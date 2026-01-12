@@ -6,11 +6,11 @@
     <div class="wrapper wrapper-body">
         <div class="dashboard-body">
             <div class="container-fluid">
-                <!-- <div class="text-center mb-4">
+                <div class="text-center mb-4">
                     <h1 class="d-main-title">Upcoming Feature</h1>
                     <p class="mb-0">This feature is under development as we will launch this feature soon.</p>
-                </div> -->
-                @if(true)
+                </div>
+                @if(false)
                 <div class="row">
                     <div class="col-md-12 d-flex justify-content-between">
                         <div class="d-main-title">
