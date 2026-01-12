@@ -1,0 +1,213 @@
+.statusswitch:checked+label:after {
+    /* left: 53px !important; */
+}
+
+.statusswitch+label {
+    /* width: 75px !important; */
+}
+
+.verifiedswitch:checked+label:after {
+    left: 73px !important;
+}
+
+.verifiedswitch+label {
+    width: 95px !important;
+}
+
+.removeonline:checked+label:after {
+    left: 83px !important;
+}
+
+.removeonline+label {
+    width: 105px !important;
+}
+
+.select2-container {
+    width: 100% !important;
+}
+
+.inquiry-status-btn .btn {
+    padding: 0px 3px;
+    font-size: 12px;
+}
+
+.choices__list--dropdown,
+.choices__list {
+    z-index: 4 !important;
+}
+
+body.dragging,
+body.dragging * {
+    cursor: move !important;
+}
+
+.dragged {
+    position: absolute;
+    opacity: 0.5;
+    z-index: 2000;
+}
+
+.jquery-sortable li.placeholder {
+    position: relative;
+}
+
+.jquery-sortable li.placeholder:before {
+    position: absolute;
+}
+
+input[readonly],
+input[disabled] {
+    background-color: #ededed !important;
+}
+
+.hide-for-lg-show-for-sm {
+    display: none;
+}
+
+@media (max-width: 768px) {
+
+    div.dataTables_wrapper div.dataTables_length,
+    div.dataTables_wrapper div.dataTables_filter,
+    div.dataTables_wrapper div.dataTables_info,
+    div.dataTables_wrapper div.dataTables_paginate {
+        text-align: left !important;
+    }
+
+    .dataTables_wrapper .col-sm-12 {
+        padding: 0px !important;
+    }
+
+    .add_vehicle_accessory_btn {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 5px;
+    }
+
+    #add_booking_vehicle {
+        margin-right: 5px;
+    }
+}
+
+@media (max-width: 425px) {
+    div.dataTables_wrapper div.dataTables_paginate ul.pagination {
+        justify-content: flex-start !important;
+    }
+
+    .hide-for-lg-show-for-sm {
+        display: unset;
+    }
+
+    .show-for-lg-hide-for-sm {
+        display: none;
+    }
+
+    .add_vehicle_accessory_btn {
+        display: block;
+        margin-top: 5px;
+    }
+
+    .add_vehicle_accessory_btn a {
+        float: none !important;
+    }
+
+    #add_booking_vehicle {
+        margin-right: 5px;
+    }
+}
+
+.btn {
+    white-space: nowrap;
+}
+
+.advance-filter-btn {
+    display: flex;
+    justify-content: end;
+}
+
+#pickup-drop-form-toggler {
+    border: none;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+@media(min-width:768px) {
+    #pickup-drop-form-toggler {
+        display: none;
+    }
+}
+
+.form-control.select {
+    display: inline-block;
+    width: 100%;
+    height: 38px;
+    padding: 6px 12px;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control.select .select2-selection {
+    height: 100%;
+    border: none;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+}
+
+.form-control.select .select2-selection__rendered {
+    font-size: 16px;
+    color: #495057;
+    line-height: normal;
+}
+
+.form-control.select .select2-selection__arrow {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 100% !important;
+}
+
+.select2-container--default .select2-selection--single {
+    border-radius: 4px;
+    padding: 0.25rem .75rem !important;
+    background-color: var(--bs-tertiary-bg) !important;
+    background-clip: padding-box !important;
+    border: var(--bs-border-width) solid var(--bs-border-color) !important;
+    height: 100% !important;
+}
+
+@media (max-width:767px) {
+    form .row {
+        gap: 10px;
+    }
+}
+
+.form-control:disabled {
+    background-color: var(--bs-gray-400);
+    opacity: 1;
+}
+
+
+.admin-card-header {
+    background-color: #5156be;
+    padding: 20px;
+    color: #fff;
+}
+.table-responsive{
+    min-height: 300px;
+}
