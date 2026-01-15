@@ -82,6 +82,8 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::get('dashboard', 'dashboard')->name('front-dashboard');
         Route::get('cleanup-attending', 'cleanupAttending')->name('front-cleanup-attending');
         Route::get('embeddable-widget', 'embeddableWidget')->name('embeddable-widget');
+        Route::post('get-organizer-options' , 'getOrganizerOptions' )->name('front-get-organizer-options');
+        Route::post('create-widget' , 'createWidget')->name('front-create-widget');
         
         Route::get('community-form/{placeholder}', 'communityForm')->name('community-form');
         Route::get('event-feedback/{placeholder}', 'eventFeedback')->name('event-feedback');

@@ -3,6 +3,7 @@
         <script src="https://maps.googleapis.com/maps/api/js?key={{env('GOOGLE_API_KEY')}}&libraries=places&callback=initMap" async></script>
         <script>
             function initMap() {
+                @if($locationarray)
                 // Array of locations with latitude and longitude
                 let locations = @json($locationarray);
                 let centeredLatLong = null;
@@ -37,6 +38,7 @@
                     })(marker, i));
                     i++;
                 });
+                @endif
 
                 // Initialize autocomplete
                 const autocomplete = new google.maps.places.Autocomplete(

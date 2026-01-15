@@ -492,7 +492,8 @@ class FrontOrderController extends Controller
                                 'event_location' => $event->fullAddress,
                                 'is_under_18'    => $is_under_18 , // or true if applicable
                                 'waiver_link'    => route('view-waiver-form', ['ticket' => encrypt($event_order_ticket_obj->id)]),
-                                'cancelRegistrationUrl' => route('cancel-rsvp-get', ['ticket' => encrypt($event_order_ticket_obj->id),'type'=>1]),
+                                //'cancelRegistrationUrl' => route('cancel-rsvp-get', ['ticket' => encrypt($event_order_ticket_obj->id),'type'=>1]),
+                                'cancelRegistrationUrl' => route('front-cleanup-attending'),
                                 'waiver_name'    => $waiver_handler_name, 
                                 'waiver_email'   => $waiver_handler_email, 
                                 'event_pdf_link' => route('front-registration-calendar', ['slug' => $event->slug]), 
@@ -529,7 +530,8 @@ class FrontOrderController extends Controller
                                     'eventDate'     => $event->startTimeAndEndTime,
                                     'eventLocation' => $event->fullAddress,
                                     'waiverUrl' => route('view-waiver-form', ['ticket' => encrypt($event_order_ticket_obj->id)]),
-                                    'cancelRegistrationUrl' => route('cancel-rsvp-get', ['ticket' => encrypt($event_order_ticket_obj->id),'type'=>1]),
+                                    //'cancelRegistrationUrl' => route('cancel-rsvp-get', ['ticket' => encrypt($event_order_ticket_obj->id),'type'=>1]),
+                                    'cancelRegistrationUrl' => route('front-cleanup-attending'),
                                 ];
                                 /* $waiver_people_array[$waiver_handler_email] = 
                                                 new \App\Mail\SendMail(

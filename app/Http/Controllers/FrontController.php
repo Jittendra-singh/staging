@@ -413,16 +413,16 @@ class FrontController extends Controller
             $request = request();
             $validated = $request->validate([
                 'event_id'          => 'required',
-                'video_url'         => 'nullable|url|max:255',
+                'video_url'         => 'nullable|url',
                 'event_reoccurance' => 'nullable|string|max:50',
-                'banner_image'      => 'nullable|image|mimes:jpeg,png,jpg,gif|max:102400',
-                'flyer_image'       => 'nullable|image|mimes:jpeg,png,jpg,gif|max:102400',
+                'banner_image'      => 'nullable|image|mimes:jpeg,png,jpg,gif',
+                'flyer_image'       => 'nullable|image|mimes:jpeg,png,jpg,gif',
                 'volunteer_tags'    => 'nullable|array',
                 'volunteer_tags.*'  => 'exists:tags,id',
                 'tags'              => 'nullable|array',
                 'tags.*'            => 'exists:tags,id',
-                'meeting_spot_details' => 'nullable|string|max:255',
-                'parking_info_details' => 'nullable|string|max:255',
+                'meeting_spot_details' => 'nullable|string',
+                'parking_info_details' => 'nullable|string',
                 
                 'bring_tools'       => 'nullable|array',
                 'bring_tools.*'     => 'exists:tools,id',
@@ -1284,7 +1284,67 @@ class FrontController extends Controller
     }
     public function embeddableWidget()
     {
-        return view('pages.frontend.embeddable-widget');
+        $data['categories']        = EventCategory::all();
+        $data['seo_details'] = (object)['title' => 'Embeddable Widget'];
+        return view('pages.frontend.embeddable-widget', $data); 
+    }
+    public function createWidget(){
+        $request = request();
+        $validated = $request->validate([
+            'title'          => 'required',
+            'location'       => 'required',
+            'latitude'       => 'required',
+            'longitude'      => 'required',
+            'distance'       => 'required',
+            'type' => 'required',
+        ]);
+
+        if(request()->hasFile('profile_picture')) {
+            $uploadedFiles = $this->uploadFiles('profile_picture' , 'uploads/volunteer_profile_pictures');
+            $validated['profile_picture']= json_encode($uploadedFiles);
+            
+        }else{
+            unset($validated['profile_picture']);
+        }
+        $pincode = '';
+        if(isset($validated['city_id']) && !empty($validated['city_id'])){
+            $cityStateZip = CityStateZip::find($validated['city_id']);
+            if(isset($cityStateZip->id)){
+                $pincode = $cityStateZip->zipcode;
+            }
+        }
+        $validated['pincode']= $pincode;
+        $validated['phone'] = formatPhoneNumber($validated['phone']);
+        $user = auth()->guard('front')->user();
+        $user->update($validated);
+
+        $this->setFlashSession(true, 'Profile updated successfully.');
+        return redirect()->back();
+
+    }
+    function getOrganizerOptions(){
+        $search = request()->search;
+        $options = [];
+        if (!empty($search)) {
+            $volunteers = Volunteer::where('status', 1)
+                ->where('is_organiser', 1)
+                ->where(function($query) use ($search) {
+                    // concat the first_name and last_name and search 
+                    $query->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $search . '%'])
+                        ->orWhere('first_name', 'like', '%' . $search . '%')
+                        ->orWhere('last_name', 'like', '%' . $search . '%')
+                        ->orWhere('email_address', 'like', '%' . $search . '%');
+                })->get();
+            if (!$volunteers->isEmpty()) {
+                foreach ($volunteers as $volunteer) {
+                    $options[] = [
+                        'id' => $volunteer->id,
+                        'text' => $volunteer->first_name . ' ' . $volunteer->last_name.' ('.$volunteer->email_address.')',
+                    ];
+                }
+            }
+        }
+        return response()->json(['results' => $options]);
     }
     
     public function bookingConfirmed($order_id)

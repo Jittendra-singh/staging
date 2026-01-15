@@ -230,7 +230,8 @@ class VolunteerController extends Controller
             $volunteers = Volunteer::where('status', 1)
                 ->where('is_organiser', 1)
                 ->where(function($query) use ($search) {
-                    $query->where('first_name', 'like', '%' . $search . '%')
+                    $query->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $search . '%'])
+                        ->orWhere('first_name', 'like', '%' . $search . '%')
                         ->orWhere('last_name', 'like', '%' . $search . '%')
                         ->orWhere('email_address', 'like', '%' . $search . '%');
                 })->get();
