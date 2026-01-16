@@ -28,6 +28,10 @@ class Volunteer extends Authenticatable
     public function alerts(){
         return $this->hasMany(VolunteerAlert::class, 'volunteer_id' );
     }
+    
+    public function widgets(){
+        return $this->hasMany(VolunteerWidget::class, 'volunteer_id' );
+    }
 
     public function state(){
         return $this->hasOneThrough(

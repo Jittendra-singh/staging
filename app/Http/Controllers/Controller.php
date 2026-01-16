@@ -299,6 +299,11 @@ class Controller extends BaseController
         return $orderNumber;
     }
 
+    public function generateRandomWidgetNumber(){
+        $randomString = str()->random(8); 
+        $widgetNumber = 'WID' . strtoupper($randomString);
+        return $widgetNumber;
+    }
 
     function generateRandomPassword($length = 8) {
         $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=';

@@ -35,7 +35,11 @@ $icalStrData = getiCalData($event);
                 <div class="col-sm-12 mb-4">
                     <a href="{{route('view-events')}}" class="back-link fw-bold">Events</a>
                     <span class="fw-bold px-2">/</span>
-                    <b><a href="{{route('view-events')}}" class="back-link text-secondary fw-bold">{{$event->event_name}}</a></b>
+                    <b><a href="{{route('view-events')}}" class="back-link text-secondary fw-bold">{{$event->event_name}}</a></b> 
+
+                    @if(auth()->guard('front')->user() && auth()->guard('front')->user()->id == $event->creator_id)
+                    <a href="{{route('front-post-a-event', encrypt($event->id))}}" class="primary-btn float-end">Edit Event</a>
+                    @endif 
                 </div>
             </div>
         </div>
@@ -637,4 +641,15 @@ $icalStrData = getiCalData($event);
 @push('script')
 <script src="{{asset('js/plugins/jquery-validation/jquery.validate.min.js')}}"></script>
 <script src="{{asset('assets/js/validation.js')}}"></script>
+<script>
+    $(document).ready(function() {
+        if (window.location.search) {
+            var widget_id = window.location.search.split('widget_id=')[1];
+            if (widget_id) {
+                localStorage.setItem('widget_id', widget_id);
+                localStorage.setItem('widget_id_datetime', new Date().toISOString());
+            }
+        }
+    });
+</script>
 @endpush

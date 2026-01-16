@@ -73,6 +73,9 @@ class Event extends Model
         if (request()->filled('event_category_id')) {
             $query->whereIn('event_category_id', request('event_category_id'));
         }
+        if (request()->filled('organizer_id')) {
+            $query->whereIn('creator_id', request('organizer_id'));
+        }
         
         // Distance filter (if present)
         

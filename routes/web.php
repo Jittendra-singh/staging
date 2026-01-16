@@ -62,6 +62,9 @@ Route::controller(\App\Http\Controllers\FrontOrderController::class)->group(func
 });
 Route::controller(\App\Http\Controllers\FrontController::class)->group(function(){
 
+    Route::get('show-widget/{id}', 'showWidget')->name('front-show-widget');
+    Route::post('add-widget-log/{widget_id}/{type}/{ref_id?}', 'addWidgetLog')->name('front-add-widget-log');
+
     Route::get('events-lists' , 'viewEvents')->name('view-events');
     Route::get('international-events' , 'viewInternationalEvents')->name('view-international-events');
     //Route::get('event/{slug}' , 'viewEventPage')->name('view-event-details');
@@ -81,9 +84,15 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
     Route::middleware(['auth:front'])->group(function () {
         Route::get('dashboard', 'dashboard')->name('front-dashboard');
         Route::get('cleanup-attending', 'cleanupAttending')->name('front-cleanup-attending');
-        Route::get('embeddable-widget', 'embeddableWidget')->name('embeddable-widget');
         Route::post('get-organizer-options' , 'getOrganizerOptions' )->name('front-get-organizer-options');
+
+        Route::get('embeddable-widget', 'embeddableWidget')->name('embeddable-widget');
+        Route::get('embeddable-widget-report', 'embeddableWidgetReport')->name('embeddable-widget-report');
         Route::post('create-widget' , 'createWidget')->name('front-create-widget');
+        Route::post('view-widget-detail/{id}', 'viewWidgetDetail')->name('front-view-widget-detail');
+        Route::get('active-inactive-widget/{id}' , 'activeInactiveWidget')->name('front-active-inactive-widget');
+        Route::delete('delete-widget/{id}' , 'deleteWidget')->name('front-delete-widget');
+        
         
         Route::get('community-form/{placeholder}', 'communityForm')->name('community-form');
         Route::get('event-feedback/{placeholder}', 'eventFeedback')->name('event-feedback');

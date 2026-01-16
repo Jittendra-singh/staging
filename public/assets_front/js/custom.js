@@ -1998,7 +1998,9 @@ $(document).ready(function () {
 				if (response.status) {
 					showError(response.message, 'success');
 					setTimeout(() => {
-						window.location.reload();
+						//window.location.reload();
+						window.location.href = window.location.pathname + '?open_tab=step3';
+
 					}, 350);
 				}
 				else {
@@ -2085,7 +2087,8 @@ $(document).ready(function () {
 						if (response.status) {
 							showError(response.message, 'success');
 							setTimeout(() => {
-								window.location.reload();
+								//window.location.reload();
+								window.location.href = window.location.pathname + '?open_tab=step3';
 							}, 350);
 						}
 						else {
@@ -2155,12 +2158,42 @@ $(document).ready(function () {
 		});
 	})
 	$('#createWidgetBtn').click(function () {
-		// check if #createWidgetForm showing then hide this div and hidden then show this div 
 		if ($('#createWidgetForm').is(':visible')) {
 			$('#createWidgetForm').hide();
 		} else {
 			$('#createWidgetForm').show();
 		}
+	});
+	$('.showWidgetDetailBtn').click(function () {
+		var url = $(this).attr('url');
+		$.ajax({
+			url: url,
+			method: 'POST',
+			data: {},
+			success: function (response) {
+				if (response.status) {
+					$('#showWidgetDetailBody').html(response.data);
+					$('#showWidgetDetail').modal('show');
+				}
+				else {
+					showError(response.message, 'error');
+				}
+			}
+		});
+	});
+	$('.widget-event-click').click(function () {
+		var eventurl = $(this).attr('url');
+		var ajaxurl = $(this).attr('ajaxurl');
+		$.ajax({
+			url: ajaxurl,
+			method: 'POST',
+			data: {
+				'_token': $('meta[name="csrf-token"]').attr('content')
+			},
+			success: function (response) {
+			}
+		});
+		window.open(eventurl, '_blank');
 	});
 	$(document).on('keyup', '.ticket_base_price_f', function () {
 		calcPriceBreakdown();

@@ -414,8 +414,23 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                                                 for="banner_image">Change Image</label>
                                                                                         </div>
                                                                                     </div>
-                                                                                    <img src="{{ isset($form_data) ? $form_data->formattedBanner() : asset('assets_front/images/event-imgs/big-2.jpg') }}" class="image-preview"
+                                                                                    @php 
+                                                                                    $banner_image = isset($form_data) ? $form_data->formattedBanner() : asset('assets_front/images/event-imgs/big-2.jpg');
+                                                                                    if(!isset($form_data)){
+                                                                                        $bimage = old('banner_image', $form_data->banner_image ?? '');
+                                                                                        if(!$bimage){
+                                                                                            $path = 'assets_front/images/event-imgs/big-2.jpg';
+                                                                                        }else{
+                                                                                            $path = $bimage->path;
+                                                                                        }              
+                                                                                        $banner_image =  asset($path);
+                                                                                    }
+                                                                                    @endphp 
+                                                                                    <img src="{{ $banner_image }}" class="image-preview"
                                                                                         alt="">
+                                                                                    @if(isset($bimage) && !empty($bimage))
+                                                                                    <input type="hidden" name="banner_image_data" value="{{json_encode($bimage)}}">
+                                                                                    @endif 
                                                                                 </div>
                                                                                 <p class="mt-1">Recommended file size: 5 MB and image size: 1000 × 660 px</p>
                                                                             </div>

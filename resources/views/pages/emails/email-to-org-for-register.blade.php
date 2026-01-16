@@ -35,7 +35,7 @@
         </ul><br/>
         <hr>
         <p>Funds (minus processing and platform fees) have been deposited into your connected account.</p>
-        <p>You can view full details in your Event Dashboard.</p>
+        <p>You can view full details in your <a href="{{route('front-cleanup-hosting',['type'=>'organizer'])}}">Event Dashboard</a>.</p>
         <p>Warm regards,<br/><strong><a href="{{ config('app.frontsite') }}">VolunteerCleanup.org Team</a></strong></p>
     @endif
 @endsection

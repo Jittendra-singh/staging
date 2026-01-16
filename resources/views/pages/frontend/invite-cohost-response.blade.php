@@ -42,9 +42,9 @@ $outPages = true;
 										</div>
 									</div>
 									@if(isset($event->slug) && !empty($event->slug))
-									<a href="{{route('view-event-details', ['slug' => $event->slug])}}" class="primary-btn mt-0"><i class="fa-solid fa-users me-1"></i>Event Detail Page</a>
+									<a href="{{route('view-event-details', ['slug' => $event->slug])}}" class="primary-btn mt-0"><i class="fa-solid fa-users me-1"></i>View Public Event Page</a>
 										@if($invitation_response==true)
-										<a href="{{route('front-post-a-event', ['id' => encrypt($event->id)])}}" class="primary-btn mt-2"><i class="fa-solid fa-users me-1"></i>Event Detail Page</a>
+										<a href="{{route('front-post-a-event', ['id' => encrypt($event->id)])}}" class="primary-btn mt-2"><i class="fa-solid fa-users me-1"></i>View / Edit Event on Your Dashboard</a>
 										@endif
 									@endif
 								</div>

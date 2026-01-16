@@ -15,6 +15,7 @@ use App\Models\OrderCart;
 use App\Models\OrderHelper;
 use App\Models\CityStateZip;
 use App\Models\VolunteerAlert;
+use App\Models\VolunteerWidgetLog;
 use App\Exceptions\CustomException;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Controllers\StripeController;
@@ -426,6 +427,16 @@ class FrontOrderController extends Controller
                 $order_object->save();   
                 $order_object->refresh();
                 $total_platform_fee = 0;
+
+                // save widget log if widget_id is there 
+                if(request()->has('widget_id') && !empty(request()->widget_id)){
+                    $widget_id = request()->widget_id;
+                    $widget_log = VolunteerWidgetLog::create([
+                        'widget_id' => decrypt($widget_id),
+                        'log_type' => 3,
+                        'reference_id' => $order_object->id,
+                    ]);
+                }
 
                 /**we are keeping track from session so that in case noone can change data from input type hidden */
                 $available_ticket_array = collect($ticket_booking)->pluck('id')->toArray();

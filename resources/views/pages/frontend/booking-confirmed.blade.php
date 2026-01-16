@@ -93,3 +93,9 @@ $icalStrData = getiCalData($event);
 </div>
 <!-- Body End-->
 @endsection
+@push('script')
+<script>
+    localStorage.removeItem('widget_id');
+    localStorage.removeItem('widget_id_datetime');
+</script>
+@endpush

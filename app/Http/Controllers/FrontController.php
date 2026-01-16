@@ -25,6 +25,8 @@ use App\Models\Setting;
 use App\Models\OrganiserLead;
 use App\Models\CityStateZip;
 use App\Models\AlertLog;
+use App\Models\VolunteerWidget;
+use App\Models\VolunteerWidgetLog;
 class FrontController extends Controller
 {
     public function viewEvents(){
@@ -437,6 +439,8 @@ class FrontController extends Controller
                 if ($request->hasFile('banner_image')) {
                     $uploadedBanner = $this->uploadFiles('banner_image', 'events/banners');
                     $event->banner_image = json_encode($uploadedBanner);
+                } else if(isset(request()->banner_image_data) && !empty(request()->banner_image_data)){
+                    $event->banner_image = request()->banner_image_data;
                 }
                 if ($request->hasFile('flyer_image')) {
                     $uploadedFlyer = $this->uploadFiles('flyer_image', 'events/flyers');
@@ -883,6 +887,7 @@ class FrontController extends Controller
         $email_content = [
             'is_deleted'=>true,
             'organizer_name' => $event->creator->first_name.' '.$event->creator->last_name,
+            'organizer_email' => $event->creator->email_address,
             'event_name' => $event->event_name,
             'cohost_first_name' => $volunteer->first_name,
         ];
@@ -898,6 +903,7 @@ class FrontController extends Controller
             $cohost = EventCoHost::where('id', decrypt($id))->firstOrFail();
             $event = $cohost->event;
             $volunteer = $cohost->volunteer;
+
             $email_content = [
                 'is_new_user' => false,
                 'organizerName' => $event->creator->first_name.' '.$event->creator->last_name,
@@ -906,8 +912,7 @@ class FrontController extends Controller
                 'acceptLink' => route('response.cohost.invitaion',['response'=>'accept','event'=>encrypt($event->id),'volunteer'=>encrypt($volunteer->id)]),
                 'cancelLink' => route('response.cohost.invitaion',['response'=>'cancel','event'=>encrypt($event->id),'volunteer'=>encrypt($volunteer->id)]),
             ];
-            $sub = 'Reminder: You’ve been invited to co-host '.$email_content['eventName'];
-            $this->sendEmail($volunteer->email_address, $sub, $email_content, "invite-cohost");
+            $this->sendEmail($volunteer->email_address, 'Reminder: You’ve been invited to co-host '.$email_content['eventName'], $email_content, "invite-cohost");
             return $this->generateJsonResponse(true, 'Co-Host invitation re-sent successfully.');
         } catch (\Exception $e) {
             return $this->generateJsonResponse(false, 'Failed to re-send Co-Host invitation: ' . $e->getMessage());
@@ -963,6 +968,10 @@ class FrontController extends Controller
                 $email_content = [
                     'eventName' => $event->event_name,
                     'date' => $event->start_datetime->format(config('app.dateTimeFormat')),
+                    'end_date' => $event->end_datetime->format(config('app.dateTimeFormat')),
+                    'location' => $event->fullAddress,
+                    'description' => $event->description,
+                    'is_meeting_private' => $event->is_private==1?'Yes':'No',
                     'eventUrl' => route('view-event-details',['slug'=>$event->slug]),
                     'orgName' => $event->creator->first_name.' '.$event->creator->last_name,
                     'orgEmail' => $event->creator->email_address,
@@ -1286,7 +1295,14 @@ class FrontController extends Controller
     {
         $data['categories']        = EventCategory::all();
         $data['seo_details'] = (object)['title' => 'Embeddable Widget'];
+        $data['listing_data'] = auth()->guard()->user()->widgets;
         return view('pages.frontend.embeddable-widget', $data); 
+    }
+    public function embeddableWidgetReport()
+    {
+        $data['seo_details'] = (object)['title' => 'Embeddable Widget Report'];
+        $data['listing_data'] = auth()->guard()->user()->widgets;
+        return view('pages.frontend.embeddable-widget-report', $data); 
     }
     public function createWidget(){
         $request = request();
@@ -1296,31 +1312,198 @@ class FrontController extends Controller
             'latitude'       => 'required',
             'longitude'      => 'required',
             'distance'       => 'required',
-            'type' => 'required',
+            'type'           => 'required',
         ]);
-
-        if(request()->hasFile('profile_picture')) {
-            $uploadedFiles = $this->uploadFiles('profile_picture' , 'uploads/volunteer_profile_pictures');
-            $validated['profile_picture']= json_encode($uploadedFiles);
-            
-        }else{
-            unset($validated['profile_picture']);
+        
+        $widget = new VolunteerWidget();
+        $widget->fill($validated);
+        $widget->wid_number = $this->generateRandomWidgetNumber();
+        $widget->location_lat = $validated['latitude'];
+        $widget->location_long = $validated['longitude'];
+        $widget->volunteer_id = auth()->guard('front')->user()->id;
+        if(request()->has('organizer_id') && !empty(request()->organizer_id)){
+            $widget->org_ids = implode(',', request()->organizer_id);
         }
-        $pincode = '';
-        if(isset($validated['city_id']) && !empty($validated['city_id'])){
-            $cityStateZip = CityStateZip::find($validated['city_id']);
-            if(isset($cityStateZip->id)){
-                $pincode = $cityStateZip->zipcode;
+        if(request()->has('category_id') && !empty(request()->category_id)){
+            $widget->cat_ids = implode(',', request()->category_id);
+        }
+        $widget->save();
+
+        $this->setFlashSession(true, 'Embeded Widget created successfully.');
+        return redirect()->back();
+    }
+    public function viewWidgetDetail($id){
+        $widget = VolunteerWidget::find(decrypt($id));
+        if(!$widget){
+            return $this->generateJsonResponse(false, 'Widget not found.');
+        }
+        $cat_html = '';
+        if(!empty($widget->cat_ids)){
+            $cat_ids = explode(',', $widget->cat_ids);
+            $cat_html = EventCategory::whereIn('id', $cat_ids)->pluck('name')->implode(', ');
+        }
+        $org_html = '';
+        if(!empty($widget->org_ids)){
+            // need to show name like "first_name last_name (email_address)" means we need to contact these 3 columns in one string 
+            $org_ids = explode(',', $widget->org_ids);
+            $vols = Volunteer::whereIn('id', $org_ids)->get();
+            foreach($vols as $key => $vol){ 
+                $org_html .= $vol->first_name.' '.$vol->last_name.' ('.$vol->email_address.')';
+                if($key < count($vols) - 1){
+                    $org_html .= ', ';
+                }
             }
         }
-        $validated['pincode']= $pincode;
-        $validated['phone'] = formatPhoneNumber($validated['phone']);
-        $user = auth()->guard('front')->user();
-        $user->update($validated);
+        $html = '
+        <div class="model-content main-form">
+            <div class="container-fluid">
+                <div class="row mt-4 mb-4">
+                    <div class="col-12">
+                        <h5 class=" mb-3">Widget Information:</h5>
+                        <hr class="mt-0 mb-3">
+                        <div class="row mb-2">
+                            <div class="col-md-3 fw-semibold text-muted">Title :</div>
+                            <div class="col-md-9 registration-full-name">'.$widget->title.'</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3 fw-semibold text-muted">Location :</div>
+                            <div class="col-md-9 registration-email-address">'.$widget->location.'</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3 fw-semibold text-muted">Distance :</div>
+                            <div class="col-md-9 registration-phone-number">'.$widget->distance.' Miles</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3 fw-semibold text-muted">Type :</div>
+                            <div class="col-md-9 registration-event-name">'.($widget->type==1?'Cleanups Listing':'Cleanups On the Map').'</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3 fw-semibold text-muted">Status :</div>
+                            <div class="col-md-9 registration-event-name">'.($widget->status==1?'Active':'Inactive').'</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3 fw-semibold text-muted">Categories :</div>
+                            <div class="col-md-9 registration-event-name">'.$cat_html.'</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3 fw-semibold text-muted">Organizers :</div>
+                            <div class="col-md-9 registration-event-name">'.$org_html.'</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-4 mb-4">
+                    <div class="col-12">
+                        <h5>Widget Code:</h5>
+                        <small class=" mb-3">Copy below code and paste it where you want to show widget.</small>
+                        <hr class="mt-0 mb-3">
+                        <div class="row mb-2">
+                            <code>
+                                &lt;iframe width="100%" height="500" src="http://localhost:8000/show-widget/'.encrypt($widget->id).'">&lt;/iframe>
+                            </code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        ';
+        return $this->generateJsonResponse(true, 'Widget found.', $html);
+    }
+    public function showWidget($id){
+        $widget = VolunteerWidget::where('status',1)->find(decrypt($id));
+        $events = null;
+        $location_array = null;
+        if(isset($widget->id)){
+            // add view log
+            $this->addWidgetLog($id, 1);
 
-        $this->setFlashSession(true, 'Profile updated successfully.');
+            $pData = [];
+            if(!empty($widget->org_ids)){
+                $pData['organizer_id'] = explode(',', $widget->org_ids);
+            }
+            if(!empty($widget->cat_ids)){
+                $pData['event_category_id'] = explode(',', $widget->cat_ids);
+            }
+            $pData['location'] = $widget->location;
+            $pData['distance'] = $widget->distance;
+            $pData['latitude'] = $widget->location_lat;
+            $pData['longitude'] = $widget->location_long;
+            $request = request();
+            $request->merge($pData);
+            if($widget->type==1){
+                $events = Event::listactive()->where('is_private',0)->paginate(21)->withQueryString();
+            } else {
+                $mapEvents = Event::listactive()
+                ->where('is_private', 0)
+                ->get();
+                $location_array = $mapEvents->map(function ($event) {
+                    if (!$event->latitude || !$event->longitude) 
+                        return null;
+                    
+                    return [
+                        'lat' => (float) $event->latitude,
+                        'lng' => (float) $event->longitude,
+                        'title' => '<b>Name:</b> '.$event->event_name.'<br/><b>Date Time:</b> '.$event->startTimeAndEndTime.'<br/><b>Address:</b> '.$event->venue.'<br/><b>Link:</b> <a target="_blank" href="'.route('view-event-details', ['slug' => $event->slug]).'">View Event</a>',
+                    ];
+                })->filter()->values()->all();
+            }
+        }
+        
+        $data['widget'] = $widget;
+        $data['events'] = $events;
+        $data['location_array'] = $location_array;
+        $data['seo_details'] = (object)[
+            'title' => 'Volunteer Cleanup',
+            'description' => 'Browse the list of upcoming cleanups.',
+            'keywords' => 'volunteer, cleanups, events, opportunities',
+        ];
+        return view('pages.frontend.show-widget', $data); 
+    }
+    public function addWidgetLog($widget_id, $type, $ref_id=null){
+        // we need to prevent that if user accidently clicked the button twice and hit the ajax twice then multiple logs should not be created so update below code accordingly 
+        $widget = VolunteerWidget::find(decrypt($widget_id));
+        if(!$widget){
+            return response()->json([
+                'status' => false,
+                'message' => 'Widget not found.',
+            ]);
+        }
+        $existingLog = VolunteerWidgetLog::where('widget_id', $widget->id)
+            ->where('log_type', $type)
+            ->where('reference_id', $ref_id)
+            ->where('created_at', '>=', now()->subSeconds(5))
+            ->first();
+
+        if($existingLog){
+            return response()->json([
+                'status' => true,
+                'message' => 'Widget log already exists.',
+            ]);
+        }
+
+        $widget->view_logs()->create([
+            'widget_id' => $widget->id,
+            'log_type' => $type,
+            'reference_id' => $ref_id,
+        ]);
+        return response()->json([
+            'status' => true,
+            'message' => 'Widget log added successfully.',
+        ]);
+    }
+    public function activeInactiveWidget($id){
+        $widget = VolunteerWidget::find(decrypt($id));
+        if(!$widget){
+            abort(404, 'Widget not found.');
+        }
+        $widget->status = $widget->status ? 0 : 1;
+        $widget->save();
+        $this->setFlashSession(true, 'Widget status updated successfully.');
         return redirect()->back();
-
+    }
+    public function deleteWidget($id){
+        $widget = VolunteerWidget::where('id', decrypt($id))->firstOrFail();
+        $res = $widget->delete();
+        return $this->generateJsonResponse($res);
     }
     function getOrganizerOptions(){
         $search = request()->search;

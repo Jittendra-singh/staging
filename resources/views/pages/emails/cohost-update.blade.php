@@ -4,6 +4,10 @@
     <p>Hi {{ $cohost_first_name }},</p>
     <p>{{ $organizer_name }} has removed you as a co-host from <strong>“{{ $event_name }}.”</strong></p>
     <p>You’ll no longer see or be able to manage this event from your dashboard. If this was unexpected or an error, please contact the organizer directly.</p>
+    <p>Organizer Details:</p>
+    <ul>
+        <li><strong>Email: <a href="mailto:{{ $organizer_email }}">{{ $organizer_email }}</a></strong></li>
+    </ul>
     <p>VolunteerCleanup.org Team</p>
 @else 
     <p>Hi {{ $cohost_first_name }},</p>

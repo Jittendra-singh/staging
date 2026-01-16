@@ -606,6 +606,14 @@ $is_session = session()->get('checkout_event');
                             <span class="menu--label">Embeddable Widget</span>
                         </a>
                     </li>
+
+                   <!--  <li class="menu--item">
+                        <a href="{{ route('embeddable-widget-report') }}" class="menu--link" title="Embeddable Widget Report"
+                            data-bs-toggle="tooltip" data-bs-placement="right">
+                            <i class="fa-solid fa-paperclip menu--icon"></i>
+                            <span class="menu--label">Widget Report</span>
+                        </a>
+                    </li> -->
                 </ul>
             </div>
         </div>

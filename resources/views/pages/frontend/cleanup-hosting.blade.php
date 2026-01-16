@@ -33,15 +33,27 @@
                         <div class="main-card mt-5">
                             <div class="dashboard-wrap-content p-4">
                                 <div class="d-md-flex flex-wrap align-items-center">
-                                    <div class="dashboard-date-wrap col-sm-7">
-                                        <h5 class="mb-0">
+                                    <div class="dashboard-date-wrap col-sm-7 rs">
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ route('front-cleanup-hosting', ['type' => 'organizer']) }}"
+                                                class="btn btn-outline-primary px-3 py-2 {{ request()->segment(2)!='cohost'?'active text-white':'' }} ">
+                                                Organizing Cleanups ({{ $hosting_event_count }})
+                                            </a>
+                                            <a href="{{ route('front-cleanup-hosting', ['type' => 'cohost']) }}"
+                                                class="btn btn-outline-primary px-3 py-2 {{ request()->segment(2)=='cohost'?'active text-white':'' }}">
+                                                Co-Hosting Cleanups ({{ $cohost_event_count }})
+                                            </a>
+                                        </div>
+                                        <!-- <h5 class="mb-0">
                                             <a href="{{ route('front-cleanup-hosting', ['type' => 'organizer']) }}" {{ request()->segment(2)=='cohost'?'class=link-deactive':'' }}>Organizing Cleanups ({{ $hosting_event_count }})</a> / <a href="{{ route('front-cleanup-hosting', ['type' => 'cohost']) }}" {{ request()->segment(2)!='cohost'?'class=link-deactive':'' }}>Co-Hosting Cleanups ({{ $cohost_event_count }})</a> 
-                                            <!-- @if (request()->segment(2) == 'cohost')
+                                        </h5> -->
+                                        <!-- <h5 class="mb-0">
+                                            @if (request()->segment(2) == 'cohost')
                                                 Events I'm Co-Hosting
                                             @else
                                                 Events I'm Hosting ({{ $hosting_events->total() }})
-                                            @endif -->
-                                        </h5>
+                                            @endif
+                                        </h5> -->
                                     </div>
                                     <div class="rs mt_r4  col-sm-5 ps-3">
                                         <div class="btn-group" role="group">
@@ -126,24 +138,27 @@
                             <div class="main-card mt-2 event-row-ongoing-not-found" style="display:none;">
                                 <div class="contact-list">
                                     <div
-                                        class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-between">
-                                        <h5>No ongoing event found</h5>
+                                        class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-between row ">
+                                        <h5 class="text-center">No cleanup found</h5>
+                                        <p class="text-center m-0">You aren't currently organizing any ongoing cleanups. <br/>Start a new initiative to help your community!</p>
                                     </div>
                                 </div>
                             </div>
                             <div class="main-card mt-2 event-row-upcoming-not-found" style="display:none;">
                                 <div class="contact-list">
                                     <div
-                                        class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-between">
-                                        <h5>No upcoming event found</h5>
+                                        class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-between row">
+                                        <h5 class="text-center">No cleanup found</h5>
+                                        <p class="text-center m-0">You aren't currently organizing any upcoming cleanups. <br/>Start a new initiative to help your community!</p>
                                     </div>
                                 </div>
                             </div>
                             <div class="main-card mt-2 event-row-ended-not-found" style="display:none;">
                                 <div class="contact-list">
                                     <div
-                                        class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-between">
-                                        <h5>No past event found</h5>
+                                        class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-between row">
+                                        <h5 class="text-center">No cleanup found</h5>
+                                        <p class="text-center m-0">You don't have any past cleanups. <br/>Start a new initiative to help your community!</p>
                                     </div>
                                 </div>
                             </div>

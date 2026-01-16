@@ -9,7 +9,11 @@
     <ul>
         <li><strong>Event Title:</strong> {{ $eventName }}</li>
         <li><strong>Start Date & Time:</strong> {{ $date }}</li>
+        <li><strong>End Date & Time:</strong> {{ $end_date }}</li>
+        <li><strong>Location:</strong> {{ $location }}</li>
+        <li><strong>Is Meeting Private:</strong> {{ $is_meeting_private }}</li>
         <li><strong>Public URL:</strong> {{ $eventUrl }}</li>
+        <li><strong>Description:</strong> {{ $description }}</li>
     </ul><br/>
     <hr>
     <p><strong>👤 Organizer Information:</strong></p>

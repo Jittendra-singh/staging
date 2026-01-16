@@ -232,6 +232,7 @@ $user = auth()->guard('front')->check() ? auth()->guard('front')->user()->load([
                                     </div>
                                 </div>
                                 <div class="confirmation-btn ">
+                                    <input name="widget_id" type="hidden" />
                                     <button type="submit" class="primary-btn w-100" id="confirm-pay">
                                         Complete Registration
                                     </button>
@@ -251,4 +252,18 @@ $user = auth()->guard('front')->check() ? auth()->guard('front')->user()->load([
 <script src="{{ asset('assets/libs/imask/imask.min.js') }}"></script>
 <script src="{{asset('js/plugins/jquery-validation/jquery.validate.min.js')}}"></script>
 <script src="{{asset('assets/js/validation.js')}}"></script>
+<!-- check if widget_id is there on local storage and get the widget_id_datetime also and check if 7 days have passed or not if passed then we don't add value if not passed then we will add value to $('input[name="widget_id"]').val() -->
+<script>
+    $(document).ready(function() {
+        if (localStorage.getItem('widget_id')) {
+            const widget_id = localStorage.getItem('widget_id');
+            const widget_id_datetime = localStorage.getItem('widget_id_datetime');
+            const widget_id_datetime_obj = new Date(widget_id_datetime);
+            const widget_id_datetime_obj_7_days = new Date(widget_id_datetime_obj.getTime() + 7 * 24 * 60 * 60 * 1000);
+            if (widget_id_datetime_obj_7_days > new Date()) {
+                $('input[name="widget_id"]').val(widget_id);
+            }
+        }
+    });
+</script>
 @endpush
