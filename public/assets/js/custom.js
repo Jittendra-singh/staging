@@ -14,13 +14,13 @@ $(document).ready(function () {
                   'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             },
             statusCode: {
-                  422: function(responseObject, textStatus, jqXHR) {
+                  422: function (responseObject, textStatus, jqXHR) {
                         let responseText = JSON.parse(responseObject.responseText);
-                        showError(responseText.message , 'error');
+                        showError(responseText.message, 'error');
                   },
-                  405: function(responseObject, textStatus, jqXHR) {
+                  405: function (responseObject, textStatus, jqXHR) {
                         let responseText = JSON.parse(responseObject.responseText);
-                        showError(responseText.message , 'error');
+                        showError(responseText.message, 'error');
                   }
             }
       });
@@ -144,15 +144,15 @@ $(document).ready(function () {
             $('.select2ajax').each(function () {
                   var datatype = $(this).attr('datatype');
                   var url = '';
-                  if(datatype=='organiser'){
+                  if (datatype == 'organiser') {
                         url = base + '/get-organizer-options';
-                  } else if(datatype=='event'){
+                  } else if (datatype == 'event') {
                         url = base + '/get-event-options';
-                  } else if(datatype=='volunteer'){
+                  } else if (datatype == 'volunteer') {
                         url = base + '/get-volunteer-options';
-                  } else if(datatype=='all_volunteers'){
+                  } else if (datatype == 'all_volunteers') {
                         url = base + '/get-all-volunteer-options';
-                  } else if(datatype=='pincode'){
+                  } else if (datatype == 'pincode') {
                         url = base + '/get-pincode-options';
                   }
                   $(this).select2({
@@ -210,27 +210,27 @@ $(document).ready(function () {
       });
       if ($('.only_date_picker').length) {
             $('.only_date_picker').datetimepicker({
-                  format:'Y-m-d',
-                  timepicker:false,
+                  format: 'Y-m-d',
+                  timepicker: false,
             });
       }
-	if ($('.only_datetime_picker').length) {
-		$('.only_datetime_picker').datetimepicker({
-			format:'Y-m-d H:i',
-			step:30,
-		});
-	}
-	//if($('#start_datetime').length && $('#site_publish_date').length && $('#ticket_sell_start_time').length){
-	if($('#start_datetime').length && $('#site_publish_date').length){
-		$('#start_datetime').datetimepicker({
-			format:'Y-m-d H:i',
-			step:30,
-			minDate:0,
-			onShow:function( ct ){
-				this.setOptions({
-					//maxDate:jQuery('#end_datetime').val()?jQuery('#end_datetime').val():false
-				})
-			},
+      if ($('.only_datetime_picker').length) {
+            $('.only_datetime_picker').datetimepicker({
+                  format: 'Y-m-d H:i',
+                  step: 30,
+            });
+      }
+      //if($('#start_datetime').length && $('#site_publish_date').length && $('#ticket_sell_start_time').length){
+      if ($('#start_datetime').length && $('#site_publish_date').length) {
+            $('#start_datetime').datetimepicker({
+                  format: 'Y-m-d H:i',
+                  step: 30,
+                  minDate: 0,
+                  onShow: function (ct) {
+                        this.setOptions({
+                              //maxDate:jQuery('#end_datetime').val()?jQuery('#end_datetime').val():false
+                        })
+                  },
                   /* onChangeDateTime:function( ct ){
                         if(ct){
                               var dateEnd2 = new Date(ct);
@@ -250,17 +250,17 @@ $(document).ready(function () {
                               $('#ticket_sell_start_time').val(formattedDate);
                         }
                   } */
-		});
-		$('#end_datetime').datetimepicker({
-			format:'Y-m-d H:i',
-			step:30,
-			onShow:function( ct ){
-				this.setOptions({
-					minDate:jQuery('#start_datetime').val()?jQuery('#start_datetime').val():0
-				})
-			},
-                  onChangeDateTime:function( ct ){
-                        if(ct){
+            });
+            $('#end_datetime').datetimepicker({
+                  format: 'Y-m-d H:i',
+                  step: 30,
+                  onShow: function (ct) {
+                        this.setOptions({
+                              minDate: jQuery('#start_datetime').val() ? jQuery('#start_datetime').val() : 0
+                        })
+                  },
+                  onChangeDateTime: function (ct) {
+                        if (ct) {
                               var dateEnd = new Date(ct);
                               dateEnd.setDate(dateEnd.getDate() + 1);
                               var month = (dateEnd.getMonth() + 1).toString().padStart(2, '0');
@@ -270,76 +270,76 @@ $(document).ready(function () {
                               $('#site_depublish_date').val(formattedDate);
                         }
                   }
-		});
-		$('#site_publish_date').datetimepicker({
-			scrollMonth: false,
+            });
+            $('#site_publish_date').datetimepicker({
+                  scrollMonth: false,
                   scrollInput: false,
-			format:'Y-m-d',
-  			timepicker:false,	
-			onShow:function( ct ){
-				this.setOptions({
-					maxDate:jQuery('#start_datetime').val()?jQuery('#start_datetime').val():false
-				})
-			},
-			onChangeDateTime: function (ct) {
-				var dateEnd = new Date(ct);
-				var month = (dateEnd.getMonth() + 1).toString().padStart(2, '0');
-				var day = dateEnd.getDate().toString().padStart(2, '0');
-				var year = dateEnd.getFullYear();
-				var formattedDate = year + '-' + month + '-' + day;
-				$('.tk_sell_start_date').val(formattedDate);
-			}
-		});
-		$('#site_depublish_date').datetimepicker({
-			scrollMonth: false,
+                  format: 'Y-m-d',
+                  timepicker: false,
+                  onShow: function (ct) {
+                        this.setOptions({
+                              maxDate: jQuery('#start_datetime').val() ? jQuery('#start_datetime').val() : false
+                        })
+                  },
+                  onChangeDateTime: function (ct) {
+                        var dateEnd = new Date(ct);
+                        var month = (dateEnd.getMonth() + 1).toString().padStart(2, '0');
+                        var day = dateEnd.getDate().toString().padStart(2, '0');
+                        var year = dateEnd.getFullYear();
+                        var formattedDate = year + '-' + month + '-' + day;
+                        $('.tk_sell_start_date').val(formattedDate);
+                  }
+            });
+            $('#site_depublish_date').datetimepicker({
+                  scrollMonth: false,
                   scrollInput: false,
-			format:'Y-m-d',
-  			timepicker:false,	
-			onShow:function( ct ){
-				this.setOptions({
-					minDate:jQuery('#end_datetime').val()?jQuery('#end_datetime').val():false
-				})
-			},
-		});
-		callSellStartEndDatePicker();
-		/* $('#ticket_sell_start_time').datetimepicker({
-			scrollMonth: false,
+                  format: 'Y-m-d',
+                  timepicker: false,
+                  onShow: function (ct) {
+                        this.setOptions({
+                              minDate: jQuery('#end_datetime').val() ? jQuery('#end_datetime').val() : false
+                        })
+                  },
+            });
+            callSellStartEndDatePicker();
+            /* $('#ticket_sell_start_time').datetimepicker({
+                  scrollMonth: false,
                   scrollInput: false,
-			format:'Y-m-d',
-  			timepicker:false,	
-			onShow:function( ct ){
+                  format:'Y-m-d',
+                            timepicker:false,	
+                  onShow:function( ct ){
                         var maxDateForSellDate = false;
                         if(jQuery('#start_datetime').val()!=''){
                               var dateEnd = new Date(jQuery('#start_datetime').val());
                               dateEnd.setDate(dateEnd.getDate() - 1);
                               maxDateForSellDate = dateEnd.getFullYear()+'-'+(dateEnd.getMonth()+1)+'-'+dateEnd.getDate();
                         }
-				this.setOptions({
-					//maxDate:jQuery('#start_datetime').val()?jQuery('#start_datetime').val():false
-					maxDate:maxDateForSellDate?maxDateForSellDate:false
-				})
-			},
-		});
-		$('#ticket_sell_end_time').datetimepicker({
-			scrollMonth: false,
+                        this.setOptions({
+                              //maxDate:jQuery('#start_datetime').val()?jQuery('#start_datetime').val():false
+                              maxDate:maxDateForSellDate?maxDateForSellDate:false
+                        })
+                  },
+            });
+            $('#ticket_sell_end_time').datetimepicker({
+                  scrollMonth: false,
                   scrollInput: false,
-			format:'Y-m-d',
-  			timepicker:false,	
-			onShow:function( ct ){
+                  format:'Y-m-d',
+                            timepicker:false,	
+                  onShow:function( ct ){
                         var maxDateForSellDate = false;
                         if(jQuery('#start_datetime').val()!=''){
                               var dateEnd = new Date(jQuery('#start_datetime').val());
                               dateEnd.setDate(dateEnd.getDate() - 1);
                               maxDateForSellDate = dateEnd.getFullYear()+'-'+(dateEnd.getMonth()+1)+'-'+dateEnd.getDate();
                         }
-				this.setOptions({
-					maxDate:jQuery('#start_datetime').val()?jQuery('#start_datetime').val():false,
-					//maxDate:maxDateForSellDate?maxDateForSellDate:false,
+                        this.setOptions({
+                              maxDate:jQuery('#start_datetime').val()?jQuery('#start_datetime').val():false,
+                              //maxDate:maxDateForSellDate?maxDateForSellDate:false,
                               minDate:jQuery('#ticket_sell_start_time').val()?jQuery('#ticket_sell_start_time').val():false
-				})
-			},
-		}); */
-	}
+                        })
+                  },
+            }); */
+      }
       $('[data-bs-dismiss="modal"]').click(function () {
             $('.modal').modal('hide');
       });
@@ -364,7 +364,7 @@ $(document).ready(function () {
             $('.seemore' + id).show();
       });
       $('.detailed-modal-popup').on('shown.bs.modal', function (event) {
-            
+
             let target_button = event.relatedTarget;
             let modelId = event.target.id;
             let detailsDiv = $(target_button).data('details') || 'tr-detail';
@@ -377,39 +377,39 @@ $(document).ready(function () {
             let target_button = event.relatedTarget;
             let route = $(target_button).data('action');
             // alert(route);
-            $('.forgot-password-modal form').attr('action' , route);
+            $('.forgot-password-modal form').attr('action', route);
       })
-	$('.generate-event-meta-data').on('click',async function(event){
-		$('#focus_keywords, #meta_title, #meta_description').val('').attr('disabled','disabled');
-		let target = $('.generate-event-meta-data');
-		$('.bx-loader').addClass('bx-spin');
-		target.text('Generating...');
-		await $.ajax({
-				type: "POST",
-				url: $(target).data('url'),
-				data: {
-                              'event_name': $('#event_name').val(),
-                              'description': $('#description').val(),
-                              'start_datetime': $('#start_datetime').val(),
-                              'end_datetime': $('#end_datetime').val(),
-                              'venue': $('#venue').val(),
-                              'pincode': $('#pincode').val()
-                        },
-				success: function (response) {
-					target.text('Generate By AI');
-					if (response.status) {
-						$('#meta_title').val(response.data.meta_title).removeAttr('disabled');
-						$('#meta_description').val(response.data.meta_description).removeAttr('disabled');
-						$('#focus_keywords').val(response.data.meta_keywords).removeAttr('disabled');
-					}
-					else {
-							showError(response.message, 'error');
-					}
-				},
-		});
-		$('.bx-loader').removeClass('bx-spin');
-	})
-      $('.generate-focus-keywords').on('click',async function(event){
+      $('.generate-event-meta-data').on('click', async function (event) {
+            $('#focus_keywords, #meta_title, #meta_description').val('').attr('disabled', 'disabled');
+            let target = $('.generate-event-meta-data');
+            $('.bx-loader').addClass('bx-spin');
+            target.text('Generating...');
+            await $.ajax({
+                  type: "POST",
+                  url: $(target).data('url'),
+                  data: {
+                        'event_name': $('#event_name').val(),
+                        'description': $('#description').val(),
+                        'start_datetime': $('#start_datetime').val(),
+                        'end_datetime': $('#end_datetime').val(),
+                        'venue': $('#venue').val(),
+                        'pincode': $('#pincode').val()
+                  },
+                  success: function (response) {
+                        target.text('Generate By AI');
+                        if (response.status) {
+                              $('#meta_title').val(response.data.meta_title).removeAttr('disabled');
+                              $('#meta_description').val(response.data.meta_description).removeAttr('disabled');
+                              $('#focus_keywords').val(response.data.meta_keywords).removeAttr('disabled');
+                        }
+                        else {
+                              showError(response.message, 'error');
+                        }
+                  },
+            });
+            $('.bx-loader').removeClass('bx-spin');
+      })
+      $('.generate-focus-keywords').on('click', async function (event) {
             let target = $('.generate-focus-keywords');
             console.log($(target).data('url'));
             $('.bx-loader').addClass('bx-spin');
@@ -432,44 +432,44 @@ $(document).ready(function () {
             $('.bx-loader').removeClass('bx-spin');
       })
       $('.add-ticket').on('click', function (event) {
-            let target        = $(event.target);
-            let route         = $(target).data('action');
+            let target = $(event.target);
+            let route = $(target).data('action');
             let clonedElement = $('.ticket-form-replica .ticket-form').clone();
-            let nextIndex     = $('.ticket-container .ticket-form').last().length ? $('.ticket-container .ticket-form').last().find('.current_counter').val() || -1 : -1;
-            nextIndex         = parseInt(nextIndex) + 1;
+            let nextIndex = $('.ticket-container .ticket-form').last().length ? $('.ticket-container .ticket-form').last().find('.current_counter').val() || -1 : -1;
+            nextIndex = parseInt(nextIndex) + 1;
             $(clonedElement).find('.current_counter').val(nextIndex);
-            $(clonedElement).find('.form-ele').each(function() {
-                  let name    = $(this).attr('name');
-                  name        = name.replace('counter_placeholder' , nextIndex);
+            $(clonedElement).find('.form-ele').each(function () {
+                  let name = $(this).attr('name');
+                  name = name.replace('counter_placeholder', nextIndex);
                   $(this).attr('name', name);
             });
 
-		$(clonedElement).find('[data-bs-target="#collapse_counter_placeholder"]').attr('aria-controls', `collapse_${nextIndex}`);
-		$(clonedElement).find('[data-bs-target="#collapse_counter_placeholder"]').attr('data-bs-target', `#collapse_${nextIndex}`);
-		$(clonedElement).find('#collapse_counter_placeholder').attr('id', `collapse_${nextIndex}`);
-		$(clonedElement).find('#collapse_title_counter_placeholder').attr('id', `collapse_title_${nextIndex}`);
-		$(clonedElement).find(`#collapse_title_${nextIndex}`).text(nextIndex+1);
+            $(clonedElement).find('[data-bs-target="#collapse_counter_placeholder"]').attr('aria-controls', `collapse_${nextIndex}`);
+            $(clonedElement).find('[data-bs-target="#collapse_counter_placeholder"]').attr('data-bs-target', `#collapse_${nextIndex}`);
+            $(clonedElement).find('#collapse_counter_placeholder').attr('id', `collapse_${nextIndex}`);
+            $(clonedElement).find('#collapse_title_counter_placeholder').attr('id', `collapse_title_${nextIndex}`);
+            $(clonedElement).find(`#collapse_title_${nextIndex}`).text(nextIndex + 1);
 
             $(clonedElement).appendTo('.ticket-container');
             fieldmasking();
-		$('.only_date_picker').datetimepicker({
-			format: 'Y-m-d',
-			timepicker: false,
-		});
-		callSellStartEndDatePicker();
+            $('.only_date_picker').datetimepicker({
+                  format: 'Y-m-d',
+                  timepicker: false,
+            });
+            callSellStartEndDatePicker();
       })
-	$(document).on('change', '.ticket_type_select', function () {
-		let name = $(this).attr('name');
-		let counter = name.split('[')[1].split(']')[0];
-		let selectedValue = $(this).val();
-		let ticketPriceInput = $('[name="ticket[' + counter + '][ticket_price]"]');
-		if (selectedValue === 'free') {
-			ticketPriceInput.val(0);
-			ticketPriceInput.prop('readonly', true);
-		} else {
-			ticketPriceInput.prop('readonly', false);
-		}
-	});
+      $(document).on('change', '.ticket_type_select', function () {
+            let name = $(this).attr('name');
+            let counter = name.split('[')[1].split(']')[0];
+            let selectedValue = $(this).val();
+            let ticketPriceInput = $('[name="ticket[' + counter + '][ticket_price]"]');
+            if (selectedValue === 'free') {
+                  ticketPriceInput.val(0);
+                  ticketPriceInput.prop('readonly', true);
+            } else {
+                  ticketPriceInput.prop('readonly', false);
+            }
+      });
       $(document).on('click', '.delete-ticket', function (event) {
             $(this).parents('.ticket-form').first().remove();
             // Swal.fire({
@@ -485,7 +485,7 @@ $(document).ready(function () {
             //       }
             // });
       });
-      if($('#organisation_short_description').length){
+      if ($('#organisation_short_description').length) {
             /* document.querySelectorAll('#organisation_short_description').forEach(editor => {
                   ClassicEditor
                         .create( editor, {
@@ -506,25 +506,25 @@ $(document).ready(function () {
             }); */
             let editor = document.getElementById('organisation_short_description');
             ClassicEditor
-                        .create( editor, {
-                              toolbar: [
+                  .create(editor, {
+                        toolbar: [
                               'heading',
                               'bold', 'italic', 'underline',
                               'bulletedList', 'numberedList',
                               'link',
                               'undo', 'redo'
-                              ]
-                        } )
-                        .then( function(editor) {
-                        editor.ui.view.editable.element.style.height = '50px';   
-                        })
-                        .catch( function(error) {
-                        console.error( error );
-                        });
+                        ]
+                  })
+                  .then(function (editor) {
+                        editor.ui.view.editable.element.style.height = '50px';
+                  })
+                  .catch(function (error) {
+                        console.error(error);
+                  });
       }
       $(document).on('change', '[name="is_organiser"]', function (event) {
             // onchange="$(this).val() == 1 ? $('.organisation-details').show() : $('.organisation-details').hide()"
-            if($(this).val() == 1){
+            if ($(this).val() == 1) {
                   $('.organisation-details').show()
                   /* document.querySelectorAll('#organisation_short_description').forEach(editor => {
                         ClassicEditor
@@ -544,7 +544,7 @@ $(document).ready(function () {
                               console.error( error );
                               });
                   }); */
-                  
+
                   /* let editor = document.getElementById('organisation_short_description');
                   ClassicEditor
                         .create( editor, {
@@ -567,61 +567,61 @@ $(document).ready(function () {
             }
       });
       $(document).on('change', '#waiver_form_type', function (event) {
-            if($(this).val() == 'text'){
+            if ($(this).val() == 'text') {
                   document.querySelectorAll('.waiver_form_content_editor').forEach(editor => {
                         ClassicEditor
-                              .create( editor, {
+                              .create(editor, {
                                     toolbar: [
-                                    'heading',
-                                    'bold', 'italic', 'underline',
-                                    'bulletedList', 'numberedList',
-                                    'link',
-                                    'undo', 'redo'
+                                          'heading',
+                                          'bold', 'italic', 'underline',
+                                          'bulletedList', 'numberedList',
+                                          'link',
+                                          'undo', 'redo'
                                     ]
-                              } )
-                              .then( function(editor) {
-                              editor.ui.view.editable.element.style.height = '50px';   
                               })
-                              .catch( function(error) {
-                              console.error( error );
+                              .then(function (editor) {
+                                    editor.ui.view.editable.element.style.height = '50px';
+                              })
+                              .catch(function (error) {
+                                    console.error(error);
                               });
                   });
-            } else if($(this).val() == 'default'){
+            } else if ($(this).val() == 'default') {
                   document.querySelectorAll('.waiver_form_content_editor').forEach(editor => {
                         ClassicEditor
-                              .create( editor, {
+                              .create(editor, {
                                     toolbar: [
-                                    'heading',
-                                    'bold', 'italic', 'underline',
-                                    'bulletedList', 'numberedList',
-                                    'link',
-                                    'undo', 'redo'
+                                          'heading',
+                                          'bold', 'italic', 'underline',
+                                          'bulletedList', 'numberedList',
+                                          'link',
+                                          'undo', 'redo'
                                     ]
-                              } )
-                              .then( function(editor) {
-                                    editor.isReadOnly = true;
-                                    editor.ui.view.editable.element.style.height = '50px';   
                               })
-                              .catch( function(error) {
-                              console.error( error );
+                              .then(function (editor) {
+                                    editor.isReadOnly = true;
+                                    editor.ui.view.editable.element.style.height = '50px';
+                              })
+                              .catch(function (error) {
+                                    console.error(error);
                               });
                   });
             }
       });
 
-      
+
       fieldmasking();
 
-      if($('.ckeditor').length){
+      if ($('.ckeditor').length) {
             $('.ckeditor').each(function () {
                   ClassicEditor
                         .create(this, {
                               toolbar: [
-                              'heading',
-                              'bold', 'italic', 'underline',
-                              'bulletedList', 'numberedList',
-                              'link',
-                              'undo', 'redo'
+                                    'heading',
+                                    'bold', 'italic', 'underline',
+                                    'bulletedList', 'numberedList',
+                                    'link',
+                                    'undo', 'redo'
                               ]
                         })
                         .then(editor => {
@@ -634,85 +634,109 @@ $(document).ready(function () {
                         });
             });
       }
-      if($('.ckeditor-classic-disabled').length){
+      if ($('.ckeditor-classic-disabled').length) {
             document.querySelectorAll('.ckeditor-classic-disabled').forEach(editor => {
                   ClassicEditor
-                        .create( editor, {
+                        .create(editor, {
                               toolbar: [
-                              'heading',
-                              'bold', 'italic', 'underline',
-                              'bulletedList', 'numberedList',
-                              'link',
-                              'undo', 'redo'
+                                    'heading',
+                                    'bold', 'italic', 'underline',
+                                    'bulletedList', 'numberedList',
+                                    'link',
+                                    'undo', 'redo'
                               ]
-                        } )
-                        .then( function(editor) {
-                              editor.isReadOnly = true;
-                              editor.ui.view.editable.element.style.height = '50px';   
                         })
-                        .catch( function(error) {
-                        console.error( error );
+                        .then(function (editor) {
+                              editor.isReadOnly = true;
+                              editor.ui.view.editable.element.style.height = '50px';
+                        })
+                        .catch(function (error) {
+                              console.error(error);
                         });
             });
       }
       $('.get-slug').on('change', function () {
-		let context 	= $(this);
-		let slug_target   = $(this).data('slugtarget');
-		let existingid    = $(this).data('existingid') || 0;
-		let get_slug_url  = $(this).data('url');
-		if($(slug_target).val() && existingid != 0){
-			return;
-		} 
-		$.ajax({
-			url : get_slug_url,
-			method : 'POST',
-			data : {
-				'existing_id'  : existingid,
-				'slug_value'   : $(this).val(),
-                        'current_slug' : $(slug_target).val(),
-				'_token'       : $('meta[name="csrf-token"]').attr('content')
-			},
-			success : function (response) {
-				if (response.status) {
-					let slug = response.data.slug;
-					$(`${slug_target}`).val(slug);
-					
-				}
-				else {
-					showError(response.message, 'error');
-				}
-			}
-		});
-		
-	});
-      
-	
-	$('#validate_event_slug').click(function(){
-		var url = $(this).attr('ajaxurl');
-		var event_id = $(this).attr('event_id');
-		var event_slug = $('.event_slug').val();
-		if(!event_slug){
-			showError('Event slug is required to validate.', 'error');
-			return;
-		}
-		var data = {
-			'event_id' : event_id,
-			'slug' : event_slug
-		};
-		$.ajax({
-			url: url,
-			method: 'POST',
-			data: data,
-			success: function (response) {
-				if (response.status) {
-					showError(response.message, 'success');
-				}
-				else {
-					showError(response.message, 'error');
-				}
-			}
-		});
-	});
+            let context = $(this);
+            let slug_target = $(this).data('slugtarget');
+            let existingid = $(this).data('existingid') || 0;
+            let get_slug_url = $(this).data('url');
+            if ($(slug_target).val() && existingid != 0) {
+                  return;
+            }
+            $.ajax({
+                  url: get_slug_url,
+                  method: 'POST',
+                  data: {
+                        'existing_id': existingid,
+                        'slug_value': $(this).val(),
+                        'current_slug': $(slug_target).val(),
+                        '_token': $('meta[name="csrf-token"]').attr('content')
+                  },
+                  success: function (response) {
+                        if (response.status) {
+                              let slug = response.data.slug;
+                              $(`${slug_target}`).val(slug);
+
+                        }
+                        else {
+                              showError(response.message, 'error');
+                        }
+                  }
+            });
+
+      });
+
+
+      $('#validate_event_slug').click(function () {
+            var url = $(this).attr('ajaxurl');
+            var event_id = $(this).attr('event_id');
+            var event_slug = $('.event_slug').val();
+            if (!event_slug) {
+                  showError('Event slug is required to validate.', 'error');
+                  return;
+            }
+            var data = {
+                  'event_id': event_id,
+                  'slug': event_slug
+            };
+            $.ajax({
+                  url: url,
+                  method: 'POST',
+                  data: data,
+                  success: function (response) {
+                        if (response.status) {
+                              showError(response.message, 'success');
+                        }
+                        else {
+                              showError(response.message, 'error');
+                        }
+                  }
+            });
+      });
+      $('.showWidgetDetailBtn').click(function () {
+            var url = $(this).attr('url');
+            $.ajax({
+                  url: url,
+                  method: 'POST',
+                  data: {},
+                  success: function (response) {
+                        if (response.status) {
+                              $('#showWidgetDetailBody').html(response.data);
+                              $('#showWidgetDetail').modal('show');
+                        }
+                        else {
+                              showError(response.message, 'error');
+                        }
+                  }
+            });
+      });
+
+      $(document).on('click', '#copyWidgetCode', function () {
+            var widgetCode = $('#widgetCode').text();
+            navigator.clipboard.writeText(widgetCode).then(function () {
+                  showError('Widget code copied.', 'success');
+            });
+      });
 });
 function callImaskForEmail(id) {
       IMask(document.getElementById(id), {
@@ -726,22 +750,22 @@ function callImaskForEmail(id) {
             }
       });
 }
-function populateData(modelId, data) {  
-      $(`#${modelId}`).find('img').attr('src' , '').addClass('d-none');
+function populateData(modelId, data) {
+      $(`#${modelId}`).find('img').attr('src', '').addClass('d-none');
       $(`#${modelId}`).find('input,textarea,select').not('[name="_token"]').val('');
-      for(index in data){
+      for (index in data) {
             console.log(index);
             let item = data[index];
-            if(!item)
+            if (!item)
                   continue;
-            if(index == 'uploaded_logo'){
+            if (index == 'uploaded_logo') {
                   $(`#${modelId}`).find(`#${index}`).attr('src', item).removeClass('d-none');
-            }else if(index=='total_organised_events' || index=='total_cohosting_events' || index=='total_volunteered_events'){
-                  $(`#${modelId}`).find(`#${index}`).text(item=='N/a'?0:item);
-            }else{
-                  $(`#${modelId}`).find(`#${index}`).val(item); 
+            } else if (index == 'total_organised_events' || index == 'total_cohosting_events' || index == 'total_volunteered_events') {
+                  $(`#${modelId}`).find(`#${index}`).text(item == 'N/a' ? 0 : item);
+            } else {
+                  $(`#${modelId}`).find(`#${index}`).val(item);
             }
-      } 
+      }
 }
 /* function changeTripDateModal(booking_id){
       var url = base + '/get-booking-for-change-dates/'+booking_id;
@@ -755,23 +779,23 @@ function populateData(modelId, data) {
             }
       });
 } */
-function submitDropImage(){
-      if($('#v_drop_km').val()==''){
+function submitDropImage() {
+      if ($('#v_drop_km').val() == '') {
             showError('Enter drop time KM from vehicle.', 'error');
-      } else if($('#v_drop_time_condition').prop('checked')){
+      } else if ($('#v_drop_time_condition').prop('checked')) {
             var is_img_updated = false;
-            if($('#v_drop_front_image_div').find('a.btn-success').length){
+            if ($('#v_drop_front_image_div').find('a.btn-success').length) {
                   is_img_updated = true;
-            } else if($('#v_drop_back_image_div').find('a.btn-success').length){
+            } else if ($('#v_drop_back_image_div').find('a.btn-success').length) {
                   is_img_updated = true;
-            } else if($('#v_drop_left_image_div').find('a.btn-success').length){
+            } else if ($('#v_drop_left_image_div').find('a.btn-success').length) {
                   is_img_updated = true;
-            } else if($('#v_drop_right_image_div').find('a.btn-success').length){
+            } else if ($('#v_drop_right_image_div').find('a.btn-success').length) {
                   is_img_updated = true;
-            } else if($('#v_drop_special_image1_div').find('a.btn-success').length){
+            } else if ($('#v_drop_special_image1_div').find('a.btn-success').length) {
                   is_img_updated = true;
             }
-            if(!is_img_updated){
+            if (!is_img_updated) {
                   showError('Please upload at least one image if you find any issue with the vehicle.', 'error');
             } else {
                   $('#formDelivery').submit();
@@ -780,27 +804,27 @@ function submitDropImage(){
             $('#formDelivery').submit();
       }
 }
-function activaTab(tab){
-    $(tab).tab('show');
-    $("html, body").animate({ scrollTop: 0 }, "slow");
+function activaTab(tab) {
+      $(tab).tab('show');
+      $("html, body").animate({ scrollTop: 0 }, "slow");
 };
-function hideShowLoader(state){
-      if(state){
-      $('#de-preloader').addClass('loadershow');
-      }else{
-      $('#de-preloader').removeClass('loadershow');
+function hideShowLoader(state) {
+      if (state) {
+            $('#de-preloader').addClass('loadershow');
+      } else {
+            $('#de-preloader').removeClass('loadershow');
       }
 }
-function callActDropDatetime(){
-  $('.vehicle_actual_drop_datetime').datetimepicker({
-        format:'Y-m-d H:i',
-        minTime:'07:00',
-        maxTime:'21:00',
-        step:30,
-        onClose:function(ct,e){
-              vehicle_tr_change($(e).attr('vid'));
-        }
-  });
+function callActDropDatetime() {
+      $('.vehicle_actual_drop_datetime').datetimepicker({
+            format: 'Y-m-d H:i',
+            minTime: '07:00',
+            maxTime: '21:00',
+            step: 30,
+            onClose: function (ct, e) {
+                  vehicle_tr_change($(e).attr('vid'));
+            }
+      });
       /* $('.vehicle_est_drop_datetime').datetimepicker({
         format:'Y-m-d H:i',
         minTime:'07:00',
@@ -812,133 +836,133 @@ function callActDropDatetime(){
       }); */
 }
 function validateEmail(email) {
-  var re = /\S+@\S+\.\S+/;
-  return re.test(email);
+      var re = /\S+@\S+\.\S+/;
+      return re.test(email);
 }
 function callAjax(url, dataset, callbackfun, async_type = false) {
-  $.ajax({
-        type: "POST",
-        url: url,
-        data: dataset,
-        async: async_type,
-        success: function (response) {
-              callbackfun(response);
-        }
-  });
+      $.ajax({
+            type: "POST",
+            url: url,
+            data: dataset,
+            async: async_type,
+            success: function (response) {
+                  callbackfun(response);
+            }
+      });
 }
 function showError(message = '', toastType = 'danger') {
-  if (toastType == 'error') {
-        toastType = 'danger';
-  }
-  if (!message)
-        return;
-  //One.helpers('jq-notify', {type: toastType , message: message});
-  var success_toast = document.getElementById("success_toast");
-  var error_toast = document.getElementById("error_toast");
-  if (toastType == 'danger') {
-        $('#error_toast strong').html(message);
-        var toast = new bootstrap.Toast(error_toast)
-        toast.show()
-  }
-  else {
-        $('#success_toast strong').html(message);
-        var toast = new bootstrap.Toast(success_toast)
-        toast.show()
-  }
+      if (toastType == 'error') {
+            toastType = 'danger';
+      }
+      if (!message)
+            return;
+      //One.helpers('jq-notify', {type: toastType , message: message});
+      var success_toast = document.getElementById("success_toast");
+      var error_toast = document.getElementById("error_toast");
+      if (toastType == 'danger') {
+            $('#error_toast strong').html(message);
+            var toast = new bootstrap.Toast(error_toast)
+            toast.show()
+      }
+      else {
+            $('#success_toast strong').html(message);
+            var toast = new bootstrap.Toast(success_toast)
+            toast.show()
+      }
 }
 function readURL(input) {
-  console.log($(input).attr('id'));
-  if (input.files && input.files[0]) {
-        var reader = new FileReader();
-        reader.onload = function (e) {
-              $('[for="'+$(input).attr('id')+'"]').text('Uploaded');
-        }
-        reader.readAsDataURL(input.files[0]);
-  }
+      console.log($(input).attr('id'));
+      if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                  $('[for="' + $(input).attr('id') + '"]').text('Uploaded');
+            }
+            reader.readAsDataURL(input.files[0]);
+      }
 }
-function callSellStartEndDatePicker(){
-	$('.tk_sell_start_date').datetimepicker({
-		scrollMonth: false,
-		scrollInput: false,
-		format: 'Y-m-d',
-		timepicker: false,
-		onShow: function (ct) {
-			var minDateForSellDate = false;
-			if (jQuery('#site_publish_date').val() != '') {
-				var dateEnd = new Date(jQuery('#site_publish_date').val());
-				minDateForSellDate = dateEnd.getFullYear() + '-' + (dateEnd.getMonth() + 1) + '-' + dateEnd.getDate();
-			}
-			this.setOptions({
-				minDate: minDateForSellDate ? minDateForSellDate : false
-			})
-			var maxDateForSellDate = false;
-			if (jQuery('#end_datetime').val() != '') {
-				var dateEnd = new Date(jQuery('#end_datetime').val());
-				dateEnd.setDate(dateEnd.getDate() - 1);
-				maxDateForSellDate = dateEnd.getFullYear() + '-' + (dateEnd.getMonth() + 1) + '-' + dateEnd.getDate();
-			}
-			this.setOptions({
-				maxDate: maxDateForSellDate ? maxDateForSellDate : false
-			})
-		},
-	});
-	$('.tk_sell_end_date').datetimepicker({
-		scrollMonth: false,
-		scrollInput: false,
-		format: 'Y-m-d',
-		timepicker: false,
-		onShow: function (ct) {
-			var minDateForSellDate = false;
-			if (jQuery('#site_publish_date').val() != '') {
-				var dateEnd = new Date(jQuery('#site_publish_date').val());
-				minDateForSellDate = dateEnd.getFullYear() + '-' + (dateEnd.getMonth() + 1) + '-' + dateEnd.getDate();
-			}
-			this.setOptions({
-				minDate: minDateForSellDate ? minDateForSellDate : false
-			})
-			var maxDateForSellDate = false;
-			if (jQuery('#end_datetime').val() != '') {
-				var dateEnd = new Date(jQuery('#end_datetime').val());
-				dateEnd.setDate(dateEnd.getDate() - 1);
-				maxDateForSellDate = dateEnd.getFullYear() + '-' + (dateEnd.getMonth() + 1) + '-' + dateEnd.getDate();
-			}
-			this.setOptions({
-				//maxDate:jQuery('#start_datetime').val()?jQuery('#start_datetime').val():false
-				maxDate: maxDateForSellDate ? maxDateForSellDate : false
-			})
-		},
-	});
+function callSellStartEndDatePicker() {
+      $('.tk_sell_start_date').datetimepicker({
+            scrollMonth: false,
+            scrollInput: false,
+            format: 'Y-m-d',
+            timepicker: false,
+            onShow: function (ct) {
+                  var minDateForSellDate = false;
+                  if (jQuery('#site_publish_date').val() != '') {
+                        var dateEnd = new Date(jQuery('#site_publish_date').val());
+                        minDateForSellDate = dateEnd.getFullYear() + '-' + (dateEnd.getMonth() + 1) + '-' + dateEnd.getDate();
+                  }
+                  this.setOptions({
+                        minDate: minDateForSellDate ? minDateForSellDate : false
+                  })
+                  var maxDateForSellDate = false;
+                  if (jQuery('#end_datetime').val() != '') {
+                        var dateEnd = new Date(jQuery('#end_datetime').val());
+                        dateEnd.setDate(dateEnd.getDate() - 1);
+                        maxDateForSellDate = dateEnd.getFullYear() + '-' + (dateEnd.getMonth() + 1) + '-' + dateEnd.getDate();
+                  }
+                  this.setOptions({
+                        maxDate: maxDateForSellDate ? maxDateForSellDate : false
+                  })
+            },
+      });
+      $('.tk_sell_end_date').datetimepicker({
+            scrollMonth: false,
+            scrollInput: false,
+            format: 'Y-m-d',
+            timepicker: false,
+            onShow: function (ct) {
+                  var minDateForSellDate = false;
+                  if (jQuery('#site_publish_date').val() != '') {
+                        var dateEnd = new Date(jQuery('#site_publish_date').val());
+                        minDateForSellDate = dateEnd.getFullYear() + '-' + (dateEnd.getMonth() + 1) + '-' + dateEnd.getDate();
+                  }
+                  this.setOptions({
+                        minDate: minDateForSellDate ? minDateForSellDate : false
+                  })
+                  var maxDateForSellDate = false;
+                  if (jQuery('#end_datetime').val() != '') {
+                        var dateEnd = new Date(jQuery('#end_datetime').val());
+                        dateEnd.setDate(dateEnd.getDate() - 1);
+                        maxDateForSellDate = dateEnd.getFullYear() + '-' + (dateEnd.getMonth() + 1) + '-' + dateEnd.getDate();
+                  }
+                  this.setOptions({
+                        //maxDate:jQuery('#start_datetime').val()?jQuery('#start_datetime').val():false
+                        maxDate: maxDateForSellDate ? maxDateForSellDate : false
+                  })
+            },
+      });
 }
-function fieldmasking(){
-      if($('.usphonemask').length != 0){
+function fieldmasking() {
+      if ($('.usphonemask').length != 0) {
             document.querySelectorAll('.usphonemask').forEach(phonefield => {
                   var phoneMask = IMask(phonefield, {
                         mask: '+{1} 000-000-0000'
                   });
             });
       }
-      if($('.textonlymask').length != 0){
+      if ($('.textonlymask').length != 0) {
             document.querySelectorAll('.textonlymask').forEach(textfield => {
                   var textMask = IMask(textfield, {
                         mask: /^[a-zA-Z\s]*$/
                   });
             });
       }
-      if($('.pincodemask').length != 0){
+      if ($('.pincodemask').length != 0) {
             document.querySelectorAll('.pincodemask').forEach(pincodefield => {
                   var pincodeMask = IMask(pincodefield, {
                         mask: /^[A-Za-z0-9\s]*$/
                   });
             });
       }
-      if($('.onlyTextNumberSplaceMask').length != 0){
+      if ($('.onlyTextNumberSplaceMask').length != 0) {
             document.querySelectorAll('.onlyTextNumberSplaceMask').forEach(pincodefield => {
                   var pincodeMask = IMask(pincodefield, {
                         mask: /^[A-Za-z0-9\s]*$/
                   });
             });
       }
-      if($('.slugmask').length != 0){
+      if ($('.slugmask').length != 0) {
             document.querySelectorAll('.slugmask').forEach(slugfield => {
                   var slugMask = IMask(slugfield, {
                         mask: /^[a-z0-9-]*$/,
@@ -949,7 +973,7 @@ function fieldmasking(){
             });
 
       }
-      if($('.urlmask').length != 0){
+      if ($('.urlmask').length != 0) {
             document.querySelectorAll('.urlmask').forEach(urlfield => {
                   var urlMask = IMask(urlfield, {
                         mask: 'https://{rest}',
@@ -957,7 +981,7 @@ function fieldmasking(){
                               rest: {
                                     mask: /^[a-zA-Z0-9./?&=_-]*$/,  // allows valid URL characters
                                     prepare: function (str) {
-                                    return str.replace(/\s+/g, ''); // remove spaces
+                                          return str.replace(/\s+/g, ''); // remove spaces
                                     }
                               }
                         }

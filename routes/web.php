@@ -86,8 +86,9 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::get('cleanup-attending', 'cleanupAttending')->name('front-cleanup-attending');
         Route::post('get-organizer-options' , 'getOrganizerOptions' )->name('front-get-organizer-options');
 
-        Route::get('embeddable-widget', 'embeddableWidget')->name('embeddable-widget');
-        Route::get('embeddable-widget-report', 'embeddableWidgetReport')->name('embeddable-widget-report');
+        Route::get('embedded-widget', 'embeddedWidget')->name('front-embedded-widget');
+        Route::get('embedded-widget-report', 'embeddedWidgetReport')->name('front-embedded-widget-report');
+        Route::post('embedded-widget-report', 'embeddedWidgetReport')->name('front-embedded-widget-report');
         Route::post('create-widget' , 'createWidget')->name('front-create-widget');
         Route::post('view-widget-detail/{id}', 'viewWidgetDetail')->name('front-view-widget-detail');
         Route::get('active-inactive-widget/{id}' , 'activeInactiveWidget')->name('front-active-inactive-widget');
@@ -232,6 +233,13 @@ Route::prefix(config('app.admin_prefix'))->group(function () {
             Route::post('/get-organizer-options' , 'getOrganizerOptions' )->name('get-organizer-options');
             Route::post('/get-volunteer-options' , 'getVolunteerOptions' )->name('get-volunteer-options');
             Route::post('/get-all-volunteer-options' , 'getAllVolunteerOptions' )->name('get-all-volunteer-options');
+            
+            Route::get('embedded-widget', 'embeddedWidget')->name('embedded-widget');
+            Route::get('embedded-widget-report', 'embeddedWidgetReport')->name('embedded-widget-report');
+            Route::post('embedded-widget-report', 'embeddedWidgetReport')->name('embedded-widget-report');
+            Route::post('view-widget-detail/{id}', 'viewWidgetDetail')->name('view-widget-detail');
+            Route::get('change-status-widget/{id}' , 'changeStatusWidget')->name('change-status-widget');
+            Route::delete('/widget/{placeholder}', 'deleteWidget')->name('delete-widget');
         });
         Route::controller(\App\Http\Controllers\EventController::class)->group(function () {
             Route::get('/events', 'index')->name('index-events');

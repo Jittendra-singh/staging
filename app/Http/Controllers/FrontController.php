@@ -1291,18 +1291,43 @@ class FrontController extends Controller
         $this->setFlashSession(true, 'Organization details updated successfully.');
         return redirect()->back();
     }
-    public function embeddableWidget()
+    public function embeddedWidget()
     {
         $data['categories']        = EventCategory::all();
-        $data['seo_details'] = (object)['title' => 'Embeddable Widget'];
+        $data['seo_details'] = (object)['title' => 'Embedded Widget'];
         $data['listing_data'] = auth()->guard()->user()->widgets;
-        return view('pages.frontend.embeddable-widget', $data); 
+        return view('pages.frontend.embedded-widget', $data); 
     }
-    public function embeddableWidgetReport()
+    public function embeddedWidgetReport()
     {
-        $data['seo_details'] = (object)['title' => 'Embeddable Widget Report'];
-        $data['listing_data'] = auth()->guard()->user()->widgets;
-        return view('pages.frontend.embeddable-widget-report', $data); 
+        $from_date = request()->from_date ? request()->from_date : date('Y-m-01');
+        $to_date = request()->to_date ? request()->to_date : date('Y-m-d');
+        $data['seo_details'] = (object)['title' => 'Embedded Widget Report'];
+        $data['listing_data'] = VolunteerWidget::with(['view_logs' => function($query) use ($from_date, $to_date) {
+            if(!empty($from_date)){
+                $query->whereDate('created_at', '>=', $from_date);
+            }
+            if(!empty($to_date)){
+                $query->whereDate('created_at', '<=', $to_date);
+            }
+        }, 'click_logs' => function($query) use ($from_date, $to_date) {
+            if(!empty($from_date)){
+                $query->whereDate('created_at', '>=', $from_date);
+            }
+            if(!empty($to_date)){
+                $query->whereDate('created_at', '<=', $to_date);
+            }
+        }, 'order_logs' => function($query) use ($from_date, $to_date) {
+            if(!empty($from_date)){
+                $query->whereDate('created_at', '>=', $from_date);
+            }
+            if(!empty($to_date)){
+                $query->whereDate('created_at', '<=', $to_date);
+            }
+        }])->where('volunteer_id', auth()->guard('front')->user()->id)->get();
+        $data['from_date'] = $from_date;
+        $data['to_date'] = $to_date;
+        return view('pages.frontend.embedded-widget-report', $data); 
     }
     public function createWidget(){
         $request = request();
@@ -1379,7 +1404,7 @@ class FrontController extends Controller
                         </div>
                         <div class="row mb-2">
                             <div class="col-md-3 fw-semibold text-muted">Status :</div>
-                            <div class="col-md-9 registration-event-name">'.($widget->status==1?'Active':'Inactive').'</div>
+                            <div class="col-md-9 registration-event-name">'.($widget->is_active==1?'Active':'Inactive').'</div>
                         </div>
                         <div class="row mb-2">
                             <div class="col-md-3 fw-semibold text-muted">Categories :</div>
@@ -1397,7 +1422,7 @@ class FrontController extends Controller
                         <small class=" mb-3">Copy below code and paste it where you want to show widget.</small>
                         <hr class="mt-0 mb-3">
                         <div class="row mb-2">
-                            <code>
+                            <code id="widgetCode">
                                 &lt;iframe width="100%" height="500" src="http://localhost:8000/show-widget/'.encrypt($widget->id).'">&lt;/iframe>
                             </code>
                         </div>
@@ -1409,7 +1434,7 @@ class FrontController extends Controller
         return $this->generateJsonResponse(true, 'Widget found.', $html);
     }
     public function showWidget($id){
-        $widget = VolunteerWidget::where('status',1)->find(decrypt($id));
+        $widget = VolunteerWidget::where('status',1)->where('is_active',1)->find(decrypt($id));
         $events = null;
         $location_array = null;
         if(isset($widget->id)){
@@ -1495,7 +1520,7 @@ class FrontController extends Controller
         if(!$widget){
             abort(404, 'Widget not found.');
         }
-        $widget->status = $widget->status ? 0 : 1;
+        $widget->is_active = $widget->is_active ? 0 : 1;
         $widget->save();
         $this->setFlashSession(true, 'Widget status updated successfully.');
         return redirect()->back();

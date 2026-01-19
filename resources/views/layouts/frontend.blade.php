@@ -577,7 +577,7 @@ $is_session = session()->get('checkout_event');
                         <a href="{{ route('front-sales-report') }}"
                             class="menu--link {{ url()->current() == route('front-sales-report') ? 'active' : '' }}"
                             title="Sales Report" data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-list menu--icon"></i>
+                            <i class="fa-solid fa-bar-chart menu--icon"></i>
                             <span class="menu--label">Sales Report</span>
                         </a>
                     </li>
@@ -600,20 +600,20 @@ $is_session = session()->get('checkout_event');
                     </li>
 
                     <li class="menu--item">
-                        <a href="{{ route('embeddable-widget') }}" class="menu--link" title="Embeddable Widget"
+                        <a href="{{ route('front-embedded-widget') }}" class="menu--link {{ url()->current() == route('front-embedded-widget') ? 'active' : '' }}" title="Embedded Widget"
                             data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-paperclip menu--icon"></i>
-                            <span class="menu--label">Embeddable Widget</span>
+                            <i class="fa-solid fa-file-code menu--icon"></i>
+                            <span class="menu--label">Embedded Widget</span>
                         </a>
                     </li>
 
-                   <!--  <li class="menu--item">
-                        <a href="{{ route('embeddable-widget-report') }}" class="menu--link" title="Embeddable Widget Report"
+                    <li class="menu--item">
+                        <a href="{{ route('front-embedded-widget-report') }}" class="menu--link {{ url()->current() == route('front-embedded-widget-report') ? 'active' : '' }}" title="Embedded Widget Report"
                             data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-paperclip menu--icon"></i>
+                            <i class="fa-solid fa-server menu--icon"></i>
                             <span class="menu--label">Widget Report</span>
                         </a>
-                    </li> -->
+                    </li>
                 </ul>
             </div>
         </div>

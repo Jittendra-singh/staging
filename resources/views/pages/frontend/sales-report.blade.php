@@ -198,13 +198,13 @@
                                                         @endphp 
                                                     <tr>
                                                         <td><a href="{{route('front-order-details',[encrypt($order->id)])  }}" target="_blank">{{$order->order_number}}</a></td>
-                                                        <td>${{$order->donation_amount}}</td>
-                                                        <td>${{round($total_amt,2)}}</td>
-                                                        <td>${{round($total_fee,2)}}</td>
-                                                        <td>${{round($re_total_amt,2)}}</td>
-                                                        <td>${{round($re_total_fee,2)}}</td>
-                                                        <td>${{round($a_total_amt,2)}}</td>
-                                                        <td>${{round($a_total_fee,2)}}</td>
+                                                        <td>{{config('app.currency').formatAmt($order->donation_amount)}}</td>
+                                                        <td>{{config('app.currency').formatAmt($total_amt)}}</td>
+                                                        <td>{{config('app.currency').formatAmt($total_fee)}}</td>
+                                                        <td>{{config('app.currency').formatAmt($re_total_amt)}}</td>
+                                                        <td>{{config('app.currency').formatAmt($re_total_fee)}}</td>
+                                                        <td>{{config('app.currency').formatAmt($a_total_amt)}}</td>
+                                                        <td>{{config('app.currency').formatAmt(round($a_total_fee,2))}}</td>
                                                         <td>{{$order->createdDateTime}}</td>
                                                     </tr>
                                                     @endforeach

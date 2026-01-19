@@ -569,8 +569,8 @@ class FrontOrderController extends Controller
 
             // creating weekly alert if checkbox of weekly alert checked on the checkout page
             if(request()->has('weekly_alert') && request()->input('weekly_alert') == 1){
-                $alertName = 'Create from registration';
-                $this->createWeeklyAlert($creating_volunteer->id,$alertName,$pincode);
+                $alertName = 'Weekly Cleanups Near '.$pincode;
+                $this->createWeeklyAlert($creating_volunteer->id,$alertName,$pincode,4);
             }
             if(request()->has('newsletter') && request()->input('newsletter') == 1){
                 $this->syncWithWP($creating_volunteer,'Checkout');
@@ -646,7 +646,7 @@ class FrontOrderController extends Controller
         }
         return redirect()->route('view-event-details', ['slug' => $event->slug]); */
     }
-    public function createWeeklyAlert($volunteer_id, $alertName, $zipcode){
+    public function createWeeklyAlert($volunteer_id, $alertName, $zipcode, $createdFrom=1){
         $existingAlert = VolunteerAlert::where('volunteer_id', $volunteer_id)
                             ->where('zipcode', $zipcode)
                             ->first();
@@ -667,6 +667,7 @@ class FrontOrderController extends Controller
                 'csz_id'          => $csz_id,
                 'location_lat'    => $lat,
                 'location_long'   => $long,
+                'created_from'    => $createdFrom,
                 'status'          => 1,
                 'email_frequency' => 'weekly',
             ]);
@@ -1124,8 +1125,8 @@ class FrontOrderController extends Controller
             $this->syncWithWP($volunteer,'Alert Page');
         }
 
-        $alertName = 'Created From Create Alert Page';
-        $this->createWeeklyAlert($volunteer->id, $alertName, $pincode);
+        $alertName = 'Weekly Cleanups Near '.$pincode;
+        $this->createWeeklyAlert($volunteer->id, $alertName, $pincode,2);
         $this->setFlashSession(true, "Weekly alert has been created successfully.");
         return redirect()->route('front-create-alert');
     }

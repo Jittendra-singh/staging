@@ -8,6 +8,9 @@ use App\Models\CityStateZip;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use App\Models\VolunteerOrganisation;
+use App\Models\EventCategory;
+use App\Models\VolunteerWidget;
+use App\Models\VolunteerWidgetLog;
 class VolunteerController extends Controller
 {
     private $gateHandler = 'volunteers';
@@ -288,5 +291,152 @@ class VolunteerController extends Controller
             }
         }
         return response()->json(['results' => $options]);
+    }
+    public function embeddedWidget(){
+        $from_date = request()->from_date ? request()->from_date : date('Y-m-01');
+        $to_date = request()->to_date ? request()->to_date : date('Y-m-d');
+        $data['seo_details'] = (object)['title' => 'Embedded Widget'];
+        $listing_data = VolunteerWidget::orderBy('id', 'desc');
+        if(request()->has('volunteer_id')){
+            $listing_data = $listing_data->where('volunteer_id', request()->volunteer_id);
+        }
+        if(!empty($from_date)){
+            $listing_data = $listing_data->whereDate('created_at', '>=', $from_date);
+        }
+        if(!empty($to_date)){
+            $listing_data = $listing_data->whereDate('created_at', '<=', $to_date);
+        }
+        $data['listing_data'] = $listing_data->get();
+        $data['from_date'] = $from_date;
+        $data['to_date'] = $to_date;
+        return view('pages.volunteers.embedded-widget', $data);
+    }
+    public function embeddedWidgetReport(){
+        
+        $from_date = request()->from_date ? request()->from_date : date('Y-m-01');
+        $to_date = request()->to_date ? request()->to_date : date('Y-m-d');
+        $data['seo_details'] = (object)['title' => 'Embedded Widget Report'];
+        $listing_data = VolunteerWidget::with(['view_logs' => function($query) use ($from_date, $to_date) {
+            if(!empty($from_date)){
+                $query->whereDate('created_at', '>=', $from_date);
+            }
+            if(!empty($to_date)){
+                $query->whereDate('created_at', '<=', $to_date);
+            }
+        }, 'click_logs' => function($query) use ($from_date, $to_date) {
+            if(!empty($from_date)){
+                $query->whereDate('created_at', '>=', $from_date);
+            }
+            if(!empty($to_date)){
+                $query->whereDate('created_at', '<=', $to_date);
+            }
+        }, 'order_logs' => function($query) use ($from_date, $to_date) {
+            if(!empty($from_date)){
+                $query->whereDate('created_at', '>=', $from_date);
+            }
+            if(!empty($to_date)){
+                $query->whereDate('created_at', '<=', $to_date);
+            }
+        //}])->where('volunteer_id', auth()->guard('front')->user()->id)->get();
+        }]);
+        if(request()->has('volunteer_id')){
+            $listing_data = $listing_data->where('volunteer_id', request()->volunteer_id);
+        }
+        $data['listing_data'] = $listing_data->orderBy('id', 'desc')->get();
+        $data['from_date'] = $from_date;
+        $data['to_date'] = $to_date;
+        return view('pages.volunteers.embedded-widget-report', $data);
+    }
+    public function viewWidgetDetail($id){
+        $widget = VolunteerWidget::find(decrypt($id));
+        if(!$widget){
+            return $this->generateJsonResponse(false, 'Widget not found.');
+        }
+        $cat_html = '';
+        if(!empty($widget->cat_ids)){
+            $cat_ids = explode(',', $widget->cat_ids);
+            $cat_html = EventCategory::whereIn('id', $cat_ids)->pluck('name')->implode(', ');
+        }
+        $org_html = '';
+        if(!empty($widget->org_ids)){
+            // need to show name like "first_name last_name (email_address)" means we need to contact these 3 columns in one string 
+            $org_ids = explode(',', $widget->org_ids);
+            $vols = Volunteer::whereIn('id', $org_ids)->get();
+            foreach($vols as $key => $vol){ 
+                $org_html .= $vol->first_name.' '.$vol->last_name.' ('.$vol->email_address.')';
+                if($key < count($vols) - 1){
+                    $org_html .= ', ';
+                }
+            }
+        }
+        $html = '
+        <div class="model-content main-form">
+            <div class="container-fluid">
+                <div class="row mt-2 mb-4">
+                    <div class="col-12">
+                        <h5 class=" mb-3">Widget Information:</h5>
+                        <hr class="mt-0 mb-3">
+                        <div class="row mb-2">
+                            <div class="col-md-3 fw-semibold text-muted">Title :</div>
+                            <div class="col-md-9 registration-full-name">'.$widget->title.'</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3 fw-semibold text-muted">Location :</div>
+                            <div class="col-md-9 registration-email-address">'.$widget->location.'</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3 fw-semibold text-muted">Distance :</div>
+                            <div class="col-md-9 registration-phone-number">'.$widget->distance.' Miles</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3 fw-semibold text-muted">Type :</div>
+                            <div class="col-md-9 registration-event-name">'.($widget->type==1?'Cleanups Listing':'Cleanups On the Map').'</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3 fw-semibold text-muted">Status :</div>
+                            <div class="col-md-9 registration-event-name">'.($widget->is_active==1?'Active':'Inactive').'</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3 fw-semibold text-muted">Categories :</div>
+                            <div class="col-md-9 registration-event-name">'.$cat_html.'</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3 fw-semibold text-muted">Organizers :</div>
+                            <div class="col-md-9 registration-event-name">'.$org_html.'</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-4 mb-4">
+                    <div class="col-12">
+                        <h5>Widget Code:</h5>
+                        <small class=" mb-3">Copy below code and paste it where you want to show widget.</small>
+                        <hr class="mt-0 mb-3">
+                        <div class="row mb-2">
+                            <code id="widgetCode">
+                                &lt;iframe width="100%" height="500" src="http://localhost:8000/show-widget/'.encrypt($widget->id).'">&lt;/iframe>
+                            </code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        ';
+        return $this->generateJsonResponse(true, 'Widget found.', $html);
+    }
+    public function changeStatusWidget($id){
+        $widget = VolunteerWidget::find(decrypt($id));
+        if(!$widget){
+            abort(404, 'Widget not found.');
+        }
+        $widget->status = $widget->status ? 0 : 1;
+        $widget->save();
+        $this->setFlashSession(true, 'Widget status updated successfully.');
+        return redirect()->back();
+    }
+    public function deleteWidget($placeholder){
+        Gate::authorize('delete', 'embedded-widget');
+        $widget = VolunteerWidget::findOrFail(decrypt($placeholder));
+        $res = $widget->delete(); 
+        return $this->generateJsonResponse($res);
     }
 }

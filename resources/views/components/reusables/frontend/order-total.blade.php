@@ -2,7 +2,7 @@
     @foreach ($ticket_booking as $ticket)
         <div class="order-total-dt">
             <div class="order-text mb-1"><h6><b>{{$ticket['count']}}x</b> {{$ticket['name']}}</h6></div>
-            <div class="order-number mb-1"><h6>{{config('app.currency')}}{{$ticket['price']}}</h6></div>
+            <div class="order-number mb-1"><h6>{{config('app.currency')}}{{formatAmt($ticket['price'])}}</h6></div>
         </div>
     @endforeach
     @if($event->allow_donations==1 && !empty($event->creator->stripe_email) && !empty($event->creator->stripe_account_id))
@@ -38,13 +38,13 @@
                 </div>
                 
                 <div class="mt-2" id="donation-price" style="display: none;">
-                    <input inputmode="decimal" autocomplete="off" oninput="this.value = sanitizeDonation(this.value)"
+                    <input inputmode="decimal" autocomplete="off"
                         type="number"
                         min="1"
-                        step="0.01"
-                        class="form-control form-control-sm"
+                        step="1"
+                        class="form-control form-control-sm integeronly"
                         name="donation_amount"
-                        placeholder="Enter custom amount">
+                        placeholder="Enter an amount of $1.00 or more">
                 </div>
             </div>
         </div>
@@ -52,11 +52,11 @@
     @endif
     <div class="order-total-dt mt-4 pt-1">
         <div class="order-text mb-3">Sub Total</div>
-        <div class="order-number mb-3">{{config('app.currency')}}<span id="f-sub-total">{{ $sub_total }}</span></div>
+        <div class="order-number mb-3">{{config('app.currency')}}<span id="f-sub-total">{{ formatAmt($sub_total) }}</span></div>
     </div>
     <div class="order-total-dt mb-2">
         <div class="order-text mb-2"><h6>Fee Included</h6></div>
-        <div class="order-number mb-2" ticketfee="{{ $ticket_fees }}"><h6>{{config('app.currency')}}{{ $ticket_fees }}</h6></div>
+        <div class="order-number mb-2" ticketfee="{{ $ticket_fees }}"><h6>{{config('app.currency')}}{{ formatAmt($ticket_fees) }}</h6></div>
     </div>
     <div class="order-total-dt donation-total-div" style="display:none;">
         <div class="order-text">Donation</div>
@@ -65,7 +65,7 @@
     <div class="divider-line"></div>
     <div class="order-total-dt">
         <div class="order-text">Total</div>
-        <div class="order-number ttl-clr">{{config('app.currency')}}<span id="f-grand-total">{{ $final_total }}</span></div>
+        <div class="order-number ttl-clr">{{config('app.currency')}}<span id="f-grand-total">{{ formatAmt($final_total) }}</span></div>
     </div>
 </div>
 <style>

@@ -1,31 +1,30 @@
 @extends('layouts.frontend')
-@section('title')
-    Registrations
-@endsection
 @push('style')
 <style>
-.bs-searchbox input::placeholder {
-    content: "Start typing to search...";
-}
-.d-none {
-    display: none !important;
-}
-
 </style>
 @endpush
 @section('content')
     <div class="wrapper wrapper-body">
         <div class="dashboard-body">
             <div class="container-fluid">
-                <div class="text-center mb-4">
+                <!-- <div class="text-center mb-4">
                     <h1 class="d-main-title">Upcoming Feature</h1>
                     <p class="mb-0">This feature is under development as we will launch this feature soon.</p>
-                </div>
-                @if(false)
+                </div> -->
+                @if(true)
                 <div class="row">
                     <div class="col-md-12 d-flex justify-content-between">
                         <div class="d-main-title">
-                            <h3><i class="fa-solid fa-calendar-days me-3"></i>Embedded Widget Code</h3>
+                            <h3><i class="fa-solid fa-calendar-days me-3 mb-3"></i>Embedded Widget</h3>
+                            @php
+                                $breadcrumbs = [
+                                    [
+                                        'name' => 'Embedded Widget', 
+                                        'url' => route('front-embedded-widget')
+                                    ],
+                                ]
+                            @endphp     
+                            <x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs"/>
                             <!-- <p class="mb-0 mt-3">You can send a message to your RSVP’s in the ‘Registration List’.</p> -->
                         </div>
                         <button class="primary-btn w-fits" id="createWidgetBtn">Create Widget</button>
@@ -188,6 +187,7 @@
             <div class="modal-body" id="showWidgetDetailBody">
             </div>
             <div class="modal-footer">
+                <button type="button" class="primary-btn w-fit" id="copyWidgetCode">Copy Code</button>
                 <button type="button" class="primary-btn w-fit"
                     data-bs-dismiss="modal">Close</button>
             </div>

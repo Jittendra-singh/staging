@@ -829,12 +829,16 @@ $(document).ready(function () {
 		$('.only_date_picker').datetimepicker({
 			format: 'Y-m-d',
 			timepicker: false,
+			scrollMonth: false,
+			scrollInput: false,
 		});
 	}
 	if ($('.only_datetime_picker').length) {
 		$('.only_datetime_picker').datetimepicker({
 			format: 'Y-m-d H:i',
 			step: 30,
+			scrollMonth: false,
+			scrollInput: false,
 		});
 	}
 	//if ($('#start_datetime').length && $('#site_publish_date').length && $('#ticket_sell_start_time').length) {
@@ -2110,7 +2114,7 @@ $(document).ready(function () {
 			$('[name="donation_amount"]').val(val);
 			$('#donation-price').hide();
 			$('.donation-total-div').show();
-			$('#donation-total').text(val);
+			$('#donation-total').text(parseFloat(val).toFixed(2));
 		}
 		calGrandTotal();
 	});
@@ -2118,7 +2122,7 @@ $(document).ready(function () {
 		var val = $(this).val();
 		if (val != '') {
 			$('.donation-total-div').show();
-			$('#donation-total').text(val);
+			$('#donation-total').text(parseFloat(val).toFixed(2));
 		} else {
 			$('.donation-total-div').hide();
 			$('#donation-total').text('');
@@ -2194,6 +2198,12 @@ $(document).ready(function () {
 			}
 		});
 		window.open(eventurl, '_blank');
+	});
+	$(document).on('click', '#copyWidgetCode', function () {
+		var widgetCode = $('#widgetCode').text();
+		navigator.clipboard.writeText(widgetCode).then(function () {
+			showError('Widget code copied.', 'success');
+		});
 	});
 	$(document).on('keyup', '.ticket_base_price_f', function () {
 		calcPriceBreakdown();
@@ -2458,6 +2468,18 @@ function callSellStartEndDatePicker() {
 	});
 }
 function fieldmasking() {
+	if ($('.integeronly').length != 0) {
+		document.querySelectorAll('.integeronly').forEach(intField => {
+			intField.addEventListener('keydown', function (e) {
+				if (['.', 'e', '+', '-'].includes(e.key)) {
+					e.preventDefault();
+				}
+			});
+			var intMask = IMask(intField, {
+				mask: /^[0-9]*$/
+			});
+		});
+	}
 	if ($('.usphonemask').length != 0) {
 		document.querySelectorAll('.usphonemask').forEach(phonefield => {
 			var phoneMask = IMask(phonefield, {

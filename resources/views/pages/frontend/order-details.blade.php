@@ -142,17 +142,17 @@
 									</tr>
 									<tr>
 										<th>Sub Total</th>
-										<td>{{config('app.currency').$order->sub_total}}</td>
+										<td>{{config('app.currency').formatAmt($order->sub_total)}}</td>
 									</tr>
 									@if(!empty($order->donation_amount) && $order->donation_amount > 0)
 									<tr>
 										<th>Donation</th>
-										<td>{{config('app.currency').$order->donation_amount}}</td>
+										<td>{{config('app.currency').formatAmt($order->donation_amount)}}</td>
 									</tr>
 									@endif 
 									<tr>
 										<th>Grand Total</th>
-										<td>{{config('app.currency').$order->grand_total}}</td>
+										<td>{{config('app.currency').formatAmt($order->grand_total)}}</td>
 									</tr>
 								</table>
 							</div>
@@ -190,7 +190,7 @@
 									<div class="info-value">{{ $ticket->volunteer->phone }}</div>
 
 									<div class="info-label">Ticket Price</div>
-									<div class="info-value">${{ $ticket->price }}</div>
+									<div class="info-value">{{config('app.currency').formatAmt($ticket->price)}}</div>
 
 									<div class="info-label">Age Category</div>
 									<div class="info-value">
@@ -312,7 +312,7 @@
 												<td>{{$ticket->volunteer->name}}</td>
 												<td>{{$ticket->volunteer->email_address}}</td>
 												<td>{{$ticket->volunteer->phone}}</td>
-												<td>${{$ticket->price}}</td>
+												<td>{{config('app.currency').formatAmt($ticket->price)}}</td>
 											</tr>
 										@endforeach
 									@else 

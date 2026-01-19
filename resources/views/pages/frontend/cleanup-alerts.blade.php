@@ -48,6 +48,7 @@
 																<tr>
 																	<th scope="col">Alert Name</th>
 																	<th scope="col">Alert Zipcode</th>
+																	<th scope="col">Created From</th>
 																	<th scope="col">Date Created</th>
 																	<th scope="col">Status</th>
                                                                     <th></th>
@@ -58,7 +59,14 @@
 																	
 																<tr class="single-tr">										
 																	<td>{{$data->alert_name}}</td>	
-																	<td>{{$data->zipcode}}</td>	
+																	<td>{{$data->zipcode}}</td>
+																	@if($data->created_from==1)	
+																		<td>Alert Page</td>
+																	@elseif($data->created_from==2)
+																		<td>Registration Page</td>
+																	@elseif($data->created_from==3)
+																		<td>Booking Page</td>
+																	@endif
 																	<td>{{$data->created_at}}</td>
 																	<td>
 																		@if($data->status)

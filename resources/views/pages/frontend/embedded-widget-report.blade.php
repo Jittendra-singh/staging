@@ -1,16 +1,7 @@
 @extends('layouts.frontend')
-@section('title')
-    Registrations
-@endsection
 @push('style')
+<link rel="stylesheet" href="{{ asset('assets/libs/datetimepicker/jquery.datetimepicker.min.css') }} ">
 <style>
-.bs-searchbox input::placeholder {
-    content: "Start typing to search...";
-}
-.d-none {
-    display: none !important;
-}
-
 </style>
 @endpush
 @section('content')
@@ -25,15 +16,51 @@
                 <div class="row">
                     <div class="col-md-12 d-flex justify-content-between">
                         <div class="d-main-title">
-                            <h3><i class="fa-solid fa-calendar-days me-3"></i>Embedded Widget Report</h3>
+                            <h3><i class="fa-solid fa-calendar-days me-3 mb-3"></i>Embedded Widget Report</h3>
+                            @php
+                                $breadcrumbs = [
+                                    [
+                                        'name' => 'Embedded Widget Report', 
+                                        'url' => route('front-embedded-widget-report')
+                                    ],
+                                ]
+                            @endphp     
+                            <x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs"/>
                             <!-- <p class="mb-0 mt-3">You can send a message to your RSVP’s in the ‘Registration List’.</p> -->
                         </div>
                     </div>
                 </div>
                 <x-reusables.frontend.alert />
                 <div class="col-md-12">
+                    <div class="main-card mt-3">
+                        <div class="dashboard-wrap-content p-4">
+                            <form class="filter-form" method="post">
+                                @csrf
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        <div class="form-group">
+                                            <input autocomplete="off" class="form-control h_40 w-100 only_date_picker" value="{{$from_date}}" name="from_date" type="text" placeholder="Log From Date">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group">
+                                            <input autocomplete="off" class="form-control h_40 w-100 only_date_picker" value="{{$to_date}}" name="to_date" type="text" placeholder="Log To Date">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="rs mt_r4 ps-3">
+                                            <div class="nav custom2-tabs btn-group justify-content-start gap-2 row-gap-3" >
+                                                <button class="primary-btn w-fit" type="submit" >Filter</button>
+                                                <a href="{{ url()->current() }}" class="primary-btn w-fit">Reset</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                     <div class="conversion-setup">
-                        <div class="main-card mt-5">
+                        <div class="main-card mt-3">
                             <div class="dashboard-wrap-content p-4">
                                 <div class="table-card mt-4">
                                     <div class="main-table">
@@ -46,7 +73,7 @@
                                                         <th scope="col">Total Click</th>
                                                         <th scope="col">Total Order</th>
                                                         <th scope="col">Last Active Date</th>
-                                                        <th scope="col">Created Date</th>
+                                                        <th scope="col">Widget Created Date</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -57,9 +84,9 @@
                                                         @endphp 
                                                         <tr class="single-tr">										
                                                             <td>{{$data->wid_number}}</td>								
-                                                            <td>{{$data->view_logs->count()}}</td>	
-                                                            <td>{{$data->click_logs->count()}}</td>	
-                                                            <td>{{$data->order_logs->count()}}</td>	
+                                                            <td>{{$data->view_logs->count() }}</td>	
+                                                            <td>{{$data->click_logs->count() }}</td>	
+                                                            <td>{{$data->order_logs->count() }}</td>	
                                                             <td>{{$lastActiveDate}}</td>
                                                             <td>{{date(config('app.dateFormat'),strtotime($data->created_at))}}</td>
                                                         </tr>

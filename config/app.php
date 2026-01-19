@@ -226,7 +226,7 @@ return [
     'frontsite'                 =>         "https://volunteercleanup.org/",
     'laravelurl'                 =>        "https://volunteercleanup.org/event/",
     'frontsiteold'              =>         "https://volunteercleanup.org/",
-    'currency'                  =>         "US$",
+    'currency'                  =>         "$",
     'communityformbadge'        => [
         'pending'   => 'text-danger', 
         'requested' => 'text-primary', 

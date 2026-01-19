@@ -1,6 +1,8 @@
 <?php 
 if (!function_exists('getiCalData')) {
-    
+    function formatAmt($amount){
+        return number_format($amount, 2);
+    }
     function formatPhoneNumber($phone) {
         // Strip everything to digits
         $digits = preg_replace('/\D+/', '', $phone);

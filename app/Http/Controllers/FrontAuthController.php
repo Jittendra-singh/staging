@@ -109,8 +109,9 @@ class FrontAuthController extends Controller
         if($request->has('weekly_alerts') && $request->weekly_alerts == 1 && !empty($pincode)){
             (new FrontOrderController)->createWeeklyAlert(
                 $volunteer->id,
-                'Created from registration',
-                $pincode
+                'Weekly Cleanups Near '.$pincode,
+                $pincode,
+                3
             );
         }
          

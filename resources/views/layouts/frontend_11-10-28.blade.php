@@ -515,10 +515,10 @@ $is_session = session()->get('checkout_event');
                     </li>
 
                     <li class="menu--item">
-                        <a href="{{ route('embeddable-widget') }}" class="menu--link" title="Embeddable Widget"
+                        <a href="{{ route('front-embedded-widget') }}" class="menu--link" title="Embedded Widget"
                             data-bs-toggle="tooltip" data-bs-placement="right">
                             <i class="fa-solid fa-paperclip menu--icon"></i>
-                            <span class="menu--label">Embeddable Widget</span>
+                            <span class="menu--label">Embedded Widget</span>
                         </a>
                     </li>
                 </ul>
