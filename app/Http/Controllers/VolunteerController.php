@@ -413,7 +413,7 @@ class VolunteerController extends Controller
                         <hr class="mt-0 mb-3">
                         <div class="row mb-2">
                             <code id="widgetCode">
-                                &lt;iframe width="100%" height="500" src="http://localhost:8000/show-widget/'.encrypt($widget->id).'">&lt;/iframe>
+                                &lt;iframe width="100%" height="500" src="'.(route('front-show-widget', ['id' => encrypt($widget->id)])).'">&lt;/iframe>
                             </code>
                         </div>
                     </div>
