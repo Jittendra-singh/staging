@@ -229,22 +229,28 @@
 															<i class="fa-solid fa-certificate"></i>
 														</span>
 														<p>Community Service Form</p>
-														@if($registration->checkin==1)
-														<a class="btn btn-sm" href="{{ $registration->community_form_pdf }}" download>Download PDF</a>
-														@elseif(strtotime(date('Y-m-d H:i:s')) < strtotime($event->eventEndDateTime))
-														<h6 class="coupon-status">
-															<span class="badge custom-badge-danger">Awaiting</span>
-														</h6>
-														@elseif($registration->checkin!=1 && $registration->community_form_status!='requested') 
-														<button class="btn btn-sm btn-warning send-community-form-request" url="{{ route('request-community-form',[encrypt($registration->id)]) }}">Request Now</button>
-														@elseif($registration->checkin!=1 && $registration->community_form_status=='requested') 
-														<h6 class="coupon-status">
-															<span class="badge custom-badge-danger">Requested</span>
-														</h6>
+														@if($registration->rsvp_confirmation==1)
+															@if($registration->checkin==1)
+																<a class="btn btn-sm" href="{{ $registration->community_form_pdf }}" download>Download PDF</a>
+															@elseif(strtotime(date('Y-m-d H:i:s')) < strtotime($event->eventEndDateTime))
+																<h6 class="coupon-status">
+																	<span class="badge custom-badge-danger">Awaiting</span>
+																</h6>
+															@elseif($registration->checkin!=1 && $registration->community_form_status!='requested') 
+																<button class="btn btn-sm btn-warning send-community-form-request" url="{{ route('request-community-form',[encrypt($registration->id)]) }}">Request Now</button>
+															@elseif($registration->checkin!=1 && $registration->community_form_status=='requested') 
+																<h6 class="coupon-status">
+																	<span class="badge custom-badge-danger">Requested</span>
+																</h6>
+															@else 
+																<h6 class="coupon-status">
+																	<span class="badge custom-badge-danger 1">Awaiting</span>
+																</h6>
+															@endif
 														@else 
-														<h6 class="coupon-status">
-															<span class="badge custom-badge-danger 1">Awaiting</span>
-														</h6>
+															<h6 class="coupon-status">
+																<span class="badge custom-badge-danger 1">Not Available</span>
+															</h6>
 														@endif
 														<!-- <div class="form-group">
 															<div class="d-flex align-items-start">

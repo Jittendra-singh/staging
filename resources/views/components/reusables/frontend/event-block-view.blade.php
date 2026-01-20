@@ -54,6 +54,10 @@
                         }
                     }
                     //$totalBookedTicket = $event->tickets->where('rsvp_confirmation',1)->count();
+
+                    if(strtotime($event->end_datetime) < strtotime(date('Y-m-d H:i:s'))){
+                        $totalTicketCount = 0;
+                    }
                     @endphp
                     <div class=" mt-2 publish-date">{{$event->full_address}}</div>
                     <div class="publish-date">Organizer: {{$event->creator->name}}</div>

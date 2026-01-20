@@ -1460,14 +1460,14 @@ class FrontController extends Controller
                 $mapEvents = Event::listactive()
                 ->where('is_private', 0)
                 ->get();
-                $location_array = $mapEvents->map(function ($event) {
+                $location_array = $mapEvents->map(function ($event) use ($widget) {
                     if (!$event->latitude || !$event->longitude) 
                         return null;
                     
                     return [
                         'lat' => (float) $event->latitude,
                         'lng' => (float) $event->longitude,
-                        'title' => '<b>Name:</b> '.$event->event_name.'<br/><b>Date Time:</b> '.$event->startTimeAndEndTime.'<br/><b>Address:</b> '.$event->venue.'<br/><b>Link:</b> <a target="_blank" href="'.route('view-event-details', ['slug' => $event->slug]).'">View Event</a>',
+                        'title' => '<b>Name:</b> '.$event->event_name.'<br/><b>Date Time:</b> '.$event->startTimeAndEndTime.'<br/><b>Address:</b> '.$event->venue.'<br/><b>Link:</b> <a href="javascript:void(0);" ajaxurl="'.route('front-add-widget-log',['widget_id'=>encrypt($widget->id),'type'=>2,'ref_id'=>$event->id]).'" url="'.route('view-event-details', ['slug' => $event->slug,'widget_id'=>encrypt($widget->id)]).'" title="'.$event->event_name.'" class="widget-event-click"><b>View Event</b></a>',
                     ];
                 })->filter()->values()->all();
             }

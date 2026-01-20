@@ -932,7 +932,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                     <label class="form-label fs-6">Waste Collected*</label>
                                                                     <!-- <input id="waste_collected" class="form-control h_50" type="text" value="{{ old('waste_collected', $form_data->waste_collected ?? '') }}" name="waste_collected" placeholder="" value="" required> -->
                                                                     <div class="input-group">
-                                                                        <input id="waste_collected" type="number" class="form-control h_50" placeholder="" name="waste_collected" required value="{{ old('waste_collected', $form_data->waste_collected ?? '') }}">
+                                                                        <input autocomplete="off" step="0.01" min="0.01" id="waste_collected" type="number" class="form-control decimalonly h_50" placeholder="" name="waste_collected" required value="{{ old('waste_collected', $form_data->waste_collected ?? '') }}">
                                                                         <div class="input-group-text">Pound (lb)</div>
                                                                     </div>
                                                                 </div>
@@ -942,7 +942,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                     <label class="form-label fs-6">Area Cleaned*</label>
                                                                     <!-- <input id="area_cleaned" class="form-control h_50" type="text" value="{{ old('area_cleaned', $form_data->area_cleaned ?? '') }}" name="area_cleaned" placeholder="" value="" required> -->
                                                                     <div class="input-group">
-                                                                        <input id="area_cleaned" type="number" class="form-control h_50" placeholder="" name="area_cleaned" required value="{{ old('area_cleaned', $form_data->area_cleaned ?? '') }}">
+                                                                        <input autocomplete="off" step="0.01" min="0.01" id="area_cleaned" type="number" class="form-control decimalonly h_50" placeholder="" name="area_cleaned" required value="{{ old('area_cleaned', $form_data->area_cleaned ?? '') }}">
                                                                         <div class="input-group-text">Yards</div>
                                                                     </div>
                                                                 </div>

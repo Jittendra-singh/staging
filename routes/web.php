@@ -54,6 +54,9 @@ Route::controller(\App\Http\Controllers\FrontOrderController::class)->group(func
     Route::post('cancel-refund-paid-ticket' , 'cancelRefundPaidTicket')->name('cancel-refund-paid-ticket');
     Route::post('cancel-refund-paid-ticket-attendee/{ticket}/{type}' , 'cancelRefundPaidTicketAttendee')->name('cancel-refund-paid-ticket-attendee');
     Route::get('rsvp-cancelled-page/{event}', 'rsvpCancelledPage')->name('rsvp-cancelled-page');
+    
+    Route::get('cancel-registration-front/{ticket}', 'cancelRegistrationFront')->name('cancel-registration-front');
+    Route::get('confirm-cancel-registration-front/{ticket}/{type}', 'confirmCancelRegistrationFront')->name('confirm-cancel-registration-front');
 
     Route::get('download-event-ical/{placeholder}' , 'downloadEventIcal')->name('download-event-ical');
     Route::post('check-event-slug', 'checkEventSlug')->name('front-check-event-slug');
@@ -76,6 +79,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
     Route::get('rsvp-confirmation/{event}', 'rsvpWaiverConfirmed')->name('front-rsvp-confirmation');
     Route::get('unsubscribe-alert/{user}/{alert?}', 'unsubscribeAlert')->name('unsubscribe-alert');
     Route::get('confirmed-unsubscribe-alert/{user}/{alert?}', 'confirmedUnsubscribeAlert')->name('confirmed-unsubscribe-alert');
+
     // cron
     Route::get('cron-weekly-alerts' , 'cronWeeklyAlerts')->name('cron-weekly-alerts');
     /*--------------------------------------------------------------------------------------- *

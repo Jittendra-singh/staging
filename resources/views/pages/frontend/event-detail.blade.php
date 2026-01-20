@@ -303,9 +303,14 @@ $icalStrData = getiCalData($event);
                         } else {
                             $evenTickets = $event->eventActiveFreeTickets;
                         }
+                        
+                        $totalTicketCount = $evenTickets->count();
+                        if(strtotime($event->end_datetime) < strtotime(date('Y-m-d H:i:s'))){
+                            $totalTicketCount = 0;
+                        }
                         @endphp 
                         <!-- if($event->sellTicketBooking() && $event->eventTickets->count() > 0) -->
-                        @if($evenTickets->count() > 0)
+                        @if($totalTicketCount > 0)
                         @else 
                         <a href="{{route('add-event-to-calendar',['id'=>encrypt($event->id)])}}"  class="secondary-btn w-100 my-4">
                             <svg class="lucide lucide-download" fill="none" height="20" stroke="currentColor"
@@ -333,7 +338,7 @@ $icalStrData = getiCalData($event);
 
                         {{-- Apply Ticket Conditions --}}
                         <!-- if($event->sellTicketBooking() && $event->eventTickets->count() > 0) -->
-                        @if($evenTickets->count() > 0)
+                        @if($totalTicketCount > 0)
                         <form action="{{route('land-to-checkout')}}" method="post">
                             @csrf
                             <input type="hidden" name="event" value="{{$event->encrypted_id}}">

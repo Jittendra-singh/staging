@@ -2185,7 +2185,7 @@ $(document).ready(function () {
 			}
 		});
 	});
-	$('.widget-event-click').click(function () {
+	$(document).on('click', '.widget-event-click', function (e) {
 		var eventurl = $(this).attr('url');
 		var ajaxurl = $(this).attr('ajaxurl');
 		$.ajax({
@@ -2457,7 +2457,7 @@ function callSellStartEndDatePicker() {
 			var maxDateForSellDate = false;
 			if (jQuery('#end_datetime').val() != '') {
 				var dateEnd = new Date(jQuery('#end_datetime').val());
-				dateEnd.setDate(dateEnd.getDate() - 1);
+				//dateEnd.setDate(dateEnd.getDate() - 1);
 				maxDateForSellDate = dateEnd.getFullYear() + '-' + (dateEnd.getMonth() + 1) + '-' + dateEnd.getDate();
 			}
 			this.setOptions({
@@ -2468,6 +2468,24 @@ function callSellStartEndDatePicker() {
 	});
 }
 function fieldmasking() {
+	if ($('.decimalonly').length != 0) {
+		document.querySelectorAll('.decimalonly').forEach(decimalField => {
+			decimalField.addEventListener('keydown', function (e) {
+				if (['e', '+', '-'].includes(e.key)) {
+					e.preventDefault();
+				}
+			});
+			var decimalMask = IMask(decimalField, {
+				mask: Number,
+				scale: 2,                 // allow 2 decimal places
+				signed: false,            // no negative
+				thousandsSeparator: '',   // optional
+				padFractionalZeros: false,
+				normalizeZeros: true,
+				radix: '.',               // decimal separator
+			});
+		});
+	}
 	if ($('.integeronly').length != 0) {
 		document.querySelectorAll('.integeronly').forEach(intField => {
 			intField.addEventListener('keydown', function (e) {

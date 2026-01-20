@@ -6,7 +6,7 @@
 @section('content')
     <div class="wrapper wrapper-body">
         <div class="dashboard-body">
-            <div class="container-fluid">
+            <div class="container-fluid"> 
                 <!-- <div class="text-center mb-4">
                     <h1 class="d-main-title">Upcoming Feature</h1>
                     <p class="mb-0">This feature is under development as we will launch this feature soon.</p>
@@ -17,7 +17,7 @@
                         <div class="d-main-title">
                             <h3><i class="fa-solid fa-calendar-days me-3 mb-3"></i>Embedded Widget</h3>
                             @php
-                                $breadcrumbs = [
+                                $breadcrumbs = [ 
                                     [
                                         'name' => 'Embedded Widget', 
                                         'url' => route('front-embedded-widget')
@@ -25,7 +25,7 @@
                                 ]
                             @endphp     
                             <x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs"/>
-                            <!-- <p class="mb-0 mt-3">You can send a message to your RSVP’s in the ‘Registration List’.</p> -->
+                            <!-- <p class="mb-0 mt-3">You can send a message to your RSVP’s in the ‘Registration List’.</p> --> 
                         </div>
                         <button class="primary-btn w-fits" id="createWidgetBtn">Create Widget</button>
                     </div>
@@ -33,11 +33,11 @@
                 <x-reusables.frontend.alert />
                 <form action="{{route('front-create-widget')}}" method="post" class="main-card mt-4 p-4 shadow-sm bg-white rounded" id="createWidgetForm" style="display: none;">
                     @csrf
-                    <div class="row">
+                    <div class="row"> 
                         <div class="col-md-4">
                             <label for="title" class="form-label">Title *</label>
                             <input type="text" id="title" class="text form-control h_40" name="title" placeholder="Enter title" value="" required>
-                        </div>
+                        </div> 
                         <div class="col-md-8">
                             <div class="form-groupd">
                                 <label for="organizer_id" class="form-label">Organizer</label>
@@ -48,7 +48,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row mt-3">
+                    <div class="row mt-3"> 
                         <div class="col-md-4">
                             <label for="location" class="form-label">Location *</label>
                             <input type="text" id="autocomplete" class="text form-control h_40" name="location" placeholder="Search and choose location" value="" required>
@@ -68,7 +68,7 @@
                             </select>
                             <input type="hidden" name="unit" value="mi">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-4"> 
                             <div class="form-group">
                                 <label for="categories" class="form-label">Categories</label>
                                 <select class="selectpicker" name="category_id[]" title="Choose Categories"
@@ -79,7 +79,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                        </div>
+                        </div> 
                     </div>
                     <div class="row mt-3">
                         <div class="col-md-4">
@@ -112,7 +112,7 @@
                             <div class="dashboard-wrap-content p-4">
                                 <div class="table-card mt-4">
                                     <div class="main-table">
-                                        <div class="table-responsive">
+                                        <div class="table-responsive"> 
                                             <table class="table">
                                                 <thead class="thead-dark">
                                                     <tr>
@@ -176,7 +176,7 @@
         </div>
     </div>
 <div class="modal fade" id="showWidgetDetail" tabindex="-1" aria-labelledby="showWidgetDetailsLabel"
-    aria-modal="true" role="dialog">
+    aria-modal="true" role="dialog"> 
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">

@@ -542,7 +542,8 @@ class FrontOrderController extends Controller
                                     'eventLocation' => $event->fullAddress,
                                     'waiverUrl' => route('view-waiver-form', ['ticket' => encrypt($event_order_ticket_obj->id)]),
                                     //'cancelRegistrationUrl' => route('cancel-rsvp-get', ['ticket' => encrypt($event_order_ticket_obj->id),'type'=>1]),
-                                    'cancelRegistrationUrl' => route('front-cleanup-attending'),
+                                    'cancelRegistrationUrl' => route('cancel-registration-front', ['ticket' => encrypt($event_order_ticket_obj->id)]),
+                                    
                                 ];
                                 /* $waiver_people_array[$waiver_handler_email] = 
                                                 new \App\Mail\SendMail(
@@ -762,7 +763,10 @@ class FrontOrderController extends Controller
             return $this->generateJsonResponse(true, 'RSVP has been cancelled.');
         } */
     }
-    public function cancelRefundPaidTicketAttendee($ticket,$type){
+    public function confirmCancelRegistrationFront($ticket,$type){
+        return $this->cancelRefundPaidTicketAttendee($ticket,$type,0);
+    }
+    public function cancelRefundPaidTicketAttendee($ticket,$type,$is_ajax=1){
         $request = request();
         if($type==2){
             $orderTicket = EventOrderTicket::find(decrypt($ticket));
@@ -772,6 +776,9 @@ class FrontOrderController extends Controller
                 
             $orderTicket->update(['rsvp_confirmation' => 0]);
             $this->sendRSVPCancelledMail($orderTicket);
+            if($is_ajax!=1){
+                return redirect()->back();
+            }
             return $this->generateJsonResponse(true, 'Ticket cancelled successfully.');
         } else if($type==1){
             $orderTicket = EventOrderTicket::find(decrypt($ticket));
@@ -784,18 +791,33 @@ class FrontOrderController extends Controller
             if($total_amount<=0){                
                 $orderTicket->update(['rsvp_confirmation' => 0]);
                 $this->sendRSVPCancelledMail($orderTicket);
+                if($is_ajax!=1){
+                    return redirect()->back();
+                }
                 return $this->generateJsonResponse(true, 'Ticket cancelled successfully. Refund initiated. Depending on bank, it may take 5–10 business days for the amount to reflect in your account.');
             } else {
                 $stripeCon = new StripeController();
                 $res = $stripeCon->refundCharge($order->id,$order->payment_intent,$total_amount,$total_fee);
+                //echo '<pre>';print_r($res);die();
                 if($res['status']==true){
                     $orderTicket->update(['rsvp_confirmation' => 0]);
                     $this->sendRSVPCancelledMail($orderTicket);
+                    if($is_ajax!=1){
+                        return redirect()->back();
+                    }
                     return $this->generateJsonResponse(true, 'Ticket cancelled successfully. Refund initiated. Depending on bank, it may take 5–10 business days for the amount to reflect in your account.');
                 } else {
+                    if($is_ajax!=1){
+                        $this->setFlashSession(false, "Something wen wrong. Please try again later.");
+                        return redirect()->back();
+                    }
                     return $this->generateJsonResponse(false, 'Something wen wrong. Please try again later');
                 }
             }
+        }
+        if($is_ajax!=1){
+            $this->setFlashSession(false, "Something wen wrong.");
+            return redirect()->back();
         }
         return $this->generateJsonResponse(false, 'Something wen wrong. Please try again later');
     }
@@ -911,6 +933,18 @@ class FrontOrderController extends Controller
             $this->setFlashSession(true, "Ticket has been cancelled and amount has been donated.");
             return redirect()->back();
         }
+    }
+    public function cancelRegistrationFront($ticket){
+        $orderTicket = EventOrderTicket::find(decrypt($ticket));
+        if(!$orderTicket) 
+            abort(404);
+        $data = [
+            'registration' => $orderTicket,
+            'event' => $orderTicket->event,
+            'order' => $orderTicket->eventOrder,
+        ];
+        $data['seo_details'] = (object)['title' => 'Cancel Registration']; 
+        return view('pages.frontend.cancel-registration-front', $data);
     }
     public function cancelRefundPaidTicketOLD(){
         $request = request();

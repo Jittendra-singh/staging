@@ -923,7 +923,7 @@ function callSellStartEndDatePicker() {
                   var maxDateForSellDate = false;
                   if (jQuery('#end_datetime').val() != '') {
                         var dateEnd = new Date(jQuery('#end_datetime').val());
-                        dateEnd.setDate(dateEnd.getDate() - 1);
+                        //dateEnd.setDate(dateEnd.getDate() - 1);
                         maxDateForSellDate = dateEnd.getFullYear() + '-' + (dateEnd.getMonth() + 1) + '-' + dateEnd.getDate();
                   }
                   this.setOptions({

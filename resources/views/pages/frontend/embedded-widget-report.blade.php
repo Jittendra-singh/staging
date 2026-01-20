@@ -4,7 +4,7 @@
 <style>
 </style>
 @endpush
-@section('content')
+@section('content') 
     <div class="wrapper wrapper-body">
         <div class="dashboard-body">
             <div class="container-fluid">
@@ -18,7 +18,7 @@
                         <div class="d-main-title">
                             <h3><i class="fa-solid fa-calendar-days me-3 mb-3"></i>Embedded Widget Report</h3>
                             @php
-                                $breadcrumbs = [
+                                $breadcrumbs = [ 
                                     [
                                         'name' => 'Embedded Widget Report', 
                                         'url' => route('front-embedded-widget-report')
@@ -32,7 +32,7 @@
                 </div>
                 <x-reusables.frontend.alert />
                 <div class="col-md-12">
-                    <div class="main-card mt-3">
+                    <div class="main-card mt-3"> 
                         <div class="dashboard-wrap-content p-4">
                             <form class="filter-form" method="post">
                                 @csrf
@@ -49,7 +49,7 @@
                                     </div>
                                     <div class="col-md-3">
                                         <div class="rs mt_r4 ps-3">
-                                            <div class="nav custom2-tabs btn-group justify-content-start gap-2 row-gap-3" >
+                                            <div class="nav custom2-tabs btn-group justify-content-start gap-2 row-gap-3">
                                                 <button class="primary-btn w-fit" type="submit" >Filter</button>
                                                 <a href="{{ url()->current() }}" class="primary-btn w-fit">Reset</a>
                                             </div>
@@ -63,7 +63,7 @@
                         <div class="main-card mt-3">
                             <div class="dashboard-wrap-content p-4">
                                 <div class="table-card mt-4">
-                                    <div class="main-table">
+                                    <div class="main-table"> 
                                         <div class="table-responsive">
                                             <table class="table">
                                                 <thead class="thead-dark">
@@ -113,5 +113,4 @@
 @endsection
 @push('script')
     <x-reusables.advanceformjs />
-
 @endpush
