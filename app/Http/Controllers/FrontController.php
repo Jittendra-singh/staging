@@ -1295,7 +1295,7 @@ class FrontController extends Controller
     {
         $data['categories']        = EventCategory::all();
         $data['seo_details'] = (object)['title' => 'Embedded Widget'];
-        $data['listing_data'] = auth()->guard()->user()->widgets;
+        $data['listing_data'] = auth()->guard()->user()->widgets()->orderBy('id', 'desc')->get();
         return view('pages.frontend.embedded-widget', $data); 
     }
     public function embeddedWidgetReport()
@@ -1345,6 +1345,7 @@ class FrontController extends Controller
         $widget->wid_number = $this->generateRandomWidgetNumber();
         $widget->location_lat = $validated['latitude'];
         $widget->location_long = $validated['longitude'];
+        $widget->website = request()->website;
         $widget->volunteer_id = auth()->guard('front')->user()->id;
         if(request()->has('organizer_id') && !empty(request()->organizer_id)){
             $widget->org_ids = implode(',', request()->organizer_id);
@@ -1354,7 +1355,7 @@ class FrontController extends Controller
         }
         $widget->save();
 
-        $this->setFlashSession(true, 'Embeded Widget created successfully.');
+        $this->setFlashSession(true, 'Embedded widget created successfully. You can copy the embed code from the “View Code & Details” button.');
         return redirect()->back();
     }
     public function viewWidgetDetail($id){
@@ -1401,6 +1402,10 @@ class FrontController extends Controller
                         <div class="row mb-2">
                             <div class="col-md-3 fw-semibold text-muted">Type :</div>
                             <div class="col-md-9 registration-event-name">'.($widget->type==1?'Cleanups Listing':'Cleanups On the Map').'</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3 fw-semibold text-muted">Website :</div>
+                            <div class="col-md-9 registration-event-name">'.(!empty($widget->website)?$widget->website:'-').'</div>
                         </div>
                         <div class="row mb-2">
                             <div class="col-md-3 fw-semibold text-muted">Status :</div>
@@ -1455,7 +1460,7 @@ class FrontController extends Controller
             $request = request();
             $request->merge($pData);
             if($widget->type==1){
-                $events = Event::listactive()->where('is_private',0)->paginate(21)->withQueryString();
+                $events = Event::listactive()->where('is_private',0)->paginate(3)->withQueryString();
             } else {
                 $mapEvents = Event::listactive()
                 ->where('is_private', 0)
@@ -1528,6 +1533,7 @@ class FrontController extends Controller
     public function deleteWidget($id){
         $widget = VolunteerWidget::where('id', decrypt($id))->firstOrFail();
         $res = $widget->delete();
+        $widgetLog = VolunteerWidgetLog::where('widget_id', decrypt($id))->delete();
         return $this->generateJsonResponse($res);
     }
     function getOrganizerOptions(){

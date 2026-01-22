@@ -150,7 +150,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                     <li>
                                         <a href="#tab_step2">
                                             <span class="number"></span>
-                                            <span class="step-name">Tickets & Waiver Setting</span>
+                                            <span class="step-name">Tickets & Waiver Settings</span>
                                         </a>
                                     </li>
                                     <li>
@@ -562,16 +562,16 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                     </div> -->
                                                                     <div class="col-md-6">
                                                                         <div class="form-group mt-2">
-                                                                            <label class="form-label fs-6">Meeting Spot
-                                                                                Details</label>
-                                                                            <textarea name="meeting_spot_details" rows="5" class="form-control h_50 ckeditor" placeholder="">{{ old('meeting_spot_details', $form_data->meeting_spot_details ?? '') }}</textarea>
+                                                                            <label class="form-label fs-6">Parking
+                                                                                Info</label>
+                                                                            <textarea name="parking_info_details" rows="5" class="form-control h_50 ckeditor" placeholder="">{{ old('parking_info_details', $form_data->parking_info_details ?? '') }}</textarea>
                                                                         </div>
                                                                     </div>
                                                                     <div class="col-md-6">
                                                                         <div class="form-group mt-2">
-                                                                            <label class="form-label fs-6">Parking
-                                                                                Info</label>
-                                                                            <textarea name="parking_info_details" rows="5" class="form-control h_50 ckeditor" placeholder="">{{ old('parking_info_details', $form_data->parking_info_details ?? '') }}</textarea>
+                                                                            <label class="form-label fs-6">Meeting Spot
+                                                                                Details</label>
+                                                                            <textarea name="meeting_spot_details" rows="5" class="form-control h_50 ckeditor" placeholder="">{{ old('meeting_spot_details', $form_data->meeting_spot_details ?? '') }}</textarea>
                                                                         </div>
                                                                     </div>
                                                                     

@@ -347,6 +347,7 @@ class VolunteerController extends Controller
         $data['to_date'] = $to_date;
         return view('pages.volunteers.embedded-widget-report', $data);
     }
+
     public function viewWidgetDetail($id){
         $widget = VolunteerWidget::find(decrypt($id));
         if(!$widget){

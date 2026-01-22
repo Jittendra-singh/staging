@@ -5,6 +5,11 @@
             function initMap() {
                 @if($locationarray)
                 // Array of locations with latitude and longitude
+                @if(isset($zoom))
+                let mapZoom = {{$zoom}};
+                @else 
+                let mapZoom = 6;
+                @endif
                 let locations = @json($locationarray);
                 let centeredLatLong = null;
                 if(locations && locations[0]){
@@ -15,7 +20,7 @@
                 const map = new google.maps.Map(document.getElementById('map'), {
                     //center: { lat: 28.5383, lng: -81.3792 }, // Centered on Florida
                     center: { lat: centeredLatLong.lat, lng: centeredLatLong.lng }, // Centered on Florida
-                    zoom: 6
+                    zoom: mapZoom
                 });
                 
                 // Add red markers

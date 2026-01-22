@@ -68,16 +68,20 @@
 @section('content')
     <div class="wrapper mt-0" style="background-color: #f5f5f5cf">
 
-        <div class="container mt-5 mb-5">
+        <div class="container mt-3 mb-5">
             @if(isset($widget->id))
                 @if($widget->type==2)
                     @if(isset($location_array) && !empty($location_array))
                     <div class="row">
+                        <div class="col-lg-12 text-left mb-2">
+                            <h2>Cleanups</h2>
+                        </div>
                         <div class="col-12 mt-2">
                             <div id="map" style="height:35rem;border-radius: 20px;overflow: hidden;"></div>
                         </div>
                     </div>
-                    <x-reusables.google :locationarray="$location_array"/>
+                    <x-reusables.google :zoom="9" :locationarray="$location_array"/>
+                    <small>Powered by VolunteerCleanup.org</small>
                     @else 
                     <div class="row">
                         <div class="col-xl-12 col-lg-12 col-md-12">
@@ -126,6 +130,7 @@
                                 </g>
                                 </svg>
                                 <p class="h3">Event Not Found</p>
+                                <small>Powered by VolunteerCleanup.org</small>
                             </div>
                         </div>
                     </div>
@@ -135,14 +140,15 @@
                     <div class="col-xl-12 col-lg-12 col-md-12">
                         @if(count($events))
                         <div class="col-lg-4 text-left mb-4">
-                            <h2>All Events</h2>
+                            <h2>Cleanups</h2>
                         </div>
                         <div class="">
                             <div class="featured-controls">
                                 <x-reusables.frontend.widget-event-block-view :widget="$widget" :events="$events->items()"/>
-                                <div class="mt-5" data-aos="fade-up" data-aos-duration="800">
+                                <div class="mt-3" data-aos="fade-up" data-aos-duration="800">
                                     {{ $events->links() }}
                                 </div>
+                                <small>Powered by VolunteerCleanup.org</small>
                             </div>
                         </div>
                         @else
@@ -191,6 +197,7 @@
                             </g>
                             </svg>
                             <p class="h3">No Event Found</p>
+                            <small>Powered by VolunteerCleanup.org</small>
                         </div>
                         @endif
                     </div>
@@ -244,6 +251,7 @@
                         </g>
                         </svg>
                         <p class="h3">Widget Not Found</p>
+                        <small>Powered by VolunteerCleanup.org</small>
                     </div>
                 </div>
             </div>

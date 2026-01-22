@@ -35,20 +35,10 @@
                     @csrf
                     <div class="row"> 
                         <div class="col-md-4">
-                            <label for="title" class="form-label">Title *</label>
+                            <label for="title" class="form-label">Widget Title *</label>
                             <input type="text" id="title" class="text form-control h_40" name="title" placeholder="Enter title" value="" required>
+                            <small>This title will not be displayed in the widget iframe.</small>
                         </div> 
-                        <div class="col-md-8">
-                            <div class="form-groupd">
-                                <label for="organizer_id" class="form-label">Organizer</label>
-                                <select class="selectpicker1" name="organizer_id[]" title="Search and Select Organizer"
-                                    data-selected-text-format="count > 1" data-size="5" multiple=""
-                                    data-live-search="true" >
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row mt-3"> 
                         <div class="col-md-4">
                             <label for="location" class="form-label">Location *</label>
                             <input type="text" id="autocomplete" class="text form-control h_40" name="location" placeholder="Search and choose location" value="" required>
@@ -68,6 +58,17 @@
                             </select>
                             <input type="hidden" name="unit" value="mi">
                         </div>
+                    </div>
+                    <div class="row mt-3"> 
+                        <div class="col-md-4">
+                            <div class="form-groupd">
+                                <label for="organizer_id" class="form-label">Organizer</label>
+                                <select class="selectpicker1" name="organizer_id[]" title="Search and Select Organizer"
+                                    data-selected-text-format="count > 1" data-size="5" multiple=""
+                                    data-live-search="true" >
+                                </select>
+                            </div>
+                        </div>
                         <div class="col-md-4"> 
                             <div class="form-group">
                                 <label for="categories" class="form-label">Categories</label>
@@ -80,6 +81,10 @@
                                 </select>
                             </div>
                         </div> 
+                        <div class="col-md-4">
+                            <label for="website" class="form-label">Website</label>
+                            <input type="url" id="website" class="text form-control h_40 urlmask" name="website" placeholder="Enter website" value="">
+                        </div>
                     </div>
                     <div class="row mt-3">
                         <div class="col-md-4">
@@ -117,7 +122,8 @@
                                                 <thead class="thead-dark">
                                                     <tr>
                                                         <th scope="col">ID</th>
-                                                        <th scope="col">Title</th>
+                                                        <th scope="col">Widget Title</th>
+                                                        <th scope="col">Type</th>
                                                         <th scope="col">Location</th>
                                                         <th scope="col">Created At</th>
                                                         <th scope="col">Status</th>
@@ -130,6 +136,7 @@
                                                     <tr class="single-tr">										
                                                         <td>{{$data->wid_number}}</td>								
                                                         <td>{{$data->title}}</td>	
+                                                        <td>{{$data->type==1?'Listing':'Map'}}</td>	
                                                         <td>{{$data->location}}</td>	
                                                         <td>{{$data->created_at}}</td>
                                                         <td>
@@ -140,11 +147,11 @@
                                                             @endif
                                                         </td>
                                                         <td>
-                                                            <div class="dropdown position-absolute translate-middle" >
+                                                            <div class="dropdown position-absolute translate-middle dropup" >
                                                                 <button class="option-btn" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-                                                                <div class="dropdown-menu dropdown-menu-right">
+                                                                <div class="dropdown-menu dropdown-menu-right" data-popper-placement="top-end">
                                                                     <a class="dropdown-item showWidgetDetailBtn" href="javascript:void(0);" url="{{route('front-view-widget-detail', ['id' => encrypt($data->id)])}}">
-                                                                        <i class="fa-solid fa-eye"></i> View Detail
+                                                                        <i class="fa-solid fa-eye"></i> View Code & Detail
                                                                     </a>
                                                                     <a class="dropdown-item" href="{{route('front-active-inactive-widget', ['id' => encrypt($data->id)])}}">
                                                                         <i class="fa-solid fa-ban"></i> {{$data->status ? 'Inactive Now' : 'Active Now'}}

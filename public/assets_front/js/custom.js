@@ -1691,7 +1691,7 @@ $(document).ready(function () {
 		}
 	})
 	if ($('.event-row-upcoming')) {
-		showHostingEvent('ongoing');
+		showHostingEvent('upcoming');
 	}
 	$('.select-all-ticket-checkbox').change(function () {
 		if ($(this).prop('checked')) {

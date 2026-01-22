@@ -57,13 +57,13 @@
                                     </div>
                                     <div class="rs mt_r4  col-sm-5 ps-3">
                                         <div class="btn-group" role="group">
-                                            <a href="javascript:void(0);" onclick="showHostingEvent('ongoing',this)"
-                                                class="btn btn-outline-primary px-3 py-2 active text-white">
-                                                Ongoing cleanups 
-                                            </a>
                                             <a href="javascript:void(0);" onclick="showHostingEvent('upcoming',this)"
-                                                class="btn btn-outline-primary px-3 py-2">
+                                                class="btn btn-outline-primary px-3 py-2 active text-white">
                                                 Upcoming cleanups 
+                                            </a>
+                                            <a href="javascript:void(0);" onclick="showHostingEvent('ongoing',this)"
+                                                class="btn btn-outline-primary px-3 py-2">
+                                                Ongoing cleanups 
                                             </a>
                                             <a href="javascript:void(0);" onclick="showHostingEvent('ended',this)"
                                                 class="btn btn-outline-primary px-3 py-2">
