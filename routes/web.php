@@ -95,6 +95,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::post('embedded-widget-report', 'embeddedWidgetReport')->name('front-embedded-widget-report');
         Route::post('create-widget' , 'createWidget')->name('front-create-widget');
         Route::post('view-widget-detail/{id}', 'viewWidgetDetail')->name('front-view-widget-detail');
+        Route::post('preview-widget/{id}', 'previewWidget')->name('front-preview-widget');
         Route::get('active-inactive-widget/{id}' , 'activeInactiveWidget')->name('front-active-inactive-widget');
         Route::delete('delete-widget/{id}' , 'deleteWidget')->name('front-delete-widget');
         

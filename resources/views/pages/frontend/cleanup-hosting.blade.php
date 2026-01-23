@@ -196,8 +196,8 @@
 
                                                     <a target="_blank" href="{{route('front-registration-list', ['event' => $event->id])}}" class="dropdown-item">
                                                     <i class="fa-solid fa-eye me-3"></i>View Attendees</a>
-                                                    <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step3'])}}" class="dropdown-item">
-                                                        <i class="fa-solid fa-user-plus me-3"></i>Manage Co-Host</a>
+                                                    <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step3'])}}" class="dropdown-item"> <i class="fa-solid fa-user-plus me-3"></i>Manage Co-Host</a>
+                                                    <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step5'])}}" class="dropdown-item"> <i class="fa-solid fa-bar-chart me-3"></i>Event Cleanup Report</a>
                                                     @if(!empty($event->slug))
                                                     <a href="{{route('front-duplicate-an-event', ['slug' => $event->slug])}}" class="dropdown-item">
                                                         <i class="fa-solid fa-clone me-3"></i>Duplicate Event

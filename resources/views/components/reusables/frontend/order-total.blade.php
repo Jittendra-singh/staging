@@ -38,7 +38,7 @@
                 </div>
                 
                 <div class="mt-2" id="donation-price" style="display: none;">
-                    <input inputmode="decimal" autocomplete="off"
+                    <input inputmode="decimal" autocomplete="off" id="donation_price_field"
                         type="number"
                         min="1"
                         step="1"
@@ -124,6 +124,12 @@
 .donation-radio input:checked + span {
   background: #2f80ed;
   color: #fff;
+}
+
+#donation_price_field::-webkit-outer-spin-button,
+#donation_price_field::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 </style>

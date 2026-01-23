@@ -153,6 +153,9 @@
                                                                     <a class="dropdown-item showWidgetDetailBtn" href="javascript:void(0);" url="{{route('front-view-widget-detail', ['id' => encrypt($data->id)])}}">
                                                                         <i class="fa-solid fa-eye"></i> View Code & Detail
                                                                     </a>
+                                                                    <a class="dropdown-item showWidgetPreviewBtn" href="javascript:void(0);" url="{{route('front-preview-widget', ['id' => encrypt($data->id)])}}">
+                                                                        <i class="fa-solid fa-eye"></i> Preview Widget
+                                                                    </a>
                                                                     <a class="dropdown-item" href="{{route('front-active-inactive-widget', ['id' => encrypt($data->id)])}}">
                                                                         <i class="fa-solid fa-ban"></i> {{$data->status ? 'Inactive Now' : 'Active Now'}}
                                                                     </a>

@@ -1936,9 +1936,11 @@ $(document).ready(function () {
 						icon: "success",
 						title: "Event Published",
 						text: "Your event is published. Go ahead and promote this link through your marketing and social media channels.",
-						footer: '<a href="' + response.data + '">' + response.data + '</a>'
+						footer: '<a href="' + response.data + '">' + response.data + '</a>',
+						confirmButtonText: "Copy URL & Continue"
 					}).then((okClicked) => {
 						if (okClicked.isConfirmed) {
+							navigator.clipboard.writeText(response.data);
 							window.location.href = url2;
 						}
 					});
@@ -2169,6 +2171,27 @@ $(document).ready(function () {
 		}
 	});
 	$('.showWidgetDetailBtn').click(function () {
+		$('#showWidgetDetailLabel').text('Embedded Widget Details');
+		$('#copyWidgetCode').show();
+		var url = $(this).attr('url');
+		$.ajax({
+			url: url,
+			method: 'POST',
+			data: {},
+			success: function (response) {
+				if (response.status) {
+					$('#showWidgetDetailBody').html(response.data);
+					$('#showWidgetDetail').modal('show');
+				}
+				else {
+					showError(response.message, 'error');
+				}
+			}
+		});
+	});
+	$('.showWidgetPreviewBtn').click(function () {
+		$('#showWidgetDetailLabel').text('Embedded Widget Preview');
+		$('#copyWidgetCode').hide();
 		var url = $(this).attr('url');
 		$.ajax({
 			url: url,

@@ -365,7 +365,7 @@ $icalStrData = getiCalData($event);
                                                     <p class="m-0"><b>{{ $eticket->ticket_name }}</b></p>
                                                 </div>
                                                 <div class="col-sm-3 ps-0 text-end">
-                                                    <h5 class="m-0"><b>{{ $eticket->payable_price ? '$'.$eticket->payable_price : 'Free'}}</b></h5>
+                                                    <h5 class="m-0"><b>{{ $eticket->payable_price ? '$'.formatAmt($eticket->payable_price) : 'Free'}}</b></h5>
                                                 </div>
                                             </div>
                                         </div>

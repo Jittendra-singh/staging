@@ -168,7 +168,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                     <li>
                                         <a href="#tab_step5">
                                             <span class="number"></span>
-                                            <span class="step-name">After Event Actions</span>
+                                            <span class="step-name">Cleanup Reporting</span>
                                         </a>
                                     </li>
                                 </ul>
@@ -984,7 +984,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                     <!-- <a style="display: none;" href="javascript:void(0);" onclick="redirectWithMessage(this,'success')" message="{{$eventCloseMsg}}" url="{{ route('front-cleanup-hosting','organizer') }}" class="primary-btn w-fit close-post-cleanup-btn" type="button">Save & Exit</a> -->
                                     @if($is_event_unpublish)
                                     <a style="display: none;" href="{{ route('front-cleanup-hosting','organizer') }}" class="primary-btn w-fit close-post-cleanup-btn" type="button">Save as Draft</a>
-                                    <a style="display: none;" href="javascript:void(0);" url2="{{ route('front-cleanup-hosting','organizer') }}" url="{{route('update-event-publish-status')}}" class="primary-btn w-fit close-post-cleanup-btn save_publish_event" type="button">Save & Publish</a>
+                                    <a style="display: none;" href="javascript:void(0);" url2="{{ route('front-cleanup-hosting','organizer') }}" url="{{route('update-event-publish-status')}}" class="primary-btn w-fit close-post-cleanup-btn save_publish_event" type="button">Publish Event</a>
                                     @else 
                                     <a style="display: none;" href="{{ route('front-cleanup-hosting','organizer') }}" class="primary-btn w-fit close-post-cleanup-btn" type="button">Close</a>
                                     @endif
@@ -1144,7 +1144,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                             </div>
                             <div class="col-lg-12 col-md-12">
                                 <div class="form-group mt-4">
-                                    <label class="form-label">Notes</label>
+                                    <label class="form-label">Include a Note (optional)</label>
                                     <textarea class="form-control" name="extra_notes" id="co_host_extra_notes" rows="4"></textarea>
                                 </div>
                             </div>

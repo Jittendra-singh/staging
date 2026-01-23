@@ -1358,6 +1358,26 @@ class FrontController extends Controller
         $this->setFlashSession(true, 'Embedded widget created successfully. You can copy the embed code from the “View Code & Details” button.');
         return redirect()->back();
     }
+    public function previewWidget($id){
+        $widget = VolunteerWidget::find(decrypt($id));
+        if(!$widget){
+            return $this->generateJsonResponse(false, 'Widget not found.');
+        }
+        $html = '
+        <div class="model-content main-form">
+            <div class="container-fluid">
+                <div class="row mt-4 mb-4">
+                    <div class="col-12">
+                        <div class="row mb-2">
+                            <iframe width="100%" height="500" src="'.(route('front-show-widget', ['id' => encrypt($widget->id)])).'"></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        ';
+        return $this->generateJsonResponse(true, 'Widget found.', $html);
+    }
     public function viewWidgetDetail($id){
         $widget = VolunteerWidget::find(decrypt($id));
         if(!$widget){
