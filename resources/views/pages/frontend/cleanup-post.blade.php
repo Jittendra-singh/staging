@@ -598,7 +598,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                         <h4 class="px-0 mb-0">
                                                             <i class="fa-solid fa-ticket step_icon me-3"></i>Ticket Types
                                                         </h4>
-                                                        <button type="button" onclick="openTicketTypePopup(this);" url="{{ route('manage-ticket-type-html') }}" class="primary-btn add-ticket w-auto" >Add Ticket Type</button>
+                                                        <button type="button" onclick="openTicketTypePopup(this);" url="{{ route('manage-ticket-type-html') }}" class="primary-btn w-auto" >Add Ticket Type</button>
                                                     </div>
                                                     @if(!(!empty(auth()->guard('front')->user()->stripe_email) && !empty(auth()->guard('front')->user()->stripe_account_id)))
                                                     <div class="alert alert-warning" role="alert">
