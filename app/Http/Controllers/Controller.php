@@ -127,6 +127,22 @@ class Controller extends BaseController
         ];
         $this->callCurl('POST',$url,json_encode($data));
     }
+    public function syncWithWPData($volunteerData){
+        $url = config('app.wp_sync_url');
+        $data = [
+            'first_name'=>$volunteerData['first_name'],
+            'last_name'=>$volunteerData['last_name'],
+            'full_name'=>$volunteerData['first_name'].' '.$volunteerData['last_name'],
+            'email'=>$volunteerData['email_address'],
+            'phone'=>'',
+            'address_line_1'=>'',
+            'postal_code'=>'',
+            'country'=>'United States',
+            'tags'=>['Newsletter'],
+            'fcrm_vol_newsletter'=>'Yes'
+        ];
+        $this->callCurl('POST',$url,json_encode($data));
+    }
 	public static function format_price($price,$add_comma=false){
 		$comma = ($add_comma)?',':'';
 		return number_format($price,2, '.', $comma);

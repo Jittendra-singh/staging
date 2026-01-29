@@ -594,6 +594,54 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                             <div class="tab-from-content">
                                                 <div class="main-card p-4 mt-4">
                                                     <div
+                                                        class="bp-title mb-4 d-flex align-items-center justify-content-between">
+                                                        <h4 class="px-0 mb-0">
+                                                            <i class="fa-solid fa-ticket step_icon me-3"></i>Ticket Types
+                                                        </h4>
+                                                        <button type="button" onclick="openTicketTypePopup(this);" url="{{ route('manage-ticket-type-html') }}" class="primary-btn add-ticket w-auto" >Add Ticket Type</button>
+                                                    </div>
+                                                    @if(!(!empty(auth()->guard('front')->user()->stripe_email) && !empty(auth()->guard('front')->user()->stripe_account_id)))
+                                                    <div class="alert alert-warning" role="alert">
+                                                        Connect your Stripe account to display paid tickets on the front end. <a target="_blank" href="{{ route('front-profile') }}">Connect Now</a>
+                                                    </div>
+                                                    @endif
+
+                                                    <div class="custom-ticket-container">
+                                                        <div class="accordion mb-4 ticket-container ticket-container-section" id="accordionExample">
+                                                            <table class="table">
+                                                                <tr>
+                                                                    <th>Ticket Name</th>
+                                                                    <th>Type</th>
+                                                                    <th>Price</th>
+                                                                    <th>Sold</th>
+                                                                    <th>Remaining</th>
+                                                                    <th>Dates</th>
+                                                                    <th>Action</th>
+                                                                </tr>
+                                                                @if($tickets->count() > 0)
+                                                                @foreach ($tickets as $counter => $ticket)
+                                                                    <tr>
+                                                                        <td>{{ $ticket->ticket_name }}</td>
+                                                                        <td>{{ ucfirst($ticket->ticket_type) }}</td>
+                                                                        <td>{{ config('app.currency').formatAmt($ticket->ticket_price) }}</td>
+                                                                        <td>{{ $ticket->approvedSold->count() ?? 0 }}</td>
+                                                                        <td>{{ $ticket->remainingTickets() }}</td>
+                                                                        <td>{{ date(config('app.dateFormat'),strtotime($ticket->sell_start_time)).' - '.date(config('app.dateFormat'),strtotime($ticket->sell_end_time)) }}</td>
+                                                                        <td><button onclick="openTicketTypePopup(this);" url="{{ route('manage-ticket-type-html', ['id'=>encrypt($ticket->id)]) }}" type="button" class="btn btn-primary btn-sm"><i class="fa-solid fa-pen"></i></button></td>
+                                                                    </tr>
+                                                                @endforeach
+                                                                @else 
+                                                                <tr>
+                                                                    <td colspan="7" class="text-center">No ticket type found</td>
+                                                                </tr>
+                                                                @endif 
+                                                            </table>
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+                                                <div class="main-card p-4 mt-4">
+                                                    <div
                                                         class="bp-title d-flex align-items-center justify-content-between">
                                                         <h4 class="px-0 mb-0">
                                                             <i class="fa-solid fa-ticket step_icon me-3"></i>Ticket Settings
@@ -697,31 +745,6 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                                <div class="main-card p-4 mt-4">
-                                                    <div
-                                                        class="bp-title mb-4 d-flex align-items-center justify-content-between">
-                                                        <h4 class="px-0 mb-0">
-                                                            <i class="fa-solid fa-ticket step_icon me-3"></i>Ticket Types
-                                                        </h4>
-                                                        <button type="button" class="primary-btn add-ticket w-auto">Add
-                                                            Ticket</button>
-                                                    </div>
-                                                    @if(!(!empty(auth()->guard('front')->user()->stripe_email) && !empty(auth()->guard('front')->user()->stripe_account_id)))
-                                                    <div class="alert alert-warning" role="alert">
-                                                        Connect your Stripe account to display paid tickets on the front end. <a target="_blank" href="{{ route('front-profile') }}">Connect Now</a>
-                                                    </div>
-                                                    @endif
-
-                                                    <div class="custom-ticket-container">
-                                                        <div class="accordion mb-4 ticket-container ticket-container-section" id="accordionExample">
-                                                        @foreach ($tickets as $counter => $ticket)
-                                                            <x-reusables.frontend.ticket-form frontend="1" 
-                                                                :ticket="$ticket" :counter="$counter" :event="$form_data??null" />
-                                                        @endforeach
-                                                        </div>
-                                                    </div>
-
                                                 </div>
                                                 <div class="main-card p-4 mt-4">
                                                     <div
@@ -1164,6 +1187,24 @@ if(isset($form_data->id) && $form_data->status=='published'){
                 </div>
                 <div class="modal-footer">
                     <button type="button" url="{{ route('front-add-co-host') }}" id="add_co_host_btn" class="primary-btn w-fit">Send Invitation</button>
+                </div>
+			</div>
+		</div>
+	</div>
+    <div class="modal fade" id="manage-ticket-popup" tabindex="-1" aria-labelledby="manage-ticket-popupPopupLabel" aria-hidden="false">
+		<div class="modal-dialog modal-medium-2 modal-dialog-centered modal-sm-height modal-lg">
+			<div class="modal-content modal-dialog-scrollable">
+				<div class="modal-header">
+					<h5 class="modal-title" id="manage-ticket-popupPopupLabel">Manage Ticket Type</h5>
+					<button type="button" class="close-model-btn" data-bs-dismiss="modal" aria-label="Close"><i class="fa fa-times"></i></button>
+				</div>
+                <div class="modal-body">
+                    <div class="model-content main-form" id="manage-ticket-popup-body">
+                        
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="save_ticket_type_btn" onclick="submitTicketTypeForm();" id="" class="primary-btn w-fit">Save</button>
                 </div>
 			</div>
 		</div>

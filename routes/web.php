@@ -44,6 +44,7 @@ Route::controller(\App\Http\Controllers\FrontOrderController::class)->group(func
     // alert 
     Route::get('create-alert' , 'createAlertPage')->name('front-create-alert');
     Route::post('create-alert' , 'submitCreateAlert')->name('submit-create-alert');
+    Route::post('create-newsletter' , 'submitCreateNewsletter')->name('submit-create-newsletter');
 
     /**waiver form*/
     Route::get('view-waiver-form/{ticket}' , 'viewWaiverForm')->name('view-waiver-form');
@@ -120,6 +121,8 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::delete('cleanup-hosting/{id}', 'cleanupHostingDelete')->name('front-cleanup-hosting-delete');
         Route::post('send-rsvp-emails/{slug}' , 'sendRsvpEmails')->name('front-send-rsvp-emails');
         Route::get('post-an-event/{id?}', 'postEvent')->name('front-post-a-event');
+        Route::post('manage-ticket-type-html/{id?}' , 'manageTicketTypeHtml')->name('manage-ticket-type-html');
+        Route::post('save-ticket-type' , 'saveTicketType')->name('save-ticket-type');
         Route::get('duplicate-an-event/{slug}', 'duplicateAnEvent')->name('front-duplicate-an-event');
         Route::post('save-cleanup-basic-details', 'saveCleanUpBasicDetails')->name('front-save-cleanup-basic-details');
         Route::post('save-cleanup-media-details', 'saveCleanUpMediaDetails')->name('front-save-cleanup-media-details');

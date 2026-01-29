@@ -293,6 +293,142 @@ class FrontController extends Controller
         $this->setFlashSession(true, 'Email alert created successfully.');
         return redirect()->back();
     }
+    public function manageTicketTypeHtml($id=null){
+        $request = request();
+        $validated = $request->validate([
+            'event_id' => 'required',
+        ]);
+        $event = Event::where('id', decrypt($validated['event_id']))->first();
+        if(!isset($event->id)){
+            return $this->generateJsonResponse(false, 'Event not found');
+        }
+        $setting = Setting::first();
+        $html = '';
+        $eventTicket = null;
+        $event_id = $validated['event_id'];
+        $ticket_id = '';
+        $ticket_name = '';
+        $ticket_type = 'free';
+        $ticket_price = 0;
+        $available_quantity = '';
+        $max_qty_allowed_per_order = '';
+        $sell_start_time = '';
+        $sell_end_time = '';
+        $pass_code = '';
+        $ticket_description = '';
+        $charge_bear_by = $event->charge_bear_by;
+        $fee = 0;
+        $b_total = 0;
+        $b_fee_text = 'Platform Fee Included';
+        if(!empty($id)){
+            $eventTicket = EventTicket::where('id', decrypt($id))->first();
+            if(isset($eventTicket->id)){
+                $ticket_id = encrypt($eventTicket->id);
+                $ticket_name = $eventTicket->ticket_name;
+                $ticket_type = $eventTicket->ticket_type;
+                $ticket_price = formatAmt($eventTicket->ticket_price);
+                $available_quantity = $eventTicket->available_quantity;
+                $max_qty_allowed_per_order = $eventTicket->max_qty_allowed_per_order;
+                $sell_start_time = $eventTicket->sell_start_time;
+                $sell_end_time = $eventTicket->sell_end_time;
+                $pass_code = $eventTicket->pass_code;
+                $ticket_description = $eventTicket->ticket_description;
+                $fee = formatAmt(($eventTicket->ticket_price*$setting->event_commission)/100);
+                $b_total = $charge_bear_by==1?(formatAmt($eventTicket->ticket_price+$fee)):formatAmt($eventTicket->ticket_price);
+                $b_fee_text = $charge_bear_by==1?'Platform Fee':'Platform Fee Included';
+            }
+        }
+        $allowPaidTickets = true;
+        if(!(!empty(auth()->guard('front')->user()->stripe_email) && !empty(auth()->guard('front')->user()->stripe_account_id)))
+        {
+            $allowPaidTickets = false;
+        }
+        $html = '
+        <form method="post" id="ticketTypeForm" action="'.route('save-ticket-type').'">
+        <div class="row mt-2 mb-3">
+            <input type="hidden" name="event_id" value="'.$event_id.'">
+            <input type="hidden" class="form-ele" name="ticket_id" value="'.$ticket_id.'">
+            <input type="hidden" id="p_charge_bear_by" name="p_charge_bear_by" value="'.$charge_bear_by.'">
+            <input type="hidden" id="p_fee_per" name="p_fee_per" value="'.$setting->event_commission.'">
+            <div class="col-md-8">
+                <div class="form-group">
+                    <div class="row mb-2">
+                        <label for="ticket_name" class="pt-3 col-sm-9">
+                            Ticket Name*
+                        </label>
+                    </div>
+                    <div class="d-flex">
+                        <input type="text" name="ticket_name" value="'.$ticket_name.'" class="form-control form-ele onlyTextNumberSplaceMask" required="">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6 mt-3">
+                        <label for="ticket_type">Type*</label>
+                        <select class="form-select form-ele mt-1" id="p_ticket_type_select" required="" name="ticket_type">
+                            <option value="free" '.($ticket_type=='free'?'selected':'').'>Free</option>
+                            <option value="paid" '.($ticket_type=='paid'?'selected':'').' '.(!$allowPaidTickets?'disabled':'').'>Paid</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-6 mt-3">
+                        <label for="ticket_price">Ticket Price*</label>
+                        <input type="number" fee_per="10" name="ticket_price" id="p_ticket_price" value="'.$ticket_price.'" class="form-control form-ele mt-1" '.($ticket_type=='free'?'readonly':'').' required="" min="0">
+                    </div>
+                    <div class="col-sm-6 mt-3">
+                        <label for="available_quantity">Total Tickets*</label>
+                        <input type="number" step="1" oninput="this.value = this.value.replace(/[^0-9]/g, \'\')" name="available_quantity" value="'.$available_quantity.'" class="form-control form-ele mt-1" min="0" required="">
+                    </div>
+                    <div class="col-sm-6 mt-3">
+                        <label for="max_qty_allowed_per_order">Max Tickets Per Order*</label>
+                        <input type="number" oninput="this.value = this.value.replace(/[^0-9]/g, \'\')" name="max_qty_allowed_per_order" value="'.$max_qty_allowed_per_order.'" class="form-control form-ele mt-1" min="1" required="">
+                    </div>
+                    <div class="col-sm-6 mt-3">
+                        <label for="ticket_sell_start_time">Sell Start Date*</label>
+                        <div class="loc-group position-relative">
+                            <input autocomplete="off" type="text" class="form-control mt-1 form-ele tk_sell_start_date" name="sell_start_time" value="'.$sell_start_time.'" required="">
+                            <span class="absolute-icon" style="top:0;"><i class="fa-solid fa-calendar-days"></i></span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 mt-3">
+                        <label for="ticket_sell_end_time">Sell End Date*</label>
+                        <div class="loc-group position-relative">
+                            <input autocomplete="off" type="text" class="form-control mt-1 form-ele tk_sell_end_date" name="sell_end_time" value="'.$sell_end_time.'" required="">
+                            <span class="absolute-icon" style="top:0;"><i class="fa-solid fa-calendar-days"></i></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 mt-3">
+                        <div class="form-group">
+                            <label for="pass_code">Pass Code</label>
+                            <input type="text" name="pass_code" value="'.$pass_code.'" class="form-control form-ele mt-1">
+                        </div>
+                        <smal style="font-size: 12px;">Volunteers must enter the Pass Code to add ticket into the cart. Leave this field blank to remove pass code lock.</smal>
+                    </div>
+                    <div class="col-md-12 mt-3">
+                        <div class="form-group">
+                            <label for="ticket_description">Ticket Description</label>
+                            <textarea name="ticket_description" class="form-control form-ele " rows="5">'.$ticket_description.'</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="row">
+                    <div class="col-md-12 mt-3">
+                        <h6 class="mb-3">Price Breakdown</h6>
+                        <p class="mb-2"><small>Base price</small> <small class="float-end">$<span name="pb_base_price_" id="pb_base_price" class="form-ele">'.$ticket_price.'</span></small></p>
+                        <p><small><span name="pb_fee_text_" id="pb_fee_text">'.$b_fee_text.'</span> ('.$setting->event_commission.'%)</small> <small class="float-end">$<span name="pb_platform_fee_" id="pb_platform_fee" class="form-ele">'.$fee.'</span></small></p>
+                        <hr class="my-2" />
+                        <h6 class="mt-3 mb-4"><span>Total to Attendee</h6span> <span class="float-end h5 text-primary">$<span name="pb_final_price_" id="pb_final_price" class="form-ele">'.$b_total.'</span></span></h6>
+                        <small style="color: #717171;font-style: italic;">Based on your last saved "Charge Bear By" setting in your Ticket Settings section.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </form>
+        ';
+        return $this->generateJsonResponse(true, '', $html);
+    }
     public function postEvent($id = null){
         $eventObj = $id ? Event::findOrFail(decrypt($id)) : null ;
         $setting = Setting::first();
@@ -581,6 +717,218 @@ class FrontController extends Controller
                 $event->waiver_form_content = request()->waiver_form_content;
             }
 
+            /* if(isset($request->ticket) && is_array($request->ticket) && count($request->ticket)>0){} else {
+                throw new \Exception("Please add tickets to event.");
+            } */
+
+
+            $event->ticket_sell_start_time = $validated['ticket_sell_start_time'] ?? null;
+            $event->ticket_sell_end_time = $validated['ticket_sell_end_time'] ?? null;
+            $event->ticket_questions = $validated['ticket_questions'] ?? null; 
+            $event->show_ticket_description = $request->has('show_ticket_description') ? 1 : 0;
+            $event->show_remaining_tickets = $request->has('show_remaining_tickets') ? 1 : 0;
+            $event->allow_donations = $request->has('allow_donations') ? 1 : 0;
+            $event->allow_refund = $request->has('allow_refund') ? 1 : 0;
+            $event->charge_bear_by = $request->charge_bear_by ?? 0; 
+            $event->sell_tickets_individually = $request->has('sell_tickets_individually') ? 1 : 0;
+            /**************************************************************************
+            * tickets system with constrait of changing number of ticket after orders *
+            ***************************************************************************/ 
+            /* $tickets = [];
+            if ($event->exists) { 
+                $existingTickets = $event->eventTickets()->get()->keyBy('id');
+                $submittedTicketIds = collect($request->ticket)->pluck('ticket_id')->filter()->toArray();
+                $event->eventTickets()->whereNotIn('id', $submittedTicketIds)->get()->each(function($ticket) {
+                    $orderTicketCount = EventOrderTicket::where('ticket_id', $ticket->id)->count(); 
+                    if((int)$orderTicketCount > 0){
+                        throw new \Exception("Ticket ID {$ticket->id} has already been sold and cannot be deleted.");
+                    } 
+                    $ticket->delete();
+                });
+                if(isset($request->ticket) && is_array($request->ticket)){               
+                    foreach ($request->ticket as $ticketData) {
+                        if($ticketData['ticket_type']=='free' && floatval($ticketData['ticket_price'])>0){
+                            throw new \Exception("Ticket price should be $0 for free type of ticket.");
+                        }
+                        if($ticketData['ticket_type']=='paid' && !floatval($ticketData['ticket_price'])>0){
+                            throw new \Exception("Ticket price should be greater than $0 for paid type of ticket.");
+                        }
+                        if(empty($ticketData['sell_start_time'])){
+                            throw new \Exception("Ticket sell start time is required.");
+                        }
+                        if(empty($ticketData['sell_end_time'])){
+                            throw new \Exception("Ticket sell end time is required.");
+                        }
+                        if($ticketData['max_qty_allowed_per_order']==0 || empty($ticketData['max_qty_allowed_per_order'])){
+                            throw new \Exception("Max tickets allowed per order should be greater than 0.");
+                        }
+                        $ticketData['is_active'] = isset($ticketData['is_active'])?$ticketData['is_active']:0;
+                        if (isset($ticketData['ticket_id']) && $existingTickets->has($ticketData['ticket_id'])) {
+                            // Constraint for sold tickets
+                            $alreadySoldTickets = EventOrderTicket::active()->where('ticket_id', $ticketData['ticket_id'])->count();
+                            if($alreadySoldTickets > $ticketData['available_quantity']){
+                                throw new \Exception("Ticket ID {$ticketData['ticket_id']} has already been sold more than the available quantity.");
+                            }
+                            $ticket = $existingTickets[$ticketData['ticket_id']];
+                            $ticketData['id'] = $ticketData['ticket_id']; // Ensure the ID is set for update
+                            $ticket->fill($ticketData);
+                            $ticket->save();
+                        } else {
+                            // Create new ticket
+                            $ticket = new EventTicket($ticketData);
+                            $event->eventTickets()->save($ticket);
+                        }
+                    }
+                }
+            } else {
+                // Create new tickets for new event
+                $tickets = [];
+                if(isset($request->ticket) && is_array($request->ticket)){  
+                    foreach ($request->ticket as $ticketData) {
+                        if($ticketData['ticket_type']=='free' && floatval($ticketData['ticket_price'])>0){
+                            throw new \Exception("Ticket price should be $0 for free type of ticket.");
+                        }
+                        if($ticketData['ticket_type']=='paid' && !floatval($ticketData['ticket_price'])>0){
+                            throw new \Exception("Ticket price should be greater than $0 for paid type of ticket.");
+                        }
+                        if(empty($ticketData['sell_start_time'])){
+                            throw new \Exception("Ticket sell start time is required.");
+                        }
+                        if(empty($ticketData['sell_end_time'])){
+                            throw new \Exception("Ticket sell end time is required.");
+                        }
+                        if($ticketData['max_qty_allowed_per_order']==0 || empty($ticketData['max_qty_allowed_per_order'])){
+                            throw new \Exception("Max tickets allowed per order should be greater than 0.");
+                        }
+                        $ticketData['is_active'] = isset($ticketData['is_active'])?$ticketData['is_active']:0;
+                        $tickets[] = new EventTicket($ticketData); 
+                    } 
+                }
+                //$obj->eventTickets()->saveMany($tickets);
+                $event->eventTickets()->saveMany($tickets);
+            } */
+            $event->save();
+        } catch (\Exception $e) {
+            return $this->generateJsonResponse(false, 'Failed to save ticket & waiver setting: ' . $e->getMessage());
+        }
+
+        $ticket_container_section = '';
+        /* $counter = 0; 
+        $event->eventTickets->map(function($ticket) use(&$ticket_container_section, &$counter){ 
+            $ticket_container_section .= view('components.reusables.frontend.ticket-form', [
+                                            'frontend' => 1,
+                                            'ticket' => $ticket,
+                                            'counter' => $counter
+                                        ])->render();
+            $counter++;
+        }); */
+
+        return $this->generateJsonResponse(true, 'Tickets & waiver setting saved successfully.', [
+            'event_instance' => encrypt($event->id),
+            'event' => $event , 
+            'section_html'   => [
+                // 'ticket-container-section' => $ticket_container_section
+            ] ,
+        ]);
+    }
+    public function saveCleanUpTicketDetailsOld(){
+
+        $request = request();
+        $event   = \App\Models\Event::findOrFail(decrypt(request()->event_id));
+
+        $start_datetime = $event->start_datetime;
+        if(!empty($start_datetime) && !empty($request->ticket_sell_start_time) && (strtotime($start_datetime) < strtotime($request->ticket_sell_start_time)) ){
+            return $this->generateJsonResponse(false, 'Ticket sell start date must be lower than event start date.');
+        }
+        if(!empty($start_datetime) && !empty($request->ticket_sell_end_time) && (strtotime(date('Y-m-d',strtotime($start_datetime))) < strtotime($request->ticket_sell_end_time)) ){
+            return $this->generateJsonResponse(false, 'Ticket sell end date must be lower than or equal to event start date.');
+        }
+
+        $obj     = $event;
+        $validated = $request->validate([
+            'event_id'                    => 'required',
+            'ticket_sell_start_time'   => 'nullable',
+            'ticket_sell_end_time'   => 'nullable',
+            //'ticket_sell_start_time'      => 'required|date',
+            //'ticket_sell_end_time'        => 'required|date|after:ticket_sell_start_time',
+            'ticket_questions'             => 'nullable|string|max:1000',
+            'show_ticket_description'     => 'nullable|boolean',
+            'show_remaining_tickets'      => 'nullable|boolean',
+            'allow_donations'      => 'nullable|boolean',
+            'sell_tickets_individually'   => 'nullable|boolean',
+
+            'waiver_form_type' => 'nullable',
+            'waiver_form_content' => ['nullable',
+                function($attribute, $value, $fail) use ($request, $obj) {
+                    
+                    $type = $request->waiver_form_type;
+                    if ($type === 'text') {
+                        if (empty($value) || !is_string($value)) {
+                            $fail('The waiver form content is required and must be text when waiver form type is text.');
+                        }
+                    }
+                    if ($type === 'external_link') {
+                        if (empty($value) || !filter_var($value, FILTER_VALIDATE_URL)) {
+                            $fail('The waiver form content must be a valid URL when waiver form type is external_link.');
+                        }
+                    }
+                    if ($type === 'pdf') {
+                        // Only required on creation
+                        $event = $obj;
+                        if (empty($event->waiver_form_content) && !$request->hasFile('waiver_form_content')) {
+                            $fail('The waiver form PDF is required when waiver form type is pdf.');
+                        } elseif (!empty($event->waiver_form_content) && is_string($event->waiver_form_content)) {
+                            // If it's a string, check if it's a valid URL ending with .pdf or a file path ending with .pdf
+                            $isPdfUrl = filter_var($event->waiver_form_content, FILTER_VALIDATE_URL) && str_ends_with(strtolower($event->waiver_form_content), '.pdf');
+                            $isPdfPath = str_ends_with(strtolower($event->waiver_form_content), '.pdf');
+                            if (!$isPdfUrl && !$isPdfPath && !$request->hasFile('waiver_form_content')) {
+                                $fail('The waiver form PDF must be a valid PDF file or a URL ending with .pdf.');
+                            }
+                        }
+                        if ($request->hasFile('waiver_form_content')) {
+                            $file = $request->file('waiver_form_content');
+                            if ($file->getClientOriginalExtension() !== 'pdf') {
+                                $fail('The waiver form PDF must be a file of type: pdf.');
+                            }
+                            if ($file->getSize() > 5 * 1024 * 1024) { // 5MB max
+                                $fail('The waiver form PDF may not be greater than 5MB.');
+                            }
+                        }
+                    }
+                }
+            ],
+        ]);
+
+        try {
+            
+            
+            /**************************************************************************
+            * Manage Waiver *
+            ***************************************************************************/ 
+            $waiver_form_pdf = $request->waiver_form_content;
+            $event->waiver_form_type = request()->waiver_form_type ?? null;
+            if(request()->waiver_form_type  == 'pdf'){
+                if(request()->hasFile('waiver_form_content')){
+                    $waiver_form_pdf = $this->uploadFiles('waiver_form_content', 'events/waiver_pdf');
+                    $event->waiver_form_content = json_encode($waiver_form_pdf);
+                } else if(isset(request()->waiver_form_content_helper)){
+                    if(str_contains(request()->waiver_form_content_helper, '"path"')){
+                        $event->waiver_form_content = request()->waiver_form_content_helper;
+                    } else {
+                        $event->waiver_form_content = null;
+                    }
+                } else if(isset($event->id) && !str_contains($event->waiver_form_content, '"path"')){
+                    $event->waiver_form_content = null;
+                }
+            }elseif(request()->waiver_form_type == 'default'){ 
+                $settings = Setting::first();
+                $event->waiver_form_content = $settings->waiver_text;
+            }elseif(!request()->waiver_form_type){
+                $event->waiver_form_content =  null;
+            }else{
+                $event->waiver_form_content = request()->waiver_form_content;
+            }
+
             if(isset($request->ticket) && is_array($request->ticket) && count($request->ticket)>0){} else {
                 throw new \Exception("Please add tickets to event.");
             }
@@ -694,6 +1042,75 @@ class FrontController extends Controller
                 // 'ticket-container-section' => $ticket_container_section
             ] ,
         ]);
+    }
+
+    public function saveTicketType(){
+        $request = request();
+        $validated = $request->validate([
+            'event_id'                  => 'required',
+            'ticket_id'                 => 'nullable',
+            'ticket_name'               => 'required',
+            'ticket_type'               => 'required',
+            'ticket_price'              => 'required',
+            'available_quantity'        => 'required',
+            'max_qty_allowed_per_order' => 'required',
+            'sell_start_time'           => 'required',
+            'sell_end_time'             => 'required',
+            'pass_code'                 => 'nullable',
+            'ticket_description'        => 'nullable',
+        ],[
+            'event_id.required'         => 'Event is required.',
+            'ticket_name.required'      => 'Ticket name is required.',
+            'ticket_type.required'      => 'Ticket type is required.',
+            'ticket_price.required'     => 'Ticket price is required.',
+            'available_quantity.required' => 'Available quantity is required.',
+            'max_qty_allowed_per_order.required' => 'Max qty allowed per order is required.',
+            'sell_start_time.required'  => 'Sell start time is required.',
+            'sell_end_time.required'    => 'Sell end time is required.',
+        ]);
+        try {
+            $event = \App\Models\Event::findOrFail(decrypt(request()->event_id));
+            if($validated['ticket_type']=='free' && floatval($validated['ticket_price'])>0){
+                throw new \Exception("Ticket price should be $0 for free type of ticket.");
+            }
+            if($validated['ticket_type']=='paid' && !floatval($validated['ticket_price'])>0){
+                throw new \Exception("Ticket price should be greater than $0 for paid type of ticket.");
+            }
+            if(empty($validated['sell_start_time'])){
+                throw new \Exception("Ticket sell start time is required.");
+            }
+            if(empty($validated['sell_end_time'])){
+                throw new \Exception("Ticket sell end time is required.");
+            }
+            if($validated['max_qty_allowed_per_order']==0 || empty($validated['max_qty_allowed_per_order'])){
+                throw new \Exception("Max tickets allowed per order should be greater than 0.");
+            }
+            $ticketData = [
+                'ticket_name' => $validated['ticket_name'],
+                'ticket_type' => $validated['ticket_type'],
+                'ticket_price' => (isset($validated['ticket_price']) && !empty($validated['ticket_price']))?$validated['ticket_price']:0,
+                'available_quantity' => (isset($validated['available_quantity']) && !empty($validated['available_quantity']))?$validated['available_quantity']:0,
+                'max_qty_allowed_per_order' => (isset($validated['max_qty_allowed_per_order']) && !empty($validated['max_qty_allowed_per_order']))?$validated['max_qty_allowed_per_order']:0,
+                'sell_start_time' => (isset($validated['sell_start_time']) && !empty($validated['sell_start_time']))?$validated['sell_start_time']:null,
+                'sell_end_time' => (isset($validated['sell_end_time']) && !empty($validated['sell_end_time']))?$validated['sell_end_time']:null,
+                'pass_code' => (isset($validated['pass_code']) && !empty($validated['pass_code']))?$validated['pass_code']:null,
+                'ticket_description' => (isset($validated['ticket_description']) && !empty($validated['ticket_description']))?$validated['ticket_description']:null,
+            ];
+            if(isset($validated['ticket_id']) && !empty($validated['ticket_id'])){
+                $ticket = EventTicket::findOrFail(decrypt($validated['ticket_id']));
+                $alreadySoldTickets = EventOrderTicket::active()->where('ticket_id', $ticket->id)->count();
+                if($alreadySoldTickets > $validated['available_quantity']){
+                    throw new \Exception("This ticket type's tickets has already been sold more than the given available quantity.");
+                }
+                $ticket->update($ticketData);
+            } else {
+                $ticket = new EventTicket($ticketData);
+                $event->eventTickets()->save($ticket);
+            }
+        } catch (\Exception $e) {
+            return $this->generateJsonResponse(false, 'Failed to save ticket type: ' . $e->getMessage());
+        }
+        return $this->generateJsonResponse(true, 'Ticket type has been saved successfully.');
     }
 
     public function saveCleanUpSeoDetails(){

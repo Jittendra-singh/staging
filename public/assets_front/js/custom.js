@@ -1291,6 +1291,15 @@ $(document).ready(function () {
 		});
 		callSellStartEndDatePicker();
 	})
+	$(document).on('change', '#p_ticket_type_select', function () {
+		let selectedValue = $(this).val();
+		if (selectedValue === 'free') {
+			$('#p_ticket_price').val(0);
+			$('#p_ticket_price').prop('readonly', true);
+		} else {
+			$('#p_ticket_price').prop('readonly', false);
+		}
+	});
 	$(document).on('change', '.ticket_type_select', function () {
 		let name = $(this).attr('name');
 		let counter = name.split('[')[1].split(']')[0];
@@ -2240,6 +2249,13 @@ $(document).ready(function () {
 	if ($('[name="charge_bear_by"]').length) {
 		calcPriceBreakdown();
 	}
+	$(document).on('keyup', '#p_ticket_price', function () {
+		console.log('asdf');
+		pCalcPriceBreakdown();
+	});
+	$(document).on('change', '#p_ticket_price', function () {
+		pCalcPriceBreakdown();
+	});
 
 	fieldmasking();
 });
@@ -2274,6 +2290,29 @@ function calcPriceBreakdown() {
 		})
 	}
 }
+
+function pCalcPriceBreakdown() {
+	var isOrgPayFee = $(document).find('#p_charge_bear_by').val();
+	var feePer = $(document).find('#p_fee_per').val();
+	var val = $(document).find('#p_ticket_price').val();
+	if (val != '') {
+		var fee = (parseFloat(val) * parseFloat(feePer)) / 100;
+		var total_price = parseFloat(val) + parseFloat(fee);
+		$(document).find('#pb_platform_fee').text(fee.toFixed(2));
+		$(document).find('#pb_base_price').text(parseFloat(val).toFixed(2));
+		if (isOrgPayFee == 1) {
+			$(document).find('#pb_fee_text').text('Platform Fee');
+			$(document).find('#pb_final_price').text(total_price.toFixed(2));
+		} else {
+			$(document).find('#pb_fee_text').text('Platform Fee Included');
+			$(document).find('#pb_final_price').text(parseFloat(val).toFixed(2));
+		}
+	} else {
+		$(document).find('#pb_platform_fee').text(0);
+		$(document).find('#pb_base_price').text(0);
+		$(document).find('#pb_final_price').text(0);
+	}
+}
 //for alters    
 let showAlert = show_alert || '';
 showError(showAlert.message, showAlert.class);
@@ -2301,6 +2340,68 @@ function sanitizeDonation(value) {
 	}
 
 	return value;
+}
+function openTicketTypePopup(control) {
+	var url = $(control).attr('url');
+	var event_id = $('.first_event_instance').val();
+	$.ajax({
+		url: url,
+		method: 'POST',
+		data: {
+			event_id: event_id
+		},
+		success: function (response) {
+			if (response.status) {
+				$('#manage-ticket-popup-body').html(response.data);
+				$('#manage-ticket-popup').modal('show');
+				fieldmasking();
+				callSellStartEndDatePicker();
+				pCalcPriceBreakdown();
+			}
+			else {
+				showError(response.message, 'error');
+			}
+		}
+	});
+}
+function submitTicketTypeForm() {
+	var url = $(document).find('form#ticketTypeForm').attr('action');
+	var formData = $(document).find('form#ticketTypeForm').serialize();
+	$('#save_ticket_type_btn').attr('disabled', true);
+	$('#save_ticket_type_btn').text('Saving...');
+	$.ajax({
+		url: url,
+		method: 'POST',
+		data: formData,
+		success: function (response) {
+			if (response.status) {
+				showError(response.message, 'success');
+				setTimeout(() => {
+					window.location.href = window.location.pathname + '?open_tab=step2';
+				}, 500);
+			}
+			else {
+				$('#save_ticket_type_btn').attr('disabled', false);
+				$('#save_ticket_type_btn').text('Save');
+				showError(response.message, 'error');
+			}
+		},
+		error: function (xhr, status, error) {
+			$('#save_ticket_type_btn').attr('disabled', false);
+			$('#save_ticket_type_btn').text('Save');
+		}
+	});
+}
+function changeCreateAlertForm(type, control) {
+	$(control).addClass('active').addClass('text-white');
+	$(control).siblings().removeClass('active').removeClass('text-white');
+	if (type == 'weeklyalerts') {
+		$('#weekly_alert_box').show();
+		$('#quarterly_newsletter_box').hide();
+	} else {
+		$('#weekly_alert_box').hide();
+		$('#quarterly_newsletter_box').show();
+	}
 }
 function showHostingEvent(type, control = null) {
 	if (control) {

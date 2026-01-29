@@ -1155,13 +1155,36 @@ class FrontOrderController extends Controller
                 return redirect()->back();
             }
         }
-        if(isset($request->newsletter) && $request->newsletter==1){
+        /* if(isset($request->newsletter) && $request->newsletter==1){
             $this->syncWithWP($volunteer,'Alert Page');
-        }
+        } */
 
         $alertName = 'Weekly Cleanups Near '.$pincode;
         $this->createWeeklyAlert($volunteer->id, $alertName, $pincode,2);
         $this->setFlashSession(true, "Weekly alert has been created successfully.");
+        return redirect()->route('front-create-alert');
+    }
+    public function submitCreateNewsletter(){
+        $request = request();
+        request()->validate([
+            'first_name' => 'required',
+            'last_name' => 'required',
+            'email' => ['required', 'email', new \App\Rules\StrictEmail()],
+        ]); 
+
+        $volunteer = Volunteer::where('email_address', $request->email)->first();
+        if (isset($volunteer->id)) {
+            $this->syncWithWP($volunteer,'Alert Page');
+        } else {
+            $volunteerData = [
+                'first_name'    => $request->first_name,
+                'last_name'     => $request->last_name,
+                'email_address' => $request->email,
+            ];
+            $this->syncWithWPData($volunteerData,'Alert Page');
+        }
+
+        $this->setFlashSession(true, "Newsletter has been subscribed successfully.");
         return redirect()->route('front-create-alert');
     }
     public function checkEventSlug(){
