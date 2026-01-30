@@ -96,6 +96,57 @@ if(isset($form_data->id) && $form_data->status=='published'){
     .custom-ticket-container .accordion-item{ 
         margin-bottom: 15px !important;
     }
+
+
+    .fee-option {
+    width: 100%;
+    cursor: pointer;
+}
+
+.fee-option input[type="radio"] {
+    display: none;
+}
+
+.fee-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 16px;
+    transition: all 0.2s ease;
+    height: 100%;
+}
+
+.fee-option:hover .fee-card {
+    border-color: #0d6efd;
+}
+
+.radio-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #ced4da;
+    margin-top: 4px;
+    position: relative;
+}
+
+.fee-option input[type="radio"]:checked + .fee-card {
+    border-color: #0d6efd;
+    background-color: #f8fbff;
+}
+
+.fee-option input[type="radio"]:checked + .fee-card .radio-dot {
+    border-color: #0d6efd;
+}
+
+.fee-option input[type="radio"]:checked + .fee-card .radio-dot::after {
+    content: "";
+    width: 8px;
+    height: 8px;
+    background: #0d6efd;
+    border-radius: 50%;
+    position: absolute;
+    top: 3px;
+    left: 3px;
+}
 </style>
 @endpush
 @section('content')
@@ -616,9 +667,10 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                     <th>Sold</th>
                                                                     <th>Remaining</th>
                                                                     <th>Dates</th>
+                                                                    <th>Status</th>
                                                                     <th>Action</th>
                                                                 </tr>
-                                                                @if($tickets->count() > 0)
+                                                                @if(isset($tickets[0]) && $tickets->count() > 0)
                                                                 @foreach ($tickets as $counter => $ticket)
                                                                     <tr>
                                                                         <td>{{ $ticket->ticket_name }}</td>
@@ -627,12 +679,22 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                         <td>{{ $ticket->approvedSold->count() ?? 0 }}</td>
                                                                         <td>{{ $ticket->remainingTickets() }}</td>
                                                                         <td>{{ date(config('app.dateFormat'),strtotime($ticket->sell_start_time)).' - '.date(config('app.dateFormat'),strtotime($ticket->sell_end_time)) }}</td>
+                                                                        <td>
+                                                                            <div class="form-group">
+                                                                                <div class="d-flex align-items-start">
+                                                                                    <label class="btn-switch m-0 me-3">
+                                                                                        <input value="1" name="event_ticket_status_toggle" type="checkbox" {{ isset($ticket->is_active)?($ticket->is_active==1 ? 'checked' : ''):'checked' }}  class="event_ticket_status_toggle" data-url="{{route('update-ticket-status',encrypt($ticket->id))}}">
+                                                                                        <span class="checkbox-slider"></span>
+                                                                                    </label>
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
                                                                         <td><button onclick="openTicketTypePopup(this);" url="{{ route('manage-ticket-type-html', ['id'=>encrypt($ticket->id)]) }}" type="button" class="btn btn-primary btn-sm"><i class="fa-solid fa-pen"></i></button></td>
                                                                     </tr>
                                                                 @endforeach
                                                                 @else 
                                                                 <tr>
-                                                                    <td colspan="7" class="text-center">No ticket type found</td>
+                                                                    <td colspan="8" class="text-center">No ticket type found</td>
                                                                 </tr>
                                                                 @endif 
                                                             </table>
@@ -666,12 +728,145 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                         </div>
                                                     </div> -->
                                                     <div class="row mb-4">
+                                                        <div class="form-group">
+                                                            <div class="ticket-section">
+                                                                <label class="form-label fs-16 mt-3">CHECKOUT & REGISTRATION</label>
+                                                                <div class="content-holder row border_bottom pb_30">
+                                                                    <div class="setting-item col-sm-6 mt-4">
+                                                                        @php 
+                                                                        $questionText = old('ticket_questions', $form_data->ticket_questions ?? '');
+                                                                        @endphp 
+                                                                        <div class="d-flex align-items-start">
+                                                                            <label class="btn-switch m-0 me-3">
+                                                                                <input type="checkbox" name="show_ticket_questions" class="" id="bird-discount" value="1" {{!empty($questionText)?'checked':''}}>
+                                                                                <span class="checkbox-slider"></span>
+                                                                            </label>
+                                                                            <div class="d-flex flex-column">
+                                                                                <label class="color-black fw-bold mb-1">Do you want to ask any questions of the volunteers?</label>
+                                                                                <small class="fs-14 d-block m-0">This will display under each attendee details on Checkout Page</small>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="online-event-discount-wrapper" style="{{!empty($questionText)?'':'display:none;'}}">
+                                                                            <div class="ticket-instructions-content tags-container mt-3">
+                                                                                <input name="ticket_questions" class="form-control tags-input" type="text" placeholder="Enter question here" value="{{ $questionText }}">
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="setting-item col-sm-6 mt-4">
+                                                                        <div class="d-flex align-items-start">
+                                                                            <label class="btn-switch m-0 me-3">
+                                                                                <input type="checkbox" value="1" id="allow_donations" name="allow_donations" {{ old('allow_donations', $form_data->allow_donations ?? false) ? 'checked' : '' }}>
+                                                                                <span class="checkbox-slider"></span>
+                                                                            </label>
+                                                                            <div class="d-flex flex-column">
+                                                                                <label class="color-black fw-bold mb-1">Allow optional donations</label>
+                                                                                <small class="fs-14 d-block m-0">Enable an additional open donation field</small>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="ticket-section">
+                                                                <label class="form-label fs-16 pt_30">DISPLAY & POLICIES</label>
+                                                                <div class="content-holder row border_bottom pb_30">
+                                                                    <div class="setting-item col-sm-6 mt-4">
+                                                                        <div class="d-flex align-items-start">
+                                                                            <label class="btn-switch m-0 me-3">
+                                                                                <input type="checkbox" value="1" id="show_ticket_description" name="show_ticket_description" {{ old('show_ticket_description', $form_data->show_ticket_description ?? false) ? 'checked' : '' }}>
+                                                                                <span class="checkbox-slider"></span>
+                                                                            </label>
+                                                                            <div class="d-flex flex-column">
+                                                                                <label class="color-black fw-bold mb-1">Show ticket description on event page?</label>
+                                                                                <small class="fs-14 d-block m-0">Provide extra context for each ticket type</small>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="setting-item col-sm-6 mt-4">
+                                                                        <div class="d-flex align-items-start">
+                                                                            <label class="btn-switch m-0 me-3">
+                                                                                <input type="checkbox" value="1" id="show_remaining_tickets" name="show_remaining_tickets" {{ old('show_remaining_tickets', $form_data->show_remaining_tickets ?? false) ? 'checked' : '' }}>
+                                                                                <span class="checkbox-slider"></span>
+                                                                            </label>
+                                                                            <div class="d-flex flex-column">
+                                                                                <label class="color-black fw-bold mb-1">Show remaining tickets with tickets details?</label>
+                                                                                <small class="fs-14 d-block m-0">Display real-time availability on event page</small>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="setting-item col-sm-6 mt-4">
+                                                                        <div class="d-flex align-items-start">
+                                                                            <label class="btn-switch m-0 me-3">
+                                                                                <input type="checkbox" value="1" id="allow_refund" name="allow_refund" {{ old('allow_refund', $form_data->allow_refund ?? false) ? 'checked' : '' }}>
+                                                                                <span class="checkbox-slider"></span>
+                                                                            </label>
+                                                                            <div class="d-flex flex-column">
+                                                                                <label class="color-black fw-bold mb-1">Allow paid tickets refund</label>
+                                                                                <small class="fs-14 d-block m-0">Set if users can request refunds via dashboard</small>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="ticket-section">
+                                                                <label class="form-label fs-16 mt-3">FEES & PROCESSING</label>
+                                                                <div class="content-holder row  ">
+                                                                    <div class="setting-item col-sm-12 mt-4">
+                                                                        <div class="d-flex align-items-start">
+                                                                            <div class="d-flex flex-column">
+                                                                                <label class="color-black fw-bold mb-3">Who will bear the Stripe processing charges and platform fees for paid tickets?</label>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="col-12">
+                                                                            <div class="row g-3">
+                                                                                <!-- Organizer -->
+                                                                                <div class="col-md-6">
+                                                                                    <label class="fee-option">
+                                                                                        <input type="radio" value="0" id="charge_bear_by" name="charge_bear_by" {{ old('charge_bear_by', $form_data->charge_bear_by ?? 0) == 0 ? 'checked' : '' }}>
+                                                                                        <div class="fee-card">
+                                                                                            <div class="d-flex align-items-start">
+                                                                                                <span class="radio-dot"></span>
+                                                                                                <div class="ms-3">
+                                                                                                    <h6 class="mb-1">Organizer</h6>
+                                                                                                    <small class="text-muted">
+                                                                                                        Deducted from your ticket revenue
+                                                                                                    </small>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </label>
+                                                                                </div>
+
+                                                                                <!-- Buyer -->
+                                                                                <div class="col-md-6">
+                                                                                    <label class="fee-option">
+                                                                                        <input type="radio" value="1" id="charge_bear_by2" name="charge_bear_by" {{ old('charge_bear_by', $form_data->charge_bear_by ?? 0) == 1 ? 'checked' : '' }}>
+                                                                                        <div class="fee-card">
+                                                                                            <div class="d-flex align-items-start">
+                                                                                                <span class="radio-dot"></span>
+                                                                                                <div class="ms-3">
+                                                                                                    <h6 class="mb-1">Buyer</h6>
+                                                                                                    <small class="text-muted">
+                                                                                                        Added on top of the ticket price
+                                                                                                    </small>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </label>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <!-- <div class="row mb-4">
                                                         <div class="col-md-12">
                                                             <label for="ticket_questions" class="form-label fs-6">Do you want to ask any questions of the volunteers?</label>
                                                             <textarea name="ticket_questions" class="form-control" id="ticket_questions" cols="30" rows="3">{{ old('ticket_questions', $form_data->ticket_questions ?? '') }}</textarea>
                                                         </div>
-                                                    </div>
-                                                    <div class="row mb-4">
+                                                    </div> -->
+                                                    <!-- <div class="row mb-4">
                                                         <div class="col-md-4">
                                                             <div class="form-check">
                                                                 <input class="form-check-input" type="checkbox"
@@ -721,8 +916,8 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                 </label>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                    <div class="row mb-4">
+                                                    </div> -->
+                                                    <!-- <div class="row mb-4">
                                                         <div class="col-md-12">
                                                             <label for="ticket_questions" class="form-label fs-6">Who will bear the Stripe processing charges and platform fees for paid tickets?</label>
                                                         </div>
@@ -744,13 +939,13 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                 </label>
                                                             </div>
                                                         </div>
-                                                    </div>
+                                                    </div> -->
                                                 </div>
                                                 <div class="main-card p-4 mt-4">
                                                     <div
                                                         class="bp-title mb-4 d-flex align-items-center justify-content-between">
                                                         <h4 class="px-0 mb-0">
-                                                            <i class="fa-solid fa-ticket step_icon me-3"></i>Waiver Form
+                                                            <i class="fa-solid fa-ticket step_icon me-3"></i> Registration & Waiver Settings
                                                         </h4>
                                                     </div>
 
@@ -771,6 +966,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                         <option value="external_link" @selected($waiver_form_type == 'external_link')> External Link</option>
                                                                         <option value="" @selected(!$waiver_form_type)> No Waiver Form</option>
                                                                     </select>
+                                                                    <small>Volunteers will be required to sign this digital waiver after completing registration.</small>
                                                                 </div>
                                                                 <div id="waiver_form_content_wrapper">
                                                                     @if($waiver_form_type == 'external_link')

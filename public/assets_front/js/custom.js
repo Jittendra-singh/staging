@@ -2256,13 +2256,29 @@ $(document).ready(function () {
 	$(document).on('change', '#p_ticket_price', function () {
 		pCalcPriceBreakdown();
 	});
+	$(document).on('change', '.event_ticket_status_toggle', function () {
+		var url = $(this).attr('data-url');
+		$.ajax({
+			url: url,
+			method: 'POST',
+			data: {},
+			success: function (response) {
+				if (response.status) {
+					showError(response.message, 'success');
+				}
+				else {
+					showError(response.message, 'error');
+				}
+			}
+		});
+	});
 
 	fieldmasking();
 });
 
 
 function calcPriceBreakdown() {
-	var isOrgPayFee = $('input[name="charge_bear_by"]:checked').val();
+	/* var isOrgPayFee = $('input[name="charge_bear_by"]:checked').val();
 	if ($('.ticket_base_price_f').length > 0) {
 		$('.ticket_base_price_f').each(function (c, e) {
 			var feePer = $(e).attr('fee_per');
@@ -2288,7 +2304,7 @@ function calcPriceBreakdown() {
 				$('[name="pb_final_price_' + number + '"]').text(0);
 			}
 		})
-	}
+	} */
 }
 
 function pCalcPriceBreakdown() {

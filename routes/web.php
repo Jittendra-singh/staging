@@ -123,6 +123,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::get('post-an-event/{id?}', 'postEvent')->name('front-post-a-event');
         Route::post('manage-ticket-type-html/{id?}' , 'manageTicketTypeHtml')->name('manage-ticket-type-html');
         Route::post('save-ticket-type' , 'saveTicketType')->name('save-ticket-type');
+        Route::post('update-ticket-status/{id}' , 'updateTicketStatus')->name('update-ticket-status');
         Route::get('duplicate-an-event/{slug}', 'duplicateAnEvent')->name('front-duplicate-an-event');
         Route::post('save-cleanup-basic-details', 'saveCleanUpBasicDetails')->name('front-save-cleanup-basic-details');
         Route::post('save-cleanup-media-details', 'saveCleanUpMediaDetails')->name('front-save-cleanup-media-details');

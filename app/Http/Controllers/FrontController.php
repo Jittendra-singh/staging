@@ -1403,6 +1403,16 @@ class FrontController extends Controller
         }
         return $this->generateJsonResponse(true, 'Event publish status updated successfully.',route('view-event-details', ['slug' => $event->slug]));
     }
+    public function updateTicketStatus($id){
+        try {
+            $eventTicket = EventTicket::findOrFail(decrypt($id));
+            $eventTicket->is_active = $eventTicket->is_active==1?0:1;
+            $eventTicket->save();
+        } catch (\Exception $e) {
+            return $this->generateJsonResponse(false, 'Failed to update event ticket status.');
+        }
+        return $this->generateJsonResponse(true, 'Event ticket status updated successfully.');
+    }
 
     public function contactLists(){
         $leads = OrganiserLead::where('organiser_id',auth()->guard('front')->user()->id)->latest()->get();
