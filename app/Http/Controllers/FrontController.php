@@ -1972,7 +1972,7 @@ class FrontController extends Controller
         if(!$widget){
             abort(404, 'Widget not found.');
         }
-        $widget->is_active = $widget->is_active ? 0 : 1;
+        $widget->is_active = $widget->is_active==1 ? 0 : 1;
         $widget->save();
         $this->setFlashSession(true, 'Widget status updated successfully.');
         return redirect()->back();

@@ -7334,12 +7334,16 @@ ul.list-styled {
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .mobile-login-btn,.mobile-dashboard-btn{
-        display: block!important;
+
+    .mobile-login-btn,
+    .mobile-dashboard-btn {
+        display: block !important;
     }
-    .vertical_nav{
-        top: 49px!important;
+
+    .vertical_nav {
+        top: 49px !important;
     }
+
     .organizer-detail-page .container {
         padding: 0 15px;
     }
@@ -7902,13 +7906,23 @@ footer p {
     color: #22c55e;
     background-color: rgb(220 252 231 / 1);
 }
+
 .badge.custom-badge-danger {
     padding: 0.4rem 0.75rem;
     text-transform: uppercase;
     border-radius: 1rem;
     color: #ff5050;
     background-color: #ffe8e8;
-}    
+}
+
+.badge.custom-badge-warning {
+    padding: 0.4rem 0.75rem;
+    text-transform: uppercase;
+    border-radius: 1rem;
+    background: #ffe94b;
+    color: black;
+}
+
 .badge.custom-badge-pending {
     padding: 0.4rem 0.75rem;
     text-transform: uppercase;
@@ -7916,13 +7930,17 @@ footer p {
     color: gray;
     background: #e3e3e3;
 }
-.mobile-login-btn,.mobile-dashboard-btn{
-    padding: 3px 8px!important;
-    border: none!important;
+
+.mobile-login-btn,
+.mobile-dashboard-btn {
+    padding: 3px 8px !important;
+    border: none !important;
 }
-.mobile-dashboard-btn{
+
+.mobile-dashboard-btn {
     background-color: #34D399 !important;
 }
-.dropdown-menu{
-    z-index: 11111!important;
+
+.dropdown-menu {
+    z-index: 11111 !important;
 }

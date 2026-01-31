@@ -164,7 +164,10 @@
 														<div class="card-event-dt">
 															<h5 class="m-0">{{$volunteer->name}}</h5>
 															<small>{{$volunteer->email_address}}</small>
-															<p class="mt-1">{{$event->event_name}}</p>
+															<p class="mt-1 mb-0">{{$event->event_name}}</p>
+															@if($registration->checkin!=1 && $registration->community_form_status=='requested')
+															<span class="badge custom-badge-warning mt-1">Certificate Requested</span>
+															@endif 
 														</div>
 													</div>
 													<div class="dropdown">

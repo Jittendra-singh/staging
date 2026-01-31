@@ -140,7 +140,7 @@
                                                         <td>{{$data->location}}</td>	
                                                         <td>{{$data->created_at}}</td>
                                                         <td>
-                                                            @if($data->status)
+                                                            @if($data->is_active)
                                                                 <span class="text-success">Active</span>
                                                             @else
                                                                 <span class="text-danger">Inactive</span>
@@ -157,7 +157,7 @@
                                                                         <i class="fa-solid fa-eye"></i> Preview Widget
                                                                     </a>
                                                                     <a class="dropdown-item" href="{{route('front-active-inactive-widget', ['id' => encrypt($data->id)])}}">
-                                                                        <i class="fa-solid fa-ban"></i> {{$data->status ? 'Inactive Now' : 'Active Now'}}
+                                                                        <i class="fa-solid fa-ban"></i> {{$data->is_active==1 ? 'Deactivate Now' : 'Activate Now'}}
                                                                     </a>
                                                                     <a class="dropdown-item delete-record" data-url="{{route('front-delete-widget', ['id' => encrypt($data->id)])}}" href="javascript:void(0);">
                                                                         <i class="fa-solid fa-trash-can"></i> Delete
