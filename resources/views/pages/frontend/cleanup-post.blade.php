@@ -640,6 +640,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                         @endphp
                                         <form method="post" action="{{ route('front-save-cleanup-ticket-details') }}">
                                             @csrf
+                                            <input type="hidden" name="save_ticket_type_url" id="save_ticket_type_url" value="{{route('save-ticket-type')}}">
                                             <input type="hidden" name="event_id" class="event_instance"
                                                 value="{{ $form_data->encrypted_id ?? 0 }}">
                                             <div class="tab-from-content">

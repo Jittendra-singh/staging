@@ -2381,7 +2381,8 @@ function openTicketTypePopup(control) {
 	});
 }
 function submitTicketTypeForm() {
-	var url = $(document).find('form#ticketTypeForm').attr('action');
+	//var url = $(document).find('form#ticketTypeForm').attr('action');
+	var url = $('#save_ticket_type_url').val();
 	var formData = $(document).find('form#ticketTypeForm').serialize();
 	$('#save_ticket_type_btn').attr('disabled', true);
 	$('#save_ticket_type_btn').text('Saving...');
