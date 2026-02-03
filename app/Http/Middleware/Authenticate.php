@@ -30,7 +30,11 @@ class Authenticate extends Middleware
             }
         }  else if($action['middleware'][1]=='guest' || $action['middleware'][1]=='auth:web'){
             if(!Auth::guard('web')->check()){
-                return route('login');
+                if(Auth::guard('front')->check()){
+                    return route('front-dashboard');
+                } else {
+                    return route('login');
+                }
             } else {
                 return route('dashboard');
             }

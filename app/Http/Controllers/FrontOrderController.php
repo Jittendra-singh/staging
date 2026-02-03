@@ -1151,7 +1151,7 @@ class FrontOrderController extends Controller
                                 ->where('csz_id', $request->checkout_pincode)
                                 ->first();
             if ($existingAlert) {
-                $this->setFlashSession(false, "Weekly alert already exists for this zip code.");
+                $this->setFlashSession(false, "You are already receiving alerts for this ZIP code.");
                 return redirect()->back();
             }
         }
