@@ -1843,6 +1843,7 @@ $(document).ready(function () {
 		}); */
 	});
 	$('.ticket_checkin_toggle').change(function () {
+		// checking toggle 
 		var url = $(this).attr('url');
 		var control = this;
 		$(control).attr('disabled', 'disabled');
