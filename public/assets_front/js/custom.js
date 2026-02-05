@@ -2149,7 +2149,7 @@ $(document).ready(function () {
 			$('#stripe_email').focus();
 			return false;
 		}
-		$(this).text('Loading..');
+		$(this).text('Connecting..');
 		$(this).attr('disabled', 'disabled');
 		$.ajax({
 			url: url,
@@ -2273,6 +2273,13 @@ $(document).ready(function () {
 			}
 		});
 	});
+	$(document).on('click', '.menu--item__has_sub_menu', function () {
+		if ($(this).hasClass('menu--subitens__opened')) {
+			$(this).removeClass('menu--subitens__opened');
+		} else {
+			$(this).addClass('menu--subitens__opened');
+		}
+	});
 
 	fieldmasking();
 });
@@ -2330,6 +2337,42 @@ function pCalcPriceBreakdown() {
 		$(document).find('#pb_final_price').text(0);
 	}
 }
+
+function disconnectStripeAccount(control) {
+	var url = $(control).attr('url');
+	Swal.fire({
+		title: "Are you sure?",
+		text: `You want to disconnect your Stripe account?`,
+		icon: "warning",
+		showCancelButton: true,
+		confirmButtonColor: '#3085d6',
+		cancelButtonColor: '#d33',
+		confirmButtonText: 'Yes, disconnect it!'
+	}).then((willDelete) => {
+		if (willDelete.isConfirmed) {
+			$(control).text('Disconnecting...');
+			$(control).attr('disabled', 'disabled');
+			$.ajax({
+				url: url,
+				method: 'POST',
+				data: {},
+				success: function (response) {
+					if (response.status) {
+						showError(response.message, 'success');
+						setTimeout(() => {
+							window.location.reload();
+						}, 350);
+					}
+					else {
+						showError(response.message, 'error');
+					}
+				}
+			});
+		}
+	});
+}
+
+
 //for alters    
 let showAlert = show_alert || '';
 showError(showAlert.message, showAlert.class);

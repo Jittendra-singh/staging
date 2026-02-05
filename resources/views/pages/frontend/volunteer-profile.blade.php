@@ -92,7 +92,7 @@
 											<h5>Short Description</h5>
 											<p class="mb-0">{!! $user->organisation_short_description ?? 'No description provided.' !!}</p>
 										</div>
-										<div class="about-step">
+										<!-- <div class="about-step">
 											<h5>Connect Stripe</h5>
 											<div class="form-group">
 												@if(!empty($user->stripe_email) && !empty($user->stripe_account_id))
@@ -105,7 +105,7 @@
 												</div>
 												@endif 
 											</div>
-										</div>
+										</div> -->
 										<div class="about-step">
 											<h5>Find us on</h5>
 											<div class="social-links">

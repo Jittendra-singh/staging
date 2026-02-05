@@ -43,18 +43,15 @@
         <div class="hero-banner">
             <div class="container mb-5">
                 <div class="row align-items-center">
-                    <div class="col-sm-12">
-                        <div class="hero-banner-content" data-aos="fade-right" data-aos-offset="200" data-aos-duration="800"
-                            data-aos-easing="ease-in-sine">
-                            <h2 class="text-black">Get Weekly Cleanup Alerts Near You</h2>
-                            <p class="text-black">Sign up to receive weekly cleanup updates near you (within 15 miles of your ZIP code). You can also opt in to our quarterly newsletter. <br/>Unsubscribe anytime - we never sell your data.</p>
-                            <p class="text-black">NOTE: Check your inbox to confirm your subscription.</p>
-                        </div>
-                    </div>
                     <div class="col-sm-12 col-lg-12">
                         <div class="search-form main-form" data-aos="fade-left" data-aos-anchor="#example-anchor" data-aos-duration="800">
                             <div class="row g-3">
-                                <div class="col-sm-8 offset-sm-2 rs">
+                                <div class="col-sm-12 text-center">
+                                    <h3 class="text-black"><b>Get Weekly Cleanup Alerts Near You</b></h3>
+                                    <p class="text-black">Sign up to receive weekly cleanup updates near you (within 15 miles of your ZIP code). You can also opt in to our quarterly newsletter. <br/>Unsubscribe anytime - we never sell your data.</p>
+                                    <p class="text-primary m-0">NOTE: Check your inbox to confirm your subscription.</p>
+                                </div>
+                                <div class="col-lg-8 offset-lg-2 col-sm-12 rs">
                                     <label class="mb-2">What would you like to receive?</label>
                                     <div class="btn-group w-100 receive-type-box" role="group" > 
                                         <a href="javascript:void(0);" onclick="changeCreateAlertForm('weeklyalerts',this);" class="btn btn-outline-primary px-3 py-2 active text-white m-2">

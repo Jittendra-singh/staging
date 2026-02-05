@@ -7944,3 +7944,11 @@ footer p {
 .dropdown-menu {
     z-index: 11111 !important;
 }
+
+.menu--item__has_sub_menu.menu--subitens__opened {
+    background: #ffffff;
+}
+
+.sub_menu--link.active {
+    background: #e8f7f7;
+}

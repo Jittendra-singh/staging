@@ -265,7 +265,7 @@
                                 </div>
                             @endforeach
                         </div>
-                        <div class="mt-2" data-aos="fade-up" data-aos-duration="800">
+                        <div class="mt-2">
                             {{ $hosting_events->links() }}
                         </div>
                     </div>

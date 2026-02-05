@@ -573,14 +573,14 @@ $is_session = session()->get('checkout_event');
                             <span class="menu--label">Registration Lists</span>
                         </a>
                     </li>
-                    <li class="menu--item">
+                    <!-- <li class="menu--item">
                         <a href="{{ route('front-sales-report') }}"
                             class="menu--link {{ url()->current() == route('front-sales-report') ? 'active' : '' }}"
                             title="Sales Report" data-bs-toggle="tooltip" data-bs-placement="right">
                             <i class="fa-solid fa-bar-chart menu--icon"></i>
                             <span class="menu--label">Sales Report</span>
                         </a>
-                    </li>
+                    </li> -->
                     <li class="menu--item">
                         <a href="{{ route('contact-lists') }}"
                             class="menu--link {{ url()->current() == route('contact-lists') ? 'active' : '' }}"
@@ -589,7 +589,24 @@ $is_session = session()->get('checkout_event');
                             <span class="menu--label">Inbox</span>
                         </a>
                     </li>
-                    @endif
+                    <li class="menu--item menu--item__has_sub_menu {{ url()->current() == route('front-sales-report') ? 'menu--subitens__opened' : '' }} {{ url()->current() == route('front-orders') ? 'menu--subitens__opened' : '' }} {{ url()->current() == route('front-stripe-connect') ? 'menu--subitens__opened' : '' }}">
+                        <a class="menu--link">
+                            <i class="menu--icon fa fa-dollar"></i>
+                            <span class="menu--label">Financials</span>
+                        </a>
+                        <ul class="sub_menu mt-0">
+                            <li>
+                                <a href="{{ route('front-stripe-connect') }}" class="sub_menu--link {{ url()->current() == route('front-stripe-connect') ? 'active' : '' }}" title="Payment Setup" data-bs-toggle="tooltip" data-bs-placement="right">Stripe Connect</a>
+                            </li>
+                            <li>
+                                <a href="{{ route('front-sales-report') }}" class="sub_menu--link {{ url()->current() == route('front-sales-report') ? 'active' : '' }}" title="Attendees & Bookings" data-bs-toggle="tooltip" data-bs-placement="right">Paid Tickets & Donations</a>
+                            </li>
+                            <li>
+                                <a href="{{ route('front-orders') }}" class="sub_menu--link {{ url()->current() == route('front-orders') ? 'active' : '' }}" title="Revenue and Donation Summary" data-bs-toggle="tooltip" data-bs-placement="right">Orders</a>
+                            </li>
+                        </ul>
+                    </li>
+                    @else 
                     <li class="menu--item">
                         <a href="{{ route('front-orders') }}"
                             class="menu--link {{ url()->current() == route('front-orders') ? 'active' : '' }}"
@@ -598,6 +615,7 @@ $is_session = session()->get('checkout_event');
                             <span class="menu--label">Orders</span>
                         </a>
                     </li>
+                    @endif
 
                     <li class="menu--item">
                         <a href="{{ route('front-embedded-widget') }}" class="menu--link {{ url()->current() == route('front-embedded-widget') ? 'active' : '' }}" title="Embedded Widget"

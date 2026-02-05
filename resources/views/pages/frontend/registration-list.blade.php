@@ -17,7 +17,9 @@
 							@endphp     
 							<x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs"/>
 						</div>
-                        
+						<button class="primary-btn w-fit download-csv" type="button" >
+							<i class="fa-solid fa-download "></i>Download CSV
+						</button>
 					</div>
 					<div class="col-md-12">
 						<div class="main-card mt-5">
@@ -35,6 +37,15 @@
 													@endforeach
 												</select>
 											</div> 
+										</div>
+										<div class="col-md-2">
+											<div class="form-group dropdown bootstrap-select dropdown">
+												<select class="selectpicker" name="event_type">
+													<option value="">Select Event Type</option>
+													<option value="1" @selected(request()->event_type == '1')>Upcoming</option>
+													<option value="2" @selected(request()->event_type == '2')>Ended</option>
+												</select>
+											</div>
 										</div>
 										<div class="col-md-2">
 											<div class="form-group">
@@ -59,17 +70,24 @@
 												</select>
 											</div>
 										</div>
-										<div class="col-md-3">
+										<div class="col-md-1 ps-0">
 											<div class="rs mt_r4 ps-3">
 												<div class="nav custom2-tabs btn-group justify-content-start gap-2 row-gap-3" >
-													<button class="primary-btn w-fit" type="submit" >Filter</button>
+													<button class="primary-btn w-fit" type="submit" ><i class="fa fa-search"></i></button>
+												</div>
+											</div>
+										</div>
+										<!-- <div class="col-md-3">
+											<div class="rs mt_r4 ps-3">
+												<div class="nav custom2-tabs btn-group justify-content-start gap-2 row-gap-3" >
+													<button class="primary-btn w-fit" type="submit" >Search</button>
 													<a href="{{ url()->current() }}" class="primary-btn w-fit">Reset</a>
 													<button class="primary-btn w-fit download-csv" type="button" >
 														<i class="fa-solid fa-download "></i>Download CSV
 													</button>
 												</div>
 											</div>
-										</div>
+										</div> -->
 									</div>
 								</form>
 							</div>

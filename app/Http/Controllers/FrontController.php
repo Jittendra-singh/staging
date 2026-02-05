@@ -1535,6 +1535,22 @@ class FrontController extends Controller
         $organising_events = auth()->guard('front')->user()->allControlEvents();
         return view('pages.frontend.sales-report', ['orders'=>$orders,'start_date'=>$startDate,'end_date'=>$endDate,'events'=>$organising_events, 'seo_details' => (object)['title' => 'Sales Report']]);
     }
+    public function stripeConnect(){
+        return view('pages.frontend.connect-stripe', ['seo_details' => (object)['title' => 'Connect Stripe']]);
+    }
+    public function disconnectStripeConnect(){
+        $user_id = auth()->guard('front')->user()->id;
+        // i need to udpate these field of volunteer stripe_email=null, stripe_account_id=null, stripe_payouts_enabled=0, stripe_charges_enabled=0, stripe_raw=null, stripe_connect_dt=null
+        Volunteer::where('id', $user_id)->update([
+            'stripe_email' => null,
+            'stripe_account_id' => null,
+            'stripe_payouts_enabled' => 0,
+            'stripe_charges_enabled' => 0,
+            'stripe_raw' => null,
+            'stripe_connect_dt' => null,
+        ]);
+        return $this->generateJsonResponse(true, 'Stripe account disconnected successfully.');
+    }
     public function registrationList(){
         $organising_events = auth()->guard('front')->user()->allControlEvents();
         

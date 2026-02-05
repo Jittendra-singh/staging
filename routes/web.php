@@ -137,6 +137,8 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         
         
         /**EVENT REGISTRATION */
+        Route::get('stripe-connect', 'stripeConnect')->name('front-stripe-connect');
+        Route::post('disconnect-stripe-connect', 'disconnectStripeConnect')->name('front-disconnect-stripe-connect');
         Route::get('sales-report', 'salesReport')->name('front-sales-report');
         Route::get('registration-list', 'registrationList')->name('front-registration-list');
         Route::post('post-registration-notes', 'postRegistrationNotes')->name('front-post-registration-notes');

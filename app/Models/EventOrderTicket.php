@@ -72,6 +72,16 @@ class EventOrderTicket extends Pivot
                                 ->orWhere('phone', 'like', "%{$search}%");
                         });
                     }
+                    if (request()->event_type) {
+                        $q->whereHas('event', function($subQ){
+                            $now = now();
+                            if(request()->event_type==1){
+                                $subQ->where("start_datetime" ,">",$now);
+                            }elseif(request()->event_type==2){
+                                $subQ->where("end_datetime" , "<",$now);
+                            }
+                        });
+                    }
                 });
     }
     /**relations */
