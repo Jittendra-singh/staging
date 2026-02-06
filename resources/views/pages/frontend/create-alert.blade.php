@@ -46,7 +46,7 @@
                     <div class="col-sm-12 col-lg-12">
                         <div class="search-form main-form" data-aos="fade-left" data-aos-anchor="#example-anchor" data-aos-duration="800">
                             <div class="row g-3">
-                                <div class="col-sm-12 text-center">
+                                <div class="col-lg-8 offset-lg-2 col-sm-12 text-center">
                                     <h3 class="text-black"><b>Get Weekly Cleanup Alerts Near You</b></h3>
                                     <p class="text-black">Sign up to receive weekly cleanup updates near you (within 15 miles of your ZIP code). You can also opt in to our quarterly newsletter. <br/>Unsubscribe anytime - we never sell your data.</p>
                                     <p class="text-primary m-0">NOTE: Check your inbox to confirm your subscription.</p>
@@ -67,67 +67,75 @@
                             <form id="weekly_alert_box" method="post" action="{{ route('submit-create-alert') }}">
                             @csrf
                             <div class="row g-3 mt-3">
-                                <div class="col-sm-6 mt-0">
-                                    <label>First Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="text form-control h_50" name="first_name" placeholder="First Name" required>
-                                </div>
-                                <div class="col-sm-6 mt-0">
-                                    <label>Last Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="text form-control h_50" name="last_name" placeholder="Last Name" required>
-                                </div>
-                                <div class="col-lg-6 mt-0">
-                                    <label>Email Address <span class="text-danger">*</span></label>
-                                    <input type="email" class="text form-control h_50" name="email" placeholder="Email Address" required>
-                                </div>
-                                <!-- <div class="col-lg-6 mt-0">
-                                    <label>Zipcode <span class="text-danger">*</span></label>
-                                    <input type="text" class="text form-control h_50" name="zipcode" placeholder="Zipcode" required>
-                                </div> -->
-                                <div class="col-lg-6 mt-0">
-                                    <div class="form-group">
-                                        <label>Zipcode <span class="text-danger">*</span></label>
-                                        <select datatype="pincode" class="form-select select2ajax city_state_zip" id="pincode" name="checkout_pincode" required>
-                                        </select>
+                                <div class="col-lg-8 offset-lg-2 col-sm-12 mt-3">
+                                    <div class="row">
+                                        <div class="col-sm-6 mt-0 mb-2">
+                                            <label>First Name <span class="text-danger">*</span></label>
+                                            <input type="text" class="text form-control h_50 specialtextonlymask" name="first_name" placeholder="First Name" required>
+                                        </div>
+                                        <div class="col-sm-6 mt-0 mb-2">
+                                            <label>Last Name <span class="text-danger">*</span></label>
+                                            <input type="text" class="text form-control h_50 specialtextonlymask" name="last_name" placeholder="Last Name" required>
+                                        </div>
+                                        <div class="col-lg-6 mt-0 mb-2">
+                                            <label>Email Address <span class="text-danger">*</span></label>
+                                            <input type="email" class="text form-control h_50" name="email" placeholder="Email Address" required>
+                                        </div>
+                                        <!-- <div class="col-lg-6 mt-0">
+                                            <label>Zipcode <span class="text-danger">*</span></label>
+                                            <input type="text" class="text form-control h_50" name="zipcode" placeholder="Zipcode" required>
+                                        </div> -->
+                                        <div class="col-lg-6 mt-0 mb-2">
+                                            <label>Zipcode <span class="text-danger">*</span></label>
+                                            <div class="form-group">
+                                                <select datatype="pincode" class="form-select select2ajax city_state_zip" id="pincode" name="checkout_pincode" required>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <!-- <div class="col-lg-12 mt-0">
+                                            <div class="form-group">
+                                                <label for="newsletter" class="mb-0">
+                                                    <input name="newsletter" type="checkbox" id="newsletter" class="me-2" value="1" />
+                                                    Receive our quarterly newsletter
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-12 mt-0">
+                                            <div class="form-group">
+                                                <label for="create_account" class="mb-0">
+                                                    <input name="create_account" type="checkbox" id="create_account" class="me-2" value="1" required />
+                                                    I understand that an account will be created to send me cleanup alerts.
+                                                </label>
+                                            </div>
+                                        </div> -->
                                     </div>
                                 </div>
-                                <!-- <div class="col-lg-12 mt-0">
-                                    <div class="form-group">
-                                        <label for="newsletter" class="mb-0">
-                                            <input name="newsletter" type="checkbox" id="newsletter" class="me-2" value="1" />
-                                            Receive our quarterly newsletter
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-lg-12 mt-0">
-                                    <div class="form-group">
-                                        <label for="create_account" class="mb-0">
-                                            <input name="create_account" type="checkbox" id="create_account" class="me-2" value="1" required />
-                                            I understand that an account will be created to send me cleanup alerts.
-                                        </label>
-                                    </div>
-                                </div> -->
                             </div>
-                            <div class="d-flex justify-content-center gap-2 pt-2 mt-3">
+                            <div class="d-flex justify-content-center gap-2 pt-3 mt-3">
                                 <button type="submit" class="primary-btn">Get Weekly Alerts</button>
                             </div>
                             </form>
                             <form id="quarterly_newsletter_box" method="post" action="{{ route('submit-create-newsletter') }}" style="display: none;">
                             @csrf
                             <div class="row g-3 mt-3">
-                                <div class="col-sm-6 col-lg-4 mt-0">
-                                    <label>First Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="text form-control h_50" name="first_name" placeholder="First Name" required>
-                                </div>
-                                <div class="col-sm-6 col-lg-4 mt-0">
-                                    <label>Last Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="text form-control h_50" name="last_name" placeholder="Last Name" required>
-                                </div>
-                                <div class="col-sm-12 col-lg-4 mt-0">
-                                    <label>Email Address <span class="text-danger">*</span></label>
-                                    <input type="email" class="text form-control h_50" name="email" placeholder="Email Address" required>
+                                <div class="col-lg-8 offset-lg-2 col-sm-12">
+                                    <div class="row">
+                                        <div class="col-sm-6 mt-0 mb-2">
+                                            <label>First Name <span class="text-danger">*</span></label>
+                                            <input type="text" class="text form-control h_50" name="first_name" placeholder="First Name" required>
+                                        </div>
+                                        <div class="col-sm-6 mt-0 mb-2">
+                                            <label>Last Name <span class="text-danger">*</span></label>
+                                            <input type="text" class="text form-control h_50" name="last_name" placeholder="Last Name" required>
+                                        </div>
+                                        <div class="col-sm-12 mt-0 mb-2">
+                                            <label>Email Address <span class="text-danger">*</span></label>
+                                            <input type="email" class="text form-control h_50" name="email" placeholder="Email Address" required>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="d-flex justify-content-center gap-2 pt-2 mt-3">
+                            <div class="d-flex justify-content-center gap-2 pt-3 mt-3">
                                 <button type="submit" class="primary-btn">Get Quarterly Newsletter</button>
                             </div>
                             </form>

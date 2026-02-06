@@ -2738,6 +2738,29 @@ function fieldmasking() {
 		});
 
 	}
+	if ($('.specialtextonlymask').length != 0) {
+		document.querySelectorAll('.specialtextonlymask').forEach(namefield => {
+
+			var nameMask = IMask(namefield, {
+				mask: /^[A-Za-z\s'-]*$/,
+				prepare: function (str, masked) {
+					// Remove numbers & disallowed special characters
+					str = str.replace(/[^A-Za-z\s'-]/g, '');
+
+					// Prevent multiple consecutive hyphens or apostrophes
+					str = str.replace(/([-']){2,}/g, '$1');
+
+					// Prevent starting with hyphen or apostrophe
+					if (masked.value.length === 0) {
+						str = str.replace(/^[-']+/g, '');
+					}
+
+					return str;
+				}
+			});
+
+		});
+	}
 }
 function redirectWithMessage(control, type = 'error') {
 	var msg = $(control).attr('message');

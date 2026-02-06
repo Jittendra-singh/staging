@@ -41,9 +41,9 @@
 										<div class="col-md-2">
 											<div class="form-group dropdown bootstrap-select dropdown">
 												<select class="selectpicker" name="event_type">
-													<option value="">Select Event Type</option>
+													<option value="">Select Event Status</option>
 													<option value="1" @selected(request()->event_type == '1')>Upcoming</option>
-													<option value="2" @selected(request()->event_type == '2')>Ended</option>
+													<option value="2" @selected(request()->event_type == '2')>Past</option>
 												</select>
 											</div>
 										</div>
@@ -289,10 +289,17 @@
 														<p>Check-in</p>
 														<div class="form-group">
 															<div class="d-flex align-items-start">
+																@if(empty($registration->waiver_filled_at) || $registration->rsvp_confirmation!=1)
+																<label class="btn-switch m-0 me-3">
+																	<input type="checkbox" disabled {{ $registration->checkin == 1 ? 'checked' : '' }} class="ticket_checkin_toggle">
+																	<span class="checkbox-slider" url="" onclick="redirectWithMessage(this)" message="{{$registration->rsvp_confirmation!=1?'You can\'t check-in before RSVP confirmation.':'You can\'t check-in before waiver signing.'}}"></span>
+																</label>
+																@else 
 																<label class="btn-switch m-0 me-3">
 																	<input type="checkbox" {{ $registration->checkin == 1 ? 'checked' : '' }} class="ticket_checkin_toggle" data-ticket-id="{{ $registration->encrypted_id }}" url="{{ route('ticket-mark-checkin',[$registration->encrypted_id]) }}">
 																	<span class="checkbox-slider" ></span>
 																</label>
+																@endif
 															</div>
 														</div>
 													</div>	
