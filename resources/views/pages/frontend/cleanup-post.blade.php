@@ -312,6 +312,23 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                             </div>
                                                             <div class="p-4 bp-form main-form">
                                                                 <div class="row g-4">
+                                                                    @php 
+                                                                    $longerThanOneWeek = false;
+                                                                    $sDate = old('start_datetime') ? old('start_datetime') : ($form_data->start_datetime ?? '');
+                                                                    $eDate = old('end_datetime') ? old('end_datetime') : ($form_data->end_datetime ?? '');
+                                                                    if(!empty($sDate) && !empty($eDate)){
+                                                                        $sDate = \Carbon\Carbon::parse($sDate);
+                                                                        $eDate = \Carbon\Carbon::parse($eDate);
+                                                                        $diffDays = $sDate->diffInDays($eDate);
+
+                                                                        if ($diffDays >= 7) {
+                                                                            $longerThanOneWeek = true;
+                                                                        } else {
+                                                                            $longerThanOneWeek = false;
+                                                                        }
+                                                                    }
+                                                                    @endphp 
+                                                                    <p class="text-secondary m-0" id="longerThanOneWeekText" style="{{$longerThanOneWeek?'':'display: none'}};">NOTE: This cleanup is longer than one week. If this is a recurring event, we recommend creating individual cleanups using the clone feature to keep attendance and reporting accurate.</p>
                                                                     <div class="col-md-6">
                                                                         <label class="form-label  fs-6">Start Date Time.*</label>
                                                                         <div class="loc-group position-relative">
@@ -333,31 +350,33 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                                <div class="row g-4 mt-4">
-                                                                    <div class="col-md-6">
-                                                                        <label class="form-label fs-6">Event Page Publish Date*</label>
-                                                                        <div class="loc-group position-relative">
-                                                                            <input autocomplete="off"
-                                                                                class="form-control h_50 datepicker-here-pp"
-                                                                                data-language="en"
-                                                                                name="site_publish_date" id="site_publish_date" type="text"
-                                                                                placeholder="YYYY/MM/DD"
-                                                                                value="{{ old('site_publish_date', $form_data->site_publish_date ?? date('Y-m-d')) }}" required />
-                                                                            <span class="absolute-icon">
-                                                                                <i
-                                                                                    class="fa-solid fa-calendar-days"></i></span>
+                                                                <div class="form-group mt-4">
+                                                                    <div class="row g-4">
+                                                                        <div class="col-md-6">
+                                                                            <label class="form-label fs-6">Event Page Publish Date*</label>
+                                                                            <div class="loc-group position-relative">
+                                                                                <input autocomplete="off"
+                                                                                    class="form-control h_50 datepicker-here-pp"
+                                                                                    data-language="en"
+                                                                                    name="site_publish_date" id="site_publish_date" type="text"
+                                                                                    placeholder="YYYY/MM/DD"
+                                                                                    value="{{ old('site_publish_date', $form_data->site_publish_date ?? date('Y-m-d')) }}" required />
+                                                                                <span class="absolute-icon">
+                                                                                    <i
+                                                                                        class="fa-solid fa-calendar-days"></i></span>
+                                                                            </div>
                                                                         </div>
-                                                                    </div>
-                                                                    <div class="col-md-6">
-                                                                        <label class="form-label fs-6">Event Page Expiry Date*</label>
-                                                                        <div class="loc-group position-relative">
-                                                                            <input autocomplete="off" name="site_depublish_date"
-                                                                                class="form-control h_50 datepicker-here-pp" id="site_depublish_date"
-                                                                                data-language="en" type="text"
-                                                                                placeholder="YYYY/MM/DD"
-                                                                                value="{{ old('site_depublish_date', $form_data->site_depublish_date ?? '') }}" required />
-                                                                            <span class="absolute-icon"><i
-                                                                                    class="fa-solid fa-calendar-days"></i></span>
+                                                                        <div class="col-md-6">
+                                                                            <label class="form-label fs-6">Event Page Expiry Date*</label>
+                                                                            <div class="loc-group position-relative">
+                                                                                <input autocomplete="off" name="site_depublish_date"
+                                                                                    class="form-control h_50 datepicker-here-pp" id="site_depublish_date"
+                                                                                    data-language="en" type="text"
+                                                                                    placeholder="YYYY/MM/DD"
+                                                                                    value="{{ old('site_depublish_date', $form_data->site_depublish_date ?? '') }}" required />
+                                                                                <span class="absolute-icon"><i
+                                                                                        class="fa-solid fa-calendar-days"></i></span>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>

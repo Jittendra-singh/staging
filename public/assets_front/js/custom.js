@@ -852,6 +852,19 @@ $(document).ready(function () {
 					//maxDate:jQuery('#end_datetime').val()?jQuery('#end_datetime').val():false
 				})
 			},
+			onChangeDateTime: function (ct) {
+				if ($('#end_datetime').val() != '') {
+					var startDate = new Date(ct);
+					var endDate = new Date($('#end_datetime').val());
+					var diffTime = Math.abs(endDate - startDate);
+					var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+					if (diffDays >= 7) {
+						$('#longerThanOneWeekText').show();
+					} else {
+						$('#longerThanOneWeekText').hide();
+					}
+				}
+			}
 			/* onChangeDateTime: function (ct) {
 				if (ct) {
 					var dateEnd2 = new Date(ct);
@@ -888,6 +901,19 @@ $(document).ready(function () {
 				var year = dateEnd.getFullYear();
 				var formattedDate = year + '-' + month + '-' + day;
 				$('#site_depublish_date').val(formattedDate);
+
+				// get #start_datetime value and if it's not empty then compare #end_datetime with #start_datetime and check that if date have more than one week difference, if yes then show #longerThanOneWeekText div and if no then hide it 
+				if ($('#start_datetime').val() != '') {
+					var startDate = new Date($('#start_datetime').val());
+					var endDate = new Date(ct);
+					var diffTime = Math.abs(endDate - startDate);
+					var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+					if (diffDays >= 7) {
+						$('#longerThanOneWeekText').show();
+					} else {
+						$('#longerThanOneWeekText').hide();
+					}
+				}
 			}
 		});
 		$('#site_publish_date').datetimepicker({
