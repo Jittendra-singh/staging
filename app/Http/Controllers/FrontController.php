@@ -1601,10 +1601,11 @@ class FrontController extends Controller
                     'org_name'=>$event->creator->first_name.' '.$event->creator->last_name,
                     'volunteer'=>$volunteer->first_name.' '.$volunteer->last_name,
                     'event_name'=>$event->event_name,
-                    'dashboard_link'=>route('front-cleanup-attending'),
+                    //'dashboard_link'=>route('front-cleanup-attending'),
+                    'dashboard_link'=>$this->mailUrl('front-registration-list'),
                 ];
                 $sub = 'Community Service Request – '.$emailData['volunteer'].' for '.$event->event_name;
-                $this->sendEmail($event->creator->email_address, $sub, $emailData, "request-community-service-form");
+                $this->sendEmail('learningdcm@gmail.com', $sub, $emailData, "request-community-service-form");
                 $orderTicket->community_form_status = 'requested';
                 $orderTicket->checkin = 0;
                 $orderTicket->save();

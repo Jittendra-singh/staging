@@ -24,26 +24,26 @@
                     <div class="col-lg-3 col-md-3">
                         <div class="form-group mt-4">
                             <label class="form-label">Email Address*</label>
-                            <input class="form-control checkout-email email_address attendee-email" name="ticket[{{$name_counter}}][email_address]" type="text" placeholder="" required value="">
+                            <input class="form-control checkout-email email_address attendee-email" name="ticket[{{$name_counter}}][email_address]" type="text" placeholder="Enter email" required value="">
                         </div>
                     </div>
                     <div class="col-lg-3 col-md-3">
                         <div class="form-group mt-4">
                             <label class="form-label">First Name*</label> 
                             <input type="hidden" name="ticket[{{$name_counter}}][id]" class="ticket_id" value="{{$ticket_id}}">
-                            <input class="form-control first_name" name="ticket[{{$name_counter}}][first_name]" type="text" placeholder="" required value="">
+                            <input class="form-control first_name" name="ticket[{{$name_counter}}][first_name]" type="text" placeholder="Enter first name" required value="">
                         </div>
                     </div>
                     <div class="col-lg-3 col-md-3">
                         <div class="form-group mt-4">
                             <label class="form-label">Last Name*</label>
-                            <input class="form-control last_name" name="ticket[{{$name_counter}}][last_name]" type="text" placeholder="" value="" required>
+                            <input class="form-control last_name" name="ticket[{{$name_counter}}][last_name]" type="text" placeholder="Enter last name" value="" required>
                         </div>
                     </div>
                     <div class="col-lg-3 col-md-3">
                         <div class="form-group mt-4">
                             <label class="form-label">Attendee Phone* <span class="fs-7 text-info d-none">Start with +1</span></label>
-                            <input class="form-control phone usphonemask" name="ticket[{{$name_counter}}][phone]" type="text" placeholder="" value="" required>
+                            <input class="form-control phone usphonemask" name="ticket[{{$name_counter}}][phone]" type="text" placeholder="Enter phone" value="" required>
                         </div>
                     </div>
                     @if($event->ticket_questions)
@@ -67,13 +67,13 @@
                         <div class="col-lg-4 col-md-4 waiver-guardian d-none">
                             <div class="form-group mt-4">
                                 <label class="form-label">Guardian Name*</label>
-                                <input class="form-control guardian_name is_under_18" name="ticket[{{$name_counter}}][waiver_handler_name]" type="text" placeholder="">
+                                <input class="form-control guardian_name is_under_18" name="ticket[{{$name_counter}}][waiver_handler_name]" type="text" placeholder="Enter guardian name">
                             </div>
                         </div>
                         <div class="col-lg-4 col-md-4 waiver-guardian d-none">
                             <div class="form-group mt-4">
                                 <label class="form-label">Guardian Email*</label>
-                                <input class="form-control guardian_email is_under_18" name="ticket[{{$name_counter}}][waiver_handler_email]" type="text" placeholder="">
+                                <input class="form-control guardian_email is_under_18" name="ticket[{{$name_counter}}][waiver_handler_email]" type="text" placeholder="Enter guardian email">
                             </div>
                         </div>
                     </div>

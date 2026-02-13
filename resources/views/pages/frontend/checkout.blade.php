@@ -58,7 +58,7 @@ $user = auth()->guard('front')->check() ? auth()->guard('front')->user()->load([
                                         <div class="col-lg-12 col-md-12">
                                             <div class="form-group mt-4">
                                                 <label class="form-label">Email*</label>
-                                                <input class="form-control h_50 checkout-email email_address billing-email" type="text" name="checkout_email_address" required
+                                                <input class="form-control h_50 checkout-email email_address billing-email" placeholder="Enter your email" type="text" name="checkout_email_address" required
                                                     @if($user && $user->email_address)
                                                 value="{{$user->email_address ?? ''}}" readonly
                                                 @endif
@@ -68,7 +68,7 @@ $user = auth()->guard('front')->check() ? auth()->guard('front')->user()->load([
                                         <div class="col-lg-6 col-md-12">
                                             <div class="form-group mt-4">
                                                 <label class="form-label">First Name*</label>
-                                                <input class="form-control h_50 first_name" name="checkout_first_name" type="text" placeholder="" required
+                                                <input class="form-control h_50 first_name" name="checkout_first_name" type="text" required placeholder="Enter your first name"
                                                     @if($user && $user->first_name)
                                                 value="{{$user->first_name ?? ''}}" readonly
                                                 @endif
@@ -78,7 +78,7 @@ $user = auth()->guard('front')->check() ? auth()->guard('front')->user()->load([
                                         <div class="col-lg-6 col-md-12">
                                             <div class="form-group mt-4">
                                                 <label class="form-label">Last Name*</label>
-                                                <input class="form-control h_50 last_name" name="checkout_last_name" type="text" required
+                                                <input class="form-control h_50 last_name" name="checkout_last_name" type="text" required placeholder="Enter your last name"
                                                     @if($user && $user->last_name)
                                                 value="{{$user->last_name ?? ''}}" readonly
                                                 @endif
@@ -126,7 +126,7 @@ $user = auth()->guard('front')->check() ? auth()->guard('front')->user()->load([
                                         <div class="col-lg-6 col-md-12">
                                             <div class="form-group mt-4">
                                                 <label class="form-label">Phone <span class="fs-7 text-info d-none">Start with +1</span></label>
-                                                <input class="form-control h_50 phone usphonemask" name="phone" type="text"
+                                                <input class="form-control h_50 phone usphonemask" name="phone" type="text" placeholder="Enter your phone"
                                                     @if($user && $user->phone)
                                                 value="{{$user->phone ?? ''}}" readonly
                                                 @endif
@@ -141,6 +141,13 @@ $user = auth()->guard('front')->check() ? auth()->guard('front')->user()->load([
                                             </div>
                                         </div>
                                         @endif
+                                        <div class="col-sm-12">
+                                            <div class="form-group mt-4">
+                                                <label class="form-label" for="copy_buyer_info_to_attendee">
+                                                    <input type="checkbox" name="copy_buyer_info_to_attendee" class="form-check-input" id="copy_buyer_info_to_attendee" value="1"> Attendee is the same as buyer
+                                                </label>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

@@ -164,7 +164,7 @@ class FrontOrderController extends Controller
                 $event          = Event::findOrFail($ticket->event_id);
                 /**abort if organizer */
                 if($event->creator_id == $user->id){
-                    throw new CustomException("You are organizer of this event so can not buy any ticket.", 408); 
+                    throw new CustomException("Since you are the organizer of this event, you cannot be an attendee of the same event.", 408); 
                 }
                 /**abort if already in any parallel event */
                 $overlapping_event = $user->approvedAttendingEvents()->where(function($query) use($event){
@@ -1120,6 +1120,68 @@ class FrontOrderController extends Controller
         }
         $seo_details = (object)['title' => 'Create Weekly Alert'];
         return view('pages.frontend.create-alert', ['seo_details' => $seo_details]);
+    }
+    public function submitCreateWeeklyNewsletterAlert(){
+        $request = request();
+        request()->validate([
+            'first_name' => 'required',
+            'last_name' => 'required',
+            'email' => ['required', 'email', new \App\Rules\StrictEmail()],
+        ]); 
+
+        $is_weekly_alert = (isset($request->weekly_alert) && $request->weekly_alert==1)?true:false;
+        $is_newsletter_alert = (isset($request->newsletter_alert) && $request->newsletter_alert==1)?true:false;
+        
+        if($is_weekly_alert){
+            if(empty($request->checkout_pincode)){
+                $this->setFlashSession(false, "Please enter a valid ZIP code to subscribe to weekly alerts.");
+                return redirect()->back();
+            }
+            // create volunteer if not exists
+            $volunteer = Volunteer::where('email_address', $request->email)->first();
+            $pincode = '';
+            $cityStateZip = CityStateZip::find($request->checkout_pincode);
+            if(isset($cityStateZip->id)){
+                $pincode = $cityStateZip->zipcode;
+            }
+            if (!$volunteer) {
+                $volunteer = Volunteer::create([
+                    'first_name'    => $request->first_name,
+                    'last_name'     => $request->last_name,
+                    'email_address' => $request->email,
+                    'pincode' => $pincode,
+                    'city_id' => $request->checkout_pincode,
+                ]);
+            } else {
+                // check weekly alert already exists
+                $existingAlert = VolunteerAlert::where('volunteer_id', $volunteer->id)
+                                    ->where('csz_id', $request->checkout_pincode)
+                                    ->first();
+                if ($existingAlert) {
+                    $this->setFlashSession(false, "You are already receiving alerts for this ZIP code.");
+                    return redirect()->back();
+                }
+            }
+
+            $alertName = 'Weekly Cleanups Near '.$pincode;
+            $this->createWeeklyAlert($volunteer->id, $alertName, $pincode,2);
+        }
+        if($is_newsletter_alert){
+            $volunteerData = [
+                'first_name'    => $request->first_name,
+                'last_name'     => $request->last_name,
+                'email_address' => $request->email,
+            ];
+            $this->syncWithWPData($volunteerData,'Alert Page');
+        }
+        if($is_weekly_alert && $is_newsletter_alert){
+            $this->setFlashSession(true, "Thank you for subscribing to Weekly Cleanup Alerts & Quarterly Newsletter.");
+        } else if ($is_weekly_alert){
+            $this->setFlashSession(true, "Thank you for subscribing to Weekly Cleanup Alerts.");
+        } else if ($is_newsletter_alert){
+            $this->setFlashSession(true, "Thank you for subscribing to Quarterly Newsletter.");
+        }
+        return redirect()->route('front-create-alert');
     }
     public function submitCreateAlert(){
         $request = request();

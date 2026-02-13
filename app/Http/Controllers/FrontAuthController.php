@@ -163,7 +163,9 @@ class FrontAuthController extends Controller
                                             'status' => 1
                                         ])) {
             //return redirect()->route('front-post-a-event');
-            return redirect()->route('front-dashboard');
+            //return redirect()->route('front-dashboard');
+            return redirect()->intended(route('front-dashboard'));
+
         } else {
             $this->setFlashSession(false, 'Either the email address or password is incorrect or your email is still not activated yet.');
             return redirect()->route('front-login');

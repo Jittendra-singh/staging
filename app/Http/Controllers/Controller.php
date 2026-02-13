@@ -109,6 +109,20 @@ class Controller extends BaseController
         curl_close($curl);
         return $response;
     }
+    public function mailUrl($slug){
+        $checkUrl = route($slug);
+        if(strpos($checkUrl, 'volunteercleanup') !== false){
+            $parsedUrl = parse_url($checkUrl);
+
+            $remainingSlug = $parsedUrl['path'] ?? '';
+
+            $link = rtrim(config('app.laravelurl'), '/') . $remainingSlug;
+
+            return $link;
+        }else{
+            return $checkUrl;
+        }
+    }
     public function syncWithWP($volunteer,$tag=''){
         $url = config('app.wp_sync_url');
         $role = $volunteer->is_organiser ? 'Organizer' : 'Volunteer';

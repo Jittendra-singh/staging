@@ -2306,6 +2306,51 @@ $(document).ready(function () {
 			$(this).addClass('menu--subitens__opened');
 		}
 	});
+	$('#copy_buyer_info_to_attendee').change(function () {
+		if ($(this).prop('checked')) {
+			var fname = $('[name="checkout_first_name"]').val();
+			var lname = $('[name="checkout_last_name"]').val();
+			var email = $('[name="checkout_email_address"]').val();
+			var phone = $('[name="phone"]').val();
+			$('[name="ticket[1][email_address]"]').val(email);
+			$('[name="ticket[1][first_name]"]').val(fname);
+			$('[name="ticket[1][last_name]"]').val(lname);
+			$('[name="ticket[1][phone]"]').val(phone);
+			$('[name="ticket[1][email_address]"]').trigger('change');
+		} else {
+			var email = $('[name="checkout_email_address"]').val();
+			var ticketEmail = $('[name="ticket[1][email_address]"]').val();
+			if (ticketEmail == email) {
+				$('[name="ticket[1][email_address]"]').val('');
+				$('[name="ticket[1][first_name]"]').val('');
+				$('[name="ticket[1][last_name]"]').val('');
+				$('[name="ticket[1][phone]"]').val('');
+			}
+		}
+	});
+	$('.create_alert_checkbox').change(function () {
+		if ($(this).prop('checked')) {
+			$(this).parent('.option-card').addClass('active');
+		} else {
+			$(this).parent('.option-card').removeClass('active');
+		}
+		var checkWeeklyAlert = $('[name="weekly_alert"]').prop('checked');
+		var checkNewsletterAlert = $('[name="newsletter_alert"]').prop('checked');
+		if (checkWeeklyAlert) {
+			$('#pincode').attr('required', 'required');
+			$('.email-div').addClass('col-lg-6').removeClass('col-lg-12');
+			$('.zipcode-div').show();
+		} else {
+			$('#pincode').removeAttr('required');
+			$('.email-div').removeClass('col-lg-6').addClass('col-lg-12');
+			$('.zipcode-div').hide();
+		}
+		if (!checkWeeklyAlert && !checkNewsletterAlert) {
+			$('.email-div').addClass('col-lg-6').removeClass('col-lg-12');
+			$('.zipcode-div').show();
+			$('[name="weekly_alert"]').prop('checked', 'checked').trigger('change');
+		}
+	});
 
 	fieldmasking();
 });

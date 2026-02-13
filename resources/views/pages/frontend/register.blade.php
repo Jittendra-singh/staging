@@ -54,11 +54,11 @@
                                     <div class="d-flex align-items-center gap-2 mt-5">
                                         <div class="form-group w-100">
                                             <label class="form-label">First Name*</label>
-                                            <input class="form-control h_50" name="first_name" type="text" placeholder="First Name" required />
+                                            <input class="form-control h_50" name="first_name" type="text" placeholder="Enter your first name" required />
                                         </div>
                                         <div class="form-group w-100">
                                             <label class="form-label">Last Name*</label>
-                                            <input class="form-control h_50" name="last_name" type="text" placeholder="Last Name" required />
+                                            <input class="form-control h_50" name="last_name" type="text" placeholder="Enter your last name" required />
                                         </div>
                                     </div>
                                     <div class="d-flex align-items-center gap-2 mt-4">
@@ -68,7 +68,7 @@
                                         </div>
                                         <div class="form-group w-100">
                                             <label class="form-label">Password*</label>
-                                            <input class="form-control h_50" name="password" type="password" placeholder="Enter your Password" minlength="4" required />
+                                            <input class="form-control h_50" name="password" type="password" placeholder="Enter your password" minlength="4" required />
                                         </div>
                                     </div>
                                     <div id="passwordFeedback" style="font-size:14px;color:red;"></div>

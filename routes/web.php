@@ -43,6 +43,7 @@ Route::controller(\App\Http\Controllers\FrontOrderController::class)->group(func
 
     // alert 
     Route::get('create-alert' , 'createAlertPage')->name('front-create-alert');
+    Route::post('create-weekly-newsletter-alert' , 'submitCreateWeeklyNewsletterAlert')->name('submit-create-weekly-newsletter-alert');
     Route::post('create-alert' , 'submitCreateAlert')->name('submit-create-alert');
     Route::post('create-newsletter' , 'submitCreateNewsletter')->name('submit-create-newsletter');
 
