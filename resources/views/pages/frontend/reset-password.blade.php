@@ -21,6 +21,7 @@
                                 <h2>Reset Password</h2>
                                 <form class="resetPasswordValidateform" action="{{route('updatePassword')}}" method="post">
                                     @csrf
+                    	            <x-reusables.frontend.alert />
                                     <div class="col-12 mb-3">
                                         <input type="hidden" name="token" value="{{$token}}">
                                         <label for="password" class="form-label">Password</label>
@@ -30,7 +31,6 @@
                                         <label for="password_confirmation" class="form-label">Confirm Password</label>
                                         <input type="password" class="form-control h_50" name="password_confirmation" id="password_confirmation" placeholder="Confirm Password" required />
                                     </div>
-                    	            <x-reusables.frontend.alert />
                                     <input type="submit" value="Reset Password" class="primary-btn w-fit " >
                                 </form>
                             </div>

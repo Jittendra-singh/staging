@@ -157,6 +157,20 @@ class FrontAuthController extends Controller
             'password' => 'required'
         ]);
         $validated = $request;
+        $user = Volunteer::where('email_address', $validated['email'])->first();
+        if (!isset($user->id)) {
+            $this->setFlashSession(false, 'No account found with the provided email address.');
+            return redirect()->route('front-login');
+        }
+        if ($user->status!=1) {
+            $this->setFlashSession(false, 'You don\'t have permission to login. Please contact admin.');
+            return redirect()->route('front-login');
+        }
+        if (empty($user->email_verified_at)) {
+            $this->setFlashSession(false, 'Your account is not active. <a href="'.route('send-activation-link', encrypt($user->id)).'">Click here</a> to receive an activation link.');
+            return redirect()->route('front-login');
+        }
+
         if (\Auth::guard('front')->attempt([
                                             'email_address' => $validated['email'], 
                                             'password' => $validated['password'] ,
@@ -167,8 +181,45 @@ class FrontAuthController extends Controller
             return redirect()->intended(route('front-dashboard'));
 
         } else {
-            $this->setFlashSession(false, 'Either the email address or password is incorrect or your email is still not activated yet.');
+            $this->setFlashSession(false, 'Incorrect email or password. Please try again with the correct credentials.');
             return redirect()->route('front-login');
+        }
+    }
+    public function sendActivationLink($id){
+        $user = Volunteer::findOrFail(decrypt($id));
+        if(!empty($user->email_verified_at)){
+            $this->setFlashSession(false, 'Your account has already been activated.');
+            return redirect()->route('front-login');
+        }
+        $mail_content = [
+            'volunteer'         => $user->first_name . ' ' . $user->last_name,
+            'email'             => $user->email_address,
+            'verification_link' => route('activate-account', ['id' => encrypt($user->id)])
+        ];
+        $this->sendEmail('learningdcm@gmail.com', ACTIVATE_ACCOUNT_MAIL_SUB, $mail_content, "activate-account");
+        $this->setFlashSession(true, 'Your activation link has been sent to your email address. Please check your inbox.');
+        return redirect()->route('front-login');
+    }
+    public function activateAccount($id){
+        $user = Volunteer::findOrFail(decrypt($id));
+        if(!empty($user->email_verified_at)){
+            $this->setFlashSession(false, 'Your account has already been activated.');
+            return redirect()->route('front-login');
+        }
+        $user->email_verified_at = now();
+        $user->save();
+        if(!empty($user->password)){
+            $this->setFlashSession(true, 'Your account has been activated successfully.');
+            return redirect()->route('front-login');
+        } else {
+            PasswordReset::where('email',$user->email_address)->delete();
+            $random = Str::random(64);
+            $pwReset = new PasswordReset();
+            $pwReset->email = $user->email_address;
+            $pwReset->token = $random;
+            $pwReset->save();
+            $this->setFlashSession(true, 'Your account has been activated successfully. Please set your password.');
+            return redirect()->route('resetPassword',['token'=>$random]);
         }
     }
     public function logout(){

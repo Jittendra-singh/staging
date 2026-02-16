@@ -17,6 +17,7 @@ define('CONTACT_ORG_MAIL_SUB','New Inquiry through VolunteerCleanup.Org website'
 define('EVENT_PUBLISH_MAIL_SUB','New Event Published on VolunteerCleanup.org – ');
 define('COMM_SERVICE_CONFIRMED_MAIL_SUB','New Inquiry through VolunteerCleanup.Org website');
 define('COMM_SERVICE_REQUEST_MAIL_SUB','Community Service Form Request');
+define('ACTIVATE_ACCOUNT_MAIL_SUB','Activate Your Account');
 return [
     /*
     |--------------------------------------------------------------------------

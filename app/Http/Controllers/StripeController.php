@@ -80,8 +80,8 @@ class StripeController extends Controller
                 "account" => $accountId,
                 //"refresh_url" => url('/onboarding/refresh'),
                 //"return_url" => url('/onboarding/done'),
-                "refresh_url" => route('stripe-connect-refresh'),
-                "return_url" => route('stripe-connect-done',['id'=>encrypt($org_id),'acc_id'=>$accountId]),
+                "refresh_url" => $this->mailUrl('stripe-connect-refresh'),
+                "return_url" => $this->mailUrl('stripe-connect-done',['id'=>encrypt($org_id),'acc_id'=>$accountId]),
                 "type" => "account_onboarding"
             ]));
 
@@ -99,7 +99,7 @@ class StripeController extends Controller
     public function stripeConnectRefresh(Request $req){
         //echo '<pre>';
         //print_r($req);
-        return redirect()->route('front-profile');
+        return redirect()->route('front-stripe-connect');
     }
     public function stripeConnectDone($id,$acc_id, Request $req){
         $state = $id; // may be null
@@ -123,10 +123,10 @@ class StripeController extends Controller
                 $organizer->save();
 
                 if (!empty($account['payouts_enabled'])) {
-                    return redirect()->route('front-profile')->with('success','Onboarding complete, payouts enabled.');
+                    return redirect()->route('front-stripe-connect')->with('success','Onboarding complete, payouts enabled.');
                     //return redirect('/onboarding/success')->with('success','Onboarding complete, payouts enabled.');
                 } else {
-                    return redirect()->route('front-profile')->with('error','Onboarding incomplete — check verification in your Stripe dashboard.');
+                    return redirect()->route('front-stripe-connect')->with('error','Onboarding incomplete — check verification in your Stripe dashboard.');
                     //return redirect('/onboarding/incomplete')->with('warning','Onboarding incomplete — check verification in your Stripe dashboard.');
                 }
             }
@@ -134,7 +134,7 @@ class StripeController extends Controller
 
         // fallback: show a page instructing organizer to wait or check email
         //return view('onboarding.wait'); // or redirect anywhere
-        return redirect()->route('front-profile')->with('error','Organizer not found.');
+        return redirect()->route('front-stripe-connect')->with('error','Organizer not found.');
     }
     private function stripeGetAccount(string $acctId)
     {

@@ -109,8 +109,8 @@ class Controller extends BaseController
         curl_close($curl);
         return $response;
     }
-    public function mailUrl($slug){
-        $checkUrl = route($slug);
+    public function mailUrl($slug,$param=null){
+        $checkUrl = route($slug,$param);
         if(strpos($checkUrl, 'volunteercleanup') !== false){
             $parsedUrl = parse_url($checkUrl);
 

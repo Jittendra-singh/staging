@@ -23,12 +23,10 @@
                             <div class="registration">
                                 <form action="{{route('front-login-post')}}" method="POST" class="validateform">
                                     @csrf
-                                    <h2 class="registration-title">Log in to Your Dashboard</h2>
-                                    
-                                    
+                                    <h2 class="registration-title pb-3">Log in to Your Dashboard</h2>
                                     
                                     <x-reusables.frontend.alert />
-                                    <div class="form-group mt-5">
+                                    <div class="form-group mt-4">
                                         <label class="form-label">Your Email*</label>
                                         <input class="form-control h_50" type="email" name="email" placeholder="Enter your email" required />
                                     </div>

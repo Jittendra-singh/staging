@@ -1869,7 +1869,51 @@ $(document).ready(function () {
 		}); */
 	});
 	$('.ticket_checkin_toggle').change(function () {
-		// checking toggle 
+		var url = $(this).attr('url');
+		var control = this;
+		if ($(control).prop('checked')) {
+			var aStatus = true;
+			var aMessage = 'You want to mark this attendee as attended?';
+			$(control).prop('checked', false);
+		} else {
+			var aStatus = false;
+			var aMessage = 'You want to mark this attendee as not attended?';
+			$(control).prop('checked', true);
+		}
+		Swal.fire({
+			title: "Are you sure?",
+			text: aMessage,
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonColor: '#3085d6',
+			cancelButtonColor: '#d33',
+			confirmButtonText: 'Yes, mark it!'
+		}).then((willDelete) => {
+			if (willDelete.isConfirmed) {
+				$(control).attr('disabled', 'disabled');
+				if (aStatus) {
+					$(control).prop('checked', true);
+				} else {
+					$(control).prop('checked', false);
+				}
+				$.ajax({
+					url: url,
+					method: 'POST',
+					data: {},
+					success: function (response) {
+						$(control).removeAttr('disabled');
+						if (response.status) {
+							showError(response.message, 'success');
+						}
+						else {
+							showError(response.message, 'error');
+						}
+					}
+				});
+			}
+		});
+
+		/* // checking toggle 
 		var url = $(this).attr('url');
 		var control = this;
 		$(control).attr('disabled', 'disabled');
@@ -1878,15 +1922,15 @@ $(document).ready(function () {
 			method: 'POST',
 			data: {},
 			success: function (response) {
+				$(control).removeAttr('disabled');
 				if (response.status) {
 					showError(response.message, 'success');
 				}
 				else {
 					showError(response.message, 'error');
 				}
-				$(control).removeAttr('disabled');
 			}
-		});
+		}); */
 	});
 
 	$('.verify_ticket_passcode_btn').click(function () {
