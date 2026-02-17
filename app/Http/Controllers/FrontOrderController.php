@@ -502,12 +502,12 @@ class FrontOrderController extends Controller
                                 'event'          => $event,
                                 'event_location' => $event->fullAddress,
                                 'is_under_18'    => $is_under_18 , // or true if applicable
-                                'waiver_link'    => route('view-waiver-form', ['ticket' => encrypt($event_order_ticket_obj->id)]),
+                                'waiver_link'    => $this->mailUrl('view-waiver-form', ['ticket' => encrypt($event_order_ticket_obj->id)]),
                                 //'cancelRegistrationUrl' => route('cancel-rsvp-get', ['ticket' => encrypt($event_order_ticket_obj->id),'type'=>1]),
-                                'cancelRegistrationUrl' => route('front-cleanup-attending'),
+                                'cancelRegistrationUrl' => $this->mailUrl('front-cleanup-attending'),
                                 'waiver_name'    => $waiver_handler_name, 
                                 'waiver_email'   => $waiver_handler_email, 
-                                'event_pdf_link' => route('front-registration-calendar', ['slug' => $event->slug]), 
+                                'event_pdf_link' => $this->mailUrl('front-registration-calendar', ['slug' => $event->slug]), 
                                 'organizer_name' => $event->creator->name,
                             ];
                             /* $email_people_array[$ticket_volunteer->email_address] = 
@@ -540,9 +540,9 @@ class FrontOrderController extends Controller
                                     'eventName' => $event->event_name,
                                     'eventDate'     => $event->startTimeAndEndTime,
                                     'eventLocation' => $event->fullAddress,
-                                    'waiverUrl' => route('view-waiver-form', ['ticket' => encrypt($event_order_ticket_obj->id)]),
+                                    'waiverUrl' => $this->mailUrl('view-waiver-form', ['ticket' => encrypt($event_order_ticket_obj->id)]),
                                     //'cancelRegistrationUrl' => route('cancel-rsvp-get', ['ticket' => encrypt($event_order_ticket_obj->id),'type'=>1]),
-                                    'cancelRegistrationUrl' => route('cancel-registration-front', ['ticket' => encrypt($event_order_ticket_obj->id)]),
+                                    'cancelRegistrationUrl' => $this->mailUrl('cancel-registration-front', ['ticket' => encrypt($event_order_ticket_obj->id)]),
                                     
                                 ];
                                 /* $waiver_people_array[$waiver_handler_email] = 
@@ -610,7 +610,7 @@ class FrontOrderController extends Controller
                     'name'=>$creating_volunteer->first_name.' '.$creating_volunteer->last_name,
                     'event_tickets'=>$ticket_booking,
                     'order'=>$order_object,
-                    'order_url'=>route('front-order-details', [encrypt($order_object->id)]),
+                    'order_url'=>$this->mailUrl('front-order-details', [encrypt($order_object->id)]),
                 ];
                 //$subject = "You're All Set for ".$event->event_name."!";
                 $subject = "Ticket Summary for ".$event->event_name." on ".$event->startTimeAndEndTime;
@@ -1061,7 +1061,7 @@ class FrontOrderController extends Controller
                 //'event_date'=>$event->eventStartDateTime,
                 //'event_location'=>$event->fullAddress,
                 //'event_url'=>route('view-event-details', ['slug' => $event->slug]),
-                'event_hosting_url'=>route('front-cleanup-hosting', ['type' => 'organizer']),
+                'event_hosting_url'=>$this->mailUrl('front-cleanup-hosting', ['type' => 'organizer']),
             ];
             $subject = "Registration cancelled for ".$event->event_name;
             $this->sendEmail($event->creator->email_address, $subject, $emailData, "email-to-org-for-register");
@@ -1072,7 +1072,7 @@ class FrontOrderController extends Controller
                 'ticket_count'=>$ticket_count,
                 'ticket_refund_amount'=>$ticket_refund_amount,
                 'event_name'=>$event->event_name,
-                'order_url'=>route('front-order-details', [encrypt($orderTicket->eventOrder->id)]),
+                'order_url'=>$this->mailUrl('front-order-details', [encrypt($orderTicket->eventOrder->id)]),
             ];
             $subject = "Your cancellation for ".$event->event_name." is confirmed";
             $this->sendEmail($orderTicket->eventOrder->creator->email_address, $subject, $emailData, "email-to-buyer-for-cancel");
@@ -1088,8 +1088,8 @@ class FrontOrderController extends Controller
             'event_date' => $orderTicket->event->startTimeAndEndTime,
             'event_location' => $orderTicket->event->fullAddress,
             'event_ticket_id' => $orderTicket->ticket_number,
-            'dashboard_link' => route('front-dashboard'),
-            'rsvp_waiver_link' => route('view-waiver-form', ['ticket' => encrypt($orderTicket->id)]),
+            'dashboard_link' => $this->mailUrl('front-dashboard'),
+            'rsvp_waiver_link' => $this->mailUrl('view-waiver-form', ['ticket' => encrypt($orderTicket->id)]),
             'is_rsvp_confirmed' => $is_rsvp_confirmed,
             'is_waiver_signed' => $is_waiver_signed,
             'guardian_name' => $orderTicket->waiver_handler_name,

@@ -1295,8 +1295,10 @@ class FrontController extends Controller
                 'organizerName' => $event->creator->first_name.' '.$event->creator->last_name,
                 'eventName' => $event->event_name,
                 'cohostName' => $cohostName,
-                'acceptLink' => route('response.cohost.invitaion',['response'=>'accept','event'=>encrypt($event->id),'volunteer'=>encrypt($cohost_id)]),
-                'cancelLink' => route('response.cohost.invitaion',['response'=>'cancel','event'=>encrypt($event->id),'volunteer'=>encrypt($cohost_id)]),
+                /* 'acceptLink' => route('response.cohost.invitaion',['response'=>'accept','event'=>encrypt($event->id),'volunteer'=>encrypt($cohost_id)]),
+                'cancelLink' => route('response.cohost.invitaion',['response'=>'cancel','event'=>encrypt($event->id),'volunteer'=>encrypt($cohost_id)]), */
+                'acceptLink' => $this->mailUrl('response.cohost.invitaion',['response'=>'accept','event'=>encrypt($event->id),'volunteer'=>encrypt($cohost_id)]),
+                'cancelLink' => $this->mailUrl('response.cohost.invitaion',['response'=>'cancel','event'=>encrypt($event->id),'volunteer'=>encrypt($cohost_id)]),
             ];
             if(!isset($existingCohost->id)){
                 $sub = ' Create your VolunteerCleanup.org account to co-host '.$email_content['eventName'];
@@ -1338,7 +1340,8 @@ class FrontController extends Controller
                 'organizer_name' => $event->creator->first_name.' '.$event->creator->last_name,
                 'event_name' => $event->event_name,
                 'cohost_first_name' => $volunteer->first_name,
-                'dashboardLink'=>route('front-dashboard'),
+                //'dashboardLink'=>route('front-dashboard'),
+                'dashboardLink'=>$this->mailUrl('front-dashboard'),
                 'permissions'=>$cohost->permissions
             ];
             $sub = 'Your co-host permissions were updated for '.$email_content['event_name'];
@@ -1381,8 +1384,10 @@ class FrontController extends Controller
                 'organizerName' => $event->creator->first_name.' '.$event->creator->last_name,
                 'eventName' => $event->event_name,
                 'cohostName' => $volunteer->first_name.' '.$volunteer->last_name,
-                'acceptLink' => route('response.cohost.invitaion',['response'=>'accept','event'=>encrypt($event->id),'volunteer'=>encrypt($volunteer->id)]),
-                'cancelLink' => route('response.cohost.invitaion',['response'=>'cancel','event'=>encrypt($event->id),'volunteer'=>encrypt($volunteer->id)]),
+                /* 'acceptLink' => route('response.cohost.invitaion',['response'=>'accept','event'=>encrypt($event->id),'volunteer'=>encrypt($volunteer->id)]),
+                'cancelLink' => route('response.cohost.invitaion',['response'=>'cancel','event'=>encrypt($event->id),'volunteer'=>encrypt($volunteer->id)]), */
+                'acceptLink' => $this->mailUrl('response.cohost.invitaion',['response'=>'accept','event'=>encrypt($event->id),'volunteer'=>encrypt($volunteer->id)]),
+                'cancelLink' => $this->mailUrl('response.cohost.invitaion',['response'=>'cancel','event'=>encrypt($event->id),'volunteer'=>encrypt($volunteer->id)]),
             ];
             $this->sendEmail($volunteer->email_address, 'Reminder: You’ve been invited to co-host '.$email_content['eventName'], $email_content, "invite-cohost");
             return $this->generateJsonResponse(true, 'Co-Host invitation re-sent successfully.');
@@ -1412,8 +1417,9 @@ class FrontController extends Controller
                     'volunteersCount' => $event->tickets()->where('checkin', 1)->count(),
                     'wasteCollected' => $event->waste_collected ?? 'N/A',
                     'areaCleaned' => $event->area_cleaned ?? 'N/A',
-                    'communityServiceFormLink' => $event->allow_community_service_form ? route('community-form', ['placeholder' => $event->encrypted_id]) : null,
-                    'feedbackFormLink' => route('event-feedback', ['placeholder' => $event->encrypted_id]),
+                    'communityServiceFormLink' => $event->allow_community_service_form ? $this->mailUrl('community-form', ['placeholder' => $event->encrypted_id]) : null,
+                    //'feedbackFormLink' => route('event-feedback', ['placeholder' => $event->encrypted_id]),
+                    'feedbackFormLink' => $this->mailUrl('event-feedback', ['placeholder' => $event->encrypted_id]),
                     'teamName' => $event->team_name,
                     'instaLink' => $event->creator->organisation_instagram,
                     'facebookLink' => $event->creator->organisation_facebook,
@@ -1444,11 +1450,11 @@ class FrontController extends Controller
                     'location' => $event->fullAddress,
                     'description' => $event->description,
                     'is_meeting_private' => $event->is_private==1?'Yes':'No',
-                    'eventUrl' => route('view-event-details',['slug'=>$event->slug]),
+                    'eventUrl' => $this->mailUrl('view-event-details',['slug'=>$event->slug]),
                     'orgName' => $event->creator->first_name.' '.$event->creator->last_name,
                     'orgEmail' => $event->creator->email_address,
                     'orgPhone' => $event->creator->phone,
-                    'eventEditUrl' => route('show-event',['placeholder'=>encrypt($event->id)]),
+                    'eventEditUrl' => $this->mailUrl('show-event',['placeholder'=>encrypt($event->id)]),
                 ];
                 $this->sendEmail(SUPPORT_EMAIL, EVENT_PUBLISH_MAIL_SUB.$event->event_name, $email_content, "email-to-admin-for-publish");
             }
@@ -1605,7 +1611,7 @@ class FrontController extends Controller
                     'dashboard_link'=>$this->mailUrl('front-registration-list'),
                 ];
                 $sub = 'Community Service Request – '.$emailData['volunteer'].' for '.$event->event_name;
-                $this->sendEmail('learningdcm@gmail.com', $sub, $emailData, "request-community-service-form");
+                $this->sendEmail($event->creator->email_address, $sub, $emailData, "request-community-service-form");
                 $orderTicket->community_form_status = 'requested';
                 $orderTicket->checkin = 0;
                 $orderTicket->save();
@@ -1667,7 +1673,7 @@ class FrontController extends Controller
                     'volunteer' => $volunteer->first_name.' '.$volunteer->last_name,
                     'event_title' => $event->event_name,
                     'certificate_download_link' => $community_form,
-                    'dashboard_link' => route('front-cleanup-attending')
+                    'dashboard_link' => $this->mailUrl('front-cleanup-attending')
                 ];
                 $sub = 'Your Community Service Certificate for '.$event->event_name.' Is Ready';
                 $this->sendEmail($volunteer->email_address, $sub, $emailData, "community-service-form");

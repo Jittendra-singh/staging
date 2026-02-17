@@ -2070,6 +2070,8 @@ $(document).ready(function () {
 				return $(this).val();
 			}).get();
 		$(this).attr('disabled', 'disabled');
+		$(this).text('Sending Invitation...');
+		var control = this;
 		$.ajax({
 			url: url,
 			method: 'POST',
@@ -2090,7 +2092,8 @@ $(document).ready(function () {
 					}, 350);
 				}
 				else {
-					$(this).removeAttr('disabled');
+					$(control).text('Send Invitation');
+					$(control).removeAttr('disabled');
 					showError(response.message, 'error');
 				}
 			}

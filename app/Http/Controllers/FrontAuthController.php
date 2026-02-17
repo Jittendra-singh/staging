@@ -54,7 +54,7 @@ class FrontAuthController extends Controller
             
             $mail_content = [
                             'volunteer' => $volunteer->name,  
-                            'link' => route('resetPassword',['token'=>$random])
+                            'link' => $this->mailUrl('resetPassword',['token'=>$random])
                         ];
                         
             $this->sendEmail($volunteer->email_address, FRONT_RESET_PASS_SUB, $mail_content, "forgot-password");
@@ -123,7 +123,7 @@ class FrontAuthController extends Controller
             $mail_content = [
                 'volunteer'         => $volunteer->first_name . ' ' . $volunteer->last_name,
                 'email'             => $volunteer->email_address,
-                'verification_link' => route('front-verify-email', ['id' => $volunteer->encrypted_id])
+                'verification_link' => $this->mailUrl('front-verify-email', ['id' => $volunteer->encrypted_id])
             ];
             $this->sendEmail($volunteer->email_address, VOLUNTEER_REG_BY_FRONTEND_SUB, $mail_content, "confirm-registration");
             if(isset($request->is_newsletter) && $request->is_newsletter==1){
@@ -194,9 +194,9 @@ class FrontAuthController extends Controller
         $mail_content = [
             'volunteer'         => $user->first_name . ' ' . $user->last_name,
             'email'             => $user->email_address,
-            'verification_link' => route('activate-account', ['id' => encrypt($user->id)])
+            'verification_link' => $this->mailUrl('activate-account', ['id' => encrypt($user->id)])
         ];
-        $this->sendEmail('learningdcm@gmail.com', ACTIVATE_ACCOUNT_MAIL_SUB, $mail_content, "activate-account");
+        $this->sendEmail($user->email_address, ACTIVATE_ACCOUNT_MAIL_SUB, $mail_content, "activate-account");
         $this->setFlashSession(true, 'Your activation link has been sent to your email address. Please check your inbox.');
         return redirect()->route('front-login');
     }
