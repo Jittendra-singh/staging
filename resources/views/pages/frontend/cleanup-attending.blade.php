@@ -231,7 +231,8 @@
 														<p>Community Service Form</p>
 														@if($registration->rsvp_confirmation==1)
 															@if($registration->checkin==1)
-																<a class="btn btn-sm" href="{{ $registration->community_form_pdf }}" download>Download PDF</a>
+																<!-- <a class="btn btn-sm" href="{{ $registration->community_form_pdf }}" download>Download PDF</a> -->
+																<a class="btn btn-sm" href="{{ route('show-community-service-pdf', ['ticket' => encrypt($registration->id)]) }}" target="_blank">Download PDF</a>
 															@elseif(strtotime(date('Y-m-d H:i:s')) < strtotime($event->eventEndDateTime))
 																<h6 class="coupon-status">
 																	<span class="badge custom-badge-danger">Awaiting</span>

@@ -1672,7 +1672,8 @@ class FrontController extends Controller
                 $emailData = [
                     'volunteer' => $volunteer->first_name.' '.$volunteer->last_name,
                     'event_title' => $event->event_name,
-                    'certificate_download_link' => $community_form,
+                    //'certificate_download_link' => $community_form,
+                    'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($orderTicket->id)]),
                     'dashboard_link' => $this->mailUrl('front-cleanup-attending')
                 ];
                 $sub = 'Your Community Service Certificate for '.$event->event_name.' Is Ready';
@@ -1687,6 +1688,24 @@ class FrontController extends Controller
             return $this->generateJsonResponse(false, "Issues occured while sending emails.");
         }
         //return redirect()->back();
+    }
+    public function showCommunityServicePdf($ticket){
+        $orderTicket = EventOrderTicket::findOrFail(decrypt($ticket));
+        if($orderTicket->rsvp_confirmation==1 && $orderTicket->checkin==1){
+            $pdfUrl = $orderTicket->community_form_pdf;
+            $relativePath = str_replace(url('/'), '', $pdfUrl);
+            $filePath = public_path($relativePath);
+            if (!file_exists($filePath)) {
+                $seo_details = (object)['title' => 'Community Service PDF'];
+                return view('pages.frontend.show-community-service-pdf', ['seo_details' => $seo_details]);
+            }
+            // load pdf on current url/page
+            return response()->file($filePath, [
+                'Content-Type' => 'application/pdf'
+            ]);
+        }
+        $seo_details = (object)['title' => 'Community Service PDF'];
+        return view('pages.frontend.show-community-service-pdf', ['seo_details' => $seo_details]);
     }
     /* public function ticketMarkCheckin($id){
         $registration = EventOrderTicket::findOrFail(decrypt($id));
@@ -1803,6 +1822,18 @@ class FrontController extends Controller
         $data['listing_data'] = auth()->guard()->user()->widgets()->orderBy('id', 'desc')->get();
         return view('pages.frontend.embedded-widget', $data); 
     }
+    public function manageWidget($id=null)
+    {
+        $widget = null;
+        if(!empty($id)){
+            $widget = VolunteerWidget::where('id', decrypt($id))->first();
+        }
+        $data['widget'] = $widget;
+        $data['categories'] = EventCategory::all();
+        $data['organizers'] = Volunteer::where('is_organiser', 1)->get();
+        $data['seo_details'] = (object)['title' => 'Manage Embedded Widget'];
+        return view('pages.frontend.manage-embedded-widget', $data); 
+    }
     public function embeddedWidgetReport()
     {
         $from_date = request()->from_date ? request()->from_date : date('Y-m-01');
@@ -1834,7 +1865,7 @@ class FrontController extends Controller
         $data['to_date'] = $to_date;
         return view('pages.frontend.embedded-widget-report', $data); 
     }
-    public function createWidget(){
+    public function saveWidget($id=null){
         $request = request();
         $validated = $request->validate([
             'title'          => 'required',
@@ -1844,14 +1875,21 @@ class FrontController extends Controller
             'distance'       => 'required',
             'type'           => 'required',
         ]);
-        
-        $widget = new VolunteerWidget();
+        if(!empty($id)){
+            $widget = VolunteerWidget::where('id', decrypt($id))->first();
+            if(!isset($widget->id)){
+                $this->setFlashSession(false, 'Widget not found.');
+                return redirect()->route('front-embedded-widget');
+            }
+        } else {
+            $widget = new VolunteerWidget();
+            $widget->wid_number = $this->generateRandomWidgetNumber();
+            $widget->volunteer_id = auth()->guard('front')->user()->id;
+        }    
         $widget->fill($validated);
-        $widget->wid_number = $this->generateRandomWidgetNumber();
         $widget->location_lat = $validated['latitude'];
         $widget->location_long = $validated['longitude'];
         $widget->website = request()->website;
-        $widget->volunteer_id = auth()->guard('front')->user()->id;
         if(request()->has('organizer_id') && !empty(request()->organizer_id)){
             $widget->org_ids = implode(',', request()->organizer_id);
         }
@@ -1861,7 +1899,7 @@ class FrontController extends Controller
         $widget->save();
 
         $this->setFlashSession(true, 'Embedded widget created successfully. You can copy the embed code from the “View Code & Details” button.');
-        return redirect()->back();
+        return redirect()->route('front-embedded-widget');
     }
     public function previewWidget($id){
         $widget = VolunteerWidget::find(decrypt($id));
@@ -1872,11 +1910,7 @@ class FrontController extends Controller
         <div class="model-content main-form">
             <div class="container-fluid">
                 <div class="row mt-4 mb-4">
-                    <div class="col-12">
-                        <div class="row mb-2">
-                            <iframe width="100%" height="500" src="'.(route('front-show-widget', ['id' => encrypt($widget->id)])).'"></iframe>
-                        </div>
-                    </div>
+                    <iframe width="100%" height="500" src="'.(route('front-show-widget', ['id' => encrypt($widget->id)])).'"></iframe>
                 </div>
             </div>
         </div>
@@ -1925,11 +1959,11 @@ class FrontController extends Controller
                             <div class="col-md-9 registration-phone-number">'.$widget->distance.' Miles</div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-md-3 fw-semibold text-muted">Type :</div>
-                            <div class="col-md-9 registration-event-name">'.($widget->type==1?'Cleanups Listing':'Cleanups On the Map').'</div>
+                            <div class="col-md-3 fw-semibold text-muted">How would you like the Widget to Display? :</div>
+                            <div class="col-md-9 registration-event-name">'.($widget->type==1?'List View':'Map View').'</div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-md-3 fw-semibold text-muted">Website :</div>
+                            <div class="col-md-3 fw-semibold text-muted">Embed Location :</div>
                             <div class="col-md-9 registration-event-name">'.(!empty($widget->website)?$widget->website:'-').'</div>
                         </div>
                         <div class="row mb-2">

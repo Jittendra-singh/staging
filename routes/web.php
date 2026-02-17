@@ -81,6 +81,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
     Route::get('rsvp-confirmation/{event}', 'rsvpWaiverConfirmed')->name('front-rsvp-confirmation');
     Route::get('unsubscribe-alert/{user}/{alert?}', 'unsubscribeAlert')->name('unsubscribe-alert');
     Route::get('confirmed-unsubscribe-alert/{user}/{alert?}', 'confirmedUnsubscribeAlert')->name('confirmed-unsubscribe-alert');
+    Route::get('show-community-service-pdf/{ticket}', 'showCommunityServicePdf')->name('show-community-service-pdf');
 
     // cron
     Route::get('cron-weekly-alerts' , 'cronWeeklyAlerts')->name('cron-weekly-alerts');
@@ -93,9 +94,11 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::post('get-organizer-options' , 'getOrganizerOptions' )->name('front-get-organizer-options');
 
         Route::get('embedded-widget', 'embeddedWidget')->name('front-embedded-widget');
+        Route::get('manage-widget/{id?}', 'manageWidget')->name('front-manage-widget');
+        Route::post('save-widget/{id?}', 'saveWidget')->name('front-save-widget');
         Route::get('embedded-widget-report', 'embeddedWidgetReport')->name('front-embedded-widget-report');
         Route::post('embedded-widget-report', 'embeddedWidgetReport')->name('front-embedded-widget-report');
-        Route::post('create-widget' , 'createWidget')->name('front-create-widget');
+        //Route::post('create-widget' , 'createWidget')->name('front-create-widget');
         Route::post('view-widget-detail/{id}', 'viewWidgetDetail')->name('front-view-widget-detail');
         Route::post('preview-widget/{id}', 'previewWidget')->name('front-preview-widget');
         Route::get('active-inactive-widget/{id}' , 'activeInactiveWidget')->name('front-active-inactive-widget');
