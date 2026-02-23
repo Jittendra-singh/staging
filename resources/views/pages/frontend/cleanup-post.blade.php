@@ -452,6 +452,105 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                         </div>
                                                     </div>
                                                 </div>
+                                                <div class="main-card py-2 mt-4">
+                                                    <div class="row">
+                                                        <div class="col-lg-12 col-md-12">
+                                                            <div class="bp-title">
+                                                                <h4><i class="fa-solid fa-flag step_icon me-3"></i>
+                                                                    Participation Type
+                                                                </h4>
+                                                            </div>
+                                                            <div class="p-4 bp-form main-form">
+                                                                <div class="content-holder row  ">
+                                                                    <div class="setting-item col-sm-12">
+                                                                        <!-- <div class="d-flex align-items-start">
+                                                                            <div class="d-flex flex-column">
+                                                                                <label class="color-black fw-bold mb-3">Who will bear the Stripe processing charges and platform fees for paid tickets?</label>
+                                                                            </div>
+                                                                        </div> -->
+                                                                        <div class="col-12">
+                                                                            <div class="row g-3">
+                                                                                <!-- Organizer -->
+                                                                                <div class="col-md-6">
+                                                                                    <label class="fee-option">
+                                                                                        <input type="radio" value="1" id="participation_type" name="participation_type" {{ old('participation_type', $form_data->participation_type ?? 1) == 1 ? 'checked' : '' }}>
+                                                                                        <div class="fee-card">
+                                                                                            <div class="d-flex align-items-start">
+                                                                                                <span class="radio-dot"></span>
+                                                                                                <div class="ms-3">
+                                                                                                    <h6 class="mb-1">Use VolunteerCleanup Tickets</h6>
+                                                                                                    <small class="text-muted">
+                                                                                                        Use VolunteerCleanup Tickets system for attendee
+                                                                                                    </small>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </label>
+                                                                                </div>
+
+                                                                                <!-- Buyer -->
+                                                                                <div class="col-md-6">
+                                                                                    <label class="fee-option">
+                                                                                        <input type="radio" value="2" id="participation_type2" name="participation_type" {{ old('participation_type', $form_data->participation_type ?? 1) == 2 ? 'checked' : '' }}>
+                                                                                        <div class="fee-card">
+                                                                                            <div class="d-flex align-items-start">
+                                                                                                <span class="radio-dot"></span>
+                                                                                                <div class="ms-3">
+                                                                                                    <h6 class="mb-1">Walk-in Mode</h6>
+                                                                                                    <small class="text-muted">
+                                                                                                        Don't need any ticket system for attendee
+                                                                                                    </small>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </label>
+                                                                                </div>
+
+                                                                                <div class="col-md-6">
+                                                                                    <label class="fee-option">
+                                                                                        <input type="radio" value="3" id="participation_type3" name="participation_type" {{ old('participation_type', $form_data->participation_type ?? 1) == 3 ? 'checked' : '' }}>
+                                                                                        <div class="fee-card">
+                                                                                            <div class="d-flex align-items-start">
+                                                                                                <span class="radio-dot"></span>
+                                                                                                <div class="ms-3">
+                                                                                                    <h6 class="mb-1">Informational Only</h6>
+                                                                                                    <small class="text-muted">
+                                                                                                        No ticket system needed, event is just for informational purpose
+                                                                                                    </small>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </label>
+                                                                                </div>
+
+                                                                                <div class="col-md-6">
+                                                                                    <label class="fee-option">
+                                                                                        <input type="radio" value="4" id="participation_type4" name="participation_type" {{ old('participation_type', $form_data->participation_type ?? 1) == 4 ? 'checked' : '' }}>
+                                                                                        <div class="fee-card">
+                                                                                            <div class="d-flex align-items-start">
+                                                                                                <span class="radio-dot"></span>
+                                                                                                <div class="ms-3">
+                                                                                                    <h6 class="mb-1">External Registration Link</h6>
+                                                                                                    <small class="text-muted">
+                                                                                                        Use external registration link to manage attendee
+                                                                                                    </small>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </label>
+                                                                                    <input class="form-control h_50 urlmask mt-2" style="{{ old('participation_type', $form_data->participation_type ?? 1) == 4 ? 'display: block;' : 'display: none;' }}"
+                                                                                        name="participation_type_external_link" id="participation_type_external_link" type="url"
+                                                                                        placeholder="Enter external link here"
+                                                                                        value="{{ old('participation_type_external_link', $form_data->participation_type_external_link ?? '') }}" />
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </form>
                                     </div>
@@ -653,7 +752,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                             </div>
                                         </form>
                                     </div>
-                                    <div class="step-tab-panel step-tab-gallery" id="tab_step2">
+                                    <div class="step-tab-panel step-tab-gallery target-box" id="tab_step2">
                                         @php
                                             $tickets = old('tickets', $form_data->eventTickets ?? []);
                                         @endphp
@@ -1022,6 +1121,11 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                 </div>
                                             </div>
                                         </form>
+                                        <div class="blur-overlay" id="ticket_setting_overlay" style="display: none;">
+                                            <div class="message bg-primary">
+                                                This section is available only for the "Use VolunteerCleanup Tickets" participation type.
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="step-tab-panel step-tab-gallery target-box" id="tab_step3">
                                         @php

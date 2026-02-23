@@ -549,7 +549,7 @@ $is_session = session()->get('checkout_event');
                         </a>
                     </li>
                     <li class="menu--item">
-                        <a href="{{ route('front-profile') }}" class="menu--link"
+                        <a href="{{ route('front-profile') }}" class="menu--link {{ url()->current() == route('front-profile') ? 'active' : '' }}"
                             title="Manage Profile" data-bs-toggle="tooltip" data-bs-placement="right">
                             <i class="fa-solid fa-user menu--icon"></i>
                             <span class="menu--label">Manage Profile</span>

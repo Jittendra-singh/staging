@@ -300,12 +300,19 @@ $icalStrData = getiCalData($event);
                         @php
                         if(!empty($event->creator->stripe_email) && !empty($event->creator->stripe_account_id)){
                             $evenTickets = $event->eventActiveTickets;
+                            $eventAllTickets = $event->eventTickets()->where('is_active',1)->get();
                         } else {
                             $evenTickets = $event->eventActiveFreeTickets;
+                            $eventAllTickets = $event->eventTickets()->where('ticket_type' , 'free')->where('is_active',1)->get();
                         }
                         
                         $totalTicketCount = $evenTickets->count();
+                        $isEventEnded = false;
                         if(strtotime($event->end_datetime) < strtotime(date('Y-m-d H:i:s'))){
+                            $totalTicketCount = 0;
+                            $isEventEnded = true;
+                        }
+                        if($event->participation_type!=1){
                             $totalTicketCount = 0;
                         }
                         @endphp 
@@ -447,6 +454,74 @@ $icalStrData = getiCalData($event);
                             </div>
                         </form>
                         <x-reusables.frontend.alert />
+                        <hr />
+                        @elseif($event->participation_type==1 && !$isEventEnded)
+                            @php 
+                            $now = \Carbon\Carbon::now();
+                            $upcomingTickets = $eventAllTickets->filter(function ($ticket) use ($now) {
+                                return $ticket->sell_start_time > $now;
+                            });
+                            $nextTicket = $upcomingTickets->sortBy('sell_start_time')->first();
+                            @endphp 
+
+                            @if($eventAllTickets->count() > 0)
+                                @if($upcomingTickets->count() > 0)
+                                <div class="">
+                                    <div class="pricing-section">
+                                        <h3>Ticket Information</h3>
+                                        <i style="font-style: italic;">Ticket will be available starting {{ \Carbon\Carbon::parse($nextTicket->sell_start_time)->format(config('app.dateFormat')) }}</i>
+                                    </div>
+                                </div>
+                                <hr />
+                                @else 
+                                <div class="">
+                                    <div class="pricing-section">
+                                        <h3>Ticket Information</h3>
+                                        <i style="font-style: italic;">Ticket booking for this event is now closed.</i>
+                                    </div>
+                                </div>
+                                <hr />
+                                @endif
+                            @else 
+                                <div class="">
+                                    <div class="pricing-section">
+                                        <h3>Ticket Information</h3>
+                                        <i style="font-style: italic;">Note: No tickets available for booking at this time.</i>
+                                    </div>
+                                </div>
+                            <hr />
+                            @endif
+                        @elseif($event->participation_type==2)
+                            <div class="">
+                                <div class="pricing-section">
+                                    <h3>Ticket Information</h3>
+                                    <i style="font-style: italic;">No registration required. Just show up.</i>
+                                </div>
+                            </div>
+                        <hr />
+                        @elseif($event->participation_type==3)
+                            <div class="">
+                                <div class="pricing-section">
+                                    <h3>Ticket Information</h3>
+                                    <i style="font-style: italic;">This event is for informational purposes only.</i>
+                                </div>
+                            </div>
+                        <hr />
+                        @elseif($event->participation_type==4 && !empty($event->participation_type_external_link) && !$isEventEnded)
+                            <div class="">
+                                <div class="pricing-section">
+                                    <h3>Ticket Information</h3>
+                                    <a href="{{ $event->participation_type_external_link }}" class="primary-btn w-100" target="_blank">Register Here</a>
+                                </div>
+                            </div>
+                        <hr />
+                        @elseif($isEventEnded)
+                            <div class="">
+                                <div class="pricing-section">
+                                    <h3>Ticket Information</h3>
+                                    <i style="font-style: italic;">This event has ended.</i>
+                                </div>
+                            </div>
                         <hr />
                         @else
                             <div class="">

@@ -548,6 +548,11 @@ class FrontController extends Controller
         $isUpdating = request()->event_id ? true : false;
         if($isUpdating){
             $eventObj = Event::where('id', decrypt(request()->event_id))->firstOrFail();
+            if(request()->participation_type!=1){
+                if(isset($eventObj->eventTickets[0])){
+                    return $this->generateJsonResponse(false, 'Remove ticket types before changing participation type.');
+                }
+            }
         }else{
             $is_org = auth()->guard('front')->user()->is_organiser==1?1:0;
             $eventObj = new Event();
@@ -565,6 +570,12 @@ class FrontController extends Controller
             //if(!$is_org){
                 $this->syncWithWP(auth()->guard('front')->user());
             //}
+
+        }
+        if(request()->participation_type==4){
+            if(empty(request()->participation_type_external_link)){
+                return $this->generateJsonResponse(false, 'Please enter external link.');
+            }
         }
         $validatedObj = request()->validate([
                             'event_name'      => 'required|string|max:255',
@@ -583,6 +594,8 @@ class FrontController extends Controller
                             'allow_community_service_form' => 'nullable|boolean',
                             'is_private'        => 'nullable|boolean',
                             'slug'            => 'nullable|string|max:255|unique:events,slug,'.$eventObj->id ? : 0 ,
+                            'participation_type' => 'required',
+                            'participation_type_external_link' => 'nullable',
                         ]);
         
         $eventObj->fill($validatedObj);

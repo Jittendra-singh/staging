@@ -1091,6 +1091,14 @@ $(document).ready(function () {
 				$('.go-to-next').removeClass('custom-disable-btn');
 				$('.go-to-next').show();
 			}
+			if (currentIndex == 2) {
+				var pType = $('[name="participation_type"]:checked').val();
+				if (pType == 1) {
+					$('#ticket_setting_overlay').hide();
+				} else {
+					$('#ticket_setting_overlay').show();
+				}
+			}
 		},
 	});
 	$('[data-direction="prev"]').click(function () {
@@ -2396,6 +2404,13 @@ $(document).ready(function () {
 			$('.email-div').addClass('col-lg-6').removeClass('col-lg-12');
 			$('.zipcode-div').show();
 			$('[name="weekly_alert"]').prop('checked', 'checked').trigger('change');
+		}
+	});
+	$('[name="participation_type"]').on('change', function () {
+		if ($(this).val() == 4) {
+			$('#participation_type_external_link').show();
+		} else {
+			$('#participation_type_external_link').hide();
 		}
 	});
 
