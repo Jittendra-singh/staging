@@ -1706,7 +1706,9 @@ class FrontController extends Controller
         $orderTicket = EventOrderTicket::findOrFail(decrypt($ticket));
         if($orderTicket->rsvp_confirmation==1 && $orderTicket->checkin==1){
             $pdfUrl = $orderTicket->community_form_pdf;
-            $relativePath = str_replace(url('/'), '', $pdfUrl);
+            //$relativePath = str_replace(url('/'), '', $pdfUrl);
+            $exp = explode('events/', $pdfUrl);
+            $relativePath = 'events/'.$exp[1];
             $filePath = public_path($relativePath);
             if (!file_exists($filePath)) {
                 $seo_details = (object)['title' => 'Community Service PDF'];
