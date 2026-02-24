@@ -2002,7 +2002,7 @@ class FrontController extends Controller
                         <hr class="mt-0 mb-3">
                         <div class="row mb-2">
                             <code id="widgetCode">
-                                &lt;iframe width="100%" height="500" src="'.(route('front-show-widget', ['id' => encrypt($widget->id)])).'">&lt;/iframe>
+                                &lt;iframe style="width:100%; height:80vh; min-height:650px; border:0; display:block;" loading="lazy" src="'.(route('front-show-widget', ['id' => encrypt($widget->id)])).'">&lt;/iframe>
                             </code>
                         </div>
                     </div>
