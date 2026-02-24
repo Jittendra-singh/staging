@@ -480,7 +480,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                                                 <div class="ms-3">
                                                                                                     <h6 class="mb-1">Use VolunteerCleanup Tickets</h6>
                                                                                                     <small class="text-muted">
-                                                                                                        Use VolunteerCleanup Tickets system for attendee
+                                                                                                        Manage registrations, issue tickets, and track attendees within the system.
                                                                                                     </small>
                                                                                                 </div>
                                                                                             </div>
@@ -498,7 +498,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                                                 <div class="ms-3">
                                                                                                     <h6 class="mb-1">Walk-in Mode</h6>
                                                                                                     <small class="text-muted">
-                                                                                                        Don't need any ticket system for attendee
+                                                                                                       Allow attendees without prior registration or ticket requirements.
                                                                                                     </small>
                                                                                                 </div>
                                                                                             </div>
@@ -515,7 +515,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                                                 <div class="ms-3">
                                                                                                     <h6 class="mb-1">Informational Only</h6>
                                                                                                     <small class="text-muted">
-                                                                                                        No ticket system needed, event is just for informational purpose
+                                                                                                        Display event details only — no registration or ticketing required.
                                                                                                     </small>
                                                                                                 </div>
                                                                                             </div>
@@ -532,7 +532,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                                                 <div class="ms-3">
                                                                                                     <h6 class="mb-1">External Registration Link</h6>
                                                                                                     <small class="text-muted">
-                                                                                                        Use external registration link to manage attendee
+                                                                                                        Redirect attendees to an external platform to complete registration.
                                                                                                     </small>
                                                                                                 </div>
                                                                                             </div>
