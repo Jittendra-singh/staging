@@ -37,7 +37,8 @@ if (!function_exists('getiCalData')) {
             'pacific' => 'America/Los_Angeles',
         ];
         $tzid = isset($tzMap[$event->event_timezone]) ? $tzMap[$event->event_timezone] : 'UTC';
-
+        
+        $todayDate = \Carbon\Carbon::now()->format('Ymd\THis');
         $sDate = $event->start_datetime->format('Ymd\THis');
         $eDate = $event->end_datetime->format('Ymd\THis');
         $add = $event->venue.' '.$event->pincode;
@@ -75,8 +76,13 @@ if (!function_exists('getiCalData')) {
         $dataStr = "BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//Community Events//EN
+METHOD:PUBLISH
 {$vtz}
 BEGIN:VEVENT
+UID:event-{$event->id}@volunteercleanup.org
+DTSTAMP:{$todayDate}
+STATUS:CONFIRMED
+TRANSP:OPAQUE
 SUMMARY:{$event->event_name}
 DTSTART;TZID={$tzid}:{$sDate}
 DTEND;TZID={$tzid}:{$eDate}
