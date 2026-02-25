@@ -87,7 +87,7 @@ SUMMARY:{$event->event_name}
 DTSTART;TZID={$tzid}:{$sDate}
 DTEND;TZID={$tzid}:{$eDate}
 LOCATION:{$add}
-ORGANIZER:CN={$orgName};EMAIL:{$orgEmail}:MAILTO:{$orgEmail}
+X-EVENT-CREATOR:CN={$orgName};EMAIL:{$orgEmail}:MAILTO:{$orgEmail}
 DESCRIPTION:{$description}
 END:VEVENT
 END:VCALENDAR
