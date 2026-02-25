@@ -54,7 +54,7 @@
     $charge_bear_by = (int) old('charge_bear_by', $formData->charge_bear_by ?? 0);
     $is_private_ticket = old('is_private_ticket', $formData->is_private_ticket ?? false);
     $participation_type = old('participation_type', $formData->participation_type ?? 1);
-    $participation_type_external_link = old('participation_type_external_link', $formData->participation_type_external_link ?? 1);
+    $participation_type_external_link = old('participation_type_external_link', $formData->participation_type_external_link ?? null);
     $ticket_questions = old('ticket_questions', $formData->ticket_questions ?? false);
     $tickets = old('tickets', $formData->eventTickets ?? []);
     // SEO Details
@@ -300,6 +300,54 @@
                 </div>
                 <div class="card">
                     <div class="card-body">
+                        <h4 class="card-title pb-3 fw-bold border-bottom admin-card-header">Participation Type</h4>
+                        <div class="row mt-3">
+                            <div class="col">
+                                <div class="form-group">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" value="1" id="participation_type1" name="participation_type"
+                                            {{ $participation_type==1?'checked':'' }}>
+                                        <label class="form-check-label"
+                                            for="participation_type1">
+                                            Use VolunteerCleanup Tickets
+                                        </label><br/>
+                                        <small>Manage registrations, issue tickets, and track attendees within the system.</small>
+                                    </div>
+                                    <div class="form-check mt-3">
+                                        <input class="form-check-input" type="radio" value="3" id="participation_type3" name="participation_type"
+                                            {{ $participation_type==3?'checked':'' }}>
+                                        <label class="form-check-label"
+                                            for="participation_type3">
+                                            Informational Only
+                                        </label><br/>
+                                        <small>Display event details only — no registration or ticketing required.</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-group">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" value="2" id="participation_type2" name="participation_type" {{ $participation_type==2?'checked':'' }}>
+                                        <label class="form-check-label" for="participation_type2">
+                                            Walk-in Mode
+                                        </label><br/>
+                                        <small>Allow attendees without prior registration or ticket requirements.</small>
+                                    </div>
+                                    <div class="form-check mt-3">
+                                        <input class="form-check-input" type="radio" value="4" id="participation_type4" name="participation_type" {{ $participation_type==4?'checked':'' }}>
+                                        <label class="form-check-label" for="participation_type4">
+                                            External Registration Link
+                                        </label><br/>
+                                        <small>Redirect attendees to an external platform to complete registration.</small>
+                                        <input type="text" class="form-control mt-2" name="participation_type_external_link" value="{{$participation_type_external_link}}" id="participation_type_external_link" placeholder="Enter external link here">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
                         <h4 class="card-title pb-3 border-bottom fw-bold admin-card-header">Other Details</h4>
                         <div class="row mt-3">
                             <div class="col-md-12">
@@ -442,54 +490,6 @@
                                     <span class="bx bx-loader font-size-16 align-middle me-2" role="status" aria-hidden="true"></span>
                                     Generate By AI
                                 </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-body">
-                        <h4 class="card-title pb-3 fw-bold border-bottom admin-card-header">Participation Type</h4>
-                        <div class="row mt-3">
-                            <div class="col">
-                                <div class="form-group">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" value="1" id="participation_type1" name="participation_type"
-                                            {{ $participation_type==1?'checked':'' }}>
-                                        <label class="form-check-label"
-                                            for="participation_type1">
-                                            Use VolunteerCleanup Tickets
-                                        </label><br/>
-                                        <small>Manage registrations, issue tickets, and track attendees within the system.</small>
-                                    </div>
-                                    <div class="form-check mt-3">
-                                        <input class="form-check-input" type="radio" value="3" id="participation_type3" name="participation_type"
-                                            {{ $participation_type==3?'checked':'' }}>
-                                        <label class="form-check-label"
-                                            for="participation_type3">
-                                            Informational Only
-                                        </label><br/>
-                                        <small>Display event details only — no registration or ticketing required.</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col">
-                                <div class="form-group">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" value="2" id="participation_type2" name="participation_type" {{ $participation_type==2?'checked':'' }}>
-                                        <label class="form-check-label" for="participation_type2">
-                                            Walk-in Mode
-                                        </label><br/>
-                                        <small>Allow attendees without prior registration or ticket requirements.</small>
-                                    </div>
-                                    <div class="form-check mt-3">
-                                        <input class="form-check-input" type="radio" value="4" id="participation_type4" name="participation_type" {{ $participation_type==4?'checked':'' }}>
-                                        <label class="form-check-label" for="participation_type4">
-                                            External Registration Link
-                                        </label><br/>
-                                        <small>Redirect attendees to an external platform to complete registration.</small>
-                                        <input type="text" class="form-control mt-2" name="participation_type_external_link" value="{{$participation_type_external_link}}" id="participation_type_external_link" placeholder="Enter external link here">
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
