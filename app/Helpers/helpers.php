@@ -82,6 +82,9 @@ METHOD:PUBLISH
 BEGIN:VEVENT
 UID:event-{$event->id}@volunteercleanup.org
 DTSTAMP:{$todayDate}
+LAST-MODIFIED:{$todayDate}
+SEQUENCE:0
+CLASS:PUBLIC
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 SUMMARY:{$event->event_name}
