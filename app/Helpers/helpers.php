@@ -38,7 +38,8 @@ if (!function_exists('getiCalData')) {
         ];
         $tzid = isset($tzMap[$event->event_timezone]) ? $tzMap[$event->event_timezone] : 'UTC';
         
-        $todayDate = \Carbon\Carbon::now()->format('Ymd\THis');
+        //$todayDate = \Carbon\Carbon::now()->format('Ymd\THis');
+        $todayDate = \Carbon\Carbon::now()->utc()->format('Ymd\THis\Z');
         $sDate = $event->start_datetime->format('Ymd\THis');
         $eDate = $event->end_datetime->format('Ymd\THis');
         $add = $event->venue.' '.$event->pincode;
