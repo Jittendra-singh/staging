@@ -162,6 +162,8 @@ class EventController extends Controller
             'start_datetime' => 'required|date',
             'end_datetime' => 'required|date|after_or_equal:start_datetime',
             'event_timezone' => 'required|string',
+            'participation_type' => 'required',
+            'participation_type_external_link' => 'nullable',
             'venue' => 'required|string|max:255',
             'latitude' => 'required|string',
             'longitude' => 'required|string',
@@ -283,6 +285,23 @@ class EventController extends Controller
                 }
             ],
         ]);
+        
+        if($request->participation_type!=1){
+            if(isset($obj->eventTickets[0])){
+                $this->setFlashSession(false,"Remove ticket types before changing participation type."); 
+                return redirect()->back();
+            }
+            if(isset($request->ticket) && is_array($request->ticket) && count($request->ticket)>0){
+                $this->setFlashSession(false,"You can't add ticket type without selecting the VolunteerCleanup Tickets on Participation Type."); 
+                return redirect()->back();
+            }
+        }
+        if($request->participation_type==4){
+            if(empty($request->participation_type_external_link)){
+                $this->setFlashSession(false,"Please enter external link for participation type."); 
+                return redirect()->back();
+            }
+        }
 
         // Tool managements
         $obj->fill($validatedData);
