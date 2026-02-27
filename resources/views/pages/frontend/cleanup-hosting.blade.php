@@ -223,7 +223,7 @@
                                                     <i class="fa-solid fa-location-dot"></i>
                                                 </span>
                                                 <p>Status</p>
-                                                <h6 class="coupon-status">{{ ucfirst($event->runningStatus) }} </h6>
+                                                <h6 class="coupon-status">{{ ucfirst($event->runningStatus)=='Ongoing'?'In-Progress':ucfirst($event->runningStatus) }} </h6>
                                             </div>
                                             <div class="icon-box">
                                                 <span class="icon">

@@ -17,9 +17,9 @@
                             {{$event->event_name}}
                         </a>
                         @if(strtotime($event->start_datetime) > strtotime(date('Y-m-d H:i:s')))
-                        <span class="badge ongoing">Upcoming</span>
+                        <span class="badge upcoming">Upcoming</span>
                         @elseif(strtotime($event->start_datetime) <= strtotime(date('Y-m-d H:i:s')) && strtotime($event->end_datetime) >= strtotime(date('Y-m-d H:i:s')))
-                        <span class="badge ongoing">Ongoing</span>
+                        <span class="badge ongoing">In-Progress</span>
                         @else
                         <span class="badge ended">Ended</span>
                         @endif

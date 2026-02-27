@@ -37,8 +37,17 @@ class FrontAuthController extends Controller
         ]);
 
         $volunteer = Volunteer::where('email_address',$request->email_address)->first();
-        if (!$volunteer || $volunteer->status == 0) {
+        if (!isset($volunteer->id)) {
             $this->setFlashSession(false, 'No account found with that email address.');
+            return redirect()->back()->withInput();
+        }
+        if ($volunteer->status == 0) {
+            $this->setFlashSession(false, 'You don\'t have permission to reset password. Please contact the admin.');
+            return redirect()->back()->withInput();
+        }
+        if (empty($volunteer->email_verified_at)) {
+            $this->sendActivationLink(encrypt($volunteer->id),true);
+            $this->setFlashSession(false, 'Your account is not activated. We\'ve sent you a new activation link.');
             return redirect()->back()->withInput();
         }
         if($volunteer){
@@ -93,7 +102,7 @@ class FrontAuthController extends Controller
         $volunteer->organisation_name = $request->organization_association_name ?? '';
         $volunteer->is_newsletter = $request->is_newsletter ?? 0;
         $volunteer->is_weekly_alert_sent = $request->weekly_alerts ?? 0;
-        $volunteer->status = 0; // Assuming status 0 means inactive
+        //$volunteer->status = 0; // Assuming status 0 means inactive
         
         $pincode = '';
         $cityStateZip = CityStateZip::find(@request()->register_pincode);
@@ -141,7 +150,7 @@ class FrontAuthController extends Controller
         $volunteer = Volunteer::findOrFail(decrypt($id));
         if($volunteer->email_verified_at == null){
             $volunteer->email_verified_at = now();
-            $volunteer->status            = 1;
+            //$volunteer->status = 1;
             $volunteer->save();
             $this->setFlashSession(true, 'Your email address has been verified successfully.');
         }else{
@@ -185,7 +194,7 @@ class FrontAuthController extends Controller
             return redirect()->route('front-login');
         }
     }
-    public function sendActivationLink($id){
+    public function sendActivationLink($id,$useByInsideFunc=false){
         $user = Volunteer::findOrFail(decrypt($id));
         if(!empty($user->email_verified_at)){
             $this->setFlashSession(false, 'Your account has already been activated.');
@@ -197,8 +206,10 @@ class FrontAuthController extends Controller
             'verification_link' => $this->mailUrl('activate-account', ['id' => encrypt($user->id)])
         ];
         $this->sendEmail($user->email_address, ACTIVATE_ACCOUNT_MAIL_SUB, $mail_content, "activate-account");
-        $this->setFlashSession(true, 'Your activation link has been sent to your email address. Please check your inbox.');
-        return redirect()->route('front-login');
+        if(!$useByInsideFunc){
+            $this->setFlashSession(true, 'Your activation link has been sent to your email address. Please check your inbox.');
+            return redirect()->route('front-login');
+        }
     }
     public function activateAccount($id){
         $user = Volunteer::findOrFail(decrypt($id));
