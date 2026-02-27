@@ -85,7 +85,7 @@
                             </div>
                         </div> 
                         <div class="col-md-4">
-                            <label for="website" class="form-label">Embed Location</label>
+                            <label for="website" class="form-label">What is the URL you are putting this widget on?</label>
                             <input type="url" id="website" class="text form-control h_40 urlmask" name="website" placeholder="Enter embed location" value="{{$widget->website ?? ''}}">
                         </div>
                     </div>

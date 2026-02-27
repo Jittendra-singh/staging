@@ -59,11 +59,11 @@
                                         <div class="btn-group" role="group">
                                             <a href="javascript:void(0);" onclick="showHostingEvent('upcoming',this)"
                                                 class="btn btn-outline-primary px-3 py-2 active text-white">
-                                                In-Progress cleanups 
+                                                Upcoming cleanups 
                                             </a>
                                             <a href="javascript:void(0);" onclick="showHostingEvent('ongoing',this)"
                                                 class="btn btn-outline-primary px-3 py-2">
-                                                Ongoing cleanups 
+                                                In-Progress cleanups 
                                             </a>
                                             <a href="javascript:void(0);" onclick="showHostingEvent('ended',this)"
                                                 class="btn btn-outline-primary px-3 py-2">
