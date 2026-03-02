@@ -132,7 +132,7 @@ class FrontAuthController extends Controller
             $mail_content = [
                 'volunteer'         => $volunteer->first_name . ' ' . $volunteer->last_name,
                 'email'             => $volunteer->email_address,
-                'verification_link' => $this->mailUrl('front-verify-email', ['id' => $volunteer->encrypted_id])
+                'verification_link' => $this->mailUrl('front-verify-email', ['id' => $volunteer->encrypted_id,'timestamp' => encrypt(now()->timestamp)])
             ];
             $this->sendEmail($volunteer->email_address, VOLUNTEER_REG_BY_FRONTEND_SUB, $mail_content, "confirm-registration");
             if(isset($request->is_newsletter) && $request->is_newsletter==1){
@@ -146,8 +146,14 @@ class FrontAuthController extends Controller
 
     }
 
-    public function verifyEmail($id){
+    public function verifyEmail($id,$timestamp){
         $volunteer = Volunteer::findOrFail(decrypt($id));
+        $tokenCreatedAt = \Carbon\Carbon::createFromTimestamp(decrypt($timestamp));
+        if(now()->diffInHours($tokenCreatedAt) > 24){
+            $this->setFlashSession(false, 'Your verification link has expired. Please request a new one from login page.');
+            return redirect()->route('front-login');
+        }
+
         if($volunteer->email_verified_at == null){
             $volunteer->email_verified_at = now();
             //$volunteer->status = 1;
@@ -203,7 +209,7 @@ class FrontAuthController extends Controller
         $mail_content = [
             'volunteer'         => $user->first_name . ' ' . $user->last_name,
             'email'             => $user->email_address,
-            'verification_link' => $this->mailUrl('activate-account', ['id' => encrypt($user->id)])
+            'verification_link' => $this->mailUrl('activate-account', ['id' => encrypt($user->id),'timestamp' => encrypt(now()->timestamp)])
         ];
         $this->sendEmail($user->email_address, ACTIVATE_ACCOUNT_MAIL_SUB, $mail_content, "activate-account");
         if(!$useByInsideFunc){
@@ -211,10 +217,15 @@ class FrontAuthController extends Controller
             return redirect()->route('front-login');
         }
     }
-    public function activateAccount($id){
+    public function activateAccount($id,$timestamp){
         $user = Volunteer::findOrFail(decrypt($id));
         if(!empty($user->email_verified_at)){
             $this->setFlashSession(false, 'Your account has already been activated.');
+            return redirect()->route('front-login');
+        }
+        $tokenCreatedAt = \Carbon\Carbon::createFromTimestamp(decrypt($timestamp));
+        if(now()->diffInHours($tokenCreatedAt) > 24){
+            $this->setFlashSession(false, 'Your activation link has expired. Please request a new one from login page.');
             return redirect()->route('front-login');
         }
         $user->email_verified_at = now();

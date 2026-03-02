@@ -105,6 +105,7 @@ class FrontOrderController extends Controller
         $event            = session()->get('checkout_event');
         $order_total_details = session()->get('checkout_order_details');
         $ticket_booking = session()->get('ticket_booking');
+        $setting = Setting::first();
 
         $feeAmt = 0;
         if($ticket_booking){
@@ -123,6 +124,7 @@ class FrontOrderController extends Controller
         }
 
         $order_total_view = view('components.reusables.frontend.order-total', [
+                                'setting' => $setting,
                                 'event' => $event , 
                                 'ticket_fees' => $feeAmt , 
                                 'ticket_booking' => $ticket_booking , 

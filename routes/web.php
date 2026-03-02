@@ -170,11 +170,11 @@ Route::controller(\App\Http\Controllers\FrontAuthController::class)->group(funct
         Route::post('login' , 'handleLogin')->name('front-login-post');
         Route::get('register' , 'register')->name('front-register');
         Route::post('register' , 'registerVolunteer')->name('front-register-post');
-        Route::get('front-verify-email/{id}' , 'verifyEmail')->name('front-verify-email');
+        Route::get('front-verify-email/{id}/{timestamp}' , 'verifyEmail')->name('front-verify-email');
         Route::get('forgot-password' , 'forgotPassword')->name('front-forgot-password');
         Route::post('reset-password-email' , 'resetPasswordEmail')->name('reset.password.email');
         Route::get('send-activation-link/{id}' , 'sendActivationLink')->name('send-activation-link');
-        Route::get('activate-account/{id}' , 'activateAccount')->name('activate-account');
+        Route::get('activate-account/{id}/{timestamp}' , 'activateAccount')->name('activate-account');
         
         Route::get('/reset-password/{token}','resetPassword')->name('resetPassword');
         Route::post('/reset-password','updatePassword')->name('updatePassword');

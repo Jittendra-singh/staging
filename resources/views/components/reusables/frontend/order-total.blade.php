@@ -1,8 +1,18 @@
 <div class="order-total-block mt-4">
     @foreach ($ticket_booking as $ticket)
         <div class="order-total-dt">
-            <div class="order-text mb-1"><h6><b>{{$ticket['count']}}x</b> {{$ticket['name']}}</h6></div>
-            <div class="order-number mb-1"><h6>{{config('app.currency')}}{{formatAmt($ticket['price'])}}</h6></div>
+            <div class="order-text mb-0"><h6 class="mb-1"><b>{{$ticket['count']}}x</b> {{$ticket['name']}}</h6></div>
+            <div class="order-number mb-0"><h6 class="mb-1">{{config('app.currency')}}{{formatAmt($ticket['price'])}}</h6></div>
+        </div>
+        @if($event->charge_bear_by==1)
+        <div class="order-total-dt">
+            <div class="order-text mb-0"><small style="font-weight: 100;font-size: 13px;">Base Ticket Price</small></div>
+            <div class="order-number mb-0"><small style="font-weight: 100;font-size: 13px;">{{config('app.currency')}}{{formatAmt($ticket['base_price'])}}</small></div>
+        </div>
+        @endif
+        <div class="order-total-dt mb-3">
+            <div class="order-text mb-1"><small style="font-weight: 100;font-size: 13px;">Platform Fee ({{$setting->event_commission}}%)</small></div>
+            <div class="order-number mb-1"><small style="font-weight: 100;font-size: 13px;">{{config('app.currency')}}{{formatAmt(($ticket['base_price']*$setting->event_commission)/100)}}</small></div>
         </div>
     @endforeach
     @if($event->allow_donations==1 && !empty($event->creator->stripe_email) && !empty($event->creator->stripe_account_id))
@@ -55,7 +65,7 @@
         <div class="order-number mb-3">{{config('app.currency')}}<span id="f-sub-total">{{ formatAmt($sub_total) }}</span></div>
     </div>
     <div class="order-total-dt mb-2">
-        <div class="order-text mb-2"><h6>Fee Included</h6></div>
+        <div class="order-text mb-2"><h6>Platform Fee Included ({{$setting->event_commission}}%)</h6></div>
         <div class="order-number mb-2" ticketfee="{{ $ticket_fees }}"><h6>{{config('app.currency')}}{{ formatAmt($ticket_fees) }}</h6></div>
     </div>
     <div class="order-total-dt donation-total-div" style="display:none;">
@@ -66,6 +76,9 @@
     <div class="order-total-dt">
         <div class="order-text">Total</div>
         <div class="order-number ttl-clr">{{config('app.currency')}}<span id="f-grand-total">{{ formatAmt($final_total) }}</span></div>
+    </div>
+    <div class="order-total-dt">
+        <div class="order-text mb-1"><small style="font-weight: 100;" class="m-0">Processing fees are estimated (~3% + $0.30) and may vary based on payment method and card type. The final amount is determined by Stripe.</small></div>
     </div>
 </div>
 <style>

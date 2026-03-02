@@ -16,9 +16,15 @@
     if (old('start_datetime') !== null) {
         $start_datetime = date('Y-m-d H:i' , strtotime(old('start_datetime')));
     }
+    if(!empty($start_datetime)){
+        $start_datetime = date('Y-m-d, H:i',strtotime($start_datetime));
+    }
     $end_datetime = old('end_datetime', $formData->end_datetime ?? '');
     if (old('end_datetime') !== null) {
         $end_datetime = date('Y-m-d H:i' , strtotime(old('end_datetime')));
+    }
+    if(!empty($end_datetime)){
+        $end_datetime = date('Y-m-d, H:i',strtotime($end_datetime));
     }
     $country_id = old('country_id', $formData->country_id ?? '');
     $pincode = old('pincode', $formData->pincode ?? '');

@@ -223,7 +223,7 @@ $(document).ready(function () {
       //if($('#start_datetime').length && $('#site_publish_date').length && $('#ticket_sell_start_time').length){
       if ($('#start_datetime').length && $('#site_publish_date').length) {
             $('#start_datetime').datetimepicker({
-                  format: 'Y-m-d H:i',
+                  format: 'Y-m-d, H:i',
                   step: 30,
                   minDate: 0,
                   onShow: function (ct) {
@@ -252,7 +252,7 @@ $(document).ready(function () {
                   } */
             });
             $('#end_datetime').datetimepicker({
-                  format: 'Y-m-d H:i',
+                  format: 'Y-m-d, H:i',
                   step: 30,
                   onShow: function (ct) {
                         this.setOptions({

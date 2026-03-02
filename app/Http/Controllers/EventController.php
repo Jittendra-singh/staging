@@ -585,7 +585,58 @@ class EventController extends Controller
     }
     public function cloneEvent($placeholder){
         Gate::authorize('create', $this->gateHandler);
-        $event                  = Event::findOrFail(decrypt($placeholder));
+        $event = Event::findOrFail(decrypt($placeholder));
+        $today_dt = date('Y-m-d H:i:s');
+        $new_event = $event->replicate();
+        $new_event->event_name  = $event->event_name . ' (Clone)';
+        $new_event->slug        = $this->generateSlug(Event::class, 'slug', $event->slug , 0); 
+        $new_event->created_at  = $today_dt;
+        $new_event->updated_at  = $today_dt;
+        $new_event->status  = 'draft';
+        $new_event->waste_collected  = null;
+        $new_event->area_cleaned  = null;
+        $new_event->team_name  = null;
+        $new_event->post_event_notes  = null;
+        $new_event->click_views  = 0;
+        $new_event->start_datetime = date('Y-m-d H:i:s', strtotime('+1 day', strtotime($today_dt)));
+        $new_event->end_datetime = date('Y-m-d H:i:s', strtotime('+2 day', strtotime($today_dt)));
+        $new_event->site_publish_date = date('Y-m-d', strtotime($today_dt));
+        $new_event->site_depublish_date = date('Y-m-d', strtotime('+3 day', strtotime($today_dt)));
+        $new_event->wp_id = null;  
+        $new_event->wp_meta = null;  
+        $new_event->save();
+        $new_event_id = $new_event->id;
+        $new_event->eventTickets()->createMany(
+            $event->eventTickets->map(function ($ticket) use ($new_event_id, $today_dt) {
+                $newTicket = $ticket->replicate();
+                $newTicket->event_id = $new_event_id;
+                $newTicket->sell_start_time = $today_dt;  
+                $newTicket->sell_end_time = date('Y-m-d', strtotime('+1 day', strtotime($today_dt)));  
+                $newTicket->wp_id = null;
+                $newTicket->wp_meta = null;
+                $newTicket->created_at = $today_dt;
+                $newTicket->updated_at = $today_dt;
+                return $newTicket->toArray();
+            })->toArray()
+        );
+        $new_event->tags()->attach($event->tags()->pluck('tag_id')->toArray());
+        $new_event->volunteertags()->attach($event->volunteertags()->pluck('tag_id')->toArray());
+        $new_event->bringTools()->attach(
+            $event->bringTools()->pluck('tool_id')->mapWithKeys(function ($toolId) {
+                return [
+                    $toolId => ['should_bring' => 1]
+                ];
+            })->toArray()
+        );
+        $new_event->providedTools()->attach(
+            $event->providedTools()->pluck('tool_id')->mapWithKeys(function ($toolId) {
+                return [
+                    $toolId => ['should_bring' => 0]
+                ];
+            })->toArray()
+        );
+        return redirect()->route('show-event', encrypt($new_event->id));
+        /* $event                  = Event::findOrFail(decrypt($placeholder));
         $event->event_name      = $event->event_name . ' (Clone)'; 
         $event->slug            = $this->generateSlug(Event::class, 'slug', $event->slug , 0);
         $event->tickets         = $event->eventTickets->map(function($ticket){
@@ -598,7 +649,7 @@ class EventController extends Controller
         $event->provided_tools  = $event->providedTools()->pluck('tools.id')->toArray();
         $event->id              = null; // Reset ID to create a new record
         session()->flashInput($event->toArray());
-        return redirect()->route('show-event');
+        return redirect()->route('show-event'); */
     }
     public function toggleStatus($placeholder){
         Gate::authorize('update', $this->gateHandler);

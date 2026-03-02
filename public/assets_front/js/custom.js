@@ -844,7 +844,7 @@ $(document).ready(function () {
 	//if ($('#start_datetime').length && $('#site_publish_date').length && $('#ticket_sell_start_time').length) {
 	if ($('#start_datetime').length && $('#site_publish_date').length) {
 		$('#start_datetime').datetimepicker({
-			format: 'Y-m-d H:i',
+			format: 'Y-m-d, H:i',
 			step: 30,
 			minDate: 0,
 			onShow: function (ct) {
@@ -886,7 +886,7 @@ $(document).ready(function () {
 			} */
 		});
 		$('#end_datetime').datetimepicker({
-			format: 'Y-m-d H:i',
+			format: 'Y-m-d, H:i',
 			step: 30,
 			onShow: function (ct) {
 				this.setOptions({
@@ -1328,7 +1328,7 @@ $(document).ready(function () {
 	$(document).on('change', '#p_ticket_type_select', function () {
 		let selectedValue = $(this).val();
 		if (selectedValue === 'free') {
-			$('#p_ticket_price').val(0);
+			$('#p_ticket_price').val(0).trigger('change');
 			$('#p_ticket_price').prop('readonly', true);
 		} else {
 			$('#p_ticket_price').prop('readonly', false);
@@ -2332,7 +2332,6 @@ $(document).ready(function () {
 		calcPriceBreakdown();
 	}
 	$(document).on('keyup', '#p_ticket_price', function () {
-		console.log('asdf');
 		pCalcPriceBreakdown();
 	});
 	$(document).on('change', '#p_ticket_price', function () {
@@ -2454,20 +2453,26 @@ function pCalcPriceBreakdown() {
 	var val = $(document).find('#p_ticket_price').val();
 	if (val != '') {
 		var fee = (parseFloat(val) * parseFloat(feePer)) / 100;
+		var est_fee = ((parseFloat(val) * 3) / 100) + 0.30;
 		var total_price = parseFloat(val) + parseFloat(fee);
 		$(document).find('#pb_platform_fee').text(fee.toFixed(2));
+		$(document).find('#pb_est_fee').text(est_fee.toFixed(2));
 		$(document).find('#pb_base_price').text(parseFloat(val).toFixed(2));
 		if (isOrgPayFee == 1) {
 			$(document).find('#pb_fee_text').text('Platform Fee');
 			$(document).find('#pb_final_price').text(total_price.toFixed(2));
+			$(document).find('#pb_net_org_price').text(parseFloat(val).toFixed(2));
 		} else {
 			$(document).find('#pb_fee_text').text('Platform Fee Included');
 			$(document).find('#pb_final_price').text(parseFloat(val).toFixed(2));
+			$(document).find('#pb_net_org_price').text((parseFloat(val) - parseFloat(fee)).toFixed(2));
 		}
 	} else {
-		$(document).find('#pb_platform_fee').text(0);
 		$(document).find('#pb_base_price').text(0);
+		$(document).find('#pb_platform_fee').text(0);
 		$(document).find('#pb_final_price').text(0);
+		$(document).find('#pb_est_fee').text(0);
+		$(document).find('#pb_net_org_price').text(0);
 	}
 }
 

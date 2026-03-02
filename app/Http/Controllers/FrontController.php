@@ -318,8 +318,10 @@ class FrontController extends Controller
         $ticket_description = '';
         $charge_bear_by = $event->charge_bear_by;
         $fee = 0;
+        $est_fee = 0;
         $b_total = 0;
         $b_fee_text = 'Platform Fee Included';
+        $net_org_total = 0;
         if(!empty($id)){
             $eventTicket = EventTicket::where('id', decrypt($id))->first();
             if(isset($eventTicket->id)){
@@ -334,8 +336,10 @@ class FrontController extends Controller
                 $pass_code = $eventTicket->pass_code;
                 $ticket_description = $eventTicket->ticket_description;
                 $fee = formatAmt(($eventTicket->ticket_price*$setting->event_commission)/100);
+                $est_fee = formatAmt((($eventTicket->ticket_price*3)/100)+0.3);
                 $b_total = $charge_bear_by==1?(formatAmt($eventTicket->ticket_price+$fee)):formatAmt($eventTicket->ticket_price);
                 $b_fee_text = $charge_bear_by==1?'Platform Fee':'Platform Fee Included';
+                $net_org_total = $charge_bear_by==1?(formatAmt($eventTicket->ticket_price)):formatAmt($eventTicket->ticket_price-$fee);
             }
         }
         $allowPaidTickets = true;
@@ -418,8 +422,11 @@ class FrontController extends Controller
                         <h6 class="mb-3">Price Breakdown</h6>
                         <p class="mb-2"><small>Base price</small> <small class="float-end">$<span name="pb_base_price_" id="pb_base_price" class="form-ele">'.$ticket_price.'</span></small></p>
                         <p><small><span name="pb_fee_text_" id="pb_fee_text">'.$b_fee_text.'</span> ('.$setting->event_commission.'%)</small> <small class="float-end">$<span name="pb_platform_fee_" id="pb_platform_fee" class="form-ele">'.$fee.'</span></small></p>
+                        <p><small>Estimated Processing Fee<br/>(~3% + $0.30)</small> <small class="float-end">$<span name="pb_est_fee_" id="pb_est_fee" class="form-ele">'.$est_fee.'</span></small></p>
                         <hr class="my-2" />
-                        <h6 class="mt-3 mb-4"><span>Total to Attendee</h6span> <span class="float-end h5 text-primary">$<span name="pb_final_price_" id="pb_final_price" class="form-ele">'.$b_total.'</span></span></h6>
+                        <h6 class="mt-3 mb-3"><span>Total to Attendee</h6span> <span class="float-end h5 text-primary">$<span name="pb_final_price_" id="pb_final_price" class="form-ele">'.$b_total.'</span></span></h6>
+                        <p class="mb-3" style="color: #717171;font-style: italic;">Net to Organizer: $<span id="pb_net_org_price">'.$net_org_total.'</span> (after platform fee)</p>
+                        <p style="color: #717171;font-style: italic;">Processing fees is estimated (~3% + $0.30) and may vary based on payment method and card type. Final amount is determined by Stripe.</p>
                         <small style="color: #717171;font-style: italic;">Based on your last saved "Charge Bear By" setting in your Ticket Settings section.</small>
                     </div>
                 </div>

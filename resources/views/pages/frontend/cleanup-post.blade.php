@@ -317,9 +317,9 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                     $sDate = old('start_datetime') ? old('start_datetime') : ($form_data->start_datetime ?? '');
                                                                     $eDate = old('end_datetime') ? old('end_datetime') : ($form_data->end_datetime ?? '');
                                                                     if(!empty($sDate) && !empty($eDate)){
-                                                                        $sDate = \Carbon\Carbon::parse($sDate);
-                                                                        $eDate = \Carbon\Carbon::parse($eDate);
-                                                                        $diffDays = $sDate->diffInDays($eDate);
+                                                                        $sDateP = \Carbon\Carbon::parse($sDate);
+                                                                        $eDateP = \Carbon\Carbon::parse($eDate);
+                                                                        $diffDays = $sDateP->diffInDays($eDateP);
 
                                                                         if ($diffDays >= 7) {
                                                                             $longerThanOneWeek = true;
@@ -332,8 +332,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                     <div class="col-md-6">
                                                                         <label class="form-label  fs-6">Start Date Time.*</label>
                                                                         <div class="loc-group position-relative">
-                                                                            <input autocomplete="off" class="form-control h_50 datepicker-here-pp" id="start_datetime" data-language="en" name="start_datetime" type="text" placeholder="YYYY/MM/DD" value="{{
-                                                                            old('start_datetime') ? \Carbon\Carbon::parse(old('start_datetime'))->format('Y-m-d H:i:s') : ($form_data->start_datetime ?? '')}}" required />
+                                                                            <input autocomplete="off" class="form-control h_50 datepicker-here-pp" id="start_datetime" data-language="en" name="start_datetime" type="text" placeholder="YYYY/MM/DD" value="{{ !empty($sDate)?date('Y-m-d, H:i',strtotime($sDate)):'' }}" required />
                                                                             <span class="absolute-icon"><i class="fa-solid fa-calendar-days"></i></span>
                                                                         </div>
                                                                     </div>
@@ -344,7 +343,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                             <input autocomplete="off" name="end_datetime"
                                                                                 class="form-control h_50 datepicker-here-pp" id="end_datetime" data-language="en" type="text"
                                                                                 placeholder="YYYY/MM/DD"
-                                                                                value="{{old('end_datetime') ? \Carbon\Carbon::parse(old('end_datetime'))->format('Y-m-d H:i:s') : ($form_data->end_datetime ?? '')}}" required />
+                                                                                value="{{!empty($eDate)?date('Y-m-d, H:i',strtotime($eDate)):''}}" required />
                                                                             <span class="absolute-icon"><i
                                                                                     class="fa-solid fa-calendar-days"></i></span>
                                                                         </div>
