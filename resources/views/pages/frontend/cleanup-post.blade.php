@@ -251,7 +251,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                 </div>
                                                             </div>
                                                             <div class="col-md-6 mt-4">
-                                                                <label class="form-label fs-6">Your Event URL Slug <i class="fa fa-info-circle" data-bs-toggle="tooltip" data-bs-title="Your event page URL will display as www.volunteercleanup.com/events/slug"></i>
+                                                                <label class="form-label fs-6">Your Event URL Slug <i class="fa fa-info-circle" data-bs-toggle="tooltip" data-bs-title="Your event page URL will display as www.volunteercleanup.org/event/slug"></i>
 
                                                                 </label>
                                                                 <div class="form-group hstack ">
@@ -902,7 +902,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                     <div class="setting-item col-sm-6 mt-4">
                                                                         <div class="d-flex align-items-start">
                                                                             <label class="btn-switch m-0 me-3">
-                                                                                <input type="checkbox" value="1" id="show_remaining_tickets" name="show_remaining_tickets" {{ old('show_remaining_tickets', $form_data->show_remaining_tickets ?? false) ? 'checked' : '' }}>
+                                                                                <input type="checkbox" value="1" id="show_remaining_tickets" name="show_remaining_tickets" {{ old('show_remaining_tickets', $form_data->show_remaining_tickets ?? true) ? 'checked' : '' }}>
                                                                                 <span class="checkbox-slider"></span>
                                                                             </label>
                                                                             <div class="d-flex flex-column">
@@ -939,7 +939,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                                 <!-- Organizer -->
                                                                                 <div class="col-md-6">
                                                                                     <label class="fee-option">
-                                                                                        <input type="radio" value="0" id="charge_bear_by" name="charge_bear_by" {{ old('charge_bear_by', $form_data->charge_bear_by ?? 0) == 0 ? 'checked' : '' }}>
+                                                                                        <input type="radio" value="0" id="charge_bear_by" name="charge_bear_by" {{ old('charge_bear_by', $form_data->charge_bear_by ?? 1) == 0 ? 'checked' : '' }}>
                                                                                         <div class="fee-card">
                                                                                             <div class="d-flex align-items-start">
                                                                                                 <span class="radio-dot"></span>
@@ -957,7 +957,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                                 <!-- Buyer -->
                                                                                 <div class="col-md-6">
                                                                                     <label class="fee-option">
-                                                                                        <input type="radio" value="1" id="charge_bear_by2" name="charge_bear_by" {{ old('charge_bear_by', $form_data->charge_bear_by ?? 0) == 1 ? 'checked' : '' }}>
+                                                                                        <input type="radio" value="1" id="charge_bear_by2" name="charge_bear_by" {{ old('charge_bear_by', $form_data->charge_bear_by ?? 1) == 1 ? 'checked' : '' }}>
                                                                                         <div class="fee-card">
                                                                                             <div class="d-flex align-items-start">
                                                                                                 <span class="radio-dot"></span>

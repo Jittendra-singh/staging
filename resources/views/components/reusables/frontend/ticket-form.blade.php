@@ -109,7 +109,7 @@
                                         <label for="pass_code">Pass Code</label>
                                         <input type="text" name="ticket[{{$counter}}][pass_code]" value="{{@$ticket->pass_code}}" class="form-control form-ele mt-1" >
                                     </div>
-                                    <smal style="font-size: 12px;">Volunteers must enter the Pass Code to add ticket into the cart. Leave this field blank to remove pass code lock.</smal>
+                                    <smal style="font-size: 12px;">Want to keep this ticket private? Enter a passcode here (passcodes as case sensitive). If you want it open to all volunteers, just leave it blank.</smal>
                                 </div>
                                 <div class="col-md-4 mt-3">
                                     <div class="form-group">

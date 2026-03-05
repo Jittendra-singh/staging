@@ -20,7 +20,7 @@
 
         <p>Thank you for supporting our mission to protect our shorelines. Even if you can’t make it this time, your care and effort truly matter 💙</p>
         <p>See you at a future cleanup,<br>
-        The {{ env('APP_NAME') }} Team</p>
+        {{ APPNAMEEMAIL }}</p>
     @else 
         <p>Hi {{ $volunteer_name ?? 'Volunteer' }},</p>
 
@@ -42,6 +42,6 @@
         <p>We hope to see you at a future cleanup.</p>
         
         <p>Warm regards,<br>
-        The {{ env('APP_NAME') }} Team</p>
+        {{ APPNAMEEMAIL }}</p>
     @endif 
 @endsection

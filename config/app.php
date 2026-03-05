@@ -6,6 +6,7 @@ define('SEND_MAIL',true);
 define('SUPPORT_EMAIL','outreach@volunteerCleanup.org');
 define('PARTNER_LOGIN_SMS','Hi, Contact No. {mobile}, your OTP to login is {otp} ');
 define('APPNAME','Volunteer Cleanup');
+define('APPNAMEEMAIL','VolunteerCleanup.Org Team');
 // email subjects
 define('VOLUNTEER_REG_BY_BACKEND_SUB','Welcome, Eco Warrior ! Confirm Your Email to Dive In.');
 define('VOLUNTEER_REG_BY_FRONTEND_SUB','Welcome, Eco Warrior ! Confirm Your Email to Dive In.');

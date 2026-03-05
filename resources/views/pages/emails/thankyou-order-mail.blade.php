@@ -29,5 +29,5 @@
     <p>We look forward to seeing everyone at the cleanup.</p>
 
     <p>Warm regards,<br>
-    The {{ env('APP_NAME') }} Team</p>
+    {{ APPNAMEEMAIL }}</p>
 @endsection

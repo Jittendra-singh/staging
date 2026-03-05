@@ -15,7 +15,7 @@
         <p>Updated attendee list and detailed ticket breakdown is available in your Event Dashboard.</p>
         <p>👉 <strong><a href="{{ $event_hosting_url ?? '#' }}">View Event Dashboard</a></strong></p>
         <p>Thank you for continuing to organize impactful cleanups.</p>
-        <p>Warm regards,<br/><strong><a href="{{ config('app.frontsite') }}">VolunteerCleanup.org Team</a></strong></p>
+        <p>Warm regards,<br/><strong><a href="{{ config('app.frontsite') }}">{{ APPNAMEEMAIL }}</a></strong></p>
     @else 
         <p>Hi {{$org_name}},</p>
 
@@ -36,6 +36,6 @@
         <hr>
         <p>Funds (minus processing and platform fees) have been deposited into your connected account.</p>
         <p>You can view full details in your <a href="{{route('front-cleanup-hosting',['type'=>'organizer'])}}">Event Dashboard</a>.</p>
-        <p>Warm regards,<br/><strong><a href="{{ config('app.frontsite') }}">VolunteerCleanup.org Team</a></strong></p>
+        <p>Warm regards,<br/><strong><a href="{{ config('app.frontsite') }}">{{ APPNAMEEMAIL }}</a></strong></p>
     @endif
 @endsection

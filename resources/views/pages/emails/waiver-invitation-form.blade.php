@@ -20,5 +20,5 @@
 
     <p>We appreciate your support in getting youth involved in protecting our environment 🌱</p>
     <p>Thank you,<br>
-    The {{ env('APP_NAME') }} Team</p>
+    {{ APPNAMEEMAIL }}</p>
 @endsection

@@ -42,7 +42,7 @@
                                     </div>
                                     <button class="primary-btn w-fit mt-4" type="submit">Sign In <i class="fas fa-sign-in-alt ms-2"></i></button>
                                     <div class="mt-3">
-                                        <label class="text-start form-label">Don't have an account? 
+                                        <label class="text-start form-label h5">Don't have an account? 
                                             <a href="{{ route('front-register') }}">Register</a>
                                         </p>
                                         <p>On Nov 3, 2025, we migrated to a new platform. Your information has been moved over, but you will need to reset your password to log in. Please reset your password <a href="{{route('front-forgot-password')}}">here</a>.</p>

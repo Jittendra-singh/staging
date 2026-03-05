@@ -34,5 +34,5 @@
     <p>Thank you for supporting cleaner communities.</p>
 
     <p>Warm regards,<br/>
-    <strong>VolunteerCleanup.org System</strong></p>
+    <strong>{{ APPNAMEEMAIL }}</strong></p>
 @endsection

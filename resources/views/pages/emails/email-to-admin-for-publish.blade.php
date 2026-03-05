@@ -29,6 +29,6 @@
     <hr>
 
     <p>🌱 Thank you<br>
-    VolunteerCleanup.org System</p>
+    {{ APPNAMEEMAIL }}</p>
     <p><i>(This is an automated message – please do not reply.)</i></p>
 @endsection

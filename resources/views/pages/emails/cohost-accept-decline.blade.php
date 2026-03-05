@@ -10,7 +10,7 @@
         </a>
     </p>
     <p>Thank you for organizing together!<br/>
-    VolunteerCleanup.org Team</p>
+    {{ APPNAMEEMAIL }}</p>
 @else 
     <p>Hi {{$organizer_first_name}},</p>
     <p>{{ $cohost_first_name }} has declined your invitation to co-host “{{ $event_name }}.”</p>
@@ -21,6 +21,6 @@
         </a>
     </p>
     <p>Thank you for organizing together!<br/>
-    VolunteerCleanup.org Team</p>
+    {{ APPNAMEEMAIL }}</p>
 @endif
 @endsection

@@ -10,7 +10,7 @@
     </p>
     <p>If you prefer not to co-host, you can safely ignore this email.<br/>
     Thanks for stepping up to help keep our community clean!</p>
-    <p>VolunteerCleanup.org Team</p>
+    <p>{{ APPNAMEEMAIL }}</p>
 @else 
     <p>Hi {{ $cohostName }},</p>
     <p>{{ $organizerName }} has invited you to co-host the cleanup event <strong>“{{ $eventName }}”</strong> on VolunteerCleanup.org.</p>
@@ -24,6 +24,6 @@
     </p>
     <p>If you’re not available to co-host, you can simply ignore this email or click <a href="{{ $cancelLink }}"><strong>Decline Invitation</strong></a>.</p>
     <p>Thank you for helping make a difference for our shoreline and community!<br/>
-    VolunteerCleanup.org Team</p>
+    {{ APPNAMEEMAIL }}</p>
 @endif
 @endsection

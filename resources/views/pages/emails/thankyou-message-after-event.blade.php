@@ -33,5 +33,5 @@ We’re deeply grateful for your time, effort, and energy.</p>
 <p>Let’s keep this wave of change going 🌊</p>
 
 <p>With gratitude,<br>
-The {{ $teamName ?? env('APP_NAME') }} Team</p>
+{{ APPNAMEEMAIL }}</p>
 @endsection

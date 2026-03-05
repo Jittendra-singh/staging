@@ -47,7 +47,7 @@
     </ul>
 
     <p>Thank you for supporting our young volunteers! 🌱</p>
-    <p>{{ env('APP_NAME') }} Team</p>
+    <p>{{ APPNAMEEMAIL }}</p>
     @else 
     <p>Hi {{ $volunteer_name ?? 'Volunteer' }},</p>
     <p>We’re excited to have you for <b>{{$event_name}}</b> on <b>{{$event_date}} at {{$event_location}}</b>! 🐚🌊</p>
@@ -112,6 +112,6 @@
 
     <p>Thanks for being part of this powerful movement – your time and energy truly make a difference! 💪🌊</p>
     <p>See you at the shoreline,<br>
-    The {{ env('APP_NAME') }} Team</p>
+    {{ APPNAMEEMAIL }}</p>
     @endif 
 @endsection

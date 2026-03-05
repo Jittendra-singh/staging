@@ -57,7 +57,7 @@
     $show_ticket_description = old('show_ticket_description', $formData->show_ticket_description ?? true);
     $allow_donations = old('allow_donations', $formData->allow_donations ?? false);
     $allow_refund = old('allow_refund', $formData->allow_refund ?? false);
-    $charge_bear_by = (int) old('charge_bear_by', $formData->charge_bear_by ?? 0);
+    $charge_bear_by = (int) old('charge_bear_by', $formData->charge_bear_by ?? 1);
     $is_private_ticket = old('is_private_ticket', $formData->is_private_ticket ?? false);
     $participation_type = old('participation_type', $formData->participation_type ?? 1);
     $participation_type_external_link = old('participation_type_external_link', $formData->participation_type_external_link ?? null);

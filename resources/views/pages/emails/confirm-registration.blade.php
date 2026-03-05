@@ -15,6 +15,6 @@
     <p>Looking forward to seeing you in action!</p>    
 
     <p>Warm regards,<br>
-    <strong>{{ env('APP_NAME') }} Team</strong><br>
+    <strong>{{ APPNAMEEMAIL }}</strong><br>
     <em>Small acts. Big impact.</em></p>
 @endsection

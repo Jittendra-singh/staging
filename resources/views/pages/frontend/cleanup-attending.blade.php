@@ -25,8 +25,8 @@
 							<div class="dashboard-wrap-content p-4">
 								<h5 class="mb-4">Events ({{$attending_events->count()}})</h5>
 								<form action="">
-									<div class="d-md-flex flex-wrap align-items-center">
-										<div class="dashboard-date-wrap w-70">
+									<div class="row">
+										<div class="col-md-5">
 											<div class="form-group">
 												<div class="relative-input position-relative">
 													<input class="form-control h_40 w-100" type="text" value="{{request()->search ?? ''}}" name="search" placeholder="Find an event you're attending">
@@ -34,7 +34,16 @@
 												</div>
 											</div>
 										</div>
-										<div class="rs mt_r4 w-30 ps-3">
+										<div class="col-md-3">
+											<div class="form-group dropdown bootstrap-select dropdown">
+												<select class="selectpicker" name="event_type">
+													<option value="">Select Event Status</option>
+													<option value="1" @selected(request()->event_type == '1')>Upcoming</option>
+													<option value="2" @selected(request()->event_type == '2')>Past</option>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-3">
 											<div class="nav custom2-tabs btn-group justify-content-start gap-2 row-gap-3" role="tablist">
 												<button class="primary-btn w-fit" type="submit">Search</button>
 												<a href="{{ url()->current() }}" class="primary-btn w-fit">Reset</a>
@@ -276,7 +285,7 @@
 											</div>
 										</div>
 									@empty
-										@if(isset(request()->search))
+										@if(isset(request()->search) || isset(request()->event_type))
 										<div class="main-card mt-2">
 											<div class="contact-list">
 												<div class="p-4 justify-content-center">

@@ -11,5 +11,5 @@
     <p>Once you check them in, the certificate will be generated automatically and emailed to the volunteer.</p>
 
     <p>Thank you for your support.<br>
-     — VolunteerCleanup.org Team</p>
+     {{ APPNAMEEMAIL }}</p>
 @endsection

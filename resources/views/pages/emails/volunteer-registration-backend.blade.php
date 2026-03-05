@@ -17,5 +17,5 @@
     <p>Thank you for joining us in making a difference!</p>
 
     <p>Best regards,<br>
-    <strong>{{ env('APP_NAME') }} Team</strong><br>
+    <strong>{{ APPNAMEEMAIL }}</strong><br>
 @endsection

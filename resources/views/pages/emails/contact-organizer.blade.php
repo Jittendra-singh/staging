@@ -18,5 +18,5 @@
         </a>
     </p>
     <p>Thank you for being part of our community!<br>
-    {{ env('APP_NAME') }} Team</p>
+    {{ APPNAMEEMAIL }}</p>
 @endsection

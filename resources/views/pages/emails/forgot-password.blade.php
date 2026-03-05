@@ -8,5 +8,5 @@
 <p>If you didn’t request a password reset, you can ignore this message — your account is safe and nothing has changed.</p>
 <p>Need help or have questions? Just hit reply. We’re here for you!</p>
 <p>Keep making the planet cleaner,<br>
-<b>Team {{ env('APP_NAME') }} 🌎</b></p>
+<b>{{ APPNAMEEMAIL }} 🌎</b></p>
 @endsection

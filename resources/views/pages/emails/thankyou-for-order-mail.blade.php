@@ -38,9 +38,15 @@
     <hr>
     <p>Event Details:</p>
     <ul>
-        <li><strong>Event:</strong> {{ $event_title ?? 'Event Title' }}</li>
+        <li><strong>Event:</strong> <a href="{{ $event_link??'#' }}">{{ $event_title ?? 'Event Title' }}</a></li>
         <li><strong>Date & Time:</strong> {{ $event_date ?? 'Event Date' }}</li>
         <li><strong>Location:</strong> {{ $event_location ?? 'Event Location' }}</li>
+        @if($event->bringTools->count())
+            <li><strong>What to Bring:</strong> {{$event->bringTools->pluck('name')->implode(', ')}}</li>
+        @else 
+            <li><strong>What to Bring:</strong> - </li>
+        @endif
+        <li><strong>Parking Instructions:</strong> {!! $event->parking_info_details ?? '-' !!}</li>
     </ul><br/>
 
     @if($event->waiverFormContentFilter() && $is_under_18)
@@ -56,5 +62,5 @@
     <p>We’re excited to have you join the effort — every helping hand makes a difference!</p>
 
     <p>Warm regards,<br>
-    {{ env('APP_NAME') }} Team</p>
+    {{ APPNAMEEMAIL }}</p>
 @endsection

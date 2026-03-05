@@ -27,5 +27,5 @@
 <p>If you have any questions about your role or the event, feel free to contact our support team at <a href="mailto:{{ SUPPORT_EMAIL }}">{{ SUPPORT_EMAIL }}</a>.</p>
 <p>Thank you for being part of our community!</p>
 <p>Best regards,<br>
-{{ env('APP_NAME') }}</p>
+{{ APPNAMEEMAIL }}</p>
 @endsection

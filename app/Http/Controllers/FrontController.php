@@ -176,8 +176,17 @@ class FrontController extends Controller
     public function cleanupAttending(){
         $attending_events = auth()->guard('front')->user()->attendingEvents()
                                 ->where(function($q){
-                                    if(request()->search)
+                                    if(request()->search){
                                         $q->where("event_name","LIKE", "%".request()->search."%");
+                                    }
+                                    if (request()->event_type) {
+                                        $now = now();
+                                        if(request()->event_type==1){
+                                            $q->where("start_datetime" ,">",$now);
+                                        }elseif(request()->event_type==2){
+                                            $q->where("end_datetime" , "<",$now);
+                                        }
+                                    }
                                 })->latest()->paginate()->withQueryString();
         return view('pages.frontend.cleanup-attending' , [
             'attending_events' => $attending_events , 
@@ -406,7 +415,7 @@ class FrontController extends Controller
                             <label for="pass_code">Pass Code</label>
                             <input type="text" name="pass_code" value="'.$pass_code.'" class="form-control form-ele mt-1">
                         </div>
-                        <smal style="font-size: 12px;">Volunteers must enter the Pass Code to add ticket into the cart. Leave this field blank to remove pass code lock.</smal>
+                        <smal style="font-size: 12px;">Want to keep this ticket private? Enter a passcode here (passcodes as case sensitive). If you want it open to all volunteers, just leave it blank.</smal>
                     </div>
                     <div class="col-md-12 mt-3">
                         <div class="form-group">

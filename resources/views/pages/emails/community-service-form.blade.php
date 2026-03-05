@@ -12,5 +12,5 @@ Your attendance has been confirmed by the event organizer, and your <strong>Comm
  👉 <a href="{{$dashboard_link}}">Dashboard Link</a></p>
 
 <p>Thank you again for helping keep our community clean.<br>
- — VolunteerCleanup.org Team</p>
+{{ APPNAMEEMAIL }}</p>
 @endsection

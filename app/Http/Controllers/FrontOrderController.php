@@ -511,6 +511,7 @@ class FrontOrderController extends Controller
                                 'waiver_email'   => $waiver_handler_email, 
                                 'event_pdf_link' => $this->mailUrl('front-registration-calendar', ['slug' => $event->slug]), 
                                 'organizer_name' => $event->creator->name,
+                                'event_link'     => $this->mailUrl('view-event-details', ['slug' => $event->slug]),
                             ];
                             /* $email_people_array[$ticket_volunteer->email_address] = 
                                                 new \App\Mail\SendMail(
@@ -545,7 +546,7 @@ class FrontOrderController extends Controller
                                     'waiverUrl' => $this->mailUrl('view-waiver-form', ['ticket' => encrypt($event_order_ticket_obj->id)]),
                                     //'cancelRegistrationUrl' => route('cancel-rsvp-get', ['ticket' => encrypt($event_order_ticket_obj->id),'type'=>1]),
                                     'cancelRegistrationUrl' => $this->mailUrl('cancel-registration-front', ['ticket' => encrypt($event_order_ticket_obj->id)]),
-                                    
+                                    'event_link' => $this->mailUrl('view-event-details', ['slug' => $event->slug]),
                                 ];
                                 /* $waiver_people_array[$waiver_handler_email] = 
                                                 new \App\Mail\SendMail(
@@ -624,7 +625,7 @@ class FrontOrderController extends Controller
                     if($email_address==$send_mail_object['purchase_by_email']){
                         $sub = "🌿 Thank you for signing up for ".$event->event_name."!";
                     }
-                    $this->sendEmail($email_address, $sub, $send_mail_object, "thankyou-for-order-mail");
+                    $this->sendEmail('learningdcm@gmail.com', $sub, $send_mail_object, "thankyou-for-order-mail");
                     /* \Mail::to($email_address) //$email_address
                         ->send($send_mail_object); */
                 }

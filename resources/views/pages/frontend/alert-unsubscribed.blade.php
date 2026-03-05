@@ -23,7 +23,7 @@ $outPages = true;
 									@if(isset($alert) && isset($alert->id))
 									<div class="social-share mt-4 mb-0">
 										<span class="share-label">Alert Name: {{ $alert->alert_name }}</span>
-										<span class="share-label mb-0">Pincode: {{ $alert->zipcode }}</span>
+										<span class="share-label mb-0">Zip Code: {{ $alert->zipcode }}</span>
 									</div>
 									@endif 
 								@elseif(isset($msg)) 

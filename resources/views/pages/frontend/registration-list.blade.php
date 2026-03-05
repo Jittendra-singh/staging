@@ -28,10 +28,10 @@
 									<div class="row">
 										<div class="col-md-3">
 											<div class="form-group dropdown bootstrap-select dropdown"> 
-												<select class="selectpicker" name="event">
+												<select class="selectpicker" name="event" data-live-search="true">
 													<option disabled selected>Select Event</option>
 													@foreach($events as $event)
-														<option value="{{ $event->id }}" @selected(request()->event == $event->id)>
+														<option value="{{ $event->id }}" @selected(request()->event == $event->id) data-content="{{ $event->event_name }}<br/><small class='p-0'>{{date('M d, Y h:i A', strtotime($event->start_datetime))}} - {{date('M d, Y h:i A', strtotime($event->end_datetime))}}</small>">
 															{{ $event->event_name }}
 														</option>
 													@endforeach

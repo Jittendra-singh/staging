@@ -8,7 +8,7 @@
     <ul>
         <li><strong>Email: <a href="mailto:{{ $organizer_email }}">{{ $organizer_email }}</a></strong></li>
     </ul>
-    <p>VolunteerCleanup.org Team</p>
+    <p>{{ APPNAMEEMAIL }}</p>
 @else 
     <p>Hi {{ $cohost_first_name }},</p>
     <p>{{ $organizer_name }} has updated your access settings for <strong>“{{ $event_name }}”.</strong></p> 
@@ -26,6 +26,6 @@
         </a>
     </p>
     <p>Thank you for supporting this cleanup!</p>
-    <p>VolunteerCleanup.org Team</p>
+    <p>{{ APPNAMEEMAIL }}</p>
 @endif
 @endsection
