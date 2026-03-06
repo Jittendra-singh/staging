@@ -157,7 +157,7 @@
 												<input type="file" id="organisation_logo" accept="image/*" name="organisation_logo">
 											</span>																								
 										</div>
-										<small>Recommended size: 200 × 200 px</small>
+										<small>Recommended size: 400 × 400 px</small>
 									</div>
 									<div class="col-lg-12 col-md-12">
 										<div class="form-group">
