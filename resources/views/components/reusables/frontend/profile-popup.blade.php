@@ -61,7 +61,7 @@
 										Update Profile Picture
 									</button>
 									<br/>
-									<small>Recommended size: 200 × 200 px</small>
+									<small>Recommended size: 400 × 400 px</small>
 								</div>
 								<div class="col-lg-6 col-md-6">
 									<div class="form-group mt-4">
