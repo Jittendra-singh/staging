@@ -2,6 +2,126 @@
 	$organisation_detail_page_url = route('organizer-detail', ['slug' => $user->organisation_landing_slug] ); 
 @endphp
 @extends('layouts.frontend')
+@push('style')
+<link rel="stylesheet" href="{{ asset('assets_front/vendor/cropperjs/cropper.min.css') }} ">
+<style>
+    .img-preview-container {
+        width: 150px;
+        height: 150px;
+        overflow: hidden;
+        border-radius: 50%;
+        border: 2px solid #ddd;
+        margin: 10px auto;
+    }
+    #cropper-modal .modal-body {
+        max-height: 70vh;
+        overflow: hidden;
+    }
+    #crop-image-container img {
+        max-width: 100%;
+        display: block;
+    }
+	#cropper-modal .modal-body {
+		max-height: 60vh;
+		overflow: hidden;
+		padding: 0;
+	}
+	#crop-image-container {
+		max-height: 60vh;
+		width: 100%;
+		overflow: hidden;
+	}
+	#image-to-crop {
+		display: block;
+		max-width: 100%;
+		max-height: 60vh;
+	}
+</style>
+@endpush
+@push('script')
+<script src="{{ asset('assets_front/vendor/cropperjs/cropper.min.js') }}"></script>
+<script src="{{ asset('assets_front/vendor/cropperjs/jquery-cropper.min.js') }}"></script>
+
+<script>
+$(document).ready(function () {
+
+    let cropperInstance = null;
+
+    // Step 1: When user picks a file, show the modal with cropper
+    $('#image-input').on('change', function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            // Set image src and open modal
+            $('#image-to-crop').attr('src', event.target.result);
+            $('#cropper-modal').modal('show');
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // Step 2: When modal opens, initialize cropper
+    $('#cropper-modal').on('shown.bs.modal', function () {
+        // Destroy any existing cropper first
+        if (cropperInstance) {
+            $('#image-to-crop').cropper('destroy');
+            cropperInstance = null;
+        }
+
+        // Init jQuery Cropper
+        $('#image-to-crop').cropper({
+            aspectRatio: 1 / 1,        // Square crop for profile pic
+            viewMode: 1,               // Restrict crop box to image
+            autoCropArea: 0.8,
+            movable: true,
+            zoomable: true,
+            scalable: true,
+            preview: '.img-preview-container', // Live preview in the circle above
+        });
+
+        cropperInstance = true;
+    });
+
+    // Step 3: Destroy cropper when modal closes
+    $('#cropper-modal').on('hidden.bs.modal', function () {
+        $('#image-to-crop').cropper('destroy');
+        cropperInstance = null;
+		if($('#cropped_image').val() != ''){
+			$('#current-preview').attr('src', $('#cropped_image').val());
+		}
+		$('#image-input').val('');
+    });
+
+    // Step 4: On "Crop & Use This" click, get the canvas data
+    $('#crop-btn').on('click', function () {
+        const canvas = $('#image-to-crop').cropper('getCroppedCanvas', {
+            width: 400,
+            height: 400,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high',
+        });
+
+        // Convert to base64 and store in hidden input
+        const base64Data = canvas.toDataURL('image/jpeg', 0.85);
+        $('#cropped_image').val(base64Data);
+
+        // Update the current preview image
+        $('#current-preview').attr('src', base64Data);
+
+        // Enable save button
+        $('#save-btn').prop('disabled', false);
+
+        // Close modal
+        $('#cropper-modal').modal('hide');
+    });
+	$('#upload-btn').on('click', function () {
+		$('#image-input').trigger('click');
+	});
+});
+</script>
+
+@endpush
 @section('content')
    	<div class="wrapper wrapper-body">
 		<div class="dashboard-body">
@@ -35,7 +155,9 @@
 								<div class="about-details">
 									<div class="about-step text-center">
 										<div class="user-avatar-img  mb-3">
-											<img  src="{{$user->formattedImage('profile_picture')}}" alt="{{$user->name}}">
+											<img id="pimage" src="{{$user->formattedImage('profile_picture')}}" alt="{{$user->name}}">
+											<div class="demo"></div>
+
 										</div>
 										<div class="user-dts">
 											<h4 class="user-name">{{$user->name}}<span class="verify-badge"><i class="fa-solid fa-circle-check"></i></span></h4>

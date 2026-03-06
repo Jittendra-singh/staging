@@ -38,12 +38,29 @@
 						<div class="model-content main-form">
 							<div class="row">
 								<div class="col-lg-12 col-md-12 text-center">
-									<div class="form-group text-center mt-5">
+									<!-- <div class="form-group text-center mt-5">
 										<span class="org_design_button btn-file">
 											<img id="vol_avatar_preview" height="120px" width="120px" src="{{$user->formattedImage('profile_picture')}}" alt="{{$user->name}}">
 											<input type="file" id="vol_avatar" accept="image/*" name="profile_picture">
 										</span>																								
+									</div> -->
+									{{-- Hidden input to store the cropped base64 image --}}
+									<input type="hidden" name="cropped_image" id="cropped_image">
+
+									{{-- Current profile image preview --}}
+									<div class="img-preview-container">
+										<img src="{{$user->formattedImage('profile_picture')}}"
+											id="current-preview" alt="Profile" style="width:100%; height:100%; object-fit:cover;">
 									</div>
+
+									{{-- Hidden file input --}}
+									<input type="file" id="image-input" accept="image/*" style="display: none;">
+
+									{{-- Visible button --}}
+									<button type="button" class="btn btn-outline-primary" id="upload-btn">
+										Update Profile Picture
+									</button>
+									<br/>
 									<small>Recommended size: 200 × 200 px</small>
 								</div>
 								<div class="col-lg-6 col-md-6">
@@ -135,7 +152,7 @@
 												@if(!empty($user->organisation_logo))
 													<img id="organisation_logo_preview" height="120px" width="120px" src="{{ $user->formattedImage('organisation_logo') }}" alt="{{ $user->organisation_name }}">
 												@else
-													<img id="organisation_logo_preview" height="120px" width="120px" src="{{ asset('assets/images/200x200.jpg') }} " alt="{{ $user->organisation_name }}">
+													<img id="organisation_logo_preview" height="120px" width="120px" src="{{ asset('assets_front/images/profile-imgs/img-13.jpg') }} " alt="{{ $user->organisation_name }}">
 												@endif
 												<input type="file" id="organisation_logo" accept="image/*" name="organisation_logo">
 											</span>																								
@@ -204,6 +221,25 @@
 			</div>
 		</div>
 	@endif
+	<div class="modal fade" id="cropper-modal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Crop Your Profile Photo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="crop-image-container">
+                    <img id="image-to-crop" src="" alt="Image to crop">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="crop-btn">✂ Crop & Use This</button>
+            </div>
+        </div>
+    </div>
+</div>
 @push('script')
 <script src="{{ asset('assets/libs/@ckeditor/ckeditor5-build-classic/build/ckeditor.js') }}"></script>
 <script src="{{ asset('js/plugins/select2/js/select2.full.min.js') }}"></script>

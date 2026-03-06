@@ -1793,6 +1793,7 @@ class FrontController extends Controller
             'address_line_2' => 'nullable|string|max:255',
             //'zip_code'      => 'nullable|string|max:20',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'cropped_image' => 'nullable|string',
         ]);
 
         if(request()->hasFile('profile_picture')) {
@@ -1801,6 +1802,27 @@ class FrontController extends Controller
             
         }else{
             unset($validated['profile_picture']);
+        }
+        if(request()->filled('cropped_image')) {
+            $base64 = preg_replace('/^data:image\/\w+;base64,/', '', request()->input('cropped_image'));
+            $imageData = base64_decode($base64);
+
+            // Mirror exactly what moveFiles returns
+            $originalName = 'profile_picture.jpg';
+            $fileName = str_replace(' ', '', date('dmyhis') . $originalName);
+            $destinationPath = 'uploads/volunteer_profile_pictures';
+
+            // Save directly — no temp file, no UploadedFile
+            file_put_contents(public_path($destinationPath) . '/' . $fileName, $imageData);
+
+            $validated['profile_picture'] = json_encode([
+                'path'          => "$destinationPath/" . $fileName,
+                'original_name' => $originalName,
+                'extension'     => 'jpg',
+            ]);
+            
+        }else{
+            unset($validated['cropped_image']);
         }
         $pincode = '';
         if(isset($validated['city_id']) && !empty($validated['city_id'])){

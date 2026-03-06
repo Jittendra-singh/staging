@@ -40,7 +40,7 @@
     <ul>
         <li><strong>Event:</strong> <a href="{{ $event_link??'#' }}">{{ $event_title ?? 'Event Title' }}</a></li>
         <li><strong>Date & Time:</strong> {{ $event_date ?? 'Event Date' }}</li>
-        <li><strong>Location:</strong> {{ $event_location ?? 'Event Location' }}</li>
+        <li><strong>Location:</strong> <a href="https://www.google.com/maps?q={{$event->latitude}},{{$event->longitude}}">{{ $event_location ?? 'Event Location' }}</a></li>
         @if($event->bringTools->count())
             <li><strong>What to Bring:</strong> {{$event->bringTools->pluck('name')->implode(', ')}}</li>
         @else 
