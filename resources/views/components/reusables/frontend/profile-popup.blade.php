@@ -147,16 +147,40 @@
 							<div class="model-content main-form pt-2 p-4">
 								<div class="row">
 									<div class="col-lg-12 col-md-12 text-center">
-										<div class="form-group text-center mt-5">
+										<!-- <div class="form-group text-center mt-5">
 											<span class="org_design_button btn-file">
 												@if(!empty($user->organisation_logo))
 													<img id="organisation_logo_preview" height="120px" width="120px" src="{{ $user->formattedImage('organisation_logo') }}" alt="{{ $user->organisation_name }}">
 												@else
-													<img id="organisation_logo_preview" height="120px" width="120px" src="{{ asset('assets_front/images/profile-imgs/img-13.jpg') }} " alt="{{ $user->organisation_name }}">
+													<img id="organisation_logo_preview" height="120px" width="120px" src="{{ asset('assets_front/images/profile-imgs/img-13.jpg') }}" alt="{{ $user->organisation_name }}">
 												@endif
 												<input type="file" id="organisation_logo" accept="image/*" name="organisation_logo">
 											</span>																								
+										</div> -->
+										{{-- Hidden input to store the cropped base64 image --}}
+										<input type="hidden" name="cropped_image" id="og_cropped_image">
+
+										{{-- Current profile image preview --}}
+										@if(!empty($user->organisation_logo))
+										<div class="og_img-preview-container">
+											<img src="{{ $user->formattedImage('organisation_logo') }}"
+												id="og_current-preview" alt="Profile" style="width:100%; height:100%; object-fit:cover;">
 										</div>
+										@else
+										<div class="og_img-preview-container">
+											<img src="{{ asset('assets_front/images/profile-imgs/img-13.jpg') }}"
+												id="og_current-preview" alt="Profile" style="width:100%; height:100%; object-fit:cover;">
+										</div>
+										@endif
+
+										{{-- Hidden file input --}}
+										<input type="file" id="og_image-input" accept="image/*" style="display: none;">
+
+										{{-- Visible button --}}
+										<button type="button" class="btn btn-outline-primary" id="og_upload-btn">
+											Update Organization Logo
+										</button>
+										<br/>
 										<small>Recommended size: 400 × 400 px</small>
 									</div>
 									<div class="col-lg-12 col-md-12">
@@ -221,7 +245,7 @@
 			</div>
 		</div>
 	@endif
-	<div class="modal fade" id="cropper-modal" tabindex="-1">
+<div class="modal fade" id="cropper-modal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
@@ -236,6 +260,25 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-success" id="crop-btn">✂ Crop & Use This</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="og_cropper-modal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Crop Your Profile Photo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="og_crop-image-container">
+                    <img id="og_image-to-crop" src="" alt="Image to crop">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="og_crop-btn">✂ Crop & Use This</button>
             </div>
         </div>
     </div>

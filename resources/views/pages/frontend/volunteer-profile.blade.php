@@ -5,7 +5,7 @@
 @push('style')
 <link rel="stylesheet" href="{{ asset('assets_front/vendor/cropperjs/cropper.min.css') }} ">
 <style>
-    .img-preview-container {
+    .img-preview-container,.og_img-preview-container {
         width: 150px;
         height: 150px;
         overflow: hidden;
@@ -13,25 +13,25 @@
         border: 2px solid #ddd;
         margin: 10px auto;
     }
-    #cropper-modal .modal-body {
+    #cropper-modal .modal-body, #og_cropper-modal .modal-body {
         max-height: 70vh;
         overflow: hidden;
     }
-    #crop-image-container img {
+    #crop-image-container img, #og_crop-image-container img {
         max-width: 100%;
         display: block;
     }
-	#cropper-modal .modal-body {
+	#cropper-modal .modal-body, #og_cropper-modal .modal-body {
 		max-height: 60vh;
 		overflow: hidden;
 		padding: 0;
 	}
-	#crop-image-container {
+	#crop-image-container, #og_crop-image-container {
 		max-height: 60vh;
 		width: 100%;
 		overflow: hidden;
 	}
-	#image-to-crop {
+	#image-to-crop, #og_image-to-crop {
 		display: block;
 		max-width: 100%;
 		max-height: 60vh;
@@ -46,7 +46,6 @@
 $(document).ready(function () {
 
     let cropperInstance = null;
-
     // Step 1: When user picks a file, show the modal with cropper
     $('#image-input').on('change', function (e) {
         const file = e.target.files[0];
@@ -60,7 +59,6 @@ $(document).ready(function () {
         };
         reader.readAsDataURL(file);
     });
-
     // Step 2: When modal opens, initialize cropper
     $('#cropper-modal').on('shown.bs.modal', function () {
         // Destroy any existing cropper first
@@ -79,10 +77,8 @@ $(document).ready(function () {
             scalable: true,
             preview: '.img-preview-container', // Live preview in the circle above
         });
-
         cropperInstance = true;
     });
-
     // Step 3: Destroy cropper when modal closes
     $('#cropper-modal').on('hidden.bs.modal', function () {
         $('#image-to-crop').cropper('destroy');
@@ -92,7 +88,6 @@ $(document).ready(function () {
 		}
 		$('#image-input').val('');
     });
-
     // Step 4: On "Crop & Use This" click, get the canvas data
     $('#crop-btn').on('click', function () {
         const canvas = $('#image-to-crop').cropper('getCroppedCanvas', {
@@ -117,6 +112,79 @@ $(document).ready(function () {
     });
 	$('#upload-btn').on('click', function () {
 		$('#image-input').trigger('click');
+	});
+
+
+
+	// og image 
+	
+    let cropperInstanceOg = null;
+    // Step 1: When user picks a file, show the modal with cropper
+    $('#og_image-input').on('change', function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            // Set image src and open modal
+            $('#og_image-to-crop').attr('src', event.target.result);
+            $('#og_cropper-modal').modal('show');
+        };
+        reader.readAsDataURL(file);
+    });
+    // Step 2: When modal opens, initialize cropper
+    $('#og_cropper-modal').on('shown.bs.modal', function () {
+        // Destroy any existing cropper first
+        if (cropperInstanceOg) {
+            $('#og_image-to-crop').cropper('destroy');
+            cropperInstanceOg = null;
+        }
+
+        // Init jQuery Cropper
+        $('#og_image-to-crop').cropper({
+            aspectRatio: 1 / 1,        // Square crop for profile pic
+            viewMode: 1,               // Restrict crop box to image
+            autoCropArea: 0.8,
+            movable: true,
+            zoomable: true,
+            scalable: true,
+            preview: '.og_img-preview-container', // Live preview in the circle above
+        });
+        cropperInstanceOg = true;
+    });
+    // Step 3: Destroy cropper when modal closes
+    $('#og_cropper-modal').on('hidden.bs.modal', function () {
+        $('#og_image-to-crop').cropper('destroy');
+        cropperInstanceOg = null;
+		if($('#og_cropped_image').val() != ''){
+			$('#og_current-preview').attr('src', $('#og_cropped_image').val());
+		}
+		$('#og_image-input').val('');
+    });
+    // Step 4: On "Crop & Use This" click, get the canvas data
+    $('#og_crop-btn').on('click', function () {
+        const canvas = $('#og_image-to-crop').cropper('getCroppedCanvas', {
+            width: 400,
+            height: 400,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high',
+        });
+
+        // Convert to base64 and store in hidden input
+        const base64Data = canvas.toDataURL('image/jpeg', 0.85);
+        $('#og_cropped_image').val(base64Data);
+
+        // Update the current preview image
+        $('#og_current-preview').attr('src', base64Data);
+
+        // Enable save button
+        $('#save-btn').prop('disabled', false);
+
+        // Close modal
+        $('#og_cropper-modal').modal('hide');
+    });
+	$('#og_upload-btn').on('click', function () {
+		$('#og_image-input').trigger('click');
 	});
 });
 </script>

@@ -637,6 +637,7 @@ class FrontController extends Controller
                 'event_id'          => 'required',
                 'video_url'         => 'nullable|url',
                 'event_reoccurance' => 'nullable|string|max:50',
+                'cropped_image'     => 'nullable|string',
                 'banner_image'      => 'nullable|image|mimes:jpeg,png,jpg,gif',
                 'flyer_image'       => 'nullable|image|mimes:jpeg,png,jpg,gif',
                 'volunteer_tags'    => 'nullable|array',
@@ -665,6 +666,26 @@ class FrontController extends Controller
                 if ($request->hasFile('flyer_image')) {
                     $uploadedFlyer = $this->uploadFiles('flyer_image', 'events/flyers');
                     $event->flyer_image = json_encode($uploadedFlyer);
+                }
+                if(request()->filled('cropped_image')) {
+                    $base64 = preg_replace('/^data:image\/\w+;base64,/', '', request()->input('cropped_image'));
+                    $imageData = base64_decode($base64);
+
+                    // Mirror exactly what moveFiles returns
+                    $originalName = 'event_banner.jpg';
+                    $fileName = str_replace(' ', '', date('dmyhis') . $originalName);
+                    $destinationPath = 'events/banners';
+
+                    // Save directly — no temp file, no UploadedFile
+                    file_put_contents(public_path($destinationPath) . '/' . $fileName, $imageData);
+
+                    $event->banner_image = json_encode([
+                        'path'          => "$destinationPath/" . $fileName,
+                        'original_name' => $originalName,
+                        'extension'     => 'jpg',
+                    ]);
+                }else{
+                    unset($validated['cropped_image']);
                 }
 
                 // Update event fields
@@ -1852,6 +1873,7 @@ class FrontController extends Controller
             'organisation_twitter' => 'nullable|string|max:255',
             'organisation_linkedin' => 'nullable|string|max:255',
             'organisation_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'cropped_image' => 'nullable|string',
         ]);
 
         $user = auth()->guard('front')->user();
@@ -1861,6 +1883,27 @@ class FrontController extends Controller
             $validated['organisation_logo'] = json_encode($uploadedFiles);
         } else {
             unset($validated['organisation_logo']);
+        }
+        if(request()->filled('cropped_image')) {
+            $base64 = preg_replace('/^data:image\/\w+;base64,/', '', request()->input('cropped_image'));
+            $imageData = base64_decode($base64);
+
+            // Mirror exactly what moveFiles returns
+            $originalName = 'organisation_logo.jpg';
+            $fileName = str_replace(' ', '', date('dmyhis') . $originalName);
+            $destinationPath = 'uploads/organisation_logos';
+
+            // Save directly — no temp file, no UploadedFile
+            file_put_contents(public_path($destinationPath) . '/' . $fileName, $imageData);
+
+            $validated['organisation_logo'] = json_encode([
+                'path'          => "$destinationPath/" . $fileName,
+                'original_name' => $originalName,
+                'extension'     => 'jpg',
+            ]);
+            
+        }else{
+            unset($validated['cropped_image']);
         }
         $validated['organisation_landing_slug'] = $this->generateSlug(Volunteer::class, 'organisation_landing_slug', request()->organisation_landing_slug ? : request()->input('organisation_name'), $user->id ? : 0);
         $user->update($validated);

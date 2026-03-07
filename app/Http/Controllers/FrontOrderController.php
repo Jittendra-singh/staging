@@ -625,7 +625,7 @@ class FrontOrderController extends Controller
                     if($email_address==$send_mail_object['purchase_by_email']){
                         $sub = "🌿 Thank you for signing up for ".$event->event_name."!";
                     }
-                    $this->sendEmail('learningdcm@gmail.com', $sub, $send_mail_object, "thankyou-for-order-mail");
+                    $this->sendEmail($email_address, $sub, $send_mail_object, "thankyou-for-order-mail");
                     /* \Mail::to($email_address) //$email_address
                         ->send($send_mail_object); */
                 }

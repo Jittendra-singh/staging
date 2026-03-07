@@ -1631,7 +1631,7 @@ $(document).ready(function () {
 	});
 
 	/**Image  */
-	$('.change-image-preview').on('change', function () {
+	/* $('.change-image-preview').on('change', function () {
 		const file = this.files[0];
 		let context = $(this);
 		if (file) {
@@ -1649,7 +1649,7 @@ $(document).ready(function () {
 				.attr('src', '#')
 				.show();
 		}
-	});
+	}); */
 
 	if ($('.select2ajax').length) {
 		select2ajaxFunc();
