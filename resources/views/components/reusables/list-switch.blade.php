@@ -1,9 +1,10 @@
 @php
     $fieldName = $field ?? "status";
     $disabled = (isset($data->checkin) && $data->checkin==1)?'disabled':'';
+    $uId = (isset($id))?$id:'switch';
 @endphp
 <div class="square-switch">
     <input {{ $disabled }} url="{{ $url }}" class="statusswitch" 
-        type="checkbox" id="switch{{$data->id}}" switch="none" {{$data->$fieldName ? 'checked' : ''}} />
-    <label for="switch{{$data->id}}" data-on-label="{{isset($onlabel)?$onlabel:'On'}}" data-off-label="{{isset($offlabel)?$offlabel:'Off'}}"></label>
+        type="checkbox" id="{{$uId}}{{$data->id}}" switch="none" {{$data->$fieldName ? 'checked' : ''}} />
+    <label for="{{$uId}}{{$data->id}}" data-on-label="{{isset($onlabel)?$onlabel:'On'}}" data-off-label="{{isset($offlabel)?$offlabel:'Off'}}"></label>
 </div>

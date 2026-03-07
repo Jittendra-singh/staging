@@ -169,6 +169,7 @@ class EventController extends Controller
             'longitude' => 'required|string',
             'pincode' => 'required|string|max:10',
             'country_id' => 'required|exists:countries,country_id',
+            'cropped_image' => 'nullable|string',
             'banner_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'flyer_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'video_url' => 'nullable|url',
@@ -313,6 +314,24 @@ class EventController extends Controller
         if ($request->hasFile('flyer_image')) {
             $uploaded_flyer = $this->uploadFiles('flyer_image', 'events/flyers');
             $obj->flyer_image = json_encode($uploaded_flyer);
+        }
+        if(request()->filled('cropped_image')) {
+            $base64 = preg_replace('/^data:image\/\w+;base64,/', '', request()->input('cropped_image'));
+            $imageData = base64_decode($base64);
+
+            // Mirror exactly what moveFiles returns
+            $originalName = 'event_banner.jpg';
+            $fileName = str_replace(' ', '', date('dmyhis') . $originalName);
+            $destinationPath = 'events/banners';
+
+            // Save directly — no temp file, no UploadedFile
+            file_put_contents(public_path($destinationPath) . '/' . $fileName, $imageData);
+
+            $obj->banner_image = json_encode([
+                'path'          => "$destinationPath/" . $fileName,
+                'original_name' => $originalName,
+                'extension'     => 'jpg',
+            ]);
         }
         $obj->creator_type              = 'App\\Models\\Volunteer';
         $obj->creator_id                = $request->volunteer_id;
@@ -497,6 +516,84 @@ class EventController extends Controller
         Gate::authorize('update', $this->gateHandler);
         $request = request();
         $validated = $request->validate([
+            'email'      => 'required',
+            'name'       => 'required',
+            'extra_notes'=> 'nullable',
+            //'permission' => 'required',
+        ]);
+
+        try {
+            $event = Event::findOrFail(decrypt($placeholder));
+            $existingCohost = Volunteer::where('email_address', strtolower(trim($validated['email'])))->first();
+            $cohostName = $validated['name'];
+            if (isset($existingCohost->id)) {
+
+                // check if already cohost
+                $alreadyCohost = EventCoHost::where('event_id', $event->id)
+                                    ->where('volunteer_id', $existingCohost->id)
+                                    ->first();
+                if (isset($alreadyCohost->id)) {
+                    return $this->generateJsonResponse(false, 'This volunteer is already a co-host for this event.');
+                }
+
+                $existingCohost->is_organiser = 1;
+                $existingCohost->save();
+                $cohost_id = $existingCohost->id;
+                $cohostName = $existingCohost->first_name.' '.$existingCohost->last_name;
+            } else {
+                $newVolunteer = new Volunteer();
+                $newVolunteer->first_name = $validated['name'];
+                $newVolunteer->email_address = strtolower(trim($validated['email']));
+                $newVolunteer->is_organiser = 1;
+                $newVolunteer->save();
+                $cohost_id = $newVolunteer->id;
+            }
+            $cohost = new EventCoHost();
+            $cohost->event_id = $event->id;
+            $cohost->volunteer_id = $cohost_id;
+            $cohost->invited_at = now();
+            $cohost->request_status = 'pending';
+            $cohost->extra_notes = $validated['extra_notes'];
+            $cohost->save();
+            $event_cohost_id = $cohost->id;
+
+            if(isset($validated['permission']) && !empty($validated['permission'])){
+                foreach ($validated['permission'] as $perm) {
+                    $permission = new CohostPermission();
+                    $permission->cohost_record_id = $event_cohost_id;
+                    $permission->permission = $perm;
+                    $permission->save();
+                }
+            }
+            // send email to cohost
+            $email_content = [
+                'is_new_user' => !isset($existingCohost->id),
+                'organizerName' => $event->creator->first_name.' '.$event->creator->last_name,
+                'eventName' => $event->event_name,
+                'cohostName' => $cohostName,
+                /* 'acceptLink' => route('response.cohost.invitaion',['response'=>'accept','event'=>encrypt($event->id),'volunteer'=>encrypt($cohost_id)]),
+                'cancelLink' => route('response.cohost.invitaion',['response'=>'cancel','event'=>encrypt($event->id),'volunteer'=>encrypt($cohost_id)]), */
+                'acceptLink' => $this->mailUrl('response.cohost.invitaion',['response'=>'accept','event'=>encrypt($event->id),'volunteer'=>encrypt($cohost_id)]),
+                'cancelLink' => $this->mailUrl('response.cohost.invitaion',['response'=>'cancel','event'=>encrypt($event->id),'volunteer'=>encrypt($cohost_id)]),
+            ];
+            if(!isset($existingCohost->id)){
+                $sub = ' Create your VolunteerCleanup.org account to co-host '.$email_content['eventName'];
+            } else {
+                $sub = 'You’ve been invited to co-host '.$email_content['eventName'];
+            }
+            $this->sendEmail($validated['email'], $sub, $email_content, "invite-cohost");
+
+            $this->setFlashSession(true, 'Co-Host added successfully.');
+            return redirect()->route('manage-event-hosts', ['placeholder' => $placeholder]);
+
+        } catch (\Exception $e) {
+            $this->setFlashSession(false, 'Failed to save Co-Host details: ' . $e->getMessage());
+            return redirect()->route('manage-event-hosts', ['placeholder' => $placeholder]);
+        }
+
+        /* Gate::authorize('update', $this->gateHandler);
+        $request = request();
+        $validated = $request->validate([
             'volunteer_email_address' => ['required:volunteer_id', 'email', new \App\Rules\StrictEmail()],
         ]);
         $volunteer = Volunteer::where('email_address' , request()->volunteer_email_address)->first();
@@ -541,10 +638,34 @@ class EventController extends Controller
         ]);
         $this->sendCoHostInvitationMail($event, $volunteer,$is_registered, $volunteer_password);
         $this->setFlashSession(true, 'Co-host invited successfully.');
-        return redirect()->route('manage-event-hosts', ['placeholder' => $placeholder]);
+        return redirect()->route('manage-event-hosts', ['placeholder' => $placeholder]); */
     }
-    public function reInviteCoHosts($eventPlaceholder, $volunteerPlaceholder ){
+    public function reInviteCoHosts($placeholder){
         Gate::authorize('update', $this->gateHandler);
+        try {
+            $cohost = EventCoHost::where('id', decrypt($placeholder))->firstOrFail();
+            $event = $cohost->event;
+            $volunteer = $cohost->volunteer;
+
+            $email_content = [
+                'is_new_user' => false,
+                'organizerName' => $event->creator->first_name.' '.$event->creator->last_name,
+                'eventName' => $event->event_name,
+                'cohostName' => $volunteer->first_name.' '.$volunteer->last_name,
+                /* 'acceptLink' => route('response.cohost.invitaion',['response'=>'accept','event'=>encrypt($event->id),'volunteer'=>encrypt($volunteer->id)]),
+                'cancelLink' => route('response.cohost.invitaion',['response'=>'cancel','event'=>encrypt($event->id),'volunteer'=>encrypt($volunteer->id)]), */
+                'acceptLink' => $this->mailUrl('response.cohost.invitaion',['response'=>'accept','event'=>encrypt($event->id),'volunteer'=>encrypt($volunteer->id)]),
+                'cancelLink' => $this->mailUrl('response.cohost.invitaion',['response'=>'cancel','event'=>encrypt($event->id),'volunteer'=>encrypt($volunteer->id)]),
+            ];
+            $this->sendEmail($volunteer->email_address, 'Reminder: You’ve been invited to co-host '.$email_content['eventName'], $email_content, "invite-cohost");
+            $this->setFlashSession(true, 'Co-Host invitation re-sent successfully.');
+            return redirect()->route('manage-event-hosts', ['placeholder' => encrypt($cohost->event_id)]);
+        } catch (\Exception $e) {
+            $this->setFlashSession(false, 'Failed to re-send Co-Host invitation: ' . $e->getMessage());
+            return redirect()->route('manage-event-hosts', ['placeholder' => encrypt($cohost->event_id)]);
+        }
+
+        /* Gate::authorize('update', $this->gateHandler);
         $event = Event::with('creator')->findOrFail(decrypt($eventPlaceholder));
         $volunteer = Volunteer::findOrFail(decrypt($volunteerPlaceholder));
         EventCoHost::where('event_id', decrypt($eventPlaceholder))->where('volunteer_id', decrypt($volunteerPlaceholder))->update([
@@ -553,7 +674,7 @@ class EventController extends Controller
         ]);
         $this->sendCoHostInvitationMail($event, $volunteer);
         $this->setFlashSession(true, 'Co-host invited successfully.');
-        return redirect()->route('manage-event-hosts', ['placeholder' => $eventPlaceholder]);
+        return redirect()->route('manage-event-hosts', ['placeholder' => $eventPlaceholder]); */
     }
     public function sendCoHostInvitationMail($event, $volunteer,$is_v_registered = false, $volunteer_password = null){
         
@@ -578,10 +699,32 @@ class EventController extends Controller
         }
     }
     public function deleteCohost($placeholder){
-        $obj = EventCoHost::findOrFail($placeholder);
+        /* $obj = EventCoHost::findOrFail($placeholder);
         $res = $obj->delete();
         $this->setFlashSession(true, 'Co-host deleted successfully.');
-        return redirect()->back();
+        return redirect()->back(); */
+        
+        $cohost = EventCoHost::where('id', decrypt($placeholder))->firstOrFail();
+
+        CohostPermission::where('cohost_record_id', $cohost->id)->delete();
+
+        $event = $cohost->event;
+        $volunteer = $cohost->volunteer;
+        $email_content = [
+            'is_deleted'=>true,
+            'organizer_name' => $event->creator->first_name.' '.$event->creator->last_name,
+            'organizer_email' => $event->creator->email_address,
+            'event_name' => $event->event_name,
+            'cohost_first_name' => $volunteer->first_name,
+        ];
+
+        $res = $cohost->delete();
+
+        $sub = 'You’ve been removed as a co-host from '.$email_content['event_name'];
+        $this->sendEmail($volunteer->email_address, $sub, $email_content, "cohost-update");
+        /* $this->setFlashSession(true,'Co-Host removed successfully.');
+        return redirect()->back(); */
+        return $this->generateJsonResponse(true,'Co-Host removed successfully.');
     }
     public function cloneEvent($placeholder){
         Gate::authorize('create', $this->gateHandler);
@@ -662,6 +805,36 @@ class EventController extends Controller
             $obj->is_active = !$obj->is_active ; 
             $this->setFlashSession($obj->save());
         }
+        return redirect()->back();
+    }
+    
+    public function togglePublish($placeholder){
+        Gate::authorize('update', $this->gateHandler);
+        try {
+            $event = Event::findOrFail(decrypt($placeholder));
+            $event->status = $event->status=='draft'?'published':'draft';
+            $event->save();
+            if($event->status=='published'){
+                $email_content = [
+                    'eventName' => $event->event_name,
+                    'date' => $event->start_datetime->format(config('app.dateTimeFormat')),
+                    'end_date' => $event->end_datetime->format(config('app.dateTimeFormat')),
+                    'location' => $event->fullAddress,
+                    'description' => $event->description,
+                    'is_meeting_private' => $event->is_private==1?'Yes':'No',
+                    'eventUrl' => $this->mailUrl('view-event-details',['slug'=>$event->slug]),
+                    'orgName' => $event->creator->first_name.' '.$event->creator->last_name,
+                    'orgEmail' => $event->creator->email_address,
+                    'orgPhone' => $event->creator->phone,
+                    'eventEditUrl' => $this->mailUrl('show-event',['placeholder'=>encrypt($event->id)]),
+                ];
+                $this->sendEmail(SUPPORT_EMAIL, EVENT_PUBLISH_MAIL_SUB.$event->event_name, $email_content, "email-to-admin-for-publish");
+            }
+        } catch (\Exception $e) {
+            $this->setFlashSession(false, 'Failed to update event publish status.');
+            return redirect()->back();
+        }
+        $this->setFlashSession(true, 'Event publish status updated successfully.');
         return redirect()->back();
     }
     public function delete($placeholder){

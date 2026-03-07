@@ -34,7 +34,18 @@
     $latitude = old('latitude', $formData->latitude ?? '');
     $longitude = old('longitude', $formData->longitude ?? '');
     $is_private = old('is_private', $formData->is_private ?? false);
-    $banner_image = isset($formData) && $formData->banner_image ? asset($formData->banner_image->path) : null;
+    //$banner_image = isset($formData) && $formData->banner_image ? asset($formData->banner_image->path) : null;
+    $banner_image = isset($formData) ? $formData->formattedBanner() : asset('assets_front/images/event-imgs/big-2.jpg');
+    if(!isset($formData)){
+        $bimage = old('banner_image', $formData->banner_image ?? '');
+        if(!$bimage){
+            $path = 'assets_front/images/event-imgs/big-2.jpg';
+        }else{
+            $path = $bimage->path;
+        }              
+        $banner_image =  asset($path);
+    }
+
     $flyer_image = isset($formData) && $formData->flyer_image ? asset($formData->flyer_image->path) : null;
     $provided_tools_obj = old(
         'provided_tools',
@@ -82,6 +93,7 @@
 ]])
 @section('css')
     <x-reusables.advanceformcss />
+<link rel="stylesheet" href="{{ asset('assets_front/vendor/cropperjs/cropper.min.css') }} ">
     <style>
         .accordion-button:not(.collapsed){
             background: none!important;
@@ -92,10 +104,45 @@
     .accordion-item:not(:first-of-type){
         border-top: 1px solid #dadada !important;
     }
+
+
+    
+    .img-preview-container,.og_img-preview-container {
+        width: 270px;
+        height: 185px;
+        overflow: hidden;
+        border: 2px solid #ddd;
+        margin: 10px auto;
+    }
+    #cropper-modal .modal-body, #og_cropper-modal .modal-body {
+        max-height: 70vh;
+        overflow: hidden;
+    }
+    #crop-image-container img, #og_crop-image-container img {
+        max-width: 100%;
+        display: block;
+    }
+	#cropper-modal .modal-body, #og_cropper-modal .modal-body {
+		max-height: 60vh;
+		overflow: hidden;
+		padding: 0;
+	}
+	#crop-image-container, #og_crop-image-container {
+		max-height: 60vh;
+		width: 100%;
+		overflow: hidden;
+	}
+	#image-to-crop, #og_image-to-crop {
+		display: block;
+		max-width: 100%;
+		max-height: 60vh;
+	}
     </style>
 @endsection
 @section('js')
     <x-reusables.advanceformjs />
+<script src="{{ asset('assets_front/vendor/cropperjs/cropper.min.js') }}"></script>
+<script src="{{ asset('assets_front/vendor/cropperjs/jquery-cropper.min.js') }}"></script>
     <script>
         $(document).ready(function () {
             function toggleWaiverInput() {
@@ -114,6 +161,76 @@
             }
             $('#waiver_form_type').on('change', toggleWaiverInput);
         });
+$(document).ready(function () {
+    let cropperInstance = null;
+    // Step 1: When user picks a file, show the modal with cropper
+    $('#image-input').on('change', function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            // Set image src and open modal
+            $('#image-to-crop').attr('src', event.target.result);
+            $('#cropper-modal').modal('show');
+        };
+        reader.readAsDataURL(file);
+    });
+    // Step 2: When modal opens, initialize cropper
+    $('#cropper-modal').on('shown.bs.modal', function () {
+        // Destroy any existing cropper first
+        if (cropperInstance) {
+            $('#image-to-crop').cropper('destroy');
+            cropperInstance = null;
+        }
+
+        // Init jQuery Cropper
+        $('#image-to-crop').cropper({
+            aspectRatio: 1000 / 660,        // Square crop for profile pic
+            viewMode: 1,               // Restrict crop box to image
+            autoCropArea: 0.8,
+            movable: true,
+            zoomable: true,
+            scalable: true,
+            preview: '.img-preview-container', // Live preview in the circle above
+        });
+        cropperInstance = true;
+    });
+    // Step 3: Destroy cropper when modal closes
+    $('#cropper-modal').on('hidden.bs.modal', function () {
+        $('#image-to-crop').cropper('destroy');
+        cropperInstance = null;
+		if($('#cropped_image').val() != ''){
+			$('#current-preview').attr('src', $('#cropped_image').val());
+		}
+		$('#image-input').val('');
+    });
+    // Step 4: On "Crop & Use This" click, get the canvas data
+    $('#crop-btn').on('click', function () {
+        const canvas = $('#image-to-crop').cropper('getCroppedCanvas', {
+            width: 1000,
+            height: 660,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high',
+        });
+
+        // Convert to base64 and store in hidden input
+        const base64Data = canvas.toDataURL('image/jpeg', 0.85);
+        $('#cropped_image').val(base64Data);
+
+        // Update the current preview image
+        $('#current-preview').attr('src', base64Data);
+
+        // Enable save button
+        $('#save-btn').prop('disabled', false);
+
+        // Close modal
+        $('#cropper-modal').modal('hide');
+    });
+	$('#upload-btn').on('click', function () {
+		$('#image-input').trigger('click');
+	});
+});
     </script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBqlhfqT1MQ2MscLa_1z_MqFy8T9rwOOZ8&libraries=places&callback=initMap" async></script>
     <script>
@@ -246,12 +363,12 @@
                         <div class="row mt-3">
                             <div class="col-md-4">
                                 <label for="start_datetime" class="form-label">Start Date & Time*</label>
-                                <input type="text" class="form-control" id="start_datetime" name="start_datetime"
+                                <input autocomplete="off" type="text" class="form-control" id="start_datetime" name="start_datetime"
                                     value="{{ $start_datetime }}" required>
                             </div>
                             <div class="col-md-4">
                                 <label for="end_datetime" class="form-label">End Date & Time*</label>
-                                <input type="text" class="form-control" id="end_datetime" name="end_datetime"
+                                <input autocomplete="off" type="text" class="form-control" id="end_datetime" name="end_datetime"
                                     value="{{ $end_datetime }}" required>
                             </div>
                             
@@ -358,13 +475,24 @@
                         <div class="row mt-3">
                             <div class="col-md-12">
                                 <label for="banner_image" class="form-label">Banner Image</label> <small>(Recommended file size: 5 MB and image size: 1000 × 660 px)</small>
-                                <input type="file" accept="image/*" class="form-control" id="banner_image" name="banner_image">
+                            </div>
+                            <div class="col-md-12 text-center">
+                                <!-- <input type="file" accept="image/*" class="form-control" id="banner_image" name="banner_image">
                                 @if ($banner_image)
                                     <div class="mt-2">
                                         <img src="{{ asset($banner_image) }}" alt="Banner Image" class="img-fluid"
                                             style="max-height: 50px;">
                                     </div>
-                                @endif
+                                @endif -->
+
+                                <input type="hidden" name="cropped_image" id="cropped_image">
+                                <div class="img-preview-container">
+                                    <img src="{{ asset($banner_image) }}" id="current-preview" alt="Profile" style="width:100%; height:100%; object-fit:cover;">
+                                </div>
+                                <input type="file" id="image-input" accept="image/*" style="display: none;">
+                                <button type="button" class="btn btn-outline-primary" id="upload-btn">
+                                    Update Banner Image
+                                </button>
                             </div>
                             <input type="hidden" name="flyer_image" value="">
                             <!-- <div class="col-md-3">
@@ -702,5 +830,24 @@
     <div class="d-none ticket-form-replica">
         <x-reusables.frontend.ticket-form />
     </div>
+<div class="modal fade" id="cropper-modal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Crop Event Banner</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="crop-image-container">
+                    <img id="image-to-crop" src="" alt="Image to crop">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="crop-btn">✂ Crop & Use This</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 

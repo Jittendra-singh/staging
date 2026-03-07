@@ -737,6 +737,40 @@ $(document).ready(function () {
                   showError('Widget code copied.', 'success');
             });
       });
+
+      $('.remove-cohost').click(function () {
+            var url = $(this).attr('url');
+            var control = this;
+            Swal.fire({
+                  title: "Are you sure?",
+                  text: `You want to remove this co-host from event?`,
+                  icon: "warning",
+                  showCancelButton: true,
+                  confirmButtonColor: '#3085d6',
+                  cancelButtonColor: '#d33',
+                  confirmButtonText: 'Yes, remove it!'
+            }).then((willDelete) => {
+                  if (willDelete.isConfirmed) {
+                        $(control).attr('disabled', 'disabled');
+                        $.ajax({
+                              url: url,
+                              method: 'POST',
+                              data: {},
+                              success: function (response) {
+                                    if (response.status) {
+                                          showError(response.message, 'success');
+                                          setTimeout(() => {
+                                                window.location.reload();
+                                          }, 350);
+                                    }
+                                    else {
+                                          showError(response.message, 'error');
+                                    }
+                              }
+                        });
+                  }
+            });
+      });
 });
 function callImaskForEmail(id) {
       IMask(document.getElementById(id), {

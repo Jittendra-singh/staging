@@ -272,12 +272,15 @@ Route::prefix(config('app.admin_prefix'))->group(function () {
             Route::get('/send-thankyou-request-email/{placeholder}' , 'sendThankyouRequestEmail' )->name('send-thankyou-request-email');
             Route::get('/mark-checkin/{ticket}', 'markCheckin')->name('mark-checkin');
             Route::get('/toggle-event-status/{placeholder}', 'toggleStatus')->name('toggle-event-status');
+            Route::get('/toggle-event-publish/{placeholder}', 'togglePublish')->name('toggle-event-publish');
             Route::delete('/events/{placeholder}', 'delete')->name('delete-event');
             //CO-HOST ROUTES
             Route::get('/manage-cohosts/{placeholder}' , 'manageCoHosts' )->name('manage-event-hosts');
             Route::post('/invite-cohosts/{placeholder}' , 'inviteCoHosts' )->name('events.cohosts.invite');
-            Route::get('/resend-invite-cohosts/{eventPlaceholder}/{volunteerPlaceholder}' , 'reInviteCoHosts' )->name('resend.cohost.invitation');
-            Route::get('/delete-cohost/{placeholder}' , 'deleteCohost' )->name('delete.cohost');
+            //Route::get('/resend-invite-cohosts/{eventPlaceholder}/{volunteerPlaceholder}' , 'reInviteCoHosts' )->name('resend.cohost.invitation');
+            Route::get('/resend-invite-cohosts/{placeholder}' , 'reInviteCoHosts' )->name('resend.cohost.invitation');
+            Route::post('/delete-cohost/{placeholder}' , 'deleteCohost' )->name('delete.cohost');
+            //post event ROUTES
             Route::get('/post-event-action/{placeholder}' , 'postEventAction' )->name('post-event-action');
             Route::post('/save-after-event-action/{placeholder}' , 'saveAfterEventAction' )->name('save-after-event-action');
             Route::post('/get-event-options' , 'getEventOptions' )->name('get-event-options');

@@ -1,7 +1,7 @@
 @php
     $pageName = 'Events';
     $createUrl = route('create-event');
-    $tableHead = ['Name', 'Organizer', 'Venue', 'Event Start Date', 'Event End Date','Co-Host','Attendees','Total Tickets', 'Created Date', 'Visibility', 'Action'];
+    $tableHead = ['Name', 'Organizer', 'Venue', 'Event Start Date', 'Event End Date','Co-Host','Attendees','Total Tickets', 'Created Date', 'Visibility', 'Publish', 'Action'];
     //print_r($listingData->toArray());die();
 @endphp
 @extends('layouts.backend_new', ['pageName' => $pageName, 'parentPageName' => $pageName])
@@ -136,6 +136,7 @@
                             }
                         }
                         $totalBookedTicket = $data->tickets->where('rsvp_confirmation',1)->count();
+                        $data->is_status = $data->status=='published'?1:0;
                         @endphp 
                             <tr>
                                 <td>{{ $data->event_name }}</td>
@@ -157,6 +158,9 @@
                                         </select>
                                     </form> --}}
                                     <x-reusables.list-switch :data="$data" field="is_active" url="{{route('toggle-event-status' , ['placeholder' => $data->encrypted_id])}}"/>
+                                </td> 
+                                <td> 
+                                    <x-reusables.list-switch :data="$data" field="is_status" id="status" url="{{route('toggle-event-publish' , ['placeholder' => $data->encrypted_id])}}"/>
                                 </td> 
                                 <td>
                                     <x-reusables.action-buttons :id="$data->encrypted_id" :module="$module"
