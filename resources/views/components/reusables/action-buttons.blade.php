@@ -100,7 +100,7 @@
                     </li>  -->
                     <li class="dropdown-item">
                         <a href="{{route('manage-event-hosts', ['placeholder' => $id])}}" title="View Attendees">
-                            <i class="fs-5 mdi mdi-ticket-confirmation-outline"></i> <span class="text-muted">Manage Co-Host</span>
+                            <i class="fs-5 mdi mdi-account-multiple-plus"></i> <span class="text-muted">Manage Co-Host</span>
                         </a>
                     </li>
                     <li class="dropdown-item">
