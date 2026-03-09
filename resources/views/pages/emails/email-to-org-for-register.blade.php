@@ -20,6 +20,19 @@
         <p>Hi {{$org_name}},</p>
 
         <p>A new registration has been completed for {{ $event_name }}.</p>
+        <p><strong>Buyer Information :</strong></p>
+        <ul>
+            <li><strong>Buyer Name:</strong> {{ $org_name??'-' }}</li>
+            <li><strong>Email:</strong> {{ $org_email??'-' }}</li>
+            <li><strong>Phone:</strong> {{ $org_phone??'-' }}</li>
+        </ul><br/>
+        <hr>
+        <p><strong>Registration Summary :</strong></p>
+        <ul>
+            <li><strong>Total Attendees:</strong> {{ $total_tickets??'-' }}</li>
+            <li><strong>Under 18 Attendees:</strong> {{ $total_18_tickets??'-' }}</li>
+        </ul><br/>
+        <hr>
         <p><strong>Tickets Registered:</strong></p>
         <ul>
             @foreach ($event_tickets as $ticket)
@@ -35,7 +48,8 @@
         </ul><br/>
         <hr>
         <p>Funds (minus processing and platform fees) have been deposited into your connected account.</p>
-        <p>You can view full details in your <a href="{{route('front-cleanup-hosting',['type'=>'organizer'])}}">Event Dashboard</a>.</p>
+        <p>You can view full details in your <a href="{{$cleanup_hosting_link}}">Event Dashboard</a>.</p>
+        <p>View full attendee details in your registration list : <a href="{{$registration_list_link}}">Registration List</a>.</p>
         <p>Warm regards,<br/><strong><a href="{{ config('app.frontsite') }}">{{ APPNAMEEMAIL }}</a></strong></p>
     @endif
 @endsection

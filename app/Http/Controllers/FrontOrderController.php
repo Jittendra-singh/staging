@@ -447,6 +447,7 @@ class FrontOrderController extends Controller
                 $email_people_array = [];
                 $waiver_people_array = [];
                 // dd(request()->ticket);
+                $total_18_tickets = 0;
                 foreach (request()->ticket as $ticket_key => $ticket_arr) {
                     if(in_array($ticket_arr['id'], $available_ticket_array)){
                         $ticket_volunteer = Volunteer::where('email_address', $ticket_arr['email_address'])->first();
@@ -471,6 +472,7 @@ class FrontOrderController extends Controller
                         $waiver_handler_name = @$ticket_arr['waiver_handler_name'] ? : $ticket_volunteer->name;
                         $waiver_handler_email = @$ticket_arr['waiver_handler_email'] ? : $ticket_volunteer->email_address;
                         $is_under_18 = isset($ticket_arr['is_under_18']) ? 1 : 0;
+                        $total_18_tickets = isset($ticket_arr['is_under_18'])?$total_18_tickets+1:$total_18_tickets;
                         $allPrice = $t_obj->all_price;
                         $total_platform_fee += $allPrice['ticket_platform_fee'];
                         $event_order_ticket_obj = EventOrderTicket::create([
@@ -589,6 +591,8 @@ class FrontOrderController extends Controller
                 // send email to organizer 
                 $emailData = [
                     'org_name'=>$event->creator->first_name.' '.$event->creator->last_name,
+                    'org_email'=>$event->creator->email_address,
+                    'org_phone'=>$event->creator->phone,
                     //'volunteer_name'=>$creating_volunteer->first_name.' '.$creating_volunteer->last_name,
                     //'volunteer_email'=>$creating_volunteer->email_address,
                     'action_type'=>'registered',
@@ -598,9 +602,13 @@ class FrontOrderController extends Controller
                     //'event_location'=>$event->fullAddress,
                     'event_tickets'=>$ticket_booking,
                     'platform_fee'=>$total_platform_fee,
+                    'total_tickets'=>count(request()->ticket),
+                    'total_18_tickets'=>$total_18_tickets,
+                    'cleanup_hosting_link'=>$this->mailUrl('front-cleanup-hosting',['type'=>'organizer']),
+                    'registration_list_link'=>$this->mailUrl('front-registration-list',['event'=>$event->id]),
                     //'event_url'=>route('view-event-details', ['slug' => $event->slug]),
                 ];
-                $subject = "New registration for ".$event->event_name;
+                $subject = "New registration for ".$event->event_name.' : '.$emailData['org_name'];
                 $this->sendEmail($event->creator->email_address, $subject, $emailData, "email-to-org-for-register");
 
                 // send email to who purchase the tickets

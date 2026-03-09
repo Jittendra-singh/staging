@@ -129,6 +129,10 @@ class Volunteer extends Authenticatable
         return $this->belongsToMany(Event::class , 'event_cohost', 'volunteer_id', 'event_id')->where('request_status','approved');
     }
 
+    public function ticketNotifications(){
+        return $this->hasMany(EventTicketNotification::class , 'volunteer_id');
+    }
+
     public function allControlEvents(){
         $cohost_events = $this->cohostingEvents()->active()->orderBy('start_datetime','desc')->get();
         $organising_events = $this->events()->active()->orderBy('start_datetime','desc')->get();

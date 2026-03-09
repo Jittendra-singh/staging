@@ -28,6 +28,16 @@
         <li><strong>Event:</strong> {{ $event_name ?? 'Event Title' }}</li>
         <li><strong>Date & Time:</strong> {{ $event_date ?? 'Event Date' }}</li>
         <li><strong>Location:</strong> {{ $event_location ?? 'Event Location' }}</li>
+        @if($event->bringTools->count())
+            <li><strong>What To Bring:</strong> {{$event->bringTools->pluck('name')->implode(', ')}}</li>
+        @else 
+            <li><strong>What to Bring:</strong> - </li>
+        @endif
+        @if($event->providedTools->count())
+            <li><strong>What Will Be Provided:</strong> {{$event->providedTools->pluck('name')->implode(', ')}}</li>
+        @else 
+            <li><strong>What Will Be Provided:</strong> - </li>
+        @endif
     </ul>
 
     <hr>
@@ -54,6 +64,7 @@
         @if($event->waiverFormContentFilter())
             @if($is_rsvp_confirmed && $is_waiver_signed)
             <p>✅ Your RSVP and Waiver are both confirmed – you’re officially ready to join the cleanup crew! 🌍💚</p>
+            <p>Please wear appropriate clothing and footwear, and arrive on time so you don't miss the short orientation.</p>
             @else 
                 @if(!$is_rsvp_confirmed)
                 <p>🚨 You haven’t confirmed your RSVP yet!<br>
@@ -78,6 +89,16 @@
             <li><strong>Event:</strong> {{ $event_name ?? 'Event Title' }}</li>
             <li><strong>Date & Time:</strong> {{ $event_date ?? 'Event Date' }}</li>
             <li><strong>Location:</strong> {{ $event_location ?? 'Event Location' }}</li>
+            @if($event->bringTools->count())
+                <li><strong>What To Bring:</strong> {{$event->bringTools->pluck('name')->implode(', ')}}</li>
+            @else 
+                <li><strong>What to Bring:</strong> - </li>
+            @endif
+            @if($event->providedTools->count())
+                <li><strong>What Will Be Provided:</strong> {{$event->providedTools->pluck('name')->implode(', ')}}</li>
+            @else 
+                <li><strong>What Will Be Provided:</strong> - </li>
+            @endif
         </ul>
 
         @if($event->waiverFormContentFilter())
@@ -97,14 +118,6 @@
             <li>Ticket ID: {{ $event_ticket_id}}</li>
         </ul>
         @endif
-
-    <hr>
-    <h5><strong>👟 What to Bring</strong></h5>
-    <ul>
-        <li>Arrive on time – short orientation at start </li>
-        <li>Wear comfy clothes & closed-toe shoes</li>
-        <li>Bring this email or QR code (optional but helpful)</li>
-    </ul>
 
     <hr>
     <h5><strong>🔗 Manage Your RSVP</strong></h5>

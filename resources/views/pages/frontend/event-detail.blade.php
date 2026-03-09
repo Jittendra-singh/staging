@@ -345,6 +345,7 @@ $icalStrData = getiCalData($event);
 
                         {{-- Apply Ticket Conditions --}}
                         <!-- if($event->sellTicketBooking() && $event->eventTickets->count() > 0) -->
+                        <x-reusables.frontend.alert />
                         @if($totalTicketCount > 0)
                         <form action="{{route('land-to-checkout')}}" method="post">
                             @csrf
@@ -453,7 +454,6 @@ $icalStrData = getiCalData($event);
                                 </div>
                             </div>
                         </form>
-                        <x-reusables.frontend.alert />
                         <hr />
                         @elseif($event->participation_type==1 && !$isEventEnded)
                             @php 
@@ -470,6 +470,14 @@ $icalStrData = getiCalData($event);
                                     <div class="pricing-section">
                                         <h3>Ticket Information</h3>
                                         <i style="font-style: italic;">Ticket will be available starting {{ \Carbon\Carbon::parse($nextTicket->sell_start_time)->format(config('app.dateFormat')) }}</i>
+                                        
+                                        @if(auth()->guard('front')->user() && isset(auth()->guard('front')->user()->id))
+                                        @if(auth()->guard('front')->user()->ticketNotifications->contains('ticket_id', $nextTicket->id))
+                                            <!-- <p class="m-0"><i style="font-style: italic;" class="text-primary">You will be notified via email.</i></p> -->
+                                        @else
+                                            <!-- <a href="{{route('save-ticket-notify', encrypt($nextTicket->id))}}" class="primary-btn btn btn-primary px-4 mt-3"><b>Notify Me</b></a> -->
+                                        @endif 
+                                        @endif 
                                     </div>
                                 </div>
                                 <hr />

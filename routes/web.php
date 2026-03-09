@@ -82,6 +82,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
     Route::get('unsubscribe-alert/{user}/{alert?}', 'unsubscribeAlert')->name('unsubscribe-alert');
     Route::get('confirmed-unsubscribe-alert/{user}/{alert?}', 'confirmedUnsubscribeAlert')->name('confirmed-unsubscribe-alert');
     Route::get('show-community-service-pdf/{ticket}', 'showCommunityServicePdf')->name('show-community-service-pdf');
+    Route::get('front-save-ticket-notify/{ticket}', 'saveTicketNotify')->name('save-ticket-notify');
 
     // cron
     Route::get('cron-weekly-alerts' , 'cronWeeklyAlerts')->name('cron-weekly-alerts');

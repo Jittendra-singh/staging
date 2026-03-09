@@ -423,7 +423,7 @@ $(document).ready(function () {
                 </div>
                 <div class="card">
                     <div class="card-body">
-                        <h4 class="card-title pb-3 fw-bold border-bottom admin-card-header">Participation Type</h4>
+                        <h4 class="card-title pb-3 fw-bold border-bottom admin-card-header">Volunteer Registration Options</h4>
                         <div class="row mt-3">
                             <div class="col">
                                 <div class="form-group">
@@ -432,9 +432,9 @@ $(document).ready(function () {
                                             {{ $participation_type==1?'checked':'' }}>
                                         <label class="form-check-label"
                                             for="participation_type1">
-                                            Use VolunteerCleanup Tickets
+                                            VolunteerCleanup’s Integrated Ticket System
                                         </label><br/>
-                                        <small>Manage registrations, issue tickets, and track attendees within the system.</small>
+                                        <small>Best for organizers who want everything in one place.</small>
                                     </div>
                                     <div class="form-check mt-3">
                                         <input class="form-check-input" type="radio" value="3" id="participation_type3" name="participation_type"
@@ -454,14 +454,14 @@ $(document).ready(function () {
                                         <label class="form-check-label" for="participation_type2">
                                             Walk-in Mode
                                         </label><br/>
-                                        <small>Allow attendees without prior registration or ticket requirements.</small>
+                                        <small>No tickets necessary. Best for casual or open-access cleanups.</small>
                                     </div>
                                     <div class="form-check mt-3">
                                         <input class="form-check-input" type="radio" value="4" id="participation_type4" name="participation_type" {{ $participation_type==4?'checked':'' }}>
                                         <label class="form-check-label" for="participation_type4">
-                                            External Registration Link
+                                            Use an External Registration System
                                         </label><br/>
-                                        <small>Redirect attendees to an external platform to complete registration.</small>
+                                        <small>Best if you already use Eventbrite, Givebutter, Google Forms, etc.</small>
                                         <input type="text" class="form-control mt-2" name="participation_type_external_link" value="{{$participation_type_external_link}}" id="participation_type_external_link" placeholder="Enter external link here">
                                     </div>
                                 </div>

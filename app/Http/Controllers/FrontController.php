@@ -169,6 +169,30 @@ class FrontController extends Controller
             return $this->generateJsonResponse(false,'Pass code not matched.');
         }
     }
+    public function saveTicketNotify($ticket){
+        if(auth()->guard('front')->user() && isset(auth()->guard('front')->user()->id)){
+            $ticket = EventTicket::where('id', decrypt($ticket))->first();
+            if(isset($ticket->id)){
+                $user = auth()->guard('front')->user();
+                $exists = $user->ticketNotifications()->where('ticket_id', $ticket->id)->exists();
+                if (!$exists) {
+                    $user->ticketNotifications()->create([
+                        'ticket_id' => $ticket->id,
+                    ]);
+                    $this->setFlashSession(true, 'Notify request added successfully.');
+                } else {
+                    $this->setFlashSession(false, 'You have already requested for this ticket.');
+                }
+                return redirect()->back();
+            } else {
+                $this->setFlashSession(false , 'Ticket not found.');
+                return redirect()->back();
+            }
+        } else {
+            $this->setFlashSession(false , 'Please login to add notify request.');
+            return redirect()->back();
+        }
+    }
     public function dashboard(){
         $data['seo_details'] = (object)['title' => 'Dashboard'];
         return view('pages.frontend.dashboard', $data);

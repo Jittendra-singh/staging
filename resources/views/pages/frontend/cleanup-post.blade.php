@@ -495,7 +495,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                         <div class="col-lg-12 col-md-12">
                                                             <div class="bp-title">
                                                                 <h4><i class="fa-solid fa-flag step_icon me-3"></i>
-                                                                    Participation Type
+                                                                    Volunteer Registration Options
                                                                 </h4>
                                                             </div>
                                                             <div class="p-4 bp-form main-form">
@@ -516,9 +516,9 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                                             <div class="d-flex align-items-start">
                                                                                                 <span class="radio-dot"></span>
                                                                                                 <div class="ms-3">
-                                                                                                    <h6 class="mb-1">Use VolunteerCleanup Tickets</h6>
+                                                                                                    <h6 class="mb-1">VolunteerCleanup’s Integrated Ticket System</h6>
                                                                                                     <small class="text-muted">
-                                                                                                        Manage registrations, issue tickets, and track attendees within the system.
+                                                                                                        Best for organizers who want everything in one place.
                                                                                                     </small>
                                                                                                 </div>
                                                                                             </div>
@@ -536,7 +536,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                                                 <div class="ms-3">
                                                                                                     <h6 class="mb-1">Walk-in Mode</h6>
                                                                                                     <small class="text-muted">
-                                                                                                       Allow attendees without prior registration or ticket requirements.
+                                                                                                       No tickets necessary. Best for casual or open-access cleanups.
                                                                                                     </small>
                                                                                                 </div>
                                                                                             </div>
@@ -568,9 +568,9 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                                             <div class="d-flex align-items-start">
                                                                                                 <span class="radio-dot"></span>
                                                                                                 <div class="ms-3">
-                                                                                                    <h6 class="mb-1">External Registration Link</h6>
+                                                                                                    <h6 class="mb-1">Use an External Registration System</h6>
                                                                                                     <small class="text-muted">
-                                                                                                        Redirect attendees to an external platform to complete registration.
+                                                                                                        Best if you already use Eventbrite, Givebutter, Google Forms, etc.
                                                                                                     </small>
                                                                                                 </div>
                                                                                             </div>
