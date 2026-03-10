@@ -472,10 +472,13 @@ $icalStrData = getiCalData($event);
                                         <i style="font-style: italic;">Ticket will be available starting {{ \Carbon\Carbon::parse($nextTicket->sell_start_time)->format(config('app.dateFormat')) }}</i>
                                         
                                         @if(auth()->guard('front')->user() && isset(auth()->guard('front')->user()->id))
-                                        @if(auth()->guard('front')->user()->ticketNotifications->contains('ticket_id', $nextTicket->id))
-                                            <!-- <p class="m-0"><i style="font-style: italic;" class="text-primary">You will be notified via email.</i></p> -->
+                                        @php 
+                                        $ticketNotifications = auth()->guard('front')->user()->ticketNotifications()->where('is_sent', 0)->get();
+                                        @endphp 
+                                        @if($ticketNotifications->contains('ticket_id', $nextTicket->id))
+                                            <p class="m-0"><i style="font-style: italic;" class="text-primary">You will be notified via email.</i></p>
                                         @else
-                                            <!-- <a href="{{route('save-ticket-notify', encrypt($nextTicket->id))}}" class="primary-btn btn btn-primary px-4 mt-3"><b>Notify Me</b></a> -->
+                                            <a href="{{route('save-ticket-notify', encrypt($nextTicket->id))}}" class="primary-btn btn btn-primary px-4 mt-3"><b>Notify Me</b></a>
                                         @endif 
                                         @endif 
                                     </div>

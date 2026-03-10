@@ -86,6 +86,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
 
     // cron
     Route::get('cron-weekly-alerts' , 'cronWeeklyAlerts')->name('cron-weekly-alerts');
+    Route::get('cron-ticket-notifications' , 'cronTicketNotifications')->name('cron-ticket-notifications');
     /*--------------------------------------------------------------------------------------- *
     *Volunteer/Organisation Portal 
     * --------------------------------------------------------------------------------------- */

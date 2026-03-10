@@ -25,8 +25,10 @@ use App\Models\Setting;
 use App\Models\OrganiserLead;
 use App\Models\CityStateZip;
 use App\Models\AlertLog;
+use App\Models\TicketNotificationLog;
 use App\Models\VolunteerWidget;
 use App\Models\VolunteerWidgetLog;
+use App\Models\EventTicketNotification;
 class FrontController extends Controller
 {
     public function viewEvents(){
@@ -2420,6 +2422,118 @@ class FrontController extends Controller
         $event['end_date'] = $request['end_datetime'];
         $content = $this->getEventMetaDataByAi($event);
         return $this->generateJsonResponse(true, '', json_decode($content));
+    }
+    public function cronTicketNotifications(){
+        if(env('SEND_TICKET_NOTIFY_MAIL')!=true){
+            return false;
+        }
+        set_time_limit(0);
+        ini_set('max_execution_time', 0);
+        $request = request();
+        $records = EventTicketNotification::with(['volunteer:id,first_name,last_name,email_address','ticket:id,event_id,ticket_name,ticket_type,ticket_price,sell_start_time,sell_end_time','ticket.event:id,event_name,slug,creator_id,start_datetime,end_datetime,charge_bear_by,venue,pincode'])->where('is_sent', 0)->whereHas('ticket', function ($q) {
+            $q->whereDate('sell_start_time', date('Y-m-d'));
+        })->limit(300)->get();
+        //echo '<pre>';
+        //print_r($records->toArray());
+        if($records->isNotEmpty()){
+            $data = [];
+            $to_arr = [];
+            $log_arr = [];
+            $updateIds = [];
+            foreach ($records as $key => $record) {
+                $data[$record->ticket_id][] = $record;
+            }
+            foreach ($data as $key1 => $value1) {
+                if(isset($value1[0]->ticket) && isset($value1[0]->ticket->id)){
+                    $ticket = $value1[0]->ticket;
+                    foreach ($value1 as $key => $value) {
+                        if(isset($value->volunteer) && isset($value->volunteer->email_address) && !empty(trim($value->volunteer->email_address))){
+                            //print_r($value->toArray());
+                            $updateIds[] = $value->id;
+                            $to_arr[] = 
+                            [
+                                "to" => [
+                                    ["email" => trim($value->volunteer->email_address)]
+                                    //["email" => 'learningdcm@gmail.com']
+                                ],
+                                "dynamic_template_data" => [
+                                    "volunteer_name" => $value->volunteer->first_name.' '.$value->volunteer->last_name,
+                                    "event_url" => $this->mailUrl('view-event-details',['slug'=>$ticket->event->slug]),
+                                    "event_name" =>  $ticket->event->event_name,
+                                    "event_date" =>  $ticket->event->startTimeAndEndTime,
+                                    "event_location" =>  $ticket->event->fullAddress,
+                                ],
+                            ];
+                            $log_arr[] = [
+                                "id" => $value->id,
+                                "ticket_id" => $value->ticket_id,
+                                "volunteer_id" => $value->volunteer_id,
+                                "email" => trim($value->volunteer->email_address)
+                            ];
+                        }
+                    }
+                }
+            }
+            //print_r($to_arr);
+            //print_r($log_arr);
+            //print_r($updateIds);
+            //die();
+            if(!empty($to_arr) && count($to_arr)>0){
+                if(env('SEND_TICKET_NOTIFY_MAIL')!=true){
+                    return false;
+                }
+                $jayParsedAry = [
+                    "personalizations" => $to_arr, 
+                    "from" => [
+                                "name" => "VolunteerCleanup.Org" ,
+                                "email" => "outreach@volunteercleanup.org" 
+                            ], 
+                    "template_id" => "d-8b60d30487624ad48181d0db07175923" 
+                ]; 
+
+                // Convert the post data to a string
+                $postDataString = http_build_query($jayParsedAry);
+                // Calculate the size of the post data in bytes
+                $postDataSizeBytes = strlen($postDataString);
+                // Convert bytes to megabytes
+                $postDataSizeMB = round($postDataSizeBytes / (1024 * 1024),2);
+
+                $response = $this->SendSendgridEmail('','','',$jayParsedAry);
+
+                //print_r($response);
+                $is_success = 1;
+                $response_code = 202;
+                if(isset($response) && !empty($response)){
+                    if(isset($response['response']) && !empty($response['response'])){
+                        if(isset($response['response']['code']) && !empty($response['response']['code']) && ($response['response']['code']==202 || $response['response']['code']==200)){
+                            $is_success = 1;
+                            $response_code = $response['response']['code'];
+                            //echo 'SUCCESS '.$resUnjson['response']['code'];
+                        }
+                        else{
+                            $is_success = 0;
+                            $response_code = $response['response']['code'];
+                            //echo 'FAILED '.$resUnjson['response']['code'];
+                        }
+                    }
+                    else{
+                        //echo 'FAILED';
+                    }
+                }
+                else{
+                    //echo 'FAILED';
+                }
+                TicketNotificationLog::create([
+                    'email_count'       => count($log_arr),
+                    'is_success'        => $is_success,
+                    'response'          => json_encode($response),
+                    'response_code'     => $response_code,
+                    'request_data'      => json_encode($log_arr),
+                    'request_data_size' => $postDataSizeMB,
+                ]);
+                EventTicketNotification::whereIn('id', $updateIds)->update(['is_sent' => 1]);
+            }
+        }
     }
     public function cronWeeklyAlerts(){
         //die();
