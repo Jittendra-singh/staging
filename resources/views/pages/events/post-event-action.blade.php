@@ -15,10 +15,35 @@
 @endphp
 @extends('layouts.backend_new', ['pageName' => $pageName, 'parentPageName' => $parentPageName, 'parentRoute' => $parentRoute,'breadcrumb' => [
     ['name' => 'Events', 'route' => route('index-events')],
-    ['name' => 'Volunteers & Other Actions', 'route' => ''],
+    ['name' => 'Volunteers & Wrap-Up Report', 'route' => ''],
 ]])
 @section('css')
     <x-reusables.datatablecss />
+    <style>
+    
+    .remove-event-img-btn {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        font-size: 10px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        line-height: 1;
+    }
+
+    .remove-event-img-btn:hover {
+        background: #b02a37;
+    }
+    </style>
 @endsection
 @section('js')
     <x-reusables.datatablejs />
@@ -162,7 +187,8 @@
             </div>
             <div class="card">
                 <div class="card-body">
-                    <form method="post" action="{{ route('save-after-event-action', ['placeholder' => $event->encrypted_id]) }}">
+                    <x-reusables.frontend.alert />
+                    <form method="post" action="{{ route('save-after-event-action', ['placeholder' => $event->encrypted_id]) }}" enctype="multipart/form-data">
                         @csrf
                         <div class="row">
                             <div class="col-md-6 mb-2">
@@ -203,14 +229,53 @@
                                         name="post_event_notes" placeholder="Post Event Notes" />
                                 </div>
                             </div>
+                            <div class="colmd-12 mb-2">
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <div class="form-group">
+                                            <label class="form-label fs-6">Images <small class="text-muted"> (max 4 images allowed)</small></label>
+                                            <input id="after_event_images" class="form-control h_50" type="file" name="after_event_images[]" accept="image/*" multiple>
+
+                                            @if(isset($event) && isset($event->id) && isset($event->after_event_images) && !empty($event->after_event_images))
+                                                @php 
+                                                $images = !empty($event->after_event_images) ? json_decode($event->after_event_images) : null;
+                                                @endphp 
+                                                <div class="d-flex flex-wrap align-items-center mt-2" id="savedImages">
+                                                    @if(!empty($images))
+                                                    <span class="me-2">Images:</span>
+                                                    @foreach($images as $key => $image)
+                                                        @php
+                                                            $imagePath = is_object($image) ? $image->path : $image;
+                                                        @endphp
+                                                        <div class="position-relative me-3 mt-2" id="saved-img-{{ $key }}">
+                                                            <img style="width: 50px; height: 50px; border-radius: 6px; object-fit: cover;" src="{{ asset($imagePath) }}">
+                                                            <button divid="saved-img-{{ $key }}" url="{{ route('remove-after-event-image', ['index' => $key, 'id' => $event->encrypted_id??0]) }}"
+                                                                type="button" 
+                                                                class="remove-event-img-btn">✕
+                                                            </button>
+                                                        </div>
+                                                    @endforeach
+                                                    @endif
+                                                </div>
+                                            @endif 
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="col-12 text-center mt-2">
                                 <a href="{{ url()->current() }}" class="btn btn-secondary ms-2">Reset</a>
                                 <button type="submit" class="btn btn-primary ms-2">Submit</button>
-                                @if ($event->afterActionDone())
-                                    <a href="{{ route('send-thankyou-request-email', ['placeholder' => $event->encrypted_id]) }}"
-                                        class="btn btn-primary ms-2">Send Thankyou & Request Email</a>
-                                @else
-                                    <p class="text-sm text-primary mt-2">Note: A thank-you email with the submitted information will be sent to all volunteers after the form is submitted.</p>
+                                @if($event->is_completed==1)
+                                    @if(isset($event->wrapup_email_sender) && isset($event->wrapup_email_sender->id))
+                                    <p class="text-sm text-primary mt-2">Wrap-Up Email sent by: {{ $event->wrapup_email_sender->first_name.' '.$event->wrapup_email_sender->last_name }}.</p>
+                                    @else 
+                                    <p class="text-sm text-primary mt-2">Wrap-Up Email has been sent.</p>
+                                    @endif 
+                                @else 
+                                <button type="button" {{ !$event->afterActionDone()?'disabled':'' }} ajaxurl="{{route('send-wrapup-email-admin',$event->encrypted_id ?? 0)}}" event_id="{{ $event->encrypted_id ?? 0 }}" class="btn btn-primary ms-2 send-thankyou-request-email-btn">Finalize & Send Wrap-up Email</button>
+                                @endif
+                                @if (!$event->afterActionDone())
+                                <p class="text-sm text-primary mt-2">Note: Save Waste Collected and Area Cleaned data to send the wrap-up email and certificate email to all volunteers.</p>
                                 @endif
                             </div>
                         </div>

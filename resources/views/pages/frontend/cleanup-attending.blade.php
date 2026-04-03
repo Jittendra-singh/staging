@@ -241,12 +241,18 @@
 														@if($registration->rsvp_confirmation==1)
 															@if($registration->checkin==1)
 																<!-- <a class="btn btn-sm" href="{{ $registration->community_form_pdf }}" download>Download PDF</a> -->
+																@if($registration->community_form_status=='approved')
 																<a class="btn btn-sm" href="{{ route('show-community-service-pdf', ['ticket' => encrypt($registration->id)]) }}" target="_blank">Download PDF</a>
+																@else
+																<h6 class="coupon-status">
+																	<span class="badge custom-badge-warning">Checked-In, Certificate Pending</span>
+																</h6>
+																@endif
 															@elseif(strtotime(date('Y-m-d H:i:s')) < strtotime($event->eventEndDateTime))
 																<h6 class="coupon-status">
 																	<span class="badge custom-badge-danger">Awaiting</span>
 																</h6>
-															@elseif($registration->checkin!=1 && $registration->community_form_status!='requested') 
+															@elseif($registration->checkin!=1 && $registration->community_form_status!='requested')
 																<button class="btn btn-sm btn-warning send-community-form-request" url="{{ route('request-community-form',[encrypt($registration->id)]) }}">Request Now</button>
 															@elseif($registration->checkin!=1 && $registration->community_form_status=='requested') 
 																<h6 class="coupon-status">

@@ -186,6 +186,31 @@ if(isset($form_data->id) && $form_data->status=='published'){
 		max-width: 100%;
 		max-height: 60vh;
 	}
+
+
+    
+    .remove-event-img-btn {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        font-size: 10px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        line-height: 1;
+    }
+
+    .remove-event-img-btn:hover {
+        background: #b02a37;
+    }
 </style>
 @endpush
 @section('content')
@@ -1173,6 +1198,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                     <div class="step-tab-panel step-tab-gallery target-box" id="tab_step3">
                                         @php
                                             $tickets = old('tickets', $form_data->eventTickets ?? []);
+                                            $cohostIds = [];
                                         @endphp
                                         <div class="tab-from-content">
                                             <div class="main-card p-4 mt-4">
@@ -1209,6 +1235,9 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                     @php 
                                                                     $permissions = $cohost->permissions;
                                                                     $permissionsString = implode(',', $permissions->pluck('permission')->toArray());
+                                                                    if($cohost->request_status=='approved'){
+                                                                        $cohostIds[] = $cohost->volunteer_id;
+                                                                    }
                                                                     @endphp 
                                                                     <div class="dropdown">
                                                                         <button class="option-btn" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
@@ -1307,7 +1336,24 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                     <div class="bp-title">
                                                         <h4><i class="fa-solid fa-gear step_icon me-3"></i>After Event Actions
                                                         @if(isset($form_data->encrypted_id))
-                                                        <button type="button" ajaxurl="{{route('send-thankyou-request-email-front')}}" event_id="{{ $form_data->encrypted_id ?? 0 }}" class="primary-btn w-fit float-end send-thankyou-request-email-btn">Send Thank-You & Request Email</button>
+                                                        @if($form_data->is_completed!=1)
+                                                        <!-- <button type="button" ajaxurl="{{route('send-thankyou-request-email-front')}}" event_id="{{ $form_data->encrypted_id ?? 0 }}" class="primary-btn w-fit float-end send-thankyou-request-email-btn">Send Thank-You & Request Email</button> -->
+                                                        <button type="button" ajaxurl="{{route('send-wrapup-email',$form_data->encrypted_id ?? 0)}}" event_id="{{ $form_data->encrypted_id ?? 0 }}" class="primary-btn w-fit float-end send-thankyou-request-email-btn" data-bs-toggle="tooltip" data-bs-original-title="Send Wrap-Up Email to All Attendees & Complete Cleanup">Finalize & Send Wrap-up Email</button>
+                                                        @else
+                                                            @if(isset($event->wrapup_email_sender) && isset($event->wrapup_email_sender->id))
+                                                            @php
+                                                                $chostText ='';
+                                                                if(isset($cohostIds) && !empty($cohostIds) && in_array($form_data->wrapup_email_sender->id, $cohostIds)){
+                                                                    $chostText = '(Co-Host)';
+                                                                } else if($form_data->creator_id==$form_data->wrapup_email_sender->id){
+                                                                    $chostText = '(Organizer)';
+                                                                }
+                                                            @endphp 
+                                                            <p class="float-end text-warning">Wrap-Up Email sent by {{ $form_data->wrapup_email_sender->first_name . ' ' . $form_data->wrapup_email_sender->last_name.' '.$chostText ?? 'Unknown' }}</p>
+                                                            @else 
+                                                            <p class="float-end text-warning">Wrap-Up Email has been sent.</p>
+                                                            @endif 
+                                                        @endif
                                                         @endif
                                                         </h4>
                                                     </div>
@@ -1348,6 +1394,44 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                 </div>
                                                             </div>
                                                         </div>
+                                                        <div class="row mt-3">
+                                                            <div class="col-sm-6">
+                                                                <div class="form-group">
+                                                                    <label class="form-label fs-6">Images <small class="text-muted"> (max 4 images allowed)</small></label>
+                                                                    <input id="after_event_images" class="form-control h_50" type="file" name="after_event_images[]" accept="image/*" multiple>
+
+                                                                    @if(isset($form_data) && isset($form_data->id) && isset($form_data->after_event_images) && !empty($form_data->after_event_images))
+                                                                        @php 
+                                                                        $images = !empty($form_data->after_event_images) ? json_decode($form_data->after_event_images) : null;
+                                                                        @endphp 
+                                                                        <div class="d-flex flex-wrap align-items-center mt-2" id="savedImages">
+                                                                            @if(!empty($images))
+                                                                            <span class="me-2">Images:</span>
+                                                                            @foreach($images as $key => $image)
+                                                                                @php
+                                                                                    $imagePath = is_object($image) ? $image->path : $image;
+                                                                                @endphp
+                                                                                <div class="position-relative me-3 mt-2" id="saved-img-{{ $key }}">
+                                                                                    <img style="width: 50px; height: 50px; border-radius: 6px; object-fit: cover;" src="{{ asset($imagePath) }}">
+                                                                                    <button divid="saved-img-{{ $key }}" url="{{ route('front-remove-event-after-image', ['index' => $key, 'id' => $form_data->encrypted_id??0]) }}"
+                                                                                        type="button" 
+                                                                                        class="remove-event-img-btn">✕
+                                                                                    </button>
+                                                                                </div>
+                                                                            @endforeach
+                                                                            @endif
+                                                                        </div>
+                                                                    @endif 
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        @if(isset($cohostIds) && !empty($cohostIds) && in_array(auth()->guard('front')->user()->id, $cohostIds))
+                                                        <div class="row mt-3">
+                                                            <div class="col-sm-12 text-center">
+                                                                <small>NOTE: You are submitting this report as a co-host on behalf of the organizer</small>
+                                                            </div>
+                                                        </div>
+                                                        @endif
                                                     </div>
                                                 </div>
                                             </div>

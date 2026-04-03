@@ -1278,25 +1278,39 @@ $(document).ready(function () {
 	}
 
 	$('.send-thankyou-request-email-btn').on('click', function () {
-		let event_id = $(this).attr('event_id');
-		let ajaxurl = $(this).attr('ajaxurl');
-		$.ajax({
-			url: ajaxurl,
-			method: 'POST',
-			data: {
-				'event_id': event_id,
-				'_token': $('meta[name="csrf-token"]').attr('content')
-			},
-			success: function (response) {
-				if (response.status) {
-					showError(response.message, 'success');
-				}
-				else {
-					showError(response.message, 'error');
-				}
+		var control = this;
+		Swal.fire({
+			title: "Are you sure?",
+			text: 'You want to send the wrap-up & certificate emails to all attendees. Event will be marked as completed after sending the email.',
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonColor: '#3085d6',
+			cancelButtonColor: '#d33',
+			confirmButtonText: 'Yes, send it!'
+		}).then((willDelete) => {
+			if (willDelete.isConfirmed) {
+				let event_id = $(control).attr('event_id');
+				let ajaxurl = $(control).attr('ajaxurl');
+				$.ajax({
+					url: ajaxurl,
+					method: 'POST',
+					data: {
+						'event_id': event_id,
+						'_token': $('meta[name="csrf-token"]').attr('content')
+					},
+					success: function (response) {
+						if (response.status) {
+							showError(response.message, 'success');
+							$(control).after(response.data);
+							$(control).hide();
+						}
+						else {
+							showError(response.message, 'error');
+						}
+					}
+				});
 			}
 		});
-
 	});
 
 	/**ADD TICKET */
@@ -2353,11 +2367,11 @@ $(document).ready(function () {
 			}
 		});
 	});
-	$(document).on('click', '.menu--item__has_sub_menu', function () {
-		if ($(this).hasClass('menu--subitens__opened')) {
-			$(this).removeClass('menu--subitens__opened');
+	$(document).on('click', '.menu--item__has_sub_menu .menu--link', function () {
+		if ($(this).parent().hasClass('menu--subitens__opened')) {
+			$(this).parent().removeClass('menu--subitens__opened');
 		} else {
-			$(this).addClass('menu--subitens__opened');
+			$(this).parent().addClass('menu--subitens__opened');
 		}
 	});
 	$('#copy_buyer_info_to_attendee').change(function () {
@@ -2411,6 +2425,79 @@ $(document).ready(function () {
 		} else {
 			$('#participation_type_external_link').hide();
 		}
+	});
+	$('#reschedule_now_btn').click(function () {
+		const form = document.getElementById('rescheduleEventForm');
+		if (!form.checkValidity()) {
+			// This will show native browser validation messages
+			form.reportValidity();
+			return;
+		}
+		Swal.fire({
+			title: "Are you sure?",
+			text: `You want to reschedule this event?`,
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonColor: '#3085d6',
+			cancelButtonColor: '#d33',
+			confirmButtonText: 'Yes, reschedule it!'
+		}).then((willDelete) => {
+			if (willDelete.isConfirmed) {
+                $('#reschedule_now_btn').attr('disabled', 'disabled');
+				$('#rescheduleEventForm').submit();
+			}
+		});
+	});
+	$(document).on('click','.remove-event-img-btn',function(){
+		var control = this;
+		var url = $(control).attr('url');
+		$.ajax({
+			url: url,
+			method: 'POST',
+			data: {},
+			success: function (response) {
+				if (response.status) {
+					if(response.data){
+						$('#savedImages').html(response.data);
+					} else {
+						$('#savedImages').html('');
+					}
+					showError(response.message, 'success');
+				}
+				else {
+					showError(response.message, 'error');
+				}
+			}
+		});
+	});
+	$(document).on('click', '.show-alert-run-url', function () {
+		var message = $(this).attr('message');
+		var url = $(this).attr('url');
+		Swal.fire({
+			title: "Are you sure?",
+			text: message,
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonColor: '#3085d6',
+			cancelButtonColor: '#d33',
+			confirmButtonText: 'Yes'
+		}).then((willDelete) => {
+			if (willDelete.isConfirmed) {
+				$.ajax({
+					url: url,
+					method: 'POST',
+					data: {},
+					success: function (response) {
+						if (response.status) {
+							showError(response.message, 'success');
+						}
+						else {
+							showError(response.message, 'error');
+						}
+					}
+				});
+			}
+		});
 	});
 
 	fieldmasking();
@@ -2610,10 +2697,12 @@ function showHostingEvent(type, control = null) {
 	$('.event-row-upcoming').hide();
 	$('.event-row-ended').hide();
 	$('.event-row-ongoing').hide();
+	$('.event-row-action_required').hide();
 	$('.event-row-' + type).show();
 	$('.event-row-ended-not-found').hide();
 	$('.event-row-upcoming-not-found').hide();
 	$('.event-row-ongoing-not-found').hide();
+	$('.event-row-action_required-not-found').hide();
 	if (type == 'ended' && !$('.event-row-ended').length > 0) {
 		$('.event-row-ended-not-found').show();
 	}
@@ -2622,6 +2711,9 @@ function showHostingEvent(type, control = null) {
 	}
 	if (type == 'ongoing' && !$('.event-row-ongoing').length > 0) {
 		$('.event-row-ongoing-not-found').show();
+	}
+	if (type == 'action_required' && !$('.event-row-action_required').length > 0) {
+		$('.event-row-action_required-not-found').show();
 	}
 }
 function downloadICS(jsonData, name = 'event') {

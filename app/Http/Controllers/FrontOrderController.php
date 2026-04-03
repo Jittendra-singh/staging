@@ -593,6 +593,9 @@ class FrontOrderController extends Controller
                     'org_name'=>$event->creator->first_name.' '.$event->creator->last_name,
                     'org_email'=>$event->creator->email_address,
                     'org_phone'=>$event->creator->phone,
+                    'buyer_name'=>$creating_volunteer->first_name.' '.$creating_volunteer->last_name,
+                    'buyer_email'=>$creating_volunteer->email_address,
+                    'buyer_phone'=>$creating_volunteer->phone,
                     //'volunteer_name'=>$creating_volunteer->first_name.' '.$creating_volunteer->last_name,
                     //'volunteer_email'=>$creating_volunteer->email_address,
                     'action_type'=>'registered',
@@ -687,6 +690,12 @@ class FrontOrderController extends Controller
 
     }
 
+    public function cleanupReportImages($event){
+        $event = Event::findOrFail(decrypt($event));
+        return view('pages.frontend.cleanup-report-images', [
+            'event'      => $event,
+        ]);
+    }
     public function viewWaiverForm($ticket){
         
         $ticket = EventOrderTicket::with('volunteer')->findOrFail(decrypt($ticket));

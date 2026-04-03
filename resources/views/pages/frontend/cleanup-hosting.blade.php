@@ -7,6 +7,10 @@
 .link-deactive{
     color: grey!important;
 }
+a[disabled]{
+    pointer-events: none;
+    opacity: 0.6;
+}
 </style>
 @endpush
 @section('content')
@@ -55,19 +59,23 @@
                                             @endif
                                         </h5> -->
                                     </div>
-                                    <div class="rs mt_r4  col-sm-5 ps-3">
+                                    <div class="rs mt_r4 col-sm-5 ps-3 text-end">
                                         <div class="btn-group" role="group">
                                             <a href="javascript:void(0);" onclick="showHostingEvent('upcoming',this)"
                                                 class="btn btn-outline-primary px-3 py-2 active text-white">
-                                                Upcoming cleanups 
+                                                Upcoming 
                                             </a>
                                             <a href="javascript:void(0);" onclick="showHostingEvent('ongoing',this)"
                                                 class="btn btn-outline-primary px-3 py-2">
-                                                In-Progress cleanups 
+                                                In-Progress 
                                             </a>
                                             <a href="javascript:void(0);" onclick="showHostingEvent('ended',this)"
                                                 class="btn btn-outline-primary px-3 py-2">
-                                                Past cleanups 
+                                                Past 
+                                            </a>
+                                            <a href="javascript:void(0);" onclick="showHostingEvent('action_required',this)"
+                                                class="btn btn-outline-primary px-3 py-2">
+                                                Action Required
                                             </a>
                                         </div>
                                         <!-- <div class="btn-group" role="group">
@@ -162,8 +170,25 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="main-card mt-2 event-row-action_required-not-found" style="display:none;">
+                                <div class="contact-list">
+                                    <div
+                                        class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-between row">
+                                        <h5 class="text-center">No cleanup found</h5>
+                                        <p class="text-center m-0">No action-required cleanups at the moment.</p>
+                                    </div>
+                                </div>
+                            </div>
                             @foreach ($hosting_events as $event)
-                                <div class="main-card mt-2 event-row-{{strtolower($event->runningStatus)}}">
+                                @php 
+                                    $eventStatusClass = strtolower($event->runningStatus);
+                                    $now = \Carbon\Carbon::now();
+                                    if($event->end_datetime && \Carbon\Carbon::parse($event->end_datetime)->lt($now) && $event->is_completed != 1)
+                                    {
+                                        $eventStatusClass = 'action_required';
+                                    }
+                                @endphp 
+                                <div class="main-card mt-2 event-row-{{$eventStatusClass}}">
                                     <div class="contact-list">
                                         <div
                                             class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-between">
@@ -203,9 +228,18 @@
                                                         <i class="fa-solid fa-clone me-3"></i>Duplicate Event
                                                     </a>
                                                     @endif
+                                                    @if($event->is_completed!=1)
+                                                    <a message="You want to send the waiver email to all attendees" href="javascript:void(0);" url="{{route('send-waiver-bulk-email', ['id' => $event->encrypted_id])}}" class="dropdown-item show-alert-run-url">
+                                                        <i class="fa-solid fa-envelope me-3"></i>Send Waiver Email To All
+                                                    </a>
+                                                    <a message="You want to mark all attendees as checked-in" href="javascript:void(0);" url="{{route('mark-bulk-checkin-with-email', ['id' => $event->encrypted_id])}}" class="dropdown-item show-alert-run-url">
+                                                        <i class="fa-solid fa-envelope me-3"></i> Check-in All
+                                                    </a>
+                                                    @endif
                                                     @if(auth()->guard('front')->user()->id==$event->creator_id)
                                                     <a class="dropdown-item delete-record" data-url="{{route('front-cleanup-hosting-delete', ['id'=> $event->id])}}">
-                                                        <i class="fa-solid fa-trash-can me-3"></i>Delete</a>
+                                                        <i class="fa-solid fa-trash-can me-3"></i>Delete
+                                                    </a>
                                                     @endif
                                                 </div>
                                             </div>
@@ -260,6 +294,10 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                        </div>
+                                        <div class="bottom d-flex flex-wrap justify-content-end align-items-center p-4">
+                                            <a class="primary-btn w-fit" href="{{route('front-reschedule-event', ['id' => $event->encrypted_id])}}" {{ $event->is_completed==1?'disabled':'' }}>Reschedule</a>
+                                            <a class="sign-up-btn text-white w-fit ms-3" href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step5'])}}" {{ $eventStatusClass!='action_required'?'disabled':'' }}>Submit Wrap-Up Report</a>
                                         </div>
                                     </div>
                                 </div>

@@ -377,8 +377,8 @@ $outPages = true;
         <p>ICC Miami-Dade County 2024 is a WRAP. Thank you to our Site Captains, Sponsors and Volunteers who supported
             this event with their time, energy and love for our Bay and Oceans.!. See the high-level results and news
             coverage below. If you want to join future cleanups throughout the year, you can search for a future
-            <a href="https://volunteercleanup.org/events/">cleanup</a>, sign up for <a
-                href="https://volunteercleanup.org/get-notified/"> weekly alerts</a>, or do your own <a
+            <a href="{{route('view-events')}}">cleanup</a>, sign up for <a
+                href="{{route('front-create-alert')}}"> weekly alerts</a>, or do your own <a
                 href="https://volunteercleanup.org/solo-cleanup/">solo cleanup</a>.
         </p>
         <p>
@@ -394,7 +394,7 @@ $outPages = true;
             <a href="http://www.pwc.com/">PricewaterhouseCoopers LLP</a>, <a href="https://www.miamiironside.com/">Miami
                 Ironside</a>, <a href="http://www.savethemanatee.org/">Save The Manatee</a>, <a
                 href="https://www.wm.com/">Waste
-                Management</a> and <a href="https://www.watersportsassociation.org/">Watersports Association</a>
+                Management</a> and Watersports Association
         </p>
         <p> If you would like to become a financial sponsor or partner for ICC Miami-Dade 2025, please contact us <a href="https://volunteercleanup.org/contact-us/">here</a>.
             If you would like to hire us for a Private Day of Service, you can find details here:

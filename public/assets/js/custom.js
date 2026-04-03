@@ -771,6 +771,118 @@ $(document).ready(function () {
                   }
             });
       });
+      
+	$(document).on('click','.remove-event-img-btn',function(){
+		var control = this;
+		var url = $(control).attr('url');
+		$.ajax({
+			url: url,
+			method: 'POST',
+			data: {},
+			success: function (response) {
+				if (response.status) {
+					if(response.data){
+						$('#savedImages').html(response.data);
+					} else {
+						$('#savedImages').html('');
+					}
+					showError(response.message, 'success');
+				}
+				else {
+					showError(response.message, 'error');
+				}
+			}
+		});
+	});
+      
+	$('.send-thankyou-request-email-btn').on('click', function () {
+		var control = this;
+		Swal.fire({
+			title: "Are you sure?",
+			text: 'You want to send the wrap-up & certificate emails to all attendees. Event will be marked as completed after sending the email.',
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonColor: '#3085d6',
+			cancelButtonColor: '#d33',
+			confirmButtonText: 'Yes, send it!'
+		}).then((willDelete) => {
+			if (willDelete.isConfirmed) {
+				let event_id = $(control).attr('event_id');
+				let ajaxurl = $(control).attr('ajaxurl');
+				$.ajax({
+					url: ajaxurl,
+					method: 'POST',
+					data: {
+						'event_id': event_id,
+						'_token': $('meta[name="csrf-token"]').attr('content')
+					},
+					success: function (response) {
+						if (response.status) {
+							showError(response.message, 'success');
+							setTimeout(() => {
+								window.location.reload();
+							}, 350);
+						}
+						else {
+							showError(response.message, 'error');
+						}
+					}
+				});
+			}
+		});
+	});
+	$(document).on('click', '.show-alert-run-url', function () {
+		var message = $(this).attr('message');
+		var url = $(this).attr('url');
+		Swal.fire({
+			title: "Are you sure?",
+			text: message,
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonColor: '#3085d6',
+			cancelButtonColor: '#d33',
+			confirmButtonText: 'Yes'
+		}).then((willDelete) => {
+			if (willDelete.isConfirmed) {
+				$.ajax({
+					url: url,
+					method: 'POST',
+					data: {},
+					success: function (response) {
+						if (response.status) {
+							showError(response.message, 'success');
+						}
+						else {
+							showError(response.message, 'error');
+						}
+					}
+				});
+			}
+		});
+	});
+      
+	$('#reschedule_now_btn').click(function () {
+		const form = document.getElementById('rescheduleEventForm');
+		if (!form.checkValidity()) {
+			// This will show native browser validation messages
+			form.reportValidity();
+			return;
+		}
+		Swal.fire({
+			title: "Are you sure?",
+			text: `You want to reschedule this event?`,
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonColor: '#3085d6',
+			cancelButtonColor: '#d33',
+			confirmButtonText: 'Yes, reschedule it!'
+		}).then((willDelete) => {
+			if (willDelete.isConfirmed) {
+                        $('#reschedule_now_btn').attr('disabled', 'disabled');
+				$('#rescheduleEventForm').submit();
+			}
+		});
+	});
 });
 function callImaskForEmail(id) {
       IMask(document.getElementById(id), {

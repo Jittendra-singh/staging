@@ -314,6 +314,9 @@ class Event extends Model
     public function providedTools(){
         return $this->tools()->where('event_tools.should_bring' , 0);
     }
+    public function wrapup_email_sender(){
+        return $this->belongsTo(Volunteer::class, 'wrapup_email_sent_by', 'id');
+    }
     public function eventPermissions(){
         return $this->hasManyThrough(
             CohostPermission::class, // Final model

@@ -405,7 +405,8 @@ $is_session = session()->get('checkout_event');
                                         <li><a class="dropdown-item" href="{{ config('app.frontsite') }}corporate-days-of-service/">Corporate Days Of Service</a></li>
                                         <li><a class="dropdown-item" href="{{ config('app.frontsite') }}trashathon/">Trashathon Fundraiser</a></li>
                                         <li><a class="dropdown-item" href="{{ config('app.frontsite') }}rent-recycling-bins/">Rent Recycling Bins</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('view-international-events') }}">International Coastal Cleanup Day</a></li>
+                                        <!-- <li><a class="dropdown-item" href="{{ route('view-international-events') }}">International Coastal Cleanup Day</a></li> -->
+                                        <li><a class="dropdown-item" href="{{ config('app.frontsite') }}international-coastal-cleanup">International Coastal Cleanup Day</a></li>
                                         <li><a class="dropdown-item" href="{{ config('app.frontsite') }}leave-no-trace/">Leave No Trace Miami</a></li>
                                         <li><a class="dropdown-item" href="{{ config('app.frontsite') }}cigarette-litter-reduction/">Cigarette Litter Solutions</a></li>
                                         <li><a class="dropdown-item" href="{{ config('app.frontsite') }}mitzvah-projects/">Mitzvah Projects</a></li>

@@ -157,6 +157,7 @@ class VolunteerController extends Controller
         if($res){
             if (!$placeholder) {
                 if (request()->is_organiser == 1) {
+                    $this->syncWithWP($obj,'Register');
                     $this->setFlashSession($res,'Great! Organizer has been created. You can now view their details in the list or assign them to events.');
                 } else {
                     $this->setFlashSession($res,'Great! Volunteer has been created. You can now view their details in the list or assign them to events.');

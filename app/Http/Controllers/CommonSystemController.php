@@ -31,6 +31,8 @@ class CommonSystemController extends Controller
         }
         $this->sendEmail($event_obj->creator->email_address, $sub, $email_content, "cohost-accept-decline");
 
+        $this->syncWithWP($volunteer_obj);
+
         //$this->setFlashSession($res);
         //return redirect(config('app.frontsite'));
         $data = [];

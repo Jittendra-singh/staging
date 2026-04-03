@@ -38,8 +38,7 @@ Route::controller(\App\Http\Controllers\FrontOrderController::class)->group(func
     Route::post('check-before-create-order', 'checkBeforeCreateOrder')->name('check-before-create-order');
 
     //ical 
-    Route::get('add-event-to-calendar/{id}', 'downloadICS')
-     ->name('add-event-to-calendar');
+    Route::get('add-event-to-calendar/{id}', 'downloadICS')->name('add-event-to-calendar');
 
     // alert 
     Route::get('create-alert' , 'createAlertPage')->name('front-create-alert');
@@ -64,6 +63,8 @@ Route::controller(\App\Http\Controllers\FrontOrderController::class)->group(func
     Route::post('check-event-slug', 'checkEventSlug')->name('front-check-event-slug');
 
     Route::get('update-ticket-dates', 'updateTicketDates')->name('update-ticket-dates');
+
+    Route::get('cleanup-report-images/{event}' , 'cleanupReportImages')->name('cleanup-report-images');
 });
 Route::controller(\App\Http\Controllers\FrontController::class)->group(function(){
 
@@ -84,9 +85,12 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
     Route::get('show-community-service-pdf/{ticket}', 'showCommunityServicePdf')->name('show-community-service-pdf');
     Route::get('front-save-ticket-notify/{ticket}', 'saveTicketNotify')->name('save-ticket-notify');
 
+    Route::get('sync-all-organizer', 'syncAllOrganizer')->name('sync-all-organizer');
+
     // cron
     Route::get('cron-weekly-alerts' , 'cronWeeklyAlerts')->name('cron-weekly-alerts');
-    Route::get('cron-ticket-notifications' , 'cronTicketNotifications')->name('cron-ticket-notifications');
+    Route::get('cron-ticket-notifications' , 'cronTicketNotifications')->name('cron-ticket-notifications'); // once a day at 12:15AM
+    Route::get('cron-event-finalize' , 'cronEventFinalize')->name('cron-event-finalize'); // once a day at 12:15AM
     /*--------------------------------------------------------------------------------------- *
     *Volunteer/Organisation Portal 
     * --------------------------------------------------------------------------------------- */
@@ -137,9 +141,15 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::post('save-cleanup-seo-details', 'saveCleanUpSeoDetails')->name('front-save-cleanup-seo-details');
         Route::post('save-cleanup-after-action', 'saveCleanUpAfterAction')->name('front-save-cleanup-after-action');
         Route::post('send-thankyou-request-email-front', 'sendThankyouRequestEmailFront')->name('send-thankyou-request-email-front');
+        Route::post('send-wrapup-email/{id}', 'sendWrapupEmail')->name('send-wrapup-email');
         Route::post('/get-focus-keywords-frontend', 'getFocusKeywordsFront')->name('get-focus-keywords-frontend');
         Route::post('/get-event-meta-data', 'getEventMetaData')->name('get-event-meta-data');
         Route::post('/update-event-publish-status', 'updateEventPublishStatus')->name('update-event-publish-status');
+        Route::get('reschedule-event/{id}', 'rescheduleEvent')->name('front-reschedule-event');
+        Route::post('submit-reschedule-event-form/{id}', 'submitRescheduleEventForm')->name('submit-reschedule-event-form');
+        Route::post('remove-event-after-image/{index}/{id}', 'removeEventAfterImage')->name('front-remove-event-after-image');
+        Route::post('send-waiver-bulk-email/{id}', 'sendWaiverBulkEmail')->name('send-waiver-bulk-email');
+        Route::post('mark-bulk-checkin-with-email/{id}', 'markBulkCheckinWithEmail')->name('mark-bulk-checkin-with-email');
         
         
         /**EVENT REGISTRATION */
@@ -272,6 +282,7 @@ Route::prefix(config('app.admin_prefix'))->group(function () {
             Route::get('/send-community-form/{ticket}', 'sendCommunityForm')->name('send-community-form');
             Route::get('/send-waiver-invitation/{ticket}', 'reSendWaiverInvitation')->name('send-waiver-invitation');
             Route::get('/send-thankyou-request-email/{placeholder}' , 'sendThankyouRequestEmail' )->name('send-thankyou-request-email');
+            Route::post('/send-wrapup-email-admin/{id}', 'sendWrapupEmail')->name('send-wrapup-email-admin');
             Route::get('/mark-checkin/{ticket}', 'markCheckin')->name('mark-checkin');
             Route::get('/toggle-event-status/{placeholder}', 'toggleStatus')->name('toggle-event-status');
             Route::get('/toggle-event-publish/{placeholder}', 'togglePublish')->name('toggle-event-publish');
@@ -282,10 +293,16 @@ Route::prefix(config('app.admin_prefix'))->group(function () {
             //Route::get('/resend-invite-cohosts/{eventPlaceholder}/{volunteerPlaceholder}' , 'reInviteCoHosts' )->name('resend.cohost.invitation');
             Route::get('/resend-invite-cohosts/{placeholder}' , 'reInviteCoHosts' )->name('resend.cohost.invitation');
             Route::post('/delete-cohost/{placeholder}' , 'deleteCohost' )->name('delete.cohost');
+            // reschedule event 
+            Route::get('reschedule-event-page/{id}', 'rescheduleEvent')->name('admin-reschedule-event');
+            Route::post('submit-reschedule-event-form-admin/{id}', 'submitRescheduleEventForm')->name('submit-reschedule-event-form-admin');
             //post event ROUTES
             Route::get('/post-event-action/{placeholder}' , 'postEventAction' )->name('post-event-action');
             Route::post('/save-after-event-action/{placeholder}' , 'saveAfterEventAction' )->name('save-after-event-action');
             Route::post('/get-event-options' , 'getEventOptions' )->name('get-event-options');
+            Route::post('/remove-after-event-image/{index}/{id}', 'removeAfterEventImage')->name('remove-after-event-image');
+            Route::post('send-waiver-bulk-email-admin/{id}', 'sendWaiverBulkEmail')->name('send-waiver-bulk-email-admin');
+            Route::post('mark-bulk-checkin-with-email-admin/{id}', 'markBulkCheckinWithEmail')->name('mark-bulk-checkin-with-email-admin');
         });
         Route::controller(\App\Http\Controllers\OrderController::class)->group(function () {
             Route::get('/orders', 'index')->name('index-orders');

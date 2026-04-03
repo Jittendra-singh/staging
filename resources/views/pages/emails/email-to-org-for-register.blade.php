@@ -22,9 +22,9 @@
         <p>A new registration has been completed for {{ $event_name }}.</p>
         <p><strong>Buyer Information :</strong></p>
         <ul>
-            <li><strong>Buyer Name:</strong> {{ $org_name??'-' }}</li>
-            <li><strong>Email:</strong> {{ $org_email??'-' }}</li>
-            <li><strong>Phone:</strong> {{ $org_phone??'-' }}</li>
+            <li><strong>Buyer Name:</strong> {{ $buyer_name??'-' }}</li>
+            <li><strong>Email:</strong> {{ $buyer_email??'-' }}</li>
+            <li><strong>Phone:</strong> {{ $buyer_phone??'-' }}</li>
         </ul><br/>
         <hr>
         <p><strong>Registration Summary :</strong></p>

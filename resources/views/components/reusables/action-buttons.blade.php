@@ -105,9 +105,26 @@
                     </li>
                     <li class="dropdown-item">
                         <a href="{{route('post-event-action', ['placeholder' => $id])}}" title="View Attendees">
-                            <i class="fs-5 mdi mdi-ticket-confirmation-outline"></i> <span class="text-muted">Volunteers & Other Actions</span>
+                            <i class="fs-5 mdi mdi-ticket-confirmation-outline"></i> <span class="text-muted">Volunteers & Wrap-Up Report</span>
                         </a>
                     </li>
+                    @if($data->is_completed!=1)
+                    <li class="dropdown-item">
+                        <a class="show-alert-run-url" href="{{route('admin-reschedule-event', ['id' => $data->encrypted_id])}}" title="Reschedule Event">
+                            <i class="fs-5 mdi mdi-calendar-clock"></i> <span class="text-muted">Reschedule Event</span>
+                        </a>
+                    </li>
+                    <li class="dropdown-item">
+                        <a class="show-alert-run-url" message="You want to send the waiver email to all attendees" href="javascript:void(0);" url="{{route('send-waiver-bulk-email-admin', ['id' => $data->encrypted_id])}}" title="Send Waiver Email To All">
+                            <i class="fs-5 mdi mdi-email-fast"></i> <span class="text-muted">Send Waiver Email To All</span>
+                        </a>
+                    </li>
+                    <li class="dropdown-item">
+                        <a class="show-alert-run-url" message="You want to mark all attendees as checked-in" href="javascript:void(0);" url="{{route('mark-bulk-checkin-with-email-admin', ['id' => $data->encrypted_id])}}" title="Check-in All">
+                            <i class="fs-5 mdi mdi-email-check"></i> <span class="text-muted">Check-in All</span>
+                        </a>
+                    </li>
+                    @endif
                 </ul>
             </div>
         @endcan

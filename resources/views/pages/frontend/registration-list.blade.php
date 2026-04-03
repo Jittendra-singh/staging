@@ -247,7 +247,7 @@
 														<span class="icon">
 															<i class="fa-solid fa-quote-right"></i>
 														</span>
-														<p>RSVP Status</p>
+														<p>RSVP</p>
 														<h6 class="coupon-status">
 															@if($registration->rsvp_confirmation===0)
 															<span class="badge custom-badge-danger">Cancelled</span>
@@ -271,12 +271,13 @@
 														<span class="icon">
 															<i class="fa-solid fa-quote-right"></i>
 														</span>
-														<p>Waiver Status</p>
+														<p>Waiver</p>
 														<h6 class="coupon-status">
 															@if(!empty($registration->waiver_filled_at))
 															Signed at {{date(config('app.dateTimeFormat'),strtotime($registration->waiver_filled_at))}}
 															@else
-															<span class="badge custom-badge-danger">Unsigned</span>
+															<span class="badge custom-badge-danger">Unsigned</span> 
+															<a href="{{ route('view-waiver-form', ['ticket' => encrypt($registration->id)]) }}" data-bs-toggle="tooltip" data-bs-original-title="Waiver Page Link" target="_blank"><span class="badge custom-badge-warning"><i class="fa fa-external-link"></i></span></a>
 															@endif 
 														</h6>
 													</div>	

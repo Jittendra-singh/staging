@@ -360,6 +360,52 @@ class Controller extends BaseController
             }
         }
     }
+    public function sendSendgridTemplateEmailWithoutLog($to_arr,$temp_id){
+        if(!SEND_MAIL){
+            return false;
+        }
+        $jayParsedAry = [
+            "personalizations" => $to_arr, 
+            "from" => [
+                        "name" => "VolunteerCleanup.Org" ,
+                        "email" => "outreach@volunteercleanup.org" 
+                    ], 
+            "template_id" => $temp_id
+        ]; 
+
+        // Convert the post data to a string
+        $postDataString = http_build_query($jayParsedAry);
+        // Calculate the size of the post data in bytes
+        $postDataSizeBytes = strlen($postDataString);
+        // Convert bytes to megabytes
+        $postDataSizeMB = round($postDataSizeBytes / (1024 * 1024),2);
+
+        $response = $this->SendSendgridEmail('','','',$jayParsedAry);
+
+        //print_r($response);
+        $is_success = 1;
+        $response_code = 202;
+        if(isset($response) && !empty($response)){
+            if(isset($response['response']) && !empty($response['response'])){
+                if(isset($response['response']['code']) && !empty($response['response']['code']) && ($response['response']['code']==202 || $response['response']['code']==200)){
+                    $is_success = 1;
+                    $response_code = $response['response']['code'];
+                    //echo 'SUCCESS '.$resUnjson['response']['code'];
+                }
+                else{
+                    $is_success = 0;
+                    $response_code = $response['response']['code'];
+                    //echo 'FAILED '.$resUnjson['response']['code'];
+                }
+            }
+            else{
+                //echo 'FAILED';
+            }
+        }
+        else{
+            //echo 'FAILED';
+        }
+    }
     function SendSendgridEmail($email,$subject,$content,$data=null){
         // Set your SendGrid API Key
         $apiKey = env('MAIL_SENDGRID_KEY');

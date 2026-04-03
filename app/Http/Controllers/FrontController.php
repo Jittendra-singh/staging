@@ -29,6 +29,8 @@ use App\Models\TicketNotificationLog;
 use App\Models\VolunteerWidget;
 use App\Models\VolunteerWidgetLog;
 use App\Models\EventTicketNotification;
+use App\Models\EventFinalizeEmailLog;
+use App\Models\EventRescheduleLog;
 class FrontController extends Controller
 {
     public function viewEvents(){
@@ -1302,6 +1304,21 @@ class FrontController extends Controller
             $event->area_cleaned = $validated['area_cleaned'];
             $event->team_name = $validated['team_name'];
             $event->post_event_notes = $validated['post_event_notes'];
+            if (request()->hasFile('after_event_images')) {
+                $files = request()->file('after_event_images');
+                // Wrap in array if single file, so loop works for both cases
+                if (!is_array($files)) {
+                    $files = [$files];
+                }
+                if (count($files) > 4) {
+                    return $this->generateJsonResponse(false,'You can only upload a maximum of 4 images');
+                }
+                $photoPaths = [];
+                foreach ($files as $photo) {
+                    $photoPaths[] = $this->moveFiles($photo, 'events/after_event_images');
+                }
+                $event->after_event_images = json_encode($photoPaths);
+            }
             $event->save();
         } catch (\Exception $e) {
             return $this->generateJsonResponse(false, 'Failed to after event actions: ' . $e->getMessage());
@@ -1312,6 +1329,43 @@ class FrontController extends Controller
             'event' => $event , 
             'redirect_href' => route('front-cleanup-hosting', ['type' => 'organizer']) , 
         ]);
+    }
+    public function removeEventAfterImage($index, $id){
+        $row = Event::findOrFail(decrypt($id));
+        $photos = json_decode($row->after_event_images, true) ?? [];
+        if (!isset($photos[$index])) {
+            return $this->generateJsonResponse(false, 'Image not found.');
+        }
+        $photo = $photos[$index];
+        $photoPath = isset($photo['path']) ? $photo['path'] : $photo;
+        if(!empty($photoPath)){
+            $filePath = public_path($photoPath);
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+        }
+        // Remove from array and re-index
+        array_splice($photos, $index, 1);
+        $new_photos = array_values($photos);
+        $row->after_event_images = !empty($new_photos)?json_encode($new_photos):null;
+        $row->save();
+        $html = '';
+        if(!empty($new_photos)){
+            $html = '<span class="me-2">Images:</span>';
+            foreach ($new_photos as $key => $image) {
+                $imagePath = isset($image['path']) ? $image['path'] : $image;
+                $html .=' 
+                <div class="position-relative me-3 mt-2" id="saved-img-'.$key.'">
+                    <img style="width: 50px; height: 50px; border-radius: 6px; object-fit: cover;" src="'.asset($imagePath).'">
+                    <button divid="saved-img-'.$key.'" url="'.route('front-remove-event-after-image', ['index' => $key, 'id' => $row->encrypted_id]).'"
+                        type="button" 
+                        class="remove-event-img-btn">✕
+                    </button>
+                </div>';
+            }
+        }
+        return $this->generateJsonResponse(true, 'Image removed.', $html);
+
     }
 
     public function addCoHost(){
@@ -1471,13 +1525,110 @@ class FrontController extends Controller
             return $this->generateJsonResponse(false, 'Failed to re-send Co-Host invitation: ' . $e->getMessage());
         }
     }
+    public function sendWrapupEmail($id){
+        $event = Event::with('creator')->findOrFail(decrypt($id));
+        if($event->is_completed==1){
+            return $this->generateJsonResponse(false, 'Event is already marked as completed and wrap-up email has been sent.');
+        }
+        if(empty($event->waste_collected) || empty($event->area_cleaned)){
+            return $this->generateJsonResponse(false, 'Waste Collected and Area Cleaned should be saved before sending the email.');
+        }
+        $event->is_completed = 1;
+        $event->wrapup_email_sent_by = auth()->guard('front')->user()->id;
+        $event->save();
+        $tickets = $event->tickets()->where('checkin', 1)->whereNotNull('waiver_filled_at')->get();
+        $cohostText = '';
+        $activeCohostsIds = $event->cohostRecords->where('request_status', 'approved')->pluck('volunteer_id');
+        if ($activeCohostsIds->isNotEmpty() && $activeCohostsIds->contains($event->wrapup_email_sender->id)) {
+            $cohostText = ' (Co-Host)';
+        } else if($event->wrapup_email_sender->id==$event->creator_id){
+            $cohostText = ' (Organizer)';
+        }
+        if($tickets->count() == 0){
+            return $this->generateJsonResponse(true, 'Event marked as completed. Only volunteers who have checked-in and signed the waiver will receive the email. Since no attendees have been found yet, the email has not been sent to anyone.', '<p class="float-end text-warning">Wrap-Up Email sent by: '.auth()->guard('front')->user()->first_name.' '.auth()->guard('front')->user()->last_name.$cohostText.'</p>');
+        }
+        if($tickets->isNotEmpty()){
+            $to_arr = [];
+            $log_arr = [];
+            $to_arr2 = [];
+            foreach ($tickets as $key => $value) {
+                if(!isset($value->volunteer)){
+                    continue;
+                } else if(!isset($value->volunteer->id)){
+                    continue;
+                }
+                $email = $value->volunteer->email_address;
+                $name = $value->volunteer->first_name.' '.$value->volunteer->last_name;
+                if(!empty(trim($email))){
+                    $to_arr[] = 
+                    [
+                        "to" => [
+                            ["email" => trim($email)]
+                            //["email" => 'learningdcm@gmail.com']
+                        ],
+                        "dynamic_template_data" => [
+                            "volunteer_name" => $value->volunteer->first_name,
+                            "volunteer_email" => $email,
+                            "event_name" =>  $event->event_name,
+                            "event_date" => $event->startTimeAndEndTime,
+                            "event_location" => $event->fullAddress,
+                            "organizer_name" => $event->creator->first_name.' '.$event->creator->last_name,
+                            "total_volunteers" => $tickets->count(),
+                            "waste_collected" => $event->waste_collected,
+                            "area_cleaned" => $event->area_cleaned,
+                            "service_hours" => 'N/A',
+                            'images_link' => $this->mailUrl('cleanup-report-images', ['event' => encrypt($event->id)]),
+                            'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]),
+                        ],
+                    ];
+                    $log_arr[] = [
+                        "id" => $value->id,
+                        "email" => trim($email)
+                    ];
+                    /* if(isset($value->community_form_pdf) && !empty($value->community_form_pdf)){
+                        $to_arr2[] = 
+                        [
+                            "to" => [
+                                ["email" => trim($email)]
+                                //["email" => 'learningdcm@gmail.com']
+                            ],
+                            "dynamic_template_data" => [
+                                "volunteer_name" => $name,
+                                "volunteer_email" => $email,
+                                "event_name" =>  $event->event_name,
+                                'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]),
+                                'dashboard_link' => $this->mailUrl('front-cleanup-attending')
+                            ],
+                        ];
+                        $event->tickets()->where('id', $value->id)->update([
+                            'community_form_status' => 'approved'
+                        ]);
+                    } */
+                }
+            }
+            if(!empty($to_arr) && count($to_arr)>0){
+                $to_arr_child = array_chunk($to_arr, 300);
+                $log_arr_child = array_chunk($log_arr, 300);
+                foreach ($to_arr_child as $key => $value) {
+                    $this->sendSendgridTemplateEmailWithoutLog($value,"d-84b101582dbb408aa6f90cf53b2be2d0");
+                }
+            }
+            /* if(!empty($to_arr2) && count($to_arr2)>0){
+                $to_arr2_child = array_chunk($to_arr2, 300);
+                foreach ($to_arr2_child as $key => $value) {
+                    $this->sendSendgridTemplateEmailWithoutLog($value,"d-3badeebd9cfe40458f55935dd25aa41a");
+                }
+            } */
+        }
+        return $this->generateJsonResponse(true, 'Event marked as completed. Wrap-Up email and certificate email has been sent successfully.', '<p class="float-end text-warning">Wrap-Up Email sent by: '.auth()->guard('front')->user()->first_name.' '.auth()->guard('front')->user()->last_name.$cohostText.'</p>');
+    }
     public function sendThankyouRequestEmailFront(){
         $request = request();
         $validated = $request->validate([
             'event_id'           => 'required'
         ]);
 
-        $event      = \App\Models\Event::with('creator')->findOrFail(decrypt($validated['event_id']));
+        $event = Event::with('creator')->findOrFail(decrypt($validated['event_id']));
         if(empty($event->waste_collected) || empty($event->area_cleaned)){
             return $this->generateJsonResponse(false, 'Waste Collected and Area Cleaned should be saved before sending the email.');
         }
@@ -1719,7 +1870,6 @@ class FrontController extends Controller
                 $filename = 'community_form_' . $orderTicket->id . '_' . time() . '.pdf';
                 $path = 'events/community_forms/' . $filename;
                 $publicPath = public_path($path);
-                // dd($publicPath); // Removed debugging line
                 if (!file_exists(dirname($publicPath))) {
                     mkdir(dirname($publicPath), 0755, true);
                 }
@@ -1728,7 +1878,6 @@ class FrontController extends Controller
                 $orderTicket->save();
                 $community_form = url('/').'/'.$path;
             }catch(\Exception $e){
-                //$this->setFlashSession(false , "Issues occured while making generating PDF");
                 return $this->generateJsonResponse(false, "Issues occured while making generating PDF",[
                     'error' => $e->getMessage(),
                     'line'  => $e->getLine(),
@@ -1737,7 +1886,6 @@ class FrontController extends Controller
                 ]);
             }
         }
-        /**Mail The PDF */
         try{
             if($orderTicket->checkin==1){
                 $orderTicket->community_form_status = 'pending';
@@ -1745,7 +1893,7 @@ class FrontController extends Controller
                 $orderTicket->save();
                 return $this->generateJsonResponse(true, 'Volunteer has been checked out successfully.');
             } else {
-                $emailData = [
+                /* $emailData = [
                     'volunteer' => $volunteer->first_name.' '.$volunteer->last_name,
                     'event_title' => $event->event_name,
                     //'certificate_download_link' => $community_form,
@@ -1754,16 +1902,14 @@ class FrontController extends Controller
                 ];
                 $sub = 'Your Community Service Certificate for '.$event->event_name.' Is Ready';
                 $this->sendEmail($volunteer->email_address, $sub, $emailData, "community-service-form");
-                $orderTicket->community_form_status = 'approved';
+                $orderTicket->community_form_status = 'approved'; */
                 $orderTicket->checkin = 1;
                 $orderTicket->save();
                 return $this->generateJsonResponse(true, 'Volunteer has been marked as check-in successfully.');
             }
         }catch(\Exception $e){
-            //$this->setFlashSession(false , "Issues occured while sending emails.");
             return $this->generateJsonResponse(false, "Issues occured while sending emails.");
         }
-        //return redirect()->back();
     }
     public function showCommunityServicePdf($ticket){
         $orderTicket = EventOrderTicket::findOrFail(decrypt($ticket));
@@ -2423,6 +2569,585 @@ class FrontController extends Controller
         $content = $this->getEventMetaDataByAi($event);
         return $this->generateJsonResponse(true, '', json_decode($content));
     }
+    public function markBulkCheckinWithEmail($event_id){
+        set_time_limit(0);
+        ini_set('max_execution_time', 0);
+        $event = Event::with('creator')->findOrFail(decrypt($event_id));
+        if($event->is_completed==1){
+            return $this->generateJsonResponse(false, 'You cannot check-in an attendee for a completed event.');
+        }
+        $tickets = $event->tickets()->where('rsvp_confirmation', 1)->whereNotNull('waiver_filled_at')->get();
+        if($tickets->count() == 0){
+            return $this->generateJsonResponse(false, 'No volunteers found to mark as checked-in.');
+        }
+        if($tickets->isNotEmpty()){
+            $to_arr = [];
+            $log_arr = [];
+            foreach ($tickets as $key => $value) {
+                if($value->community_form_pdf){
+                    $community_form = $value->community_form_pdf; 
+                }else{
+                    $data = [
+                        'event'            => $event,
+                        'volunteerName'    => $value->volunteer->first_name.' '.$value->volunteer->last_name,
+                        'hours'            => $value->hours_completed,
+                        'organization_name'   => $event->creator->organisation_name,
+                        'organizer_name'   => $event->creator->first_name.' '.$event->creator->last_name,
+                        'organizer_link'   => route('organizer-detail', ['slug' => $event->creator->organisation_landing_slug]),
+                    ];
+                    try{
+                        $html = view('pages.events.community-form-new', $data)->render();
+                        $pdf = \PDF::setOptions(['isHtml5ParserEnabled' => true,'isRemoteEnabled' => true])->loadHTML($html);
+                        $filename = 'community_form_' . $value->id . '_' . time() . '.pdf';
+                        $path = 'events/community_forms/' . $filename;
+                        $publicPath = public_path($path);
+                        if (!file_exists(dirname($publicPath))) {
+                            mkdir(dirname($publicPath), 0755, true);
+                        }
+                        file_put_contents($publicPath, $pdf->output());
+                        $value->update([
+                            'community_form_pdf' => $path,
+                        ]);
+                        $community_form = url('/').'/'.$path;
+                    }catch(\Exception $e){
+                        return $this->generateJsonResponse(false, "Issues occured while generating PDF",[
+                            'error' => $e->getMessage(),
+                            'line'  => $e->getLine(),
+                            'file'  => $e->getFile(),
+                            // 'trace' => $e->getTraceAsString() // uncomment if needed
+                        ]);
+                    }
+                }
+                $value->update([
+                    'checkin' => 1,
+                ]);
+                $email = $value->volunteer->email_address;
+                $name = $value->volunteer->first_name.' '.$value->volunteer->last_name;
+                if(!empty(trim($email))){
+                    $to_arr[] = 
+                    [
+                        "to" => [
+                            ["email" => trim($email)]
+                            //["email" => 'learningdcm@gmail.com']
+                        ],
+                        "dynamic_template_data" => [
+                            "volunteer_name" => $name,
+                            "volunteer_email" => $email,
+                            "event_name" =>  $event->event_name,
+                            'event_date' => $event->startTimeAndEndTime,
+                            'event_location' => $event->fullAddress,
+                            'event_link' => $this->mailUrl('view-event-details', ['slug' => $event->slug]),
+                        ],
+                    ];
+                    $log_arr[] = [
+                        "id" => $value->id,
+                        "email" => trim($email)
+                    ];
+                }
+            }
+            if(!empty($to_arr) && count($to_arr)>0){
+                $to_arr_child = array_chunk($to_arr, 300);
+                $log_arr_child = array_chunk($log_arr, 300);
+                foreach ($to_arr_child as $key => $value) {
+                    $this->sendSendgridTemplateEmailWithoutLog($value,"d-3badeebd9cfe40458f55935dd25aa41a");
+                }
+            }
+            return $this->generateJsonResponse(true, 'All volunteers has been marked as check-in successfully.');
+        }
+    }
+    public function sendWaiverBulkEmail($id){
+        set_time_limit(0);
+        ini_set('max_execution_time', 0);
+        $event = Event::with('creator')->findOrFail(decrypt($id));
+        if($event->is_completed==1){
+            return $this->generateJsonResponse(false, 'Waiver email cannot be sent for a completed event.');
+        }
+        $tickets = $event->tickets()->where('rsvp_confirmation', 1)->whereNull('waiver_filled_at')->get();
+        if($tickets->count() == 0){
+            return $this->generateJsonResponse(false, 'No volunteer found to send waiver email.');
+        }
+        if($tickets->isNotEmpty()){
+            $to_arr = [];
+            $log_arr = [];
+            foreach ($tickets as $key => $value) {
+                if(!isset($value->volunteer)){
+                    continue;
+                } else if(!isset($value->volunteer->id)){
+                    continue;
+                }
+                if($value->is_under_18==1){
+                    $email = $value->waiver_handler_email;
+                    $name = $value->waiver_handler_name;
+                } else {
+                    $email = $value->volunteer->email_address;
+                    $name = $value->volunteer->first_name.' '.$value->volunteer->last_name;
+                }
+                if(!empty(trim($email))){
+                    $subject = "Action Required : Sign Waiver for ".$event->event_name;
+                    if($value->is_under_18==1){
+                        $subject = "Action Required: ".$name.", Please Sign Waiver for ".$value->volunteer->first_name." – ".$event->event_name;
+                    }
+                    $to_arr[] = 
+                    [
+                        "to" => [
+                            ["email" => trim($email)]
+                            //["email" => 'learningdcm@gmail.com']
+                        ],
+                        "subject" => $subject,
+                        "dynamic_template_data" => [
+                            "is_under_18" => $value->is_under_18 == 1 ? true : false,
+                            "volunteer_name" => $value->volunteer->first_name.' '.$value->volunteer->last_name,
+                            "volunteer_email" => $value->volunteer->email_address,
+                            "guardian_name" => $value->waiver_handler_name,
+                            "guardian_email" => $value->waiver_handler_email,
+                            "event_name" =>  $event->event_name,
+                            'event_date' => $event->startTimeAndEndTime,
+                            'event_location' => $event->fullAddress,
+                            'organizer_name' => $event->creator->first_name.' '.$event->creator->last_name,
+                            'waiver_link' => $this->mailUrl('view-waiver-form', ['ticket' => encrypt($value->id)]),
+                            'event_link' => $this->mailUrl('view-event-details', ['slug' => $event->slug]),
+                        ],
+                    ];
+                    $log_arr[] = [
+                        "id" => $value->id,
+                        "email" => trim($email)
+                    ];
+                }
+            }
+            if(!empty($to_arr) && count($to_arr)>0){
+                $to_arr_child = array_chunk($to_arr, 300);
+                $log_arr_child = array_chunk($log_arr, 300);
+                foreach ($to_arr_child as $key => $value) {
+                    $this->sendSendgridTemplateEmailWithoutLog($value,"d-1ef71dffbc644dce914ab333526c922d");
+                }
+            }
+            return $this->generateJsonResponse(true, 'Waiver emails sent successfully to all attendees.');
+        }
+    }
+    
+    public function rescheduleEvent($id){
+        $event = Event::find(decrypt($id));
+        if(!$event){
+            abort(404, 'Event not found.');
+        }
+        $data['event'] = $event;
+        $data['seo_details'] = (object)['title' => 'Reschedule Event'];
+        return view('pages.frontend.reschedule-event', $data);
+    }
+    public function submitRescheduleEventForm(Request $request, $id, $callFrom = null){
+        $eventId = decrypt($id);
+        $event = Event::with('eventTickets')->findOrFail($eventId);
+        if($event->is_completed==1){
+            $this->setFlashSession(false, 'Completed events cannot be rescheduled.');
+            return redirect()->back();
+        }
+        $request = request();
+        $validated = $request->validate([
+            'start_datetime'      => ['required', 'after:now'],
+            'end_datetime'        => ['required', 'after:start_datetime'],
+            'site_publish_date'   => ['required', 'before_or_equal:start_datetime'],
+            'site_depublish_date' => ['required', 'after:end_datetime'],
+            'sell_start_time'     => ['required', 'array'],
+            'sell_start_time.*'   => ['required'],
+            'sell_end_time'       => ['required', 'array'],
+            'sell_end_time.*'     => ['required'],
+            'reschedule_note'     => ['nullable'],
+        ], [
+            'start_datetime.required'           => 'Start date & time is required.',
+            'start_datetime.after'              => 'Start date must be in the future.',
+            'end_datetime.after'                => 'End date must be after the start date.',
+            'site_publish_date.before_or_equal' => 'Publish date must be on or before the event start date.',
+            'site_depublish_date.after'         => 'Expiry date must be after the event end date.',
+            'sell_start_time.*.required'        => 'Sell start date is required for all tickets.',
+            'sell_end_time.*.required'          => 'Sell end date is required for all tickets.',
+        ]);
+        DB::beginTransaction();
+
+        try {
+            // ── Snapshot old values for the log ───────────────────────────────
+            $oldData = [
+                'start_datetime'      => $event->start_datetime,
+                'end_datetime'        => $event->end_datetime,
+                'site_publish_date'   => $event->site_publish_date,
+                'site_depublish_date' => $event->site_depublish_date,
+            ];
+
+            // ── Update the Event ──────────────────────────────────────────────
+            $event->update([
+                'start_datetime'      => $validated['start_datetime'],
+                'end_datetime'        => $validated['end_datetime'],
+                'site_publish_date'   => $validated['site_publish_date'],
+                'site_depublish_date' => $validated['site_depublish_date'],
+            ]);
+
+            // ── Update each Ticket's sell dates ───────────────────────────────
+            $sellStartTimes = $request->input('sell_start_time');
+            $sellEndTimes   = $request->input('sell_end_time');
+
+            foreach ($event->eventTickets as $index => $ticket) {
+                $ticket->update([
+                    'sell_start_time' => $sellStartTimes[$index],
+                    'sell_end_time'   =>$sellEndTimes[$index],
+                ]);
+            }
+
+            // ── Send reschedule notification email ────────────────────────────
+            //$emailResponse   = $this->sendRescheduleNotification($event, $validated['reschedule_note'] ?? null);
+
+            // ── Write to the reschedule log ───────────────────────────────────
+            $rescheduleLog = EventRescheduleLog::create([
+                'event_id'               => $event->id,
+                'user_id'                => !empty($callFrom)?null:auth()->guard('front')->user()->id,
+
+                // Old values snapshot
+                'old_start_datetime'     => $oldData['start_datetime'],
+                'old_end_datetime'       => $oldData['end_datetime'],
+                'old_site_publish_date'  => $oldData['site_publish_date'],
+                'old_site_depublish_date'=> $oldData['site_depublish_date'],
+
+                // New values
+                'new_start_datetime'     => $event->start_datetime,
+                'new_end_datetime'       => $event->end_datetime,
+                'new_site_publish_date'  => $event->site_publish_date,
+                'new_site_depublish_date'=> $event->site_depublish_date,
+
+                // Note
+                'note'                    => $validated['reschedule_note'] ?? null,
+
+                // Email fields default to null — will be updated after sending
+                'email_count'             => null,
+                'is_success'              => null,
+                'response'                => null,
+                'response_code'           => null,
+                'request_data'            => null,
+                'request_data_size'       => null,
+            ]);
+
+            DB::commit();
+
+            // ── Send notification AFTER commit & update the log ───────────────
+            // Done outside the transaction so a mail failure won't rollback event data
+            //$this->sendRescheduleNotification($event, $validated['reschedule_note'] ?? null, $rescheduleLog->id);
+            $tickets = $event->tickets()->where('rsvp_confirmation', 1)->get();
+            if($tickets->isNotEmpty()){
+                $to_arr = [];
+                $log_arr = [];
+                foreach ($tickets as $key => $value) {
+                    if(!isset($value->volunteer)){
+                        continue;
+                    } else if(!isset($value->volunteer->id)){
+                        continue;
+                    }
+                    $email = $value->volunteer->email_address;
+                    $name = $value->volunteer->first_name.' '.$value->volunteer->last_name;
+                    if(!empty(trim($email))){
+                        $to_arr[] = 
+                        [
+                            "to" => [
+                                ["email" => trim($email)]
+                                //["email" => 'learningdcm@gmail.com']
+                            ],
+                            "subject" => "New date confirmed for ".$event->event_name." — see you soon 🌊",
+                            "dynamic_template_data" => [
+                                "volunteer_name" => $name,
+                                "volunteer_email" => $email,
+                                'organizer_name' => $event->creator->name,
+                                "event_name" =>  $event->event_name,
+                                'event_date' => $event->startTimeAndEndTime,
+                                'event_location' => $event->fullAddress,
+                                'cancel_registration_link' => $this->mailUrl('front-cleanup-attending'),
+                                'add_to_calendar_link' => $this->mailUrl('front-registration-calendar', ['slug' => $event->slug]), 
+                                'event_link' => $this->mailUrl('view-event-details', ['slug' => $event->slug]),
+                                'is_under_18'    => $value->is_under_18==1?true:false,
+                                'waiver_signed'  => !empty($value->rsvp_filled_at)?true:false,
+                                'waiver_link'    => $this->mailUrl('view-waiver-form', ['ticket' => encrypt($value->id)]),
+                            ],
+                        ];
+                        $log_arr[] = [
+                            "id" => $value->id,
+                            "email" => trim($email)
+                        ];
+                    }
+                }
+                if(!empty($to_arr) && count($to_arr)>0){
+                    $to_arr_child = array_chunk($to_arr, 300);
+                    $log_arr_child = array_chunk($log_arr, 300);
+                    foreach ($to_arr_child as $key => $value) {
+                        $this->runRescheduleEventEmail($value,$log_arr_child[$key],$rescheduleLog->id);
+                    }
+                }
+            }
+
+            $this->setFlashSession(true, 'Event rescheduled successfully. Volunteers will be notified.');
+            if(!empty($callFrom)){
+                return redirect()->route('index-events');
+            } else {
+                return redirect()->route('front-cleanup-hosting', ['type' => 'organizer']);
+            }
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $this->setFlashSession(false, 'Something went wrong while rescheduling. Please try again.');
+            return redirect()->back()->withInput();
+        }
+    }
+    public function runRescheduleEventEmail($to_arr,$log_arr,$rescheduleLogId){
+        if(!SEND_MAIL){
+            return false;
+        }
+        $jayParsedAry = [
+            "personalizations" => $to_arr, 
+            "from" => [
+                        "name" => "VolunteerCleanup.Org" ,
+                        "email" => "outreach@volunteercleanup.org" 
+                    ], 
+            "template_id" => "d-05bdce4a79464eb294ac6be3fa0f6ee3" 
+        ]; 
+
+        // Convert the post data to a string
+        $postDataString = http_build_query($jayParsedAry);
+        // Calculate the size of the post data in bytes
+        $postDataSizeBytes = strlen($postDataString);
+        // Convert bytes to megabytes
+        $postDataSizeMB = round($postDataSizeBytes / (1024 * 1024),2);
+
+        $response = $this->SendSendgridEmail('','','',$jayParsedAry);
+
+        //print_r($response);
+        $is_success = 1;
+        $response_code = 202;
+        if(isset($response) && !empty($response)){
+            if(isset($response['response']) && !empty($response['response'])){
+                if(isset($response['response']['code']) && !empty($response['response']['code']) && ($response['response']['code']==202 || $response['response']['code']==200)){
+                    $is_success = 1;
+                    $response_code = $response['response']['code'];
+                    //echo 'SUCCESS '.$resUnjson['response']['code'];
+                }
+                else{
+                    $is_success = 0;
+                    $response_code = $response['response']['code'];
+                    //echo 'FAILED '.$resUnjson['response']['code'];
+                }
+            }
+            else{
+                //echo 'FAILED';
+            }
+        }
+        else{
+            //echo 'FAILED';
+        }
+        /* EventRescheduleLog::create([
+            'email_count'       => count($log_arr),
+            'is_success'        => $is_success,
+            'response'          => json_encode($response),
+            'response_code'     => $response_code,
+            'request_data'      => json_encode($log_arr),
+            'request_data_size' => $postDataSizeMB,
+        ]); */
+        EventRescheduleLog::where('id', $rescheduleLogId)->update([
+            'email_count'       => count($log_arr),
+            'is_success'        => $is_success,
+            'response'          => json_encode($response),
+            'response_code'     => $response_code,
+            'request_data'      => json_encode($log_arr),
+            'request_data_size' => $postDataSizeMB,
+        ]);
+    }
+    public function cronEventFinalize(){
+        set_time_limit(0);
+        ini_set('max_execution_time', 0);
+        $records = Event::with('creator:id,first_name,last_name,email_address')->where('is_completed',0)->whereDate('end_datetime', '=', now()->subDay()->toDateString())->get();
+        if($records->isNotEmpty()){
+            $to_arr = [];
+            $log_arr = [];
+            foreach ($records as $key => $value) {
+                if(isset($value->creator) && isset($value->creator->email_address) && !empty(trim($value->creator->email_address))){
+                    $to_arr[] = 
+                    [
+                        "to" => [
+                            ["email" => trim($value->creator->email_address)]
+                            //["email" => 'learningdcm@gmail.com']
+                        ],
+                        "dynamic_template_data" => [
+                            "is_reminder" => false,
+                            "org_name" => $value->creator->first_name.' '.$value->creator->last_name,
+                            "event_name" =>  $value->event_name,
+                            'event_date' => $value->startTimeAndEndTime,
+                            'event_location' => $value->fullAddress,
+                            "cleanup_report_link" => $this->mailUrl('front-post-a-event', ['id'=> $value->encrypted_id,'open_tab'=>'step5']),
+                            "reschedule_event_link" => $this->mailUrl('view-event-details',['slug'=>$value->slug]),
+                        ],
+                    ];
+                    $log_arr[] = [
+                        "event_id" => $value->id,
+                        "email" => trim($value->creator->email_address)
+                    ];
+                }
+                $activeCohosts = $value->cohostRecords->where('request_status', 'approved');
+                if ($activeCohosts->isNotEmpty()) {
+                    foreach ($activeCohosts as $key => $cohost) {
+                        if(isset($cohost->volunteer) && isset($cohost->volunteer->email_address) && !empty(trim($cohost->volunteer->email_address))){
+                            $to_arr[] = 
+                            [
+                                "to" => [
+                                    ["email" => trim($cohost->volunteer->email_address)]
+                                    //["email" => 'learningdcm@gmail.com']
+                                ],
+                                "dynamic_template_data" => [
+                                    "is_reminder" => false,
+                                    "org_name" => $cohost->volunteer->first_name.' '.$cohost->volunteer->last_name,
+                                    "event_name" =>  $value->event_name,
+                                    'event_date' => $value->startTimeAndEndTime,
+                                    'event_location' => $value->fullAddress,
+                                    "cleanup_report_link" => $this->mailUrl('front-post-a-event', ['id'=> $value->encrypted_id,'open_tab'=>'step5']),
+                                    "reschedule_event_link" => $this->mailUrl('view-event-details',['slug'=>$value->slug]),
+                                ],
+                            ];
+                            $log_arr[] = [
+                                "event_id" => $value->id,
+                                "email" => trim($cohost->volunteer->email_address)
+                            ];
+
+                        }
+                    }
+                }
+            }
+            if(!empty($to_arr) && count($to_arr)>0){
+                $to_arr_child = array_chunk($to_arr, 300);
+                $log_arr_child = array_chunk($log_arr, 300);
+                foreach ($to_arr_child as $key => $value) {
+                    $this->runCronEventFinalize($value,$log_arr_child[$key]);
+                }
+            }
+        }
+    }
+    public function runCronEventFinalize($to_arr,$log_arr){
+        $jayParsedAry = [
+            "personalizations" => $to_arr, 
+            "from" => [
+                        "name" => "VolunteerCleanup.Org" ,
+                        "email" => "outreach@volunteercleanup.org" 
+                    ], 
+            "template_id" => "d-3badeebd9cfe40458f55935dd25aa41a" 
+        ]; 
+
+        // Convert the post data to a string
+        $postDataString = http_build_query($jayParsedAry);
+        // Calculate the size of the post data in bytes
+        $postDataSizeBytes = strlen($postDataString);
+        // Convert bytes to megabytes
+        $postDataSizeMB = round($postDataSizeBytes / (1024 * 1024),2);
+
+        $response = $this->SendSendgridEmail('','','',$jayParsedAry);
+
+        //print_r($response);
+        $is_success = 1;
+        $response_code = 202;
+        if(isset($response) && !empty($response)){
+            if(isset($response['response']) && !empty($response['response'])){
+                if(isset($response['response']['code']) && !empty($response['response']['code']) && ($response['response']['code']==202 || $response['response']['code']==200)){
+                    $is_success = 1;
+                    $response_code = $response['response']['code'];
+                    //echo 'SUCCESS '.$resUnjson['response']['code'];
+                }
+                else{
+                    $is_success = 0;
+                    $response_code = $response['response']['code'];
+                    //echo 'FAILED '.$resUnjson['response']['code'];
+                }
+            }
+            else{
+                //echo 'FAILED';
+            }
+        }
+        else{
+            //echo 'FAILED';
+        }
+        EventFinalizeEmailLog::create([
+            'email_count'       => count($log_arr),
+            'is_success'        => $is_success,
+            'response'          => json_encode($response),
+            'response_code'     => $response_code,
+            'request_data'      => json_encode($log_arr),
+            'request_data_size' => $postDataSizeMB,
+        ]);
+        if(!empty($log_arr)){
+            $eventIds = array_column($log_arr, 'event_id');
+            Event::whereIn('id', $eventIds)->increment('finalize_email_count');
+        }
+    }
+    public function cronEventFinalizeReminder(){ // call after first finalize email with 72 hours duration
+        set_time_limit(0);
+        ini_set('max_execution_time', 0);
+        $records = Event::with('creator:id,first_name,last_name,email_address')
+        ->where('is_completed', 0)
+        ->where('finalize_email_count', '>', 0)
+        ->whereRaw("DATE_ADD(DATE(end_datetime), INTERVAL (finalize_email_count * 3) DAY) = CURDATE()")
+        ->get();
+        if($records->isNotEmpty()){
+            $to_arr = [];
+            $log_arr = [];
+            foreach ($records as $key => $value) {
+                if(isset($value->creator) && isset($value->creator->email_address) && !empty(trim($value->creator->email_address))){
+                    $to_arr[] = 
+                    [
+                        "to" => [
+                            ["email" => trim($value->creator->email_address)]
+                            //["email" => 'learningdcm@gmail.com']
+                        ],
+                        "dynamic_template_data" => [
+                            "is_reminder" => true,
+                            "org_name" => $value->creator->first_name.' '.$value->creator->last_name,
+                            "event_name" =>  $value->event_name,
+                            'event_date' => $value->startTimeAndEndTime,
+                            'event_location' => $value->fullAddress,
+                            "cleanup_report_link" => $this->mailUrl('front-post-a-event', ['id'=> $value->encrypted_id,'open_tab'=>'step5']),
+                            "reschedule_event_link" => $this->mailUrl('view-event-details',['slug'=>$value->slug]),
+                        ],
+                    ];
+                    $log_arr[] = [
+                        "event_id" => $value->id,
+                        "email" => trim($value->creator->email_address)
+                    ];
+                }
+                $activeCohosts = $value->cohostRecords->where('request_status', 'approved');
+                if ($activeCohosts->isNotEmpty()) {
+                    foreach ($activeCohosts as $key => $cohost) {
+                        if(isset($cohost->volunteer) && isset($cohost->volunteer->email_address) && !empty(trim($cohost->volunteer->email_address))){
+                            $to_arr[] = 
+                            [
+                                "to" => [
+                                    ["email" => trim($cohost->volunteer->email_address)]
+                                    //["email" => 'learningdcm@gmail.com']
+                                ],
+                                "dynamic_template_data" => [
+                                    "is_reminder" => true,
+                                    "org_name" => $cohost->volunteer->first_name.' '.$cohost->volunteer->last_name,
+                                    "event_name" =>  $value->event_name,
+                                    'event_date' => $value->startTimeAndEndTime,
+                                    'event_location' => $value->fullAddress,
+                                    "cleanup_report_link" => $this->mailUrl('front-post-a-event', ['id'=> $value->encrypted_id,'open_tab'=>'step5']),
+                                    "reschedule_event_link" => $this->mailUrl('view-event-details',['slug'=>$value->slug]),
+                                ],
+                            ];
+                            $log_arr[] = [
+                                "event_id" => $value->id,
+                                "email" => trim($cohost->volunteer->email_address)
+                            ];
+
+                        }
+                    }
+                }
+            }
+            if(!empty($to_arr) && count($to_arr)>0){
+                $to_arr_child = array_chunk($to_arr, 300);
+                $log_arr_child = array_chunk($log_arr, 300);
+                foreach ($to_arr_child as $key => $value) {
+                    $this->runCronEventFinalize($value,$log_arr_child[$key]);
+                }
+            }
+        }
+    }
     public function cronTicketNotifications(){
         if(env('SEND_TICKET_NOTIFY_MAIL')!=true){
             return false;
@@ -2462,6 +3187,7 @@ class FrontController extends Controller
                                     "event_name" =>  $ticket->event->event_name,
                                     "event_date" =>  $ticket->event->startTimeAndEndTime,
                                     "event_location" =>  $ticket->event->fullAddress,
+                                    "organizer" =>  $ticket->event->creator->first_name.' '.$ticket->event->creator->last_name,
                                 ],
                             ];
                             $log_arr[] = [
@@ -2803,5 +3529,14 @@ class FrontController extends Controller
             }
         }
         return $html;
+    }
+    public function syncAllOrganizer(){
+        $organizers = Volunteer::where('is_organiser', 1)
+            ->limit(100)
+            ->offset(0)
+            ->get();
+        foreach ($organizers as $organizer) {
+            $this->syncWithWP($organizer);
+        }
     }
 }
