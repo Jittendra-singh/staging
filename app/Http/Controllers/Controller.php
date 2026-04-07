@@ -356,7 +356,7 @@ class Controller extends BaseController
                 // Handle the exception if needed
                 // For example, log the error or return a specific response
                 //echo '123123';
-                echo 'Mail error: ' . $e->getMessage(); die();
+                //echo 'Mail error: ' . $e->getMessage(); die();
             }
         }
     }

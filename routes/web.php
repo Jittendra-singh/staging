@@ -142,6 +142,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::post('save-cleanup-after-action', 'saveCleanUpAfterAction')->name('front-save-cleanup-after-action');
         Route::post('send-thankyou-request-email-front', 'sendThankyouRequestEmailFront')->name('send-thankyou-request-email-front');
         Route::post('send-wrapup-email/{id}', 'sendWrapupEmail')->name('send-wrapup-email');
+        Route::post('check-event-for-wrapup/{id}', 'checkEventForWrapup')->name('check-event-for-wrapup');
         Route::post('/get-focus-keywords-frontend', 'getFocusKeywordsFront')->name('get-focus-keywords-frontend');
         Route::post('/get-event-meta-data', 'getEventMetaData')->name('get-event-meta-data');
         Route::post('/update-event-publish-status', 'updateEventPublishStatus')->name('update-event-publish-status');

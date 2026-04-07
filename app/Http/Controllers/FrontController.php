@@ -1289,7 +1289,6 @@ class FrontController extends Controller
 
     public function saveCleanUpAfterAction(){
         $request = request();
-
         $validated = $request->validate([
             'event_id'           => 'required',
             'waste_collected'    => 'required|max:255',
@@ -1310,16 +1309,27 @@ class FrontController extends Controller
                 if (!is_array($files)) {
                     $files = [$files];
                 }
-                if (count($files) > 4) {
+                $existingImages = [];
+                if (!empty($event->after_event_images)) {
+                    $existingImages = json_decode($event->after_event_images, true) ?? [];
+                }
+                /* if (count($files) > 4) {
                     return $this->generateJsonResponse(false,'You can only upload a maximum of 4 images');
+                } */
+                if (count($existingImages) + count($files) > 4) {
+                    return $this->generateJsonResponse(false, 'You can only upload a maximum of 4 images');
                 }
-                $photoPaths = [];
+                $newPhotoPaths = [];
                 foreach ($files as $photo) {
-                    $photoPaths[] = $this->moveFiles($photo, 'events/after_event_images');
+                    $newPhotoPaths[] = $this->moveFiles($photo, 'events/after_event_images');
                 }
-                $event->after_event_images = json_encode($photoPaths);
+                $allPhotos = array_merge($existingImages, $newPhotoPaths);
+                $event->after_event_images = json_encode($allPhotos);
             }
             $event->save();
+            if(isset(request()->send_cleanup_report_email) && request()->send_cleanup_report_email==1){
+                return $this->sendWrapupEmail($validated['event_id'],true);
+            }
         } catch (\Exception $e) {
             return $this->generateJsonResponse(false, 'Failed to after event actions: ' . $e->getMessage());
         }
@@ -1351,7 +1361,7 @@ class FrontController extends Controller
         $row->save();
         $html = '';
         if(!empty($new_photos)){
-            $html = '<span class="me-2">Images:</span>';
+            $html = '';
             foreach ($new_photos as $key => $image) {
                 $imagePath = isset($image['path']) ? $image['path'] : $image;
                 $html .=' 
@@ -1359,7 +1369,7 @@ class FrontController extends Controller
                     <img style="width: 50px; height: 50px; border-radius: 6px; object-fit: cover;" src="'.asset($imagePath).'">
                     <button divid="saved-img-'.$key.'" url="'.route('front-remove-event-after-image', ['index' => $key, 'id' => $row->encrypted_id]).'"
                         type="button" 
-                        class="remove-event-img-btn">✕
+                        class="remove-event-img-btn remove-new-img">✕
                     </button>
                 </div>';
             }
@@ -1525,7 +1535,47 @@ class FrontController extends Controller
             return $this->generateJsonResponse(false, 'Failed to re-send Co-Host invitation: ' . $e->getMessage());
         }
     }
-    public function sendWrapupEmail($id){
+    public function checkEventForWrapup($id){
+        $event = Event::with('creator')->findOrFail(decrypt($id));
+        if($event->is_completed==1){
+            return $this->generateJsonResponse(false, 'Event is already marked as completed so no wrap-up email can be sent.');
+        }
+        $availTickets = $event->tickets()->where('rsvp_confirmation', 1)->get();
+        $notCheckedIntickets = $event->tickets()->where('checkin', 0)->where('rsvp_confirmation', 1)->get();
+        if($availTickets->count() > 0){
+            if($notCheckedIntickets->count() > 0){
+                $link = route('front-registration-list',['event' => $event->id]);
+                $message = '<div class="text-left fw-bold mb-2">You have '.$notCheckedIntickets->count().' attendees who are not checked-in. Only checked-in attendees will receive certificates.</div>
+                <div class="text-left mb-2">
+                You can review and update <a target="_blank" href="'.$link.'">check-ins</a> before submitting. Once you submit:</div>
+                <ul class="text-left">
+                    <li>• Certificates will be generated.</li>
+                    <li>• Emails will be sent immediately.</li>
+                </ul>';
+            } else {
+                $checkedIntickets = $event->tickets()->where('checkin', 1)->where('rsvp_confirmation', 1)->get();
+                $message = '<div class="text-left fw-bold mb-2">You have '.$checkedIntickets->count().' checked-in attendees and they will receive certificates.</div>
+                <div class="text-left mb-2">
+                You can proceed to submit the wrap-up. Once submitted:</div>
+                <ul class="text-left">
+                    <li>• Certificates will be generated.</li>
+                    <li>• Emails will be sent immediately.</li>
+                </ul>';
+            }
+        } else {
+            $message = '<div class="text-left fw-bold mb-2">There are no registered or checked-in attendees for this event.</div>
+            <div class="text-left mb-2">
+            You can still proceed to submit the wrap-up. Once submitted:
+            </div>
+            <ul class="text-left">
+                <li>• Your cleanup impact will be recorded and contribute to overall community impact.</li>
+                <li>• No certificates will be generated.</li>
+                <li>• No emails will be sent.</li>
+            </ul>';
+        }
+        return $this->generateJsonResponse(true, 'Event is ready for wrap-up email.', $message);
+    }
+    public function sendWrapupEmail($id,$submitAsForm=false){
         $event = Event::with('creator')->findOrFail(decrypt($id));
         if($event->is_completed==1){
             return $this->generateJsonResponse(false, 'Event is already marked as completed and wrap-up email has been sent.');
@@ -1545,7 +1595,16 @@ class FrontController extends Controller
             $cohostText = ' (Organizer)';
         }
         if($tickets->count() == 0){
-            return $this->generateJsonResponse(true, 'Event marked as completed. Only volunteers who have checked-in and signed the waiver will receive the email. Since no attendees have been found yet, the email has not been sent to anyone.', '<p class="float-end text-warning">Wrap-Up Email sent by: '.auth()->guard('front')->user()->first_name.' '.auth()->guard('front')->user()->last_name.$cohostText.'</p>');
+            if($submitAsForm){
+                $this->setFlashSession(true, 'Event marked as completed. Only volunteers who have checked-in and signed the waiver will receive the email. Since no attendees have been found yet, the email has not been sent to anyone.');
+                return $this->generateJsonResponse(true, 'Event marked as completed. Only volunteers who have checked-in and signed the waiver will receive the email. Since no attendees have been found yet, the email has not been sent to anyone.', [
+                    'event_instance' => encrypt($event->id),
+                    'event' => $event , 
+                    'redirect_href' => route('front-cleanup-hosting', ['type' => 'organizer']) , 
+                ]);
+            } else {
+                return $this->generateJsonResponse(true, 'Event marked as completed. Only volunteers who have checked-in and signed the waiver will receive the email. Since no attendees have been found yet, the email has not been sent to anyone.', '<p class="float-end text-warning">Wrap-Up Email sent by: '.auth()->guard('front')->user()->first_name.' '.auth()->guard('front')->user()->last_name.$cohostText.'</p>');
+            }
         }
         if($tickets->isNotEmpty()){
             $to_arr = [];
@@ -1620,7 +1679,16 @@ class FrontController extends Controller
                 }
             } */
         }
-        return $this->generateJsonResponse(true, 'Event marked as completed. Wrap-Up email and certificate email has been sent successfully.', '<p class="float-end text-warning">Wrap-Up Email sent by: '.auth()->guard('front')->user()->first_name.' '.auth()->guard('front')->user()->last_name.$cohostText.'</p>');
+        if($submitAsForm){
+            $this->setFlashSession(true, 'Event marked as completed. Wrap-Up email and certificate email has been sent successfully.');
+            return $this->generateJsonResponse(true, 'Event marked as completed. Wrap-Up email and certificate email has been sent successfully.', [
+                'event_instance' => encrypt($event->id),
+                'event' => $event , 
+                'redirect_href' => route('front-cleanup-hosting', ['type' => 'organizer']), 
+            ]);
+        } else {
+            return $this->generateJsonResponse(true, 'Event marked as completed. Wrap-Up email and certificate email has been sent successfully.', '<p class="float-end text-warning">Wrap-Up Email sent by: '.auth()->guard('front')->user()->first_name.' '.auth()->guard('front')->user()->last_name.$cohostText.'</p>');
+        }
     }
     public function sendThankyouRequestEmailFront(){
         $request = request();
@@ -1667,6 +1735,12 @@ class FrontController extends Controller
         ]);
         try {
             $event = Event::findOrFail(decrypt($validated['event_id']));
+            if($validated['status']=='draft'){
+                $tickets = $event->tickets()->where('rsvp_confirmation', 1)->get();
+                if($tickets->count() > 0){
+                    return $this->generateJsonResponse(false, 'An event cannot be unpublished once an attendee has registered.',route('view-event-details', ['slug' => $event->slug]));
+                }
+            }
             $event->status = $validated['status'];
             $event->save();
             if($validated['status']=='published'){

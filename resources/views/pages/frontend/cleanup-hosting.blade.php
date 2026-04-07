@@ -33,7 +33,6 @@ a[disabled]{
                         </div>
                     </div>
                     <div class="col-md-12">
-                    	<x-reusables.frontend.alert />
                         <div class="main-card mt-5">
                             <div class="dashboard-wrap-content p-4">
                                 <div class="d-md-flex flex-wrap align-items-center">
@@ -142,6 +141,7 @@ a[disabled]{
                                 </div>
                             </div>
                         </div>
+                    	<x-reusables.frontend.alert />
                         <div class="event-list">
                             <div class="main-card mt-2 event-row-ongoing-not-found" style="display:none;">
                                 <div class="contact-list">
@@ -289,7 +289,7 @@ a[disabled]{
                                                     <div class="d-flex align-items-start">
                                                         <label class="btn-switch m-0 me-3">
                                                             <input {{ $event->tickets()->active()->count()>0?'disabled':'' }} type="checkbox" {{ $event->status == 'published' ? 'checked' : '' }} class="event_publish_toggle" data-event-id="{{ $event->encrypted_id }}">
-                                                            <span class="checkbox-slider" {{ $event->tickets()->active()->count()>0?'onclick=redirectWithMessage(this)':'' }} url="" message="This event already has active registrations. To make changes, please contact support."></span>
+                                                            <span class="checkbox-slider" {{ $event->tickets()->active()->count()>0?'onclick=redirectWithMessage(this)':'' }} url="" message="An event cannot be unpublished once an attendee has registered."></span>
                                                         </label>
                                                     </div>
                                                 </div>

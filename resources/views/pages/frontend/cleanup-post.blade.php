@@ -189,7 +189,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
 
 
     
-    .remove-event-img-btn {
+    .remove-new-img {
         position: absolute;
         top: -5px;
         right: -5px;
@@ -208,7 +208,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
         line-height: 1;
     }
 
-    .remove-event-img-btn:hover {
+    .remove-new-img:hover {
         background: #b02a37;
     }
 </style>
@@ -1331,6 +1331,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                             @csrf
                                             <input type="hidden" name="event_id" class="event_instance" value="{{ $form_data->encrypted_id ?? 0 }}">
                                             <input type="hidden" name="is_event_end" id="is_event_end" value="{{$is_event_end?1:0}}">
+                                            <input type="hidden" id="send_cleanup_report_email" name="send_cleanup_report_email" value="0">
                                             <div class="tab-from-content">
                                                 <div class="main-card mt-4">
                                                     <div class="bp-title">
@@ -1338,9 +1339,9 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                         @if(isset($form_data->encrypted_id))
                                                         @if($form_data->is_completed!=1)
                                                         <!-- <button type="button" ajaxurl="{{route('send-thankyou-request-email-front')}}" event_id="{{ $form_data->encrypted_id ?? 0 }}" class="primary-btn w-fit float-end send-thankyou-request-email-btn">Send Thank-You & Request Email</button> -->
-                                                        <button type="button" ajaxurl="{{route('send-wrapup-email',$form_data->encrypted_id ?? 0)}}" event_id="{{ $form_data->encrypted_id ?? 0 }}" class="primary-btn w-fit float-end send-thankyou-request-email-btn" data-bs-toggle="tooltip" data-bs-original-title="Send Wrap-Up Email to All Attendees & Complete Cleanup">Finalize & Send Wrap-up Email</button>
+                                                        <!-- <button type="button" ajaxurl="{{route('send-wrapup-email',$form_data->encrypted_id ?? 0)}}" event_id="{{ $form_data->encrypted_id ?? 0 }}" class="primary-btn w-fit float-end send-thankyou-request-email-btn" data-bs-toggle="tooltip" data-bs-original-title="Send Wrap-Up Email to All Attendees & Complete Cleanup">Finalize & Send Wrap-up Email</button> -->
                                                         @else
-                                                            @if(isset($event->wrapup_email_sender) && isset($event->wrapup_email_sender->id))
+                                                            @if(isset($form_data->wrapup_email_sender) && isset($form_data->wrapup_email_sender->id))
                                                             @php
                                                                 $chostText ='';
                                                                 if(isset($cohostIds) && !empty($cohostIds) && in_array($form_data->wrapup_email_sender->id, $cohostIds)){
@@ -1349,9 +1350,9 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                     $chostText = '(Organizer)';
                                                                 }
                                                             @endphp 
-                                                            <p class="float-end text-warning">Wrap-Up Email sent by {{ $form_data->wrapup_email_sender->first_name . ' ' . $form_data->wrapup_email_sender->last_name.' '.$chostText ?? 'Unknown' }}</p>
+                                                            <p class="float-end text-primary">Wrap-Up completed by {{ $form_data->wrapup_email_sender->first_name . ' ' . $form_data->wrapup_email_sender->last_name.' '.$chostText ?? 'Unknown' }}</p>
                                                             @else 
-                                                            <p class="float-end text-warning">Wrap-Up Email has been sent.</p>
+                                                            <p class="float-end text-primary">Wrap-Up Completed.</p>
                                                             @endif 
                                                         @endif
                                                         @endif
@@ -1398,15 +1399,15 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                             <div class="col-sm-6">
                                                                 <div class="form-group">
                                                                     <label class="form-label fs-6">Images <small class="text-muted"> (max 4 images allowed)</small></label>
-                                                                    <input id="after_event_images" class="form-control h_50" type="file" name="after_event_images[]" accept="image/*" multiple>
+                                                                    <input style="line-height: 3;" id="after_event_images" class="form-control h_50" type="file" name="after_event_images[]" accept="image/*" multiple>
 
                                                                     @if(isset($form_data) && isset($form_data->id) && isset($form_data->after_event_images) && !empty($form_data->after_event_images))
                                                                         @php 
                                                                         $images = !empty($form_data->after_event_images) ? json_decode($form_data->after_event_images) : null;
                                                                         @endphp 
+                                                                        <div class="d-flex flex-wrap align-items-center mt-2" >
                                                                         <div class="d-flex flex-wrap align-items-center mt-2" id="savedImages">
                                                                             @if(!empty($images))
-                                                                            <span class="me-2">Images:</span>
                                                                             @foreach($images as $key => $image)
                                                                                 @php
                                                                                     $imagePath = is_object($image) ? $image->path : $image;
@@ -1415,11 +1416,14 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                                                     <img style="width: 50px; height: 50px; border-radius: 6px; object-fit: cover;" src="{{ asset($imagePath) }}">
                                                                                     <button divid="saved-img-{{ $key }}" url="{{ route('front-remove-event-after-image', ['index' => $key, 'id' => $form_data->encrypted_id??0]) }}"
                                                                                         type="button" 
-                                                                                        class="remove-event-img-btn">✕
+                                                                                        class="remove-event-img-btn remove-new-img">✕
                                                                                     </button>
                                                                                 </div>
                                                                             @endforeach
                                                                             @endif
+                                                                        </div>
+                                                                        <div class="d-flex flex-wrap align-items-center mt-2" id="newImagePreview">
+                                                                        </div>
                                                                         </div>
                                                                     @endif 
                                                                 </div>
@@ -1450,8 +1454,11 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                     class="step-footer step-tab-pager my-4 d-flex align-items-center justify-content-center gap-2 ">
                                     <button data-direction="prev" class="primary-btn w-fit">Previous</button>
                                     <button data-direction="next" class="primary-btn w-fit d-none stepper-next-button" current-active-tab="#tab_step0" type="button">Next</button>
-                                    <button class="primary-btn w-fit go-to-next" is_event_end="{{$is_event_end?1:0}}" type="button">Save & Next</button>
+                                    <button class="primary-btn w-fit go-to-next" is_event_unpublish={{ $is_event_unpublish?1:0 }} is_event_completed="{{ (isset($form_data->encrypted_id) && $form_data->is_completed==1)?1:0 }}" is_event_end="{{$is_event_end?1:0}}" type="button">Save & Next</button>
                                     <!-- <a style="display: none;" href="javascript:void(0);" onclick="redirectWithMessage(this,'success')" message="{{$eventCloseMsg}}" url="{{ route('front-cleanup-hosting','organizer') }}" class="primary-btn w-fit close-post-cleanup-btn" type="button">Save & Exit</a> -->
+                                     @if(isset($form_data->encrypted_id) && $form_data->is_completed!=1)
+                                        <button style="display:none;" type="button" url="{{route('check-event-for-wrapup',$form_data->encrypted_id ?? 0)}}" class="primary-btn w-fit float-end submit-send-wrapup-btn" data-bs-toggle="tooltip" data-bs-original-title="Send Wrap-Up Email & Certificate to All Attendees and Complete Cleanup">Save & Finalize Cleanup Report</button>
+                                    @endif
                                     @if($is_event_unpublish)
                                     <a style="display: none;" href="{{ route('front-cleanup-hosting','organizer') }}" class="primary-btn w-fit close-post-cleanup-btn" type="button">Save as Draft</a>
                                     <a style="display: none;" href="javascript:void(0);" url2="{{ route('front-cleanup-hosting','organizer') }}" url="{{route('update-event-publish-status')}}" class="primary-btn w-fit close-post-cleanup-btn save_publish_event" type="button">Publish Event</a>
