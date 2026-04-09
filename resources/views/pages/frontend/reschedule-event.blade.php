@@ -57,6 +57,7 @@
                     <div class="col-md-12 d-flex justify-content-between">
                         <div class="d-main-title">
                             <h3><i class="fa-solid fa-calendar-days me-3 mb-3"></i>Reschedule Cleanup: <span class="text-primary">{{$event->event_name}}</span></h3>
+                            <p class="mb-2">Update the schedule and notify all registered participants about the new timing.</p>
                             @php
                                 $breadcrumbs = [ 
                                     [
@@ -71,109 +72,133 @@
                     </div>
                 </div>
                 <x-reusables.frontend.alert />
-                <form action="{{route('submit-reschedule-event-form', encrypt($event->id))}}" method="post" class="main-card mt-4 p-4 shadow-sm bg-white rounded" id="rescheduleEventForm">
+                <form action="{{route('submit-reschedule-event-form', encrypt($event->id))}}" method="post" class="" id="rescheduleEventForm">
                     @csrf
-                    <div class="row"> 
-                        <div class="col-md-6">
-                            <label for="start_datetime" class="form-label">Start Date Time *</label>
-                            <div class="loc-group position-relative">
-                                <input autocomplete="off" class="form-control h_50 datepicker-here-pp" id="start_datetime" data-language="en" name="start_datetime" type="text" placeholder="YYYY/MM/DD" value="" required />
-                                <span class="absolute-icon"><i class="fa-solid fa-calendar-days"></i></span>
-                            </div>
-                        </div> 
-                        <div class="col-md-6">
-                            <label for="end_datetime" class="form-label">End Date Time *</label>
-                            <div class="loc-group position-relative">
-                                <input autocomplete="off" name="end_datetime"
-                                    class="form-control h_50 datepicker-here-pp" id="end_datetime" data-language="en" type="text"
-                                    placeholder="YYYY/MM/DD"
-                                    value="" required />
-                                <span class="absolute-icon"><i class="fa-solid fa-calendar-days"></i></span>
-                            </div>
-                        </div> 
-                    </div>
-                    <div class="row mt-3"> 
-                        <div class="col-md-6">
-                            <label class="form-label fs-6">Event Page Publish Date*</label>
-                            <div class="loc-group position-relative">
-                                <input autocomplete="off"
-                                    class="form-control h_50 datepicker-here-pp"
-                                    data-language="en"
-                                    name="site_publish_date" id="site_publish_date" type="text"
-                                    placeholder="YYYY/MM/DD"
-                                    value="" required />
-                                <span class="absolute-icon"><i class="fa-solid fa-calendar-days"></i></span>
-                            </div>
-                        </div> 
-                        <div class="col-md-6">
-                            <label class="form-label fs-6">Event Page Expiry Date*</label>
-                            <div class="loc-group position-relative">
-                                <input autocomplete="off" name="site_depublish_date"
-                                    class="form-control h_50 datepicker-here-pp" id="site_depublish_date"
-                                    data-language="en" type="text"
-                                    placeholder="YYYY/MM/DD"
-                                    value="" required />
-                                <span class="absolute-icon"><i class="fa-solid fa-calendar-days"></i></span>
-                            </div>
-                        </div> 
-                    </div>
-                    <div class="row mt-3"> 
-                        <label class="form-label fs-6">Tickets</label>
-                        <div class="col-md-12">
-                            <table class="table table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>Ticket Name</th>
-                                        <th>Type</th>
-                                        <th>Price</th>
-                                        <th>Sell Start Date</th>
-                                        <th>Sell End Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($event->eventTickets as $ticket)
-                                        <tr>
-                                            <td>{{$ticket->ticket_name}}</td>
-                                            <td>{{ ucfirst($ticket->ticket_type) }}</td>
-                                            <td>{{ config('app.currency').formatAmt($ticket->ticket_price) }}</td>
-                                            <td>
-                                            <div class="loc-group position-relative">
-                                                <input autocomplete="off" type="text" class="form-control mt-1 form-ele tk_sell_start_date" name="sell_start_time[]" value="" required>
-                                                <span class="absolute-icon" style="top:0;"><i class="fa-solid fa-calendar-days"></i></span>
-                                            </div>
-                                            </td>
-                                            <td>
-                                            <div class="loc-group position-relative">
-                                                <input autocomplete="off" type="text" class="form-control mt-1 form-ele tk_sell_end_date" name="sell_end_time[]" value="" required>
-                                                <span class="absolute-icon" style="top:0;"><i class="fa-solid fa-calendar-days"></i></span>
-                                            </div>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                    <div class="main-card p-4 mt-4">
+                        <div class="bp-title mb-2 d-flex align-items-center justify-content-between">
+                            <h4 class="px-0 mb-0 py-2">
+                                <i class="fa-solid fa-clock step_icon me-3"></i>Date and Time Details
+                            </h4>
+                        </div>
+                        <div class="row"> 
+                            <div class="col-md-6 mt-3">
+                                <label for="start_datetime" class="form-label">Start Date Time *</label>
+                                <div class="loc-group position-relative">
+                                    <input autocomplete="off" class="form-control h_50 datepicker-here-pp" id="start_datetime" data-language="en" name="start_datetime" type="text" placeholder="YYYY/MM/DD, --:--" value="" required />
+                                    <span class="absolute-icon"><i class="fa-solid fa-calendar-days"></i></span>
+                                </div>
+                            </div> 
+                            <div class="col-md-6 mt-3">
+                                <label for="end_datetime" class="form-label">End Date Time *</label>
+                                <div class="loc-group position-relative">
+                                    <input autocomplete="off" name="end_datetime"
+                                        class="form-control h_50 datepicker-here-pp" id="end_datetime" data-language="en" type="text"
+                                        placeholder="YYYY/MM/DD, --:--"
+                                        value="" required />
+                                    <span class="absolute-icon"><i class="fa-solid fa-calendar-days"></i></span>
+                                </div>
+                            </div> 
+                        </div>
+                        <div class="row"> 
+                            <div class="col-md-6 mt-3">
+                                <label class="form-label fs-6">Event Page Publish Date*</label>
+                                <div class="loc-group position-relative">
+                                    <input autocomplete="off"
+                                        class="form-control h_50 datepicker-here-pp"
+                                        data-language="en"
+                                        name="site_publish_date" id="site_publish_date" type="text"
+                                        placeholder="YYYY/MM/DD"
+                                        value="" required />
+                                    <span class="absolute-icon"><i class="fa-solid fa-calendar-days"></i></span>
+                                </div>
+                            </div> 
+                            <div class="col-md-6 mt-3">
+                                <label class="form-label fs-6">Event Page Expiry Date*</label>
+                                <div class="loc-group position-relative">
+                                    <input autocomplete="off" name="site_depublish_date"
+                                        class="form-control h_50 datepicker-here-pp" id="site_depublish_date"
+                                        data-language="en" type="text"
+                                        placeholder="YYYY/MM/DD"
+                                        value="" required />
+                                    <span class="absolute-icon"><i class="fa-solid fa-calendar-days"></i></span>
+                                </div>
+                            </div> 
                         </div>
                     </div>
-                    <div class="row mt-3">
-                        <div class="col-md-12">
-                            <label class="form-label fs-6">Note to Volunteers (optional)</label>
-                            <textarea name="reschedule_note" class="form-control" rows="4" placeholder="Briefly explain the reason for the reschedule (e.g., weather conditions, location change).."></textarea>
-                            <small>This note will be included in the automated notification email sent to all participants.</small>
-                        </div> 
-                    </div>
-                    <div class="row mt-3"> 
-                        <!-- <small class="text-center">Note: Rescheduling an event will update the event details and automatically send a rescheduling email to all attendees.</small> -->
-                        <div class="col-sm-12">
-                            <div class="confirm-alert d-flex gap-3">
-                                <div class="icon-wrap">
-                                    <i class="bi bi-info-lg"></i>
+                    <div class="main-card p-4 mt-4">
+                        <div class="bp-title mb-2 d-flex align-items-center justify-content-between">
+                            <h4 class="px-0 mb-0 py-2">
+                                <i class="fa-solid fa-ticket step_icon me-3"></i>Ticket Details
+                            </h4>
+                        </div>
+                        @foreach($event->eventTickets as $ticket)
+                        <div class="row"> 
+                            <div class="col-md-4 mt-3">
+                                <div class="form-group">
+                                    <label class="form-label fs-6">Ticket Name</label>
+                                    <input id="" class="form-control h_50 get-slug" name="" type="text" placeholder="Ticket Name" value="{{ $ticket->ticket_name }}" disabled />
                                 </div>
-                                <div>
-                                    <p class="alert-title">Before you confirm</p>
-                                    <p class="alert-body">
-                                        Rescheduling will notify all registered volunteers immediately. Some volunteers may no
-                                        longer be able to attend and might cancel their registration.
-                                    </p>
+                            </div> 
+                            <div class="col-md-2 mt-3">
+                                <div class="form-group">
+                                    <label class="form-label fs-6">Ticket Type</label>
+                                    <input id="" class="form-control h_50 get-slug" name="" type="text" placeholder="Ticket Type" value="{{ ucfirst($ticket->ticket_type) }}" disabled />
+                                </div>
+                            </div> 
+                            <div class="col-md-2 mt-3">
+                                <div class="form-group">
+                                    <label class="form-label fs-6">Ticket Price</label>
+                                    <input id="" class="form-control h_50 get-slug" name="" type="text" placeholder="Ticket Price" value="{{ config('app.currency').formatAmt($ticket->ticket_price) }}" disabled />
+                                </div>
+                            </div> 
+                            <div class="col-md-2 mt-3">
+                                <div class="form-group">
+                                    <label class="form-label fs-6">Sell Start Date</label>
+                                    <div class="loc-group position-relative">
+                                        <input autocomplete="off" type="text" class="form-control h_50 mt-1 form-ele tk_sell_start_date" name="sell_start_time[]" value="" required>
+                                        <span class="absolute-icon" ><i class="fa-solid fa-calendar-days"></i></span>
+                                    </div>
+                                </div>
+                            </div> 
+                            <div class="col-md-2 mt-3">
+                                <div class="form-group">
+                                    <label class="form-label fs-6">Sell End Date</label>
+                                    <div class="loc-group position-relative">
+                                        <input autocomplete="off" type="text" class="form-control h_50 mt-1 form-ele tk_sell_end_date" name="sell_end_time[]" value="" required>
+                                        <span class="absolute-icon" ><i class="fa-solid fa-calendar-days"></i></span>
+                                    </div>
+                                </div>
+                            </div> 
+                        </div>
+                        @endforeach
+                    </div>
+                    <div class="main-card p-4 mt-4">
+                        <div class="bp-title mb-2 d-flex align-items-center justify-content-between">
+                            <h4 class="px-0 mb-0 py-2">
+                                <i class="fa-solid fa-comment step_icon me-3"></i>Note
+                            </h4>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="form-group">
+                                <label class="form-label fs-6">Note to Volunteers (optional)</label>
+                                <textarea name="reschedule_note" class="form-control" rows="4" placeholder="Briefly explain the reason for the reschedule (e.g., weather conditions, location change).."></textarea>
+                                <small>This note will be included in the automated notification email sent to all participants.</small>
+                            </div>
+                        </div>
+                        <div class="row mt-3"> 
+                            <!-- <small class="text-center">Note: Rescheduling an event will update the event details and automatically send a rescheduling email to all attendees.</small> -->
+                            <div class="col-sm-12">
+                                <div class="confirm-alert d-flex gap-3">
+                                    <div class="icon-wrap">
+                                        <i class="bi bi-info-lg"></i>
+                                    </div>
+                                    <div>
+                                        <p class="alert-title">Before you confirm</p>
+                                        <p class="alert-body">
+                                            Rescheduling will notify all registered volunteers immediately. Some volunteers may no
+                                            longer be able to attend and might cancel their registration.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>

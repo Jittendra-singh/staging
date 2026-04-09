@@ -11,6 +11,9 @@ a[disabled]{
     pointer-events: none;
     opacity: 0.6;
 }
+.border-default,.border-default:hover{
+    border:1px solid var(--bs-body-color);
+}
 </style>
 @endpush
 @section('content')
@@ -145,13 +148,15 @@ a[disabled]{
                         <div class="event-list">
                             <div class="main-card mt-2 event-row-ongoing-not-found" style="display:none;">
                                 <div class="contact-list">
-                                    <div
-                                        class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-between row ">
-                                        <h5 class="text-center">No cleanup found</h5>
-                                        <p class="text-center m-0">You aren't currently organizing any ongoing cleanups. <br/>Start a new initiative to help your community!</p>
-                                        <div class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-center">
-                                            <a href="{{route('front-post-a-event')}}" class="primary-btn outlined">
-                                                Post A New Cleanup
+                                    <div class="card-top event-top p-4 align-items-center top d-flex flex-wrap justify-content-center">
+                                        <div class="text-center py-4">
+                                            <div class="empty-icon-wrap mx-auto mb-3">
+                                                <i class="fa-regular fa-image fa-2x text-muted"></i>
+                                            </div>
+                                            <h5 class="fw-semibold mb-2">No cleanup found</h5>
+                                            <p class="text-muted small mb-3">You aren't currently organizing any ongoing cleanups.<br/>Start a new initiative to help your community!</p>
+                                            <a href="{{route('front-post-a-event')}}" class="btn btn-clear-filters">
+                                                <i class="fa-solid fa-paper-plane me-2"></i>Post A New Cleanup
                                             </a>
                                         </div>
                                     </div>
@@ -159,13 +164,15 @@ a[disabled]{
                             </div>
                             <div class="main-card mt-2 event-row-upcoming-not-found" style="display:none;">
                                 <div class="contact-list">
-                                    <div
-                                        class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-between row">
-                                        <h5 class="text-center">No cleanup found</h5>
-                                        <p class="text-center m-0">You aren't currently organizing any upcoming cleanups. <br/>Start a new initiative to help your community!</p>
-                                        <div class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-center">
-                                            <a href="{{route('front-post-a-event')}}" class="primary-btn outlined">
-                                                Post A New Cleanup
+                                    <div class="card-top event-top p-4 align-items-center top d-flex flex-wrap justify-content-center">
+                                        <div class="text-center py-4">
+                                            <div class="empty-icon-wrap mx-auto mb-3">
+                                                <i class="fa-regular fa-image fa-2x text-muted"></i>
+                                            </div>
+                                            <h5 class="fw-semibold mb-2">No cleanup found</h5>
+                                            <p class="text-muted small mb-3">You aren't currently organizing any upcoming cleanups.<br/>Start a new initiative to help your community!</p>
+                                            <a href="{{route('front-post-a-event')}}" class="btn btn-clear-filters">
+                                                <i class="fa-solid fa-paper-plane me-2"></i>Post A New Cleanup
                                             </a>
                                         </div>
                                     </div>
@@ -173,13 +180,15 @@ a[disabled]{
                             </div>
                             <div class="main-card mt-2 event-row-ended-not-found" style="display:none;">
                                 <div class="contact-list">
-                                    <div
-                                        class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-between row">
-                                        <h5 class="text-center">No cleanup found</h5>
-                                        <p class="text-center m-0">You don't have any past cleanups. <br/>Start a new initiative to help your community!</p>
-                                        <div class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-center">
-                                            <a href="{{route('front-post-a-event')}}" class="primary-btn outlined">
-                                                Post A New Cleanup
+                                    <div class="card-top event-top p-4 align-items-center top d-flex flex-wrap justify-content-center">
+                                        <div class="text-center py-4">
+                                            <div class="empty-icon-wrap mx-auto mb-3">
+                                                <i class="fa-regular fa-image fa-2x text-muted"></i>
+                                            </div>
+                                            <h5 class="fw-semibold mb-2">No cleanup found</h5>
+                                            <p class="text-muted small mb-3">You don't have any past cleanups.<br/>Start a new initiative to help your community!</p>
+                                            <a href="{{route('front-post-a-event')}}" class="btn btn-clear-filters">
+                                                <i class="fa-solid fa-paper-plane me-2"></i>Post A New Cleanup
                                             </a>
                                         </div>
                                     </div>
@@ -187,10 +196,14 @@ a[disabled]{
                             </div>
                             <div class="main-card mt-2 event-row-action_required-not-found" style="display:none;">
                                 <div class="contact-list">
-                                    <div
-                                        class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-between row">
-                                        <h5 class="text-center">No cleanup found</h5>
-                                        <p class="text-center m-0">No action-required cleanups at the moment.</p>
+                                    <div class="card-top event-top p-4 align-items-center top d-flex flex-wrap justify-content-center">
+                                        <div class="text-center py-4">
+                                            <div class="empty-icon-wrap mx-auto mb-3">
+                                                <i class="fa-regular fa-image fa-2x text-muted"></i>
+                                            </div>
+                                            <h5 class="fw-semibold mb-2">No cleanup found</h5>
+                                            <p class="text-muted small mb-3">No action-required cleanups at the moment.</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -213,7 +226,11 @@ a[disabled]{
                                                 </div>
                                                 <div class="card-event-dt">
                                                     <h5 class="m-0">{{ $event->event_name }}</h5>
-                                                    <p>{{ $event->fullAddress }}</p>
+                                                    <p class="mb-2">{{ $event->fullAddress }}</p>
+                                                    <div class="card-event-dt">
+                                                        <button {{ $event->is_completed==1?'disabled':'' }} class="btn btn-sm btn-default border-default show-alert-run-url" message="You want to send the waiver email to all attendees" url="{{route('send-waiver-bulk-email', ['id' => $event->encrypted_id])}}"><i class="fa fa-envelope me-2"></i>Send Wavier To All</button>
+                                                        <button {{ $event->is_completed==1?'disabled':'' }} class="btn btn-sm btn-default ms-2 border-default show-alert-run-url" message="You want to mark all attendees as checked-in" url="{{route('mark-bulk-checkin-with-email', ['id' => $event->encrypted_id])}}"><i class="fa fa-check-square me-2"></i>Check-in All</button>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div class="dropdown">
@@ -244,12 +261,12 @@ a[disabled]{
                                                     </a>
                                                     @endif
                                                     @if($event->is_completed!=1)
-                                                    <a message="You want to send the waiver email to all attendees" href="javascript:void(0);" url="{{route('send-waiver-bulk-email', ['id' => $event->encrypted_id])}}" class="dropdown-item show-alert-run-url">
+                                                    <!-- <a message="You want to send the waiver email to all attendees" href="javascript:void(0);" url="{{route('send-waiver-bulk-email', ['id' => $event->encrypted_id])}}" class="dropdown-item show-alert-run-url">
                                                         <i class="fa-solid fa-envelope me-3"></i>Send Waiver Email To All
                                                     </a>
                                                     <a message="You want to mark all attendees as checked-in" href="javascript:void(0);" url="{{route('mark-bulk-checkin-with-email', ['id' => $event->encrypted_id])}}" class="dropdown-item show-alert-run-url">
                                                         <i class="fa-solid fa-envelope me-3"></i> Check-in All
-                                                    </a>
+                                                    </a> -->
                                                     @endif
                                                     @if(auth()->guard('front')->user()->id==$event->creator_id)
                                                     <a class="dropdown-item delete-record" data-url="{{route('front-cleanup-hosting-delete', ['id'=> $event->id])}}">
@@ -269,6 +286,27 @@ a[disabled]{
                                             </div>
                                             <div class="icon-box ">
                                                 <span class="icon">
+                                                    <i class="fa-solid fa-user"></i>
+                                                </span>
+                                                <p><!-- <i class="fa-solid fa-user me-1"></i> --> Registered</p>
+                                                <h6 class="coupon-status">{{$event->tickets()->active()->count()}} / {{$event->eventTickets()->sum('available_quantity')}}</h6>
+                                            </div>
+                                            <div class="icon-box ">
+                                                <span class="icon">
+                                                    <i class="fa-solid fa-check-square"></i>
+                                                </span>
+                                                <p><!-- <i class="fa-solid fa-check-square me-1"></i> -->Check-In</p>
+                                                <h6 class="coupon-status">{{$event->tickets()->active()->where('checkin',1)->count()}} / {{$event->tickets()->active()->count()}}</h6>
+                                            </div>
+                                            <div class="icon-box ">
+                                                <span class="icon">
+                                                    <i class="fa-solid fa-handshake"></i>
+                                                </span>
+                                                <p><!-- <i class="fa-solid fa-handshake me-1"></i> --> Waiver Signed</p>
+                                                <h6 class="coupon-status">{{$event->tickets()->active()->whereNotNull('waiver_filled_at')->count()}} / {{$event->tickets()->active()->count()}}</h6>
+                                            </div>
+                                            <!-- <div class="icon-box ">
+                                                <span class="icon">
                                                     <i class="fa-solid fa-location-dot"></i>
                                                 </span>
                                                 <p>Status</p>
@@ -287,7 +325,7 @@ a[disabled]{
                                                 </span>
                                                 <p>Tickets sold</p>
                                                 <h6 class="coupon-status">{{$event->tickets()->active()->count()}}</h6>
-                                            </div>
+                                            </div> -->
                                             <!-- <div class="icon-box">
                                                 <span class="icon">
                                                     <i class="fa-solid fa-eye"></i>

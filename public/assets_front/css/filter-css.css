@@ -1,0 +1,147 @@
+
+/* ── Filter Card ── */
+.filter-card {
+    background: #fff;
+    border: 1.5px solid var(--linear-gradient-2);
+    border-radius: 10px;
+}
+
+.filter-card-header {
+    color: var(--linear-gradient-2);
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+}
+
+.filter-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6c757d;
+    margin-bottom: 4px;
+}
+
+/* ── Icon wrapper ── */
+.filter-input-wrap {
+    position: relative;
+}
+
+.filter-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    font-size: 13px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* ── Shared height & border for all filter fields ── */
+.filter-field.form-control,
+.filter-input-wrap .bootstrap-select > .dropdown-toggle,
+.bootstrap-select.filter-field > .dropdown-toggle {
+    height: 42px !important;
+    border: 1px solid #ced4da !important;
+    border-radius: 6px !important;
+    font-size: 14px !important;
+    box-shadow: none !important;
+    background-color: #fff !important;
+}
+
+/* ── Padding-left for icon-wrapped fields ── */
+.filter-input-wrap .bootstrap-select > .dropdown-toggle,
+.filter-input-wrap .form-control {
+    padding-left: 34px !important;
+}
+
+/* ── Remove bootstrap-select wrapper border ── */
+.filter-input-wrap .bootstrap-select,
+.bootstrap-select.filter-field {
+    width: 100% !important;
+    border: none !important;
+}
+
+/* ── Bootstrap-select toggle: vertical alignment + overflow fix ── */
+.bootstrap-select > .dropdown-toggle {
+    display: flex !important;
+    align-items: center !important;
+    overflow: hidden !important;
+}
+
+.bootstrap-select > .dropdown-toggle .filter-option {
+    display: flex !important;
+    align-items: center !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+}
+
+.bootstrap-select > .dropdown-toggle .filter-option-inner-inner {
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    line-height: 1.4 !important;
+}
+
+/* ── Hide date/small tag in selected state only ── */
+.bootstrap-select > .dropdown-toggle .filter-option-inner-inner small,
+.bootstrap-select > .dropdown-toggle .filter-option-inner-inner br {
+    display: none !important;
+}
+
+/* ── Caret vertical center ── */
+.bootstrap-select > .dropdown-toggle::after {
+    margin-top: 0 !important;
+    vertical-align: middle !important;
+    flex-shrink: 0;
+}
+
+/* ── Focus state ── */
+.filter-field.form-control:focus,
+.filter-input-wrap .bootstrap-select.show > .dropdown-toggle,
+.bootstrap-select.filter-field.show > .dropdown-toggle {
+    border-color: var(--linear-gradient-2) !important;
+    box-shadow: 0 0 0 0.15rem rgba(var(--linear-gradient-2-rgb, 23, 169, 158), 0.2) !important;
+}
+
+/* ── Search button ── */
+.btn-filter-search {
+    height: 42px;
+    background-color: var(--linear-gradient-2);
+    color: #fff;
+    border: none;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.btn-filter-search:hover {
+    background-color: var(--linear-gradient-2);
+    color: #fff;
+    opacity: 0.88;
+}
+
+/* ── Reset button ── */
+.btn-filter-reset {
+    height: 42px;
+    width: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    color: #6c757d;
+    background: #fff;
+    flex-shrink: 0;
+}
+
+.btn-filter-reset:hover {
+    border-color: var(--linear-gradient-2);
+    color: var(--linear-gradient-2);
+}
+
+/* ── Dropdown active item ── */
+.bootstrap-select .dropdown-item.active,
+.bootstrap-select .dropdown-item:active {
+    background-color: var(--linear-gradient-2) !important;
+}

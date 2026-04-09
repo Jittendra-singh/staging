@@ -1334,7 +1334,7 @@ class FrontController extends Controller
             return $this->generateJsonResponse(false, 'Failed to after event actions: ' . $e->getMessage());
         }
 
-        return $this->generateJsonResponse(true, 'After event actions saved successfully.', [
+        return $this->generateJsonResponse(true, 'Cleanup report data saved successfully.', [
             'event_instance' => encrypt($event->id),
             'event' => $event , 
             'redirect_href' => route('front-cleanup-hosting', ['type' => 'organizer']) , 

@@ -7,6 +7,7 @@
 					<div class="col-md-12 d-flex align-items-center justify-content-between">
 						<div class="d-main-title">
 							<h3><i class="fa-solid fa-calendar-days me-3 mb-3"></i>Event Registrations List</h3>
+							<p class="mb-2">Track volunteer registrations, attendance and participation across all events.</p>
 							@php						
 								$breadcrumbs = [
 										[
@@ -22,7 +23,73 @@
 						</button>
 					</div>
 					<div class="col-md-12">
-						<div class="main-card mt-5">
+						<div class="filter-card mt-4">
+							<div class="card-body p-4">
+								<div class="filter-card-header mb-3">
+									<i class="fa fa-filter me-2"></i>
+									<span>Filters</span>
+								</div>
+								<form class="filter-form">
+									<div class="row g-3 mb-3">
+										<div class="col-md-6">
+											<label class="form-label filter-label">Search Event Name</label>
+											<div class="filter-input-wrap">
+												<i class="fa fa-search filter-icon"></i>
+												<select class="selectpicker filter-field" name="event" data-live-search="true" title="Find an event by name...">
+													@foreach($events as $event)
+														<option value="{{ $event->id }}" @selected(request()->event == $event->id)
+															data-content="{{ $event->event_name }}<br/><small class='p-0'>{{ date('M d, Y h:i A', strtotime($event->start_datetime)) }} - {{ date('M d, Y h:i A', strtotime($event->end_datetime)) }}</small>">
+															{{ $event->event_name }}
+														</option>
+													@endforeach
+												</select>
+											</div>
+										</div>
+										<div class="col-md-6">
+											<label class="form-label filter-label">Volunteer Info</label>
+											<div class="filter-input-wrap">
+												<i class="fa fa-user filter-icon"></i>
+												<input class="form-control filter-field" value="{{ request()->search }}" name="search" type="text" placeholder="Name, Email, or Phone">
+											</div>
+										</div>
+									</div>
+									<div class="row g-3 align-items-end">
+										<div class="col-md-3">
+											<label class="form-label filter-label">Event Status</label>
+											<select class="selectpicker filter-field w-100" name="event_type" title="Status: All">
+												<option value="">Status: All</option>
+												<option value="1" @selected(request()->event_type == '1')>Upcoming</option>
+												<option value="2" @selected(request()->event_type == '2')>Past</option>
+											</select>
+										</div>
+										<div class="col-md-3">
+											<label class="form-label filter-label">RSVP Status</label>
+											<select class="selectpicker filter-field w-100" name="status" title="RSVP: All">
+												<option value="">RSVP: All</option>
+												<option value="active" @selected(request()->status == 'active')>Active RSVP</option>
+												<option value="cancelled" @selected(request()->status == 'cancelled')>Cancelled RSVP</option>
+											</select>
+										</div>
+										<div class="col-md-3">
+											<label class="form-label filter-label">Sort By</label>
+											<select class="selectpicker filter-field w-100" name="filter">
+												<option value="newest" @selected(request()->filter == 'newest' || !request()->filter)>Newest First</option>
+												<option value="oldest" @selected(request()->filter == 'oldest')>Oldest First</option>
+											</select>
+										</div>
+										<div class="col-md-3 d-flex gap-2">
+											<button class="btn btn-filter-search flex-grow-1" type="submit">
+												<i class="fa fa-search me-2"></i>Search
+											</button>
+											<a href="{{ url()->current() }}" class="btn btn-filter-reset" title="Reset Filters">
+												<i class="fa fa-rotate-left"></i>
+											</a>
+										</div>
+									</div>
+								</form>
+							</div>
+						</div>
+						<!-- <div class="main-card mt-5">
 							<div class="dashboard-wrap-content p-4">
 								<form class="filter-form">
 									<div class="row">
@@ -66,7 +133,6 @@
 												<select class="selectpicker" name="filter">
 													<option value="newest" @selected(request()->filter == 'newest' || !request()->filter)>Newest first</option>
 													<option value="oldest" @selected(request()->filter == 'oldest')>Oldest first</option>
-													<!-- Add sorting options here -->
 												</select>
 											</div>
 										</div>
@@ -77,21 +143,10 @@
 												</div>
 											</div>
 										</div>
-										<!-- <div class="col-md-3">
-											<div class="rs mt_r4 ps-3">
-												<div class="nav custom2-tabs btn-group justify-content-start gap-2 row-gap-3" >
-													<button class="primary-btn w-fit" type="submit" >Search</button>
-													<a href="{{ url()->current() }}" class="primary-btn w-fit">Reset</a>
-													<button class="primary-btn w-fit download-csv" type="button" >
-														<i class="fa-solid fa-download "></i>Download CSV
-													</button>
-												</div>
-											</div>
-										</div> -->
 									</div>
 								</form>
 							</div>
-						</div>
+						</div> -->
 						<div class="d-flex flex-wrap gap-2 my-4">
 							<div class="d-flex align-items-center bg-white rounded-3 px-3 py-3 flex-grow-1 border" style="min-width:160px;">
 								<span class="me-3 d-flex align-items-center justify-content-center rounded-circle" style="background:#e3f0ff;width:48px;height:48px;">
@@ -319,11 +374,37 @@
 									@empty
 										<div class="main-card mt-2">
 											<div class="contact-list">
+												<div class="card-top event-top p-4 align-items-center top d-flex flex-wrap justify-content-center">
+													@if(request()->anyFilled(['event', 'event_type', 'search', 'status', 'filter']))
+														<div class="text-center py-4">
+															<div class="empty-icon-wrap mx-auto mb-3">
+																<i class="fa-regular fa-image fa-2x text-muted"></i>
+															</div>
+															<h5 class="fw-semibold mb-2">No registrations found</h5>
+															<p class="text-muted small mb-3">We couldn't find any registrations matching your<br>current filters. Try adjusting your search criteria.</p>
+															<a href="{{ url()->current() }}" class="btn btn-clear-filters">
+																<i class="fa fa-filter me-2"></i>Clear all filters
+															</a>
+														</div>
+													@else
+														<div class="text-center py-4">
+															<div class="empty-icon-wrap mx-auto mb-3">
+																<i class="fa-regular fa-image fa-2x text-muted"></i>
+															</div>
+															<h5 class="fw-semibold mb-2">No registrations found</h5>
+															<p class="text-muted small mb-3">New registrations will appear here once volunteers sign up for your events.</p>
+														</div>
+													@endif
+												</div>
+											</div>
+										</div>
+										<!-- <div class="main-card mt-2">
+											<div class="contact-list">
 												<div class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-between">
 													<h4 class="text-center">New registrations will appear here once volunteers sign up for your events.</h4>
 												</div>
 											</div>
-										</div>
+										</div> -->
 									@endforelse
 								</div>
 							</div>
@@ -389,5 +470,6 @@
 			border-radius: 30px;
 		}
 	</style>
+	<link rel="stylesheet" href="{{ asset('assets_front/css/filter-css.css') }} ">
 	@endstyle
 @endsection

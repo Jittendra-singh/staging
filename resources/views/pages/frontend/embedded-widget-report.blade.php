@@ -1,6 +1,7 @@
 @extends('layouts.frontend')
 @push('style')
 <link rel="stylesheet" href="{{ asset('assets/libs/datetimepicker/jquery.datetimepicker.min.css') }} ">
+<link rel="stylesheet" href="{{ asset('assets_front/css/filter-css.css') }} ">
 <style>
 </style>
 @endpush
@@ -32,7 +33,42 @@
                 </div>
                 <x-reusables.frontend.alert />
                 <div class="col-md-12">
-                    <div class="main-card mt-3"> 
+                    <div class="filter-card my-4">
+                        <div class="card-body p-4">
+                            <div class="filter-card-header mb-3">
+                                <i class="fa fa-filter me-2"></i>
+                                <span>Filters</span>
+                            </div>
+                            <form class="filter-form" method="post">
+                                @csrf
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-md-4">
+                                        <label class="form-label filter-label">From Date</label>
+                                        <div class="filter-input-wrap">
+                                            <i class="fa fa-calendar filter-icon"></i>
+                                            <input autocomplete="off" class="form-control filter-field only_date_picker" value="{{ $from_date }}" name="from_date" type="text" placeholder="Log From Date">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label filter-label">To Date</label>
+                                        <div class="filter-input-wrap">
+                                            <i class="fa fa-calendar filter-icon"></i>
+                                            <input autocomplete="off" class="form-control filter-field only_date_picker" value="{{ $to_date }}" name="to_date" type="text" placeholder="Log To Date">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 d-flex gap-2">
+                                        <button class="btn btn-filter-search flex-grow-1" type="submit">
+                                            <i class="fa fa-filter me-2"></i>Filter
+                                        </button>
+                                        <a href="{{ url()->current() }}" class="btn btn-filter-reset" title="Reset Filters">
+                                            <i class="fa fa-rotate-left"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <!-- <div class="main-card mt-3"> 
                         <div class="dashboard-wrap-content p-4">
                             <form class="filter-form" method="post">
                                 @csrf
@@ -58,7 +94,7 @@
                                 </div>
                             </form>
                         </div>
-                    </div>
+                    </div> -->
                     <div class="conversion-setup">
                         <div class="main-card mt-3">
                             <div class="dashboard-wrap-content p-4">

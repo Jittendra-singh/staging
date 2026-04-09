@@ -21,7 +21,42 @@
 					</div>
 					<div class="col-md-12">
                     	<x-reusables.frontend.alert />
-						<div class="main-card mt-5">
+						<div class="filter-card my-4">
+							<div class="card-body p-4">
+								<div class="filter-card-header mb-3">
+									<i class="fa fa-filter me-2"></i>
+									<span>Filters</span>
+								</div>
+								<form action="">
+									<div class="row g-3 align-items-end">
+										<div class="col-md-5">
+											<label class="form-label filter-label">Search Event</label>
+											<div class="filter-input-wrap">
+												<i class="fa fa-search filter-icon"></i>
+												<input class="form-control filter-field" type="text" value="{{ request()->search ?? '' }}" name="search" placeholder="Find an event you're attending">
+											</div>
+										</div>
+										<div class="col-md-4">
+											<label class="form-label filter-label">Event Status</label>
+											<select class="selectpicker filter-field w-100" name="event_type" title="Status: All">
+												<option value="">Status: All</option>
+												<option value="1" @selected(request()->event_type == '1')>Upcoming</option>
+												<option value="2" @selected(request()->event_type == '2')>Past</option>
+											</select>
+										</div>
+										<div class="col-md-3 d-flex gap-2">
+											<button class="btn btn-filter-search flex-grow-1" type="submit">
+												<i class="fa fa-search me-2"></i>Search
+											</button>
+											<a href="{{ url()->current() }}" class="btn btn-filter-reset" title="Reset Filters">
+												<i class="fa fa-rotate-left"></i>
+											</a>
+										</div>
+									</div>
+								</form>
+							</div>
+						</div>
+						<!-- <div class="main-card mt-5">
 							<div class="dashboard-wrap-content p-4">
 								<h5 class="mb-4">Events ({{$attending_events->count()}})</h5>
 								<form action="">
@@ -52,7 +87,7 @@
 									</div>
 								</form>
 							</div>
-						</div>
+						</div> -->
 						<div class="event-list">
 							<div class="tab-content">
 								<div class="tab-pane fade show active" id="all-tab" role="tabpanel">
@@ -291,7 +326,36 @@
 											</div>
 										</div>
 									@empty
-										@if(isset(request()->search) || isset(request()->event_type))
+										<div class="main-card mt-2">
+											<div class="contact-list">
+												<div class="card-top event-top p-4 align-items-center top d-flex flex-wrap justify-content-center">
+													@if(request()->anyFilled(['event_type', 'search']))
+														<div class="text-center py-4">
+															<div class="empty-icon-wrap mx-auto mb-3">
+																<i class="fa-regular fa-image fa-2x text-muted"></i>
+															</div>
+															<h5 class="fw-semibold mb-2">No event found</h5>
+															<p class="text-muted small mb-3">We couldn't find any event matching your<br>current filters. Try adjusting your search criteria.</p>
+															<a href="{{ url()->current() }}" class="btn btn-clear-filters">
+																<i class="fa fa-filter me-2"></i>Clear all filters
+															</a>
+														</div>
+													@else
+														<div class="text-center py-4">
+															<div class="empty-icon-wrap mx-auto mb-3">
+																<i class="fa-regular fa-image fa-2x text-muted"></i>
+															</div>
+															<h5 class="fw-semibold mb-2">You're not signed up for any cleanups yet.</h5>
+															<p class="text-muted small mb-3">Find a cleanup event near you and start making a difference today!</p>
+															<a href="{{ route('view-events') }}" class="btn btn-clear-filters">
+																<i class="fa-solid fa-calendar-days me-2"></i>Start Browsing
+															</a>
+														</div>
+													@endif
+												</div>
+											</div>
+										</div>
+										<!-- @if(isset(request()->search) || isset(request()->event_type))
 										<div class="main-card mt-2">
 											<div class="contact-list">
 												<div class="p-4 justify-content-center">
@@ -316,7 +380,7 @@
 												</div>
 											</div>
 										</div>
-										@endif
+										@endif -->
 
 										{{-- <x-reusables.frontend.frontemptyresult /> --}}
 									@endforelse
@@ -328,6 +392,59 @@
 			</div>
 		</div>
 	</div>
+<div class="modal fade" id="cancel-ticket-popup" tabindex="-1" aria-labelledby="cancelTicketPopupLabel" aria-hidden="false">
+	<div class="modal-dialog modal-medium-2 modal-dialog-centered modal-sm-height modal-lg">
+		<div class="modal-content modal-dialog-scrollable">
+			<div class="modal-header">
+				<h5 class="modal-title" id="cancelTicketPopupLabel">Cancel Ticket</h5>
+				<button type="button" class="close-model-btn" data-bs-dismiss="modal" aria-label="Close"><i class="fa fa-times"></i></button>
+			</div>
+			<form class="validateform" action="{{route('cancel-refund-paid-ticket')}}" method="POST" enctype="multipart/form-data">
+				@csrf
+				<input type="hidden" name="ticket[]" id="single-cancel-ticket-id" value="">
+				<div class="modal-body">
+					<div class="model-content main-form">
+						<div class="row">
+							<div class="col-lg-12 col-md-12">
+								<div class="premium-select">
+									<div class="row">
+										<div class="col-sm-6" id="option-1-div">
+											<input value="1" type="radio" name="refund_type" id="option-1">
+											<label for="option-1" class="option option-1">
+												<p><span class="dot m-auto"></span></p>
+												<b>Cancel Registration & Donate the Amount</b>
+												<span>Your registration will be cancelled, and the $<b class="ticket-cancel-amt">0</b> amount will be donated.</span>
+											</label>
+										</div>
+										<div class="col-sm-6" id="option-2-div">
+											<input value="2" type="radio" name="refund_type" id="option-2">
+											<label for="option-2" class="option option-2">
+												<p><span class="dot m-auto"></span></p>
+												<b>Cancel Registration & Refund the Amount</b>
+												<span>Your registration will be cancelled, and the $<b class="ticket-cancel-amt">0</b> amount will be refunded.</span>
+											</label>
+										</div>
+										<div class="col-sm-6 offset-sm-3" id="option-3-div" style="display: none;">
+											<input value="3" type="radio" name="refund_type" id="option-3">
+											<label for="option-3" class="option option-3">
+												<p><span class="dot m-auto"></span></p>
+												<p class="m-0 text-black"><b>Cancel Registration</b></p>
+												<span>Your registration will be cancelled, and no amount will be refunded.</span>
+											</label>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="submit" class="primary-btn w-fit">Submit Now</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
     <x-reusables.frontend.registration-popups />
 	@push('script')
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -382,58 +499,6 @@
 			background: var(--linear-gradient-2)!important;;
 		}
 	</style>
+	<link rel="stylesheet" href="{{ asset('assets_front/css/filter-css.css') }} ">
 	@endstyle
-<div class="modal fade" id="cancel-ticket-popup" tabindex="-1" aria-labelledby="cancelTicketPopupLabel" aria-hidden="false">
-	<div class="modal-dialog modal-medium-2 modal-dialog-centered modal-sm-height modal-lg">
-		<div class="modal-content modal-dialog-scrollable">
-			<div class="modal-header">
-				<h5 class="modal-title" id="cancelTicketPopupLabel">Cancel Ticket</h5>
-				<button type="button" class="close-model-btn" data-bs-dismiss="modal" aria-label="Close"><i class="fa fa-times"></i></button>
-			</div>
-			<form class="validateform" action="{{route('cancel-refund-paid-ticket')}}" method="POST" enctype="multipart/form-data">
-				@csrf
-				<input type="hidden" name="ticket[]" id="single-cancel-ticket-id" value="">
-				<div class="modal-body">
-					<div class="model-content main-form">
-						<div class="row">
-							<div class="col-lg-12 col-md-12">
-								<div class="premium-select">
-									<div class="row">
-										<div class="col-sm-6" id="option-1-div">
-											<input value="1" type="radio" name="refund_type" id="option-1">
-											<label for="option-1" class="option option-1">
-												<p><span class="dot m-auto"></span></p>
-												<b>Cancel Registration & Donate the Amount</b>
-												<span>Your registration will be cancelled, and the $<b class="ticket-cancel-amt">0</b> amount will be donated.</span>
-											</label>
-										</div>
-										<div class="col-sm-6" id="option-2-div">
-											<input value="2" type="radio" name="refund_type" id="option-2">
-											<label for="option-2" class="option option-2">
-												<p><span class="dot m-auto"></span></p>
-												<b>Cancel Registration & Refund the Amount</b>
-												<span>Your registration will be cancelled, and the $<b class="ticket-cancel-amt">0</b> amount will be refunded.</span>
-											</label>
-										</div>
-										<div class="col-sm-6 offset-sm-3" id="option-3-div" style="display: none;">
-											<input value="3" type="radio" name="refund_type" id="option-3">
-											<label for="option-3" class="option option-3">
-												<p><span class="dot m-auto"></span></p>
-												<p class="m-0 text-black"><b>Cancel Registration</b></p>
-												<span>Your registration will be cancelled, and no amount will be refunded.</span>
-											</label>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="submit" class="primary-btn w-fit">Submit Now</button>
-				</div>
-			</form>
-		</div>
-	</div>
-</div>
 @endsection

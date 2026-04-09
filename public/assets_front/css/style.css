@@ -2065,9 +2065,6 @@ label {
     background: #F5F5F5;
 }
 
-.registration .form-control {
-    background-color: #f9f9f9 !important;
-}
 
 .agree-text {
     padding-top: 20px;
@@ -2433,17 +2430,15 @@ label {
     padding: 0 30px 30px;
 }
 
-.bp-form .form-control {
-    background-color: #f9f9f9 !important;
-}
 
 .bp-form .btn-light {
     display: block !important;
     font-size: 14px !important;
     font-weight: 400 !important;
     color: #717171 !important;
-    background-color: #f9f9f9 !important;
-    border: 1px solid #efefef !important;
+    /* background-color: #f9f9f9 !important; */
+    /* border: 1px solid #efefef !important; */
+    border: var(--bs-border-width) solid var(--bs-border-color)!important;
     padding: 5px 20px !important;
     min-height: 50px !important;
     border-radius: 3px !important;
@@ -3219,10 +3214,6 @@ label {
 
 .model-content {
     padding: 0 30px 30px;
-}
-
-.model-content .form-control {
-    background-color: #f9f9f9 !important;
 }
 
 .address-title {
@@ -7951,4 +7942,31 @@ footer p {
 
 .sub_menu--link.active {
     background: #e8f7f7;
+}
+
+
+/* .bp-form .form-control {
+    background-color: #f9f9f9 !important;
+}
+.model-content .form-control {
+    background-color: #f9f9f9 !important;
+} 
+.registration .form-control {
+    background-color: #f9f9f9 !important;
+}*/
+ 
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="url"],
+input[type="search"],
+input[type="tel"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="week"],
+input[type="time"],
+textarea, select, .dropdown-toggle.btn, .ck.ck-editor {
+        border-radius: 6px !important;
 }

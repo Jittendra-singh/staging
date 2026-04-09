@@ -1390,7 +1390,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                             </div>
                                                             <div class="col-sm-6">
                                                                 <div class="form-group">
-                                                                    <label class="form-label fs-6">Post Event Notes</label>
+                                                                    <label class="form-label fs-6">Post Event Narrative</label>
                                                                     <input id="post_event_notes" class="form-control h_50" type="text" value="{{ old('post_event_notes', $form_data->post_event_notes ?? '') }}" name="post_event_notes" placeholder="" value="">
                                                                 </div>
                                                             </div>

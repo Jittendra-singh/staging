@@ -1,6 +1,7 @@
 @extends('layouts.frontend')
 @push('style')
 <link rel="stylesheet" href="{{ asset('assets/libs/datetimepicker/jquery.datetimepicker.min.css') }} ">
+<link rel="stylesheet" href="{{ asset('assets_front/css/filter-css.css') }} ">
 @endpush
 @push('script')
     <script src="{{ asset('assets/libs/datetimepicker/jquery.datetimepicker.full.min.js') }}"></script>
@@ -10,7 +11,7 @@
 <div class="wrapper wrapper-body">
 	<div class="dashboard-body orders-page">
 		<div class="container-fluid">
-			<div class="col-md-12 d-flex align-items-center justify-content-between mb-5">
+			<div class="col-md-12 d-flex align-items-center justify-content-between">
 				<div class="d-main-title">
 					<h3><i class="fa-solid fa-calendar-days me-3 mb-3"></i>Orders</h3>
                     @php
@@ -31,7 +32,53 @@
 			<div class="row">
 				<div class="col-md-12">
                     <x-reusables.frontend.alert />
-                    <div class="main-card mt-0">
+                    <div class="filter-card my-4">
+                        <div class="card-body p-4">
+                            <div class="filter-card-header mb-3">
+                                <i class="fa fa-filter me-2"></i>
+                                <span>Filters</span>
+                            </div>
+                            <form class="filter-form">
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-md-4">
+                                        <label class="form-label filter-label">Select Event</label>
+                                        <select class="selectpicker filter-field w-100" name="event_id" title="Select Event">
+                                            @php
+                                                if(isset($events) && isset($events[0])){
+                                                    foreach($events as $event){
+                                                        echo '<option '.(request()->event_id == $event['id'] ? 'selected' : '').' value="'.$event['id'].'">'.$event['name'].'</option>';
+                                                    }
+                                                }
+                                            @endphp
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label filter-label">Start Date</label>
+                                        <div class="filter-input-wrap">
+                                            <i class="fa fa-calendar filter-icon"></i>
+                                            <input class="form-control filter-field only_date_picker" value="{{ request()->start_date }}" name="start_date" autocomplete="off" type="text" placeholder="Order Start Date">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label filter-label">End Date</label>
+                                        <div class="filter-input-wrap">
+                                            <i class="fa fa-calendar filter-icon"></i>
+                                            <input class="form-control filter-field only_date_picker" value="{{ request()->end_date }}" name="end_date" autocomplete="off" type="text" placeholder="Order End Date">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 d-flex gap-2">
+                                        <button class="btn btn-filter-search flex-grow-1" type="submit">
+                                            <i class="fa fa-filter me-2"></i>Filter
+                                        </button>
+                                        <a href="{{ url()->current() }}" class="btn btn-filter-reset" title="Reset">
+                                            <i class="fa fa-rotate-left"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <!-- <div class="main-card mt-0">
                         <div class="dashboard-wrap-content p-4">
                             <form class="filter-form">
                                 <div class="row">
@@ -70,7 +117,7 @@
                                 </div>
                             </form>
                         </div>
-                    </div>
+                    </div> -->
 					<div class="conversion-setup mt-4">
 						<div class="main-card">
 							<div class="dashboard-wrap-content p-4">
