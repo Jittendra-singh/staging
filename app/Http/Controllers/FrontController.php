@@ -1535,7 +1535,7 @@ class FrontController extends Controller
             return $this->generateJsonResponse(false, 'Failed to re-send Co-Host invitation: ' . $e->getMessage());
         }
     }
-    public function checkEventForWrapup($id){
+    public function checkEventForWrapup($id,$submitFromAdmin=false){
         $event = Event::with('creator')->findOrFail(decrypt($id));
         if($event->is_completed==1){
             return $this->generateJsonResponse(false, 'Event is already marked as completed so no wrap-up email can be sent.');
@@ -1544,10 +1544,14 @@ class FrontController extends Controller
         $notCheckedIntickets = $event->tickets()->where('checkin', 0)->where('rsvp_confirmation', 1)->get();
         if($availTickets->count() > 0){
             if($notCheckedIntickets->count() > 0){
-                $link = route('front-registration-list',['event' => $event->id]);
+                if($submitFromAdmin){
+                    $link = 'check-ins';
+                } else {
+                    $link = '<a target="_blank" href="'.route('front-registration-list',['event' => $event->id]).'">check-ins</a>';
+                }
                 $message = '<div class="text-left fw-bold mb-2">You have '.$notCheckedIntickets->count().' attendees who are not checked-in. Only checked-in attendees will receive certificates.</div>
                 <div class="text-left mb-2">
-                You can review and update <a target="_blank" href="'.$link.'">check-ins</a> before submitting. Once you submit:</div>
+                You can review and update '.$link.' before submitting. Once you submit:</div>
                 <ul class="text-left">
                     <li>• Certificates will be generated.</li>
                     <li>• Emails will be sent immediately.</li>
@@ -1626,7 +1630,7 @@ class FrontController extends Controller
                             //["email" => 'learningdcm@gmail.com']
                         ],
                         "dynamic_template_data" => [
-                            "volunteer_name" => $value->volunteer->first_name,
+                            "volunteer_name" => $name,
                             "volunteer_email" => $email,
                             "event_name" =>  $event->event_name,
                             "event_date" => $event->startTimeAndEndTime,
@@ -1923,7 +1927,7 @@ class FrontController extends Controller
         }
         return $this->generateJsonResponse(true, 'Issue occured while sending request email.');
     }
-    public function ticketMarkCheckin($ticket){
+    public function ticketMarkCheckin($ticket,$callFromBackend=false){
         $orderTicket = EventOrderTicket::findOrFail(decrypt($ticket));
         $event = $orderTicket->event;
         $volunteer = $orderTicket->volunteer;
@@ -1952,12 +1956,17 @@ class FrontController extends Controller
                 $orderTicket->save();
                 $community_form = url('/').'/'.$path;
             }catch(\Exception $e){
-                return $this->generateJsonResponse(false, "Issues occured while making generating PDF",[
-                    'error' => $e->getMessage(),
-                    'line'  => $e->getLine(),
-                    'file'  => $e->getFile(),
-                    // 'trace' => $e->getTraceAsString() // uncomment if needed
-                ]);
+                if($callFromBackend){
+                    $this->setFlashSession(false , "Issues occured while making generating PDF");
+                    return redirect()->back();
+                } else {
+                    return $this->generateJsonResponse(false, "Issues occured while making generating PDF",[
+                        'error' => $e->getMessage(),
+                        'line'  => $e->getLine(),
+                        'file'  => $e->getFile(),
+                        // 'trace' => $e->getTraceAsString() // uncomment if needed
+                    ]);
+                }
             }
         }
         try{
@@ -1965,24 +1974,91 @@ class FrontController extends Controller
                 $orderTicket->community_form_status = 'pending';
                 $orderTicket->checkin = 0;
                 $orderTicket->save();
-                return $this->generateJsonResponse(true, 'Volunteer has been checked out successfully.');
+                if($callFromBackend){
+                    $this->setFlashSession(true , "Volunteer has been checked out successfully.");
+                    return redirect()->back();
+                } else {
+                    return $this->generateJsonResponse(true, 'Volunteer has been checked out successfully.');
+                }
             } else {
-                /* $emailData = [
-                    'volunteer' => $volunteer->first_name.' '.$volunteer->last_name,
-                    'event_title' => $event->event_name,
-                    //'certificate_download_link' => $community_form,
-                    'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($orderTicket->id)]),
-                    'dashboard_link' => $this->mailUrl('front-cleanup-attending')
-                ];
-                $sub = 'Your Community Service Certificate for '.$event->event_name.' Is Ready';
-                $this->sendEmail($volunteer->email_address, $sub, $emailData, "community-service-form");
-                $orderTicket->community_form_status = 'approved'; */
-                $orderTicket->checkin = 1;
-                $orderTicket->save();
-                return $this->generateJsonResponse(true, 'Volunteer has been marked as check-in successfully.');
+                if(!empty($orderTicket->waiver_filled_at)){
+                    /* $emailData = [
+                        'volunteer' => $volunteer->first_name.' '.$volunteer->last_name,
+                        'event_title' => $event->event_name,
+                        //'certificate_download_link' => $community_form,
+                        'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($orderTicket->id)]),
+                        'dashboard_link' => $this->mailUrl('front-cleanup-attending')
+                    ];
+                    $sub = 'Your Community Service Certificate for '.$event->event_name.' Is Ready';
+                    $this->sendEmail($volunteer->email_address, $sub, $emailData, "community-service-form");
+                    $orderTicket->community_form_status = 'approved'; */
+                    $orderTicket->checkin = 1;
+                    if($event->is_completed==1){
+                        $orderTicket->community_form_status = 'approved';
+                        $orderTicket->is_late_checkin = 1;
+                    }
+                    $orderTicket->save();
+                    if($event->is_completed==1){
+                        $to_arr = [];
+                        $log_arr = [];
+                        if (isset($orderTicket->volunteer) && isset($orderTicket->volunteer->id)) {
+                            $tickets = $event->tickets()->where('checkin', 1)->whereNotNull('waiver_filled_at')->get();
+                            $email = $orderTicket->volunteer->email_address;
+                            $name = $orderTicket->volunteer->first_name.' '.$orderTicket->volunteer->last_name;
+                            if(!empty(trim($email))){
+                                $to_arr[] = 
+                                [
+                                    "to" => [
+                                        ["email" => trim($email)]
+                                        //["email" => 'learningdcm@gmail.com']
+                                    ],
+                                    "dynamic_template_data" => [
+                                        "volunteer_name" => $name,
+                                        "volunteer_email" => $email,
+                                        "event_name" =>  $event->event_name,
+                                        "event_date" => $event->startTimeAndEndTime,
+                                        "event_location" => $event->fullAddress,
+                                        "organizer_name" => $event->creator->first_name.' '.$event->creator->last_name,
+                                        "total_volunteers" => $tickets->count(),
+                                        "waste_collected" => $event->waste_collected,
+                                        "area_cleaned" => $event->area_cleaned,
+                                        "service_hours" => 'N/A',
+                                        'images_link' => $this->mailUrl('cleanup-report-images', ['event' => encrypt($event->id)]),
+                                        'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($orderTicket->id)]),
+                                    ],
+                                ];
+                                $log_arr[] = [
+                                    "id" => $orderTicket->id,
+                                    "email" => trim($email)
+                                ];
+                            }
+                        }
+                        if(!empty($to_arr)){
+                            $this->sendSendgridTemplateEmailWithoutLog($to_arr,"d-84b101582dbb408aa6f90cf53b2be2d0");
+                        }
+                    }
+                    if($callFromBackend){
+                        $this->setFlashSession(true , "Volunteer has been marked as check-in successfully.");
+                        return redirect()->back();
+                    } else {
+                        return $this->generateJsonResponse(true, 'Volunteer has been marked as check-in successfully.');
+                    }
+                } else {
+                    if($callFromBackend){
+                        $this->setFlashSession(true , "Waiver should be signed before marking the volunteer checked-in.");
+                        return redirect()->back();
+                    } else {
+                        return $this->generateJsonResponse(true, 'Waiver should be signed before marking the volunteer checked-in.');
+                    }
+                }
             }
         }catch(\Exception $e){
-            return $this->generateJsonResponse(false, "Issues occured while sending emails.");
+            if($callFromBackend){
+                $this->setFlashSession(false , "Issues occured while updating the status.");
+                return redirect()->back();
+            } else {
+                return $this->generateJsonResponse(false, "Issues occured while updating the status.");
+            }
         }
     }
     public function showCommunityServicePdf($ticket){
@@ -2643,6 +2719,68 @@ class FrontController extends Controller
         $content = $this->getEventMetaDataByAi($event);
         return $this->generateJsonResponse(true, '', json_decode($content));
     }
+    public function resendWaiver($ticket){
+        $ticket = EventOrderTicket::find(decrypt($ticket));
+        if(!$ticket){
+            return $this->generateJsonResponse(false, 'Ticket not found.');
+        }
+        if($ticket->waiver_filled_at){
+            return $this->generateJsonResponse(false, 'Waiver has already been filled for this ticket.');
+        }
+        $volunteer = $ticket->volunteer;
+        if(!isset($volunteer->id)){
+            return $this->generateJsonResponse(false, 'Volunteer not found.');
+        }
+        $event = $ticket->event;
+        if(!$event){
+            return $this->generateJsonResponse(false, 'Event not found for this ticket.');
+        }
+        // send waiver email to volunteer
+        $email = $ticket->volunteer->email_address;
+        if(empty(trim($email))){
+            return $this->generateJsonResponse(false, 'Volunteer email address is not available.');
+        }
+        $to_arr = [];
+        if($ticket->is_under_18==1){
+            $email = $ticket->waiver_handler_email;
+            $name = $ticket->waiver_handler_name;
+        } else {
+            $email = $volunteer->email_address;
+            $name = $volunteer->first_name.' '.$volunteer->last_name;
+        }
+        if(!empty(trim($email))){
+            $subject = "Action Required : Sign Waiver for ".$event->event_name;
+            if($ticket->is_under_18==1){
+                $subject = "Action Required: ".$name.", Please Sign Waiver for ".$volunteer->first_name." – ".$event->event_name;
+            }
+            $to_arr[] = 
+            [
+                "to" => [
+                    ["email" => trim($email)]
+                    //["email" => 'learningdcm@gmail.com']
+                ],
+                "dynamic_template_data" => [
+                    "subject" => $subject,
+                    "is_under_18" => $ticket->is_under_18 == 1 ? true : false,
+                    "volunteer_name" => $volunteer->first_name.' '.$volunteer->last_name,
+                    "volunteer_email" => $volunteer->email_address,
+                    "guardian_name" => $ticket->waiver_handler_name,
+                    "guardian_email" => $ticket->waiver_handler_email,
+                    "event_name" =>  $event->event_name,
+                    'event_date' => $event->startTimeAndEndTime,
+                    'event_location' => $event->fullAddress,
+                    'organizer_name' => $event->creator->first_name.' '.$event->creator->last_name,
+                    'waiver_link' => $this->mailUrl('view-waiver-form', ['ticket' => encrypt($ticket->id)]),
+                    'event_link' => $this->mailUrl('view-event-details', ['slug' => $event->slug]),
+                ],
+            ];
+        }
+        if(!empty($to_arr)){
+            $this->sendSendgridTemplateEmailWithoutLog($to_arr,"d-1ef71dffbc644dce914ab333526c922d");
+            return $this->generateJsonResponse(true, 'Waiver email sent successfully.');
+        }
+        return $this->generateJsonResponse(false, 'Failed to send waiver email.');
+    }
     public function markBulkCheckinWithEmail($event_id){
         set_time_limit(0);
         ini_set('max_execution_time', 0);
@@ -2695,7 +2833,7 @@ class FrontController extends Controller
                 $value->update([
                     'checkin' => 1,
                 ]);
-                $email = $value->volunteer->email_address;
+                /* $email = $value->volunteer->email_address;
                 $name = $value->volunteer->first_name.' '.$value->volunteer->last_name;
                 if(!empty(trim($email))){
                     $to_arr[] = 
@@ -2717,15 +2855,15 @@ class FrontController extends Controller
                         "id" => $value->id,
                         "email" => trim($email)
                     ];
-                }
+                } */
             }
-            if(!empty($to_arr) && count($to_arr)>0){
+            /* if(!empty($to_arr) && count($to_arr)>0){
                 $to_arr_child = array_chunk($to_arr, 300);
                 $log_arr_child = array_chunk($log_arr, 300);
                 foreach ($to_arr_child as $key => $value) {
                     $this->sendSendgridTemplateEmailWithoutLog($value,"d-3badeebd9cfe40458f55935dd25aa41a");
                 }
-            }
+            } */
             return $this->generateJsonResponse(true, 'All volunteers has been marked as check-in successfully.');
         }
     }
@@ -2767,8 +2905,8 @@ class FrontController extends Controller
                             ["email" => trim($email)]
                             //["email" => 'learningdcm@gmail.com']
                         ],
-                        "subject" => $subject,
                         "dynamic_template_data" => [
+                            "subject" => $subject,
                             "is_under_18" => $value->is_under_18 == 1 ? true : false,
                             "volunteer_name" => $value->volunteer->first_name.' '.$value->volunteer->last_name,
                             "volunteer_email" => $value->volunteer->email_address,
@@ -2921,11 +3059,12 @@ class FrontController extends Controller
                                 ["email" => trim($email)]
                                 //["email" => 'learningdcm@gmail.com']
                             ],
-                            "subject" => "New date confirmed for ".$event->event_name." — see you soon 🌊",
                             "dynamic_template_data" => [
+                                "subject" => "New date confirmed for ".$event->event_name." — see you soon 🌊",
                                 "volunteer_name" => $name,
                                 "volunteer_email" => $email,
                                 'organizer_name' => $event->creator->name,
+                                "reschedule_reason" => !empty($validated['reschedule_note']) ? $validated['reschedule_note'] : false,
                                 "event_name" =>  $event->event_name,
                                 'event_date' => $event->startTimeAndEndTime,
                                 'event_location' => $event->fullAddress,
@@ -3611,6 +3750,55 @@ class FrontController extends Controller
             ->get();
         foreach ($organizers as $organizer) {
             $this->syncWithWP($organizer);
+        }
+    }
+    public function sendCancelEMail(){
+        $event = Event::find(1790);
+        $tickets = $event->tickets()->where('rsvp_confirmation', 1)->get();
+        echo '<pre>';
+        //echo $tickets->count();
+        //print_r($event->toArray());
+        if($tickets->isNotEmpty()){
+            $to_arr = [];
+            $log_arr = [];
+            foreach ($tickets as $key => $value) {
+                $email = $value->volunteer->email_address;
+                $name = $value->volunteer->first_name.' '.$value->volunteer->last_name;
+                if(!empty(trim($email)) && !in_array($email, $log_arr)){
+                    $to_arr[] = 
+                    [
+                        "to" => [
+                            ["email" => trim($email)]
+                        ],
+                        "dynamic_template_data" => [
+                            "volunteer_name" => $name,
+                        ],
+                    ];
+                    /* $log_arr[] = [
+                        "id" => $value->id,
+                        "email" => trim($email)
+                    ]; */
+                    $log_arr[] = trim($email);
+                }
+            }
+            $to_arr[] = 
+            [
+                "to" => [
+                    ["email" => 'learningdcm@gmail.com']
+                ],
+                "dynamic_template_data" => [
+                    "volunteer_name" => 'DEV USER',
+                ],
+            ];
+            print_r($log_arr);die();
+            /* if(!empty($to_arr) && count($to_arr)>0){
+                $to_arr_child = array_chunk($to_arr, 300);
+                $log_arr_child = array_chunk($log_arr, 300);
+                foreach ($to_arr_child as $key => $value) {
+                    $this->sendSendgridTemplateEmailWithoutLog($value,"d-90ce664df7e04903aca3bf79264b7db8");
+                }
+            } */
+            echo 'Email sent to all volunteers.';
         }
     }
 }

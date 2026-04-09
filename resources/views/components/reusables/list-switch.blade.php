@@ -1,6 +1,7 @@
 @php
     $fieldName = $field ?? "status";
-    $disabled = (isset($data->checkin) && $data->checkin==1)?'disabled':'';
+    //$disabled = (isset($data->checkin) && $data->checkin==1)?'disabled':'';
+    $disabled = '';
     $uId = (isset($id))?$id:'switch';
 @endphp
 <div class="square-switch">

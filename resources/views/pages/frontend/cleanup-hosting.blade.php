@@ -149,6 +149,11 @@ a[disabled]{
                                         class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-between row ">
                                         <h5 class="text-center">No cleanup found</h5>
                                         <p class="text-center m-0">You aren't currently organizing any ongoing cleanups. <br/>Start a new initiative to help your community!</p>
+                                        <div class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-center">
+                                            <a href="{{route('front-post-a-event')}}" class="primary-btn outlined">
+                                                Post A New Cleanup
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -158,6 +163,11 @@ a[disabled]{
                                         class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-between row">
                                         <h5 class="text-center">No cleanup found</h5>
                                         <p class="text-center m-0">You aren't currently organizing any upcoming cleanups. <br/>Start a new initiative to help your community!</p>
+                                        <div class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-center">
+                                            <a href="{{route('front-post-a-event')}}" class="primary-btn outlined">
+                                                Post A New Cleanup
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -167,6 +177,11 @@ a[disabled]{
                                         class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-between row">
                                         <h5 class="text-center">No cleanup found</h5>
                                         <p class="text-center m-0">You don't have any past cleanups. <br/>Start a new initiative to help your community!</p>
+                                        <div class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-center">
+                                            <a href="{{route('front-post-a-event')}}" class="primary-btn outlined">
+                                                Post A New Cleanup
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

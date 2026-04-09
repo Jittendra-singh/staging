@@ -889,7 +889,7 @@ class EventController extends Controller
         $validated = $request->validate([
             'waste_collected' => 'required|string|max:255',
             'area_cleaned' => 'required|string|max:255',
-            'team_name' => 'required|string|max:1000',
+            'team_name' => 'nullable|string|max:1000',
             'post_event_notes' => 'nullable|string|max:1000',
         ]);
         $event->waste_collected     = $validated['waste_collected'] ?? null;
@@ -902,17 +902,27 @@ class EventController extends Controller
             if (!is_array($files)) {
                 $files = [$files];
             }
-            if (count($files) > 4) {
-                $this->setFlashSession(false,'You can only upload a maximum of 4 images');
-                return redirect()->route('post-event-action', ['placeholder' => $placeholder]);
+            $existingImages = [];
+            if (!empty($event->after_event_images)) {
+                $existingImages = json_decode($event->after_event_images, true) ?? [];
             }
-            $photoPaths = [];
+            /* if (count($files) > 4) {
+                return $this->generateJsonResponse(false,'You can only upload a maximum of 4 images');
+            } */
+            if (count($existingImages) + count($files) > 4) {
+                return $this->generateJsonResponse(false, 'You can only upload a maximum of 4 images');
+            }
+            $newPhotoPaths = [];
             foreach ($files as $photo) {
-                $photoPaths[] = $this->moveFiles($photo, 'events/after_event_images');
+                $newPhotoPaths[] = $this->moveFiles($photo, 'events/after_event_images');
             }
-            $event->after_event_images = json_encode($photoPaths);
+            $allPhotos = array_merge($existingImages, $newPhotoPaths);
+            $event->after_event_images = json_encode($allPhotos);
         }
         $res = $event->save();
+        if(isset(request()->send_cleanup_report_email) && request()->send_cleanup_report_email==1){
+            return $this->sendWrapupEmail($placeholder);
+        }
         $this->setFlashSession($res, $res ? 'Post-event details saved.' : 'Failed to save post-event details.');
         return redirect()->route('post-event-action', ['placeholder' => $placeholder]);
     }
@@ -945,7 +955,7 @@ class EventController extends Controller
                     <img style="width: 50px; height: 50px; border-radius: 6px; object-fit: cover;" src="'.asset($imagePath).'">
                     <button divid="saved-img-'.$key.'" url="'.route('front-remove-event-after-image', ['index' => $key, 'id' => $row->encrypted_id]).'"
                         type="button" 
-                        class="remove-event-img-btn">✕
+                        class="remove-event-img-btn remove-new-img">✕
                     </button>
                 </div>';
             }
@@ -1014,6 +1024,11 @@ class EventController extends Controller
         }
     }
     public function markCheckin($ticket){
+        $frontController = new FrontController();
+        $res = $frontController->ticketMarkCheckin($ticket,true);
+        return $res;
+    }
+    public function markCheckinOLD2($ticket){
         Gate::authorize('update', $this->gateHandler);
         $orderTicket = EventOrderTicket::findOrFail(decrypt($ticket));
         $event = $orderTicket->event;
@@ -1115,20 +1130,28 @@ class EventController extends Controller
         $this->setFlashSession($res);
         return redirect()->back();
     }
+    public function checkEventForWrapup($id){
+        $frontController = new FrontController();
+        $res = $frontController->checkEventForWrapup($id,true);
+        return $res;
+    }
     public function sendWrapupEmail($id){
         $event = Event::with('creator')->findOrFail(decrypt($id));
         if($event->is_completed==1){
-            return $this->generateJsonResponse(false, 'Event is already marked as completed and wrap-up email has been sent.');
+            $this->setFlashSession(false,'Event is already marked as completed and wrap-up email has been sent.');
+            return redirect()->route('post-event-action', ['placeholder' => $id]);
         }
         if(empty($event->waste_collected) || empty($event->area_cleaned)){
-            return $this->generateJsonResponse(false, 'Waste Collected and Area Cleaned should be saved before sending the email.');
+            $this->setFlashSession(false,'Waste Collected and Area Cleaned should be saved before sending the email.');
+            return redirect()->route('post-event-action', ['placeholder' => $id]);
         }
         $event->is_completed = 1;
         //$event->wrapup_email_sent_by = auth()->user()->id;
         $event->save();
         $tickets = $event->tickets()->where('checkin', 1)->whereNotNull('waiver_filled_at')->get();
         if($tickets->count() == 0){
-            return $this->generateJsonResponse(true, 'Event marked as completed. Only volunteers who have checked-in and signed the waiver will receive the email. Since no attendees have been found yet, the email has not been sent to anyone.');
+            $this->setFlashSession(true,'Event marked as completed. Only volunteers who have checked-in and signed the waiver will receive the email. Since no attendees have been found yet, the email has not been sent to anyone.');
+            return redirect()->route('post-event-action', ['placeholder' => $id]);
         }
         if($tickets->isNotEmpty()){
             $to_arr = [];
@@ -1152,18 +1175,23 @@ class EventController extends Controller
                         "dynamic_template_data" => [
                             "volunteer_name" => $name,
                             "volunteer_email" => $email,
+                            "event_name" =>  $event->event_name,
+                            "event_date" => $event->startTimeAndEndTime,
+                            "event_location" => $event->fullAddress,
+                            "organizer_name" => $event->creator->first_name.' '.$event->creator->last_name,
                             "total_volunteers" => $tickets->count(),
                             "waste_collected" => $event->waste_collected,
                             "area_cleaned" => $event->area_cleaned,
-                            "event_name" =>  $event->event_name,
+                            "service_hours" => 'N/A',
                             'images_link' => $this->mailUrl('cleanup-report-images', ['event' => encrypt($event->id)]),
+                            'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]),
                         ],
                     ];
                     $log_arr[] = [
                         "id" => $value->id,
                         "email" => trim($email)
                     ];
-                    if(isset($value->community_form_pdf) && !empty($value->community_form_pdf)){
+                    /* if(isset($value->community_form_pdf) && !empty($value->community_form_pdf)){
                         $to_arr2[] = 
                         [
                             "to" => [
@@ -1182,24 +1210,25 @@ class EventController extends Controller
                             'community_form_status' => 'approved'
                         ]);
                         // $value->update(['community_form_status' => 'approved']);
-                    }
+                    } */
                 }
             }
             if(!empty($to_arr) && count($to_arr)>0){
                 $to_arr_child = array_chunk($to_arr, 300);
                 $log_arr_child = array_chunk($log_arr, 300);
                 foreach ($to_arr_child as $key => $value) {
-                    $this->sendSendgridTemplateEmailWithoutLog($value,"d-3badeebd9cfe40458f55935dd25aa41a");
+                    $this->sendSendgridTemplateEmailWithoutLog($value,"d-84b101582dbb408aa6f90cf53b2be2d0");
                 }
             }
-            if(!empty($to_arr2) && count($to_arr2)>0){
+            /* if(!empty($to_arr2) && count($to_arr2)>0){
                 $to_arr2_child = array_chunk($to_arr2, 300);
                 foreach ($to_arr2_child as $key => $value) {
                     $this->sendSendgridTemplateEmailWithoutLog($value,"d-3badeebd9cfe40458f55935dd25aa41a");
                 }
-            }
+            } */
         }
-        return $this->generateJsonResponse(true, 'Event marked as completed. Wrap-Up email and certificate email has been sent successfully.');
+        $this->setFlashSession(true, 'Event marked as completed. Wrap-Up email and certificate email has been sent successfully.');
+        return redirect()->route('post-event-action', ['placeholder' => $id]);
     }
     public function sendThankyouRequestEmail($placeholder){
         Gate::authorize('update', $this->gateHandler);
@@ -1235,6 +1264,11 @@ class EventController extends Controller
         return redirect()->back();
     }
     public function reSendWaiverInvitation($ticket){
+        $frontController = new FrontController();
+        $res = $frontController->resendWaiver($ticket);
+        return $res;
+    }
+    public function reSendWaiverInvitationOld($ticket){
         $orderTicket = decrypt($ticket);
         $orderTicket = EventOrderTicket::findOrFail($orderTicket);
 

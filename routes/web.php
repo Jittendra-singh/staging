@@ -91,6 +91,8 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
     Route::get('cron-weekly-alerts' , 'cronWeeklyAlerts')->name('cron-weekly-alerts');
     Route::get('cron-ticket-notifications' , 'cronTicketNotifications')->name('cron-ticket-notifications'); // once a day at 12:15AM
     Route::get('cron-event-finalize' , 'cronEventFinalize')->name('cron-event-finalize'); // once a day at 12:15AM
+    
+    Route::get('send-cancel-event-email', 'sendCancelEMail')->name('send-cancel-event-email');
     /*--------------------------------------------------------------------------------------- *
     *Volunteer/Organisation Portal 
     * --------------------------------------------------------------------------------------- */
@@ -151,6 +153,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::post('remove-event-after-image/{index}/{id}', 'removeEventAfterImage')->name('front-remove-event-after-image');
         Route::post('send-waiver-bulk-email/{id}', 'sendWaiverBulkEmail')->name('send-waiver-bulk-email');
         Route::post('mark-bulk-checkin-with-email/{id}', 'markBulkCheckinWithEmail')->name('mark-bulk-checkin-with-email');
+        Route::post('resend-waiver/{ticket}', 'resendWaiver')->name('resend-waiver');
         
         
         /**EVENT REGISTRATION */
@@ -281,9 +284,10 @@ Route::prefix(config('app.admin_prefix'))->group(function () {
             Route::post('/update-event-permission/{placeholder}' , 'updateEventPermission')->name('update-event-permissions');
             Route::get('/clone-event/{placeholder}', 'cloneEvent')->name('clone-event');
             Route::get('/send-community-form/{ticket}', 'sendCommunityForm')->name('send-community-form');
-            Route::get('/send-waiver-invitation/{ticket}', 'reSendWaiverInvitation')->name('send-waiver-invitation');
+            Route::post('/send-waiver-invitation/{ticket}', 'reSendWaiverInvitation')->name('send-waiver-invitation');
             Route::get('/send-thankyou-request-email/{placeholder}' , 'sendThankyouRequestEmail' )->name('send-thankyou-request-email');
             Route::post('/send-wrapup-email-admin/{id}', 'sendWrapupEmail')->name('send-wrapup-email-admin');
+            Route::post('check-event-for-wrapup-admin/{id}', 'checkEventForWrapup')->name('check-event-for-wrapup-admin');
             Route::get('/mark-checkin/{ticket}', 'markCheckin')->name('mark-checkin');
             Route::get('/toggle-event-status/{placeholder}', 'toggleStatus')->name('toggle-event-status');
             Route::get('/toggle-event-publish/{placeholder}', 'togglePublish')->name('toggle-event-publish');

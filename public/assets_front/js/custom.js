@@ -2625,8 +2625,9 @@ $(document).ready(function () {
 		});
 	});
 	$(document).on('click', '.show-alert-run-url', function () {
-		var message = $(this).attr('message');
-		var url = $(this).attr('url');
+		var control = this;
+		var message = $(control).attr('message');
+		var url = $(control).attr('url');
 		Swal.fire({
 			title: "Are you sure?",
 			text: message,
@@ -2637,11 +2638,13 @@ $(document).ready(function () {
 			confirmButtonText: 'Yes'
 		}).then((willDelete) => {
 			if (willDelete.isConfirmed) {
+				$(control).attr('disabled', 'disabled');
 				$.ajax({
 					url: url,
 					method: 'POST',
 					data: {},
 					success: function (response) {
+						$(control).removeAttr('disabled');
 						if (response.status) {
 							showError(response.message, 'success');
 						}

@@ -831,35 +831,6 @@ $(document).ready(function () {
 			}
 		});
 	});
-	$(document).on('click', '.show-alert-run-url', function () {
-		var message = $(this).attr('message');
-		var url = $(this).attr('url');
-		Swal.fire({
-			title: "Are you sure?",
-			text: message,
-			icon: "warning",
-			showCancelButton: true,
-			confirmButtonColor: '#3085d6',
-			cancelButtonColor: '#d33',
-			confirmButtonText: 'Yes'
-		}).then((willDelete) => {
-			if (willDelete.isConfirmed) {
-				$.ajax({
-					url: url,
-					method: 'POST',
-					data: {},
-					success: function (response) {
-						if (response.status) {
-							showError(response.message, 'success');
-						}
-						else {
-							showError(response.message, 'error');
-						}
-					}
-				});
-			}
-		});
-	});
       
 	$('#reschedule_now_btn').click(function () {
 		const form = document.getElementById('rescheduleEventForm');
@@ -883,6 +854,170 @@ $(document).ready(function () {
 			}
 		});
 	});
+	$(document).on('click', '.show-alert-run-url', function () {
+		var control = this;
+		var message = $(control).attr('message');
+		var url = $(control).attr('url');
+		Swal.fire({
+			title: "Are you sure?",
+			text: message,
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonColor: '#3085d6',
+			cancelButtonColor: '#d33',
+			confirmButtonText: 'Yes'
+		}).then((willDelete) => {
+			if (willDelete.isConfirmed) {
+				$(control).attr('disabled', 'disabled');
+				$.ajax({
+					url: url,
+					method: 'POST',
+					data: {},
+					success: function (response) {
+						$(control).removeAttr('disabled');
+						if (response.status) {
+							showError(response.message, 'success');
+						}
+						else {
+							showError(response.message, 'error');
+						}
+					}
+				});
+			}
+		});
+	});
+      
+	$('.submit-send-wrapup-btn').on('click', function () {
+		/* if($('#waste_collected').val()==''){
+			showError('Please enter the waste collected value', 'error');
+			$('#waste_collected').focus();
+			return false;
+		}
+		if($('#area_cleaned').val()==''){
+			showError('Please enter the area cleaned value', 'error');
+			$('#area_cleaned').focus();
+			return false;
+		} */
+		var control = this;
+		var url = $(this).attr('url');
+		$(control).attr('disabled', 'disabled');
+		$(control).text('Finalizing...');
+		$.ajax({
+			url: url,
+			method: 'POST',
+			data: {},
+			success: function (response) {
+				if (response.status) {
+					Swal.fire({
+						title: "Before You Submit",
+						//text: response.data,
+						html: response.data,
+						icon: "warning",
+						showCancelButton: true,
+						confirmButtonColor: '#3085d6',
+						cancelButtonColor: '#d33',
+						confirmButtonText: 'Submit Anyway'
+					}).then((willDelete) => {
+						if (willDelete.isConfirmed) {
+							$('#send_cleanup_report_email').val(1);
+							$('#submit-cleanup-report-btn').trigger('click');
+						} else {
+							$(control).removeAttr('disabled');
+							$(control).text('Save & Finalize Cleanup Report');
+						}
+					});
+				}
+				else {
+					$(control).removeAttr('disabled');
+					$(control).text('Save & Finalize Cleanup Report');
+					showError(response.message, 'error');
+				}
+			}
+		});
+	});
+	if($('#after_event_images').length){
+		const MAX_IMAGES = 4;
+		let selectedFiles = [];
+
+		// Preview new images on select
+		$('#after_event_images').on('change', function () {
+			const self = this;
+			const newFiles = Array.from(this.files);
+			const savedCount = $('#savedImages .position-relative').length;
+			const validCount = selectedFiles.filter(f => f !== null).length;
+			const totalAllowed = MAX_IMAGES - savedCount - validCount;
+
+			if (totalAllowed <= 0) {
+				showError('You can only upload a maximum of 4 images.', 'error');
+				$(self).val(''); // safe to clear because rebuildFileInput() will restore valid files
+				rebuildFileInput(); // restore previously selected valid files back to input
+				return;
+			}
+
+			let added = 0;
+			let limitReached = false;
+
+			newFiles.forEach(function (file) {
+				if (added >= totalAllowed) {
+					if (!limitReached) {
+						showError('You can only upload a maximum of 4 images.', 'error');
+						limitReached = true;
+					}
+					return;
+				}
+
+				const reader = new FileReader();
+				const index = selectedFiles.length;
+				//var index = Math.floor(10000 + Math.random() * 90000);
+				selectedFiles.push(file);
+				added++;
+
+				reader.onload = function (e) {
+					const wrapper = `
+						<div class="position-relative me-3 mt-2" id="new-img-${index}">
+							<img src="${e.target.result}" style="width:50px;height:50px;border-radius:6px;object-fit:cover;">
+							<button type="button" class="remove-new-img" data-index="${index}">✕</button>
+						</div>
+					`;
+
+					/* if ($('#savedImages').length === 0) {
+						$('#after_event_images').closest('.form-group').append(
+							'<div id="savedImages" class="d-flex flex-wrap align-items-center mt-2"></div>'
+						);
+					}
+					$('#savedImages').append(wrapper); */
+					if ($('#newImagePreview').length === 0) {
+						$('#after_event_images').closest('.form-group').append(
+							'<div id="newImagePreview" class="d-flex flex-wrap align-items-center mt-2"></div>'
+						);
+					}
+					$('#newImagePreview').append(wrapper);
+				};
+
+				reader.readAsDataURL(file);
+			});
+
+			rebuildFileInput();
+		});
+
+		// Remove newly selected (unsaved) image
+		$(document).on('click', '.remove-new-img', function () {
+			const index = parseInt($(this).data('index'));
+			selectedFiles[index] = null;
+			$('#new-img-' + index).remove();
+			rebuildFileInput();
+		});
+
+		// Rebuild file input after removal using DataTransfer
+		function rebuildFileInput() {
+			const validFiles = selectedFiles.filter(f => f !== null);
+			const dataTransfer = new DataTransfer();
+			validFiles.forEach(function (file) {
+				dataTransfer.items.add(file);
+			});
+			$('#after_event_images')[0].files = dataTransfer.files;
+		}
+	}
 });
 function callImaskForEmail(id) {
       IMask(document.getElementById(id), {

@@ -20,8 +20,13 @@
 @section('css')
     <x-reusables.datatablecss />
     <style>
-    
-    .remove-event-img-btn {
+    #swal2-html-container{
+        text-align: left;
+    }
+    #swal2-html-container ul{
+        list-style-type: none;
+    }
+    .remove-new-img {
         position: absolute;
         top: -5px;
         right: -5px;
@@ -40,7 +45,7 @@
         line-height: 1;
     }
 
-    .remove-event-img-btn:hover {
+    .remove-new-img:hover {
         background: #b02a37;
     }
     </style>
@@ -76,28 +81,30 @@
                                     @if(!$data->pivot->event->waiver_form_type)
                                         <span class="text-primary">No Waiver</span>
                                     @elseif($data->pivot->waiver_filled_at)
-                                        Signed By: 
-                                        {{ $data->pivot->waiver_handler_name.' ('.$data->pivot->waiver_handler_email.')' }}<br/>
-                                        Signed At:
+                                        <!-- Signed By: 
+                                        {{ $data->pivot->waiver_handler_name.' ('.$data->pivot->waiver_handler_email.')' }}<br/> -->
+                                        Signed At (<i data-bs-toggle="tooltip" data-bs-original-title="{{ $data->pivot->waiver_handler_name.' ('.$data->pivot->waiver_handler_email.')' }}" class="mdi mdi-account"></i>):<br/>
                                         {{ $data->pivot->waiver_filled_at->format(config('app.dateTimeFormat')) }}<br/>
                                     @else
                                         @if(!empty($data->pivot->waiver_handler_email))
-                                        Signed By: 
-                                        {{ $data->pivot->waiver_handler_name.' ('.$data->pivot->waiver_handler_email.')' }}<br/>
+                                        <!-- Signed By: 
+                                        {{ $data->pivot->waiver_handler_name.' ('.$data->pivot->waiver_handler_email.')' }}<br/> -->
                                         @endif
-                                        Signed At: <span class="text-danger">Pending</span><br/>
+                                        Signed At (<i data-bs-toggle="tooltip" data-bs-original-title="{{ $data->pivot->waiver_handler_name.' ('.$data->pivot->waiver_handler_email.')' }}" class="mdi mdi-account"></i>):<br/> <span class="text-danger">Pending</span> 
+                                        <a href="{{ route('view-waiver-form', encrypt($data->pivot->id)) }}" target="_blank" data-bs-toggle="tooltip" data-bs-original-title="Waiver Page Link" target="_blank"><span class="badge bg-warning"><i class="mdi mdi-link-variant"></i></span></a> 
+                                        <a href="javascript:void(0);" url="{{ route('send-waiver-invitation', ['ticket' => $data->pivot->encrypted_id]) }}" message="You want to resend email for waiver" data-bs-toggle="tooltip" data-bs-original-title="Resend Waiver Email" class="show-alert-run-url"><span class="badge bg-info"><i class="mdi mdi-email-send"></i></span></a><br/>
                                     @endif
                                     @if($data->pivot->rsvp_confirmation===0)
-                                    RSVP: <span class="text-danger">Cancelled</span>
+                                    <br/>RSVP: <span class="text-danger">Cancelled</span>
                                     @elseif($data->pivot->rsvp_confirmation==1)
-                                    RSVP: Registered
+                                    <br/>RSVP: Confirmed
                                     @else
-                                    RSVP: <span class="text-danger">Pending</span>
+                                    <br/>RSVP: <span class="text-danger">Pending</span>
                                     @endif 
                                 </td>
                                 
                                 <td>
-                                    @if($data->pivot->checkin==1)
+                                    @if($data->pivot->checkin==1 && $data->pivot->community_form_status=='approved')
                                     <a class="btn btn-sm" href="{{ $data->pivot->community_form_pdf }}" download>Download PDF</a>
                                     @elseif(strtotime(date('Y-m-d H:i:s')) < strtotime($data->pivot->event->eventEndDateTime))
                                     <span class="text-danger">Awaiting</span>
@@ -105,6 +112,8 @@
                                     <span class="text-danger">Pending</span>
                                     @elseif($data->pivot->checkin!=1 && $data->pivot->community_form_status=='requested') 
                                     <span class="text-danger">Requested</span>
+                                    @elseif($data->pivot->checkin==1 && $data->pivot->community_form_status!='approved') 
+                                    <span class="text-danger">Wrap-up Pending</span>
                                     @endif
 
                                     <!-- @if($data->pivot->event->allow_community_service_form)
@@ -190,6 +199,7 @@
                     <x-reusables.frontend.alert />
                     <form method="post" action="{{ route('save-after-event-action', ['placeholder' => $event->encrypted_id]) }}" enctype="multipart/form-data">
                         @csrf
+                        <input type="hidden" id="send_cleanup_report_email" name="send_cleanup_report_email" value="0">
                         <div class="row">
                             <div class="col-md-6 mb-2">
                                 <!-- <div class="form-group">
@@ -217,9 +227,9 @@
                             </div>
                             <div class="col-md-6 mb-2">
                                 <div class="form-group">
-                                    <label for="">Team Name*</label>
+                                    <label for="">Team Name</label>
                                     <input type="text" value="{{ $event->team_name }}" class="form-control"
-                                        name="team_name" placeholder="Team Name" required />
+                                        name="team_name" placeholder="Team Name" />
                                 </div>
                             </div>
                             <div class="col-md-6 mb-2">
@@ -240,9 +250,9 @@
                                                 @php 
                                                 $images = !empty($event->after_event_images) ? json_decode($event->after_event_images) : null;
                                                 @endphp 
+                                                <div class="d-flex flex-wrap align-items-center mt-2" >
                                                 <div class="d-flex flex-wrap align-items-center mt-2" id="savedImages">
                                                     @if(!empty($images))
-                                                    <span class="me-2">Images:</span>
                                                     @foreach($images as $key => $image)
                                                         @php
                                                             $imagePath = is_object($image) ? $image->path : $image;
@@ -251,11 +261,14 @@
                                                             <img style="width: 50px; height: 50px; border-radius: 6px; object-fit: cover;" src="{{ asset($imagePath) }}">
                                                             <button divid="saved-img-{{ $key }}" url="{{ route('remove-after-event-image', ['index' => $key, 'id' => $event->encrypted_id??0]) }}"
                                                                 type="button" 
-                                                                class="remove-event-img-btn">✕
+                                                                class="remove-event-img-btn remove-new-img">✕
                                                             </button>
                                                         </div>
                                                     @endforeach
                                                     @endif
+                                                </div>
+                                                <div class="d-flex flex-wrap align-items-center mt-2" id="newImagePreview">
+                                                </div>
                                                 </div>
                                             @endif 
                                         </div>
@@ -264,7 +277,7 @@
                             </div>
                             <div class="col-12 text-center mt-2">
                                 <a href="{{ url()->current() }}" class="btn btn-secondary ms-2">Reset</a>
-                                <button type="submit" class="btn btn-primary ms-2">Submit</button>
+                                <button id="submit-cleanup-report-btn" type="submit" class="btn btn-primary ms-2">Save</button>
                                 @if($event->is_completed==1)
                                     @if(isset($event->wrapup_email_sender) && isset($event->wrapup_email_sender->id))
                                     <p class="text-sm text-primary mt-2">Wrap-Up Email sent by: {{ $event->wrapup_email_sender->first_name.' '.$event->wrapup_email_sender->last_name }}.</p>
@@ -272,10 +285,11 @@
                                     <p class="text-sm text-primary mt-2">Wrap-Up Email has been sent.</p>
                                     @endif 
                                 @else 
-                                <button type="button" {{ !$event->afterActionDone()?'disabled':'' }} ajaxurl="{{route('send-wrapup-email-admin',$event->encrypted_id ?? 0)}}" event_id="{{ $event->encrypted_id ?? 0 }}" class="btn btn-primary ms-2 send-thankyou-request-email-btn">Finalize & Send Wrap-up Email</button>
+                                <!-- <button type="button" {{ !$event->afterActionDone()?'disabled':'' }} ajaxurl="{{route('send-wrapup-email-admin',$event->encrypted_id ?? 0)}}" event_id="{{ $event->encrypted_id ?? 0 }}" class="btn btn-primary ms-2 send-thankyou-request-email-btn">Finalize & Send Wrap-up Email</button> -->
+                                <button type="button" url="{{route('check-event-for-wrapup-admin',$event->encrypted_id ?? 0)}}" class="btn btn-primary ms-2 submit-send-wrapup-btn">Save & Finalize Cleanup Report</button>
                                 @endif
                                 @if (!$event->afterActionDone())
-                                <p class="text-sm text-primary mt-2">Note: Save Waste Collected and Area Cleaned data to send the wrap-up email and certificate email to all volunteers.</p>
+                                <!-- <p class="text-sm text-primary mt-2">Note: Save Waste Collected and Area Cleaned data to send the wrap-up email and certificate email to all volunteers.</p> -->
                                 @endif
                             </div>
                         </div>
