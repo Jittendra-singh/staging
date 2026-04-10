@@ -202,7 +202,8 @@ class FrontController extends Controller
         return view('pages.frontend.dashboard', $data);
     }
     public function cleanupAttending(){
-        $attending_events = auth()->guard('front')->user()->attendingEvents()
+        //$attending_events = auth()->guard('front')->user()->attendingEvents()
+        $attending_events = auth()->guard('front')->user()->attendingEventsWithoutActive()
                                 ->where(function($q){
                                     if(request()->search){
                                         $q->where("event_name","LIKE", "%".request()->search."%");
@@ -235,7 +236,8 @@ class FrontController extends Controller
         $cohostEventCount = auth()->guard('front')->user()->cohostingEvents()->active()->count();
         $hostingEventCount = auth()->guard('front')->user()->events()->active()->count();
 
-        $hosting_events = $hosting_events_builder->orderBy('start_datetime','desc')->active()->paginate(20)->withQueryString();
+        //$hosting_events = $hosting_events_builder->orderBy('start_datetime','desc')->active()->paginate(20)->withQueryString();
+        $hosting_events = $hosting_events_builder->orderBy('start_datetime','desc')->paginate(20)->withQueryString();
         //echo $hostingEventCount;
         //print_r($hosting_events->toArray());
         //die();
@@ -1293,8 +1295,8 @@ class FrontController extends Controller
             'event_id'           => 'required',
             'waste_collected'    => 'required|max:255',
             'area_cleaned'       => 'required|max:255',
-            'team_name'          => 'nullable|string',
-            'post_event_notes'   => 'nullable|string',
+            'team_name'          => 'required|string',
+            'post_event_notes'   => 'required|string',
         ]);
 
         try {
@@ -1581,6 +1583,9 @@ class FrontController extends Controller
     }
     public function sendWrapupEmail($id,$submitAsForm=false){
         $event = Event::with('creator')->findOrFail(decrypt($id));
+        if($event->is_active!=1){
+            return $this->generateJsonResponse(false, 'Event is not active, contact admin for more details.');
+        }
         if($event->is_completed==1){
             return $this->generateJsonResponse(false, 'Event is already marked as completed and wrap-up email has been sent.');
         }
@@ -1640,7 +1645,7 @@ class FrontController extends Controller
                             "waste_collected" => $event->waste_collected,
                             "area_cleaned" => $event->area_cleaned,
                             "service_hours" => 'N/A',
-                            'images_link' => $this->mailUrl('cleanup-report-images', ['event' => encrypt($event->id)]),
+                            'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
                             'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]),
                         ],
                     ];
@@ -1739,6 +1744,9 @@ class FrontController extends Controller
         ]);
         try {
             $event = Event::findOrFail(decrypt($validated['event_id']));
+            if($event->is_active!=1){
+                return $this->generateJsonResponse(false, 'You can not change the publish status of a non-active event.');
+            }
             if($validated['status']=='draft'){
                 $tickets = $event->tickets()->where('rsvp_confirmation', 1)->get();
                 if($tickets->count() > 0){
@@ -1919,6 +1927,7 @@ class FrontController extends Controller
                 $this->sendEmail($event->creator->email_address, $sub, $emailData, "request-community-service-form");
                 $orderTicket->community_form_status = 'requested';
                 $orderTicket->checkin = 0;
+                $orderTicket->certificate_requested_at = date('Y-m-d H:i:s');
                 $orderTicket->save();
                 return $this->generateJsonResponse(true, 'Request email has been sent to organizer for your community service form.');
             }catch(\Exception $e){
@@ -2023,7 +2032,7 @@ class FrontController extends Controller
                                         "waste_collected" => $event->waste_collected,
                                         "area_cleaned" => $event->area_cleaned,
                                         "service_hours" => 'N/A',
-                                        'images_link' => $this->mailUrl('cleanup-report-images', ['event' => encrypt($event->id)]),
+                                        'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
                                         'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($orderTicket->id)]),
                                     ],
                                 ];
@@ -2232,6 +2241,12 @@ class FrontController extends Controller
 
         $this->setFlashSession(true, 'Organization details updated successfully.');
         return redirect()->back();
+    }
+    public function certificateRequests(){
+        $data = [];
+        $data['events'] = auth()->guard('front')->user()->participatedEvents()->distinct()->get();
+        $data['seo_details'] = (object)['title' => 'Certificate Requests'];
+        return view('pages.frontend.certificate-requests', $data); 
     }
     public function embeddedWidget()
     {

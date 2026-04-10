@@ -121,6 +121,39 @@ class Volunteer extends Authenticatable
             $q->active();
         });
     }
+    public function attendingEventsWithoutActive(){
+        return $this->participatedEvents()
+        ->withPivot([
+            'id',
+            'order_id',
+            'event_id',
+            'volunteer_id',
+            'ticket_number',
+            'price',
+            'ticket_id',
+            'status',
+            'extra_notes',
+            'checkin',
+            'ticket_answer',
+            'created_at',
+            'updated_at',
+            'community_form_status',
+            'community_form_pdf',
+            'hours_completed',
+            'activity_description',
+            'participation_proof',
+            'additional_notes',
+            'waiver_filled_at',
+            'waiver_handler_email',
+            'waiver_handler_name',
+            'rsvp_confirmation',
+            'rsvp_filled_at',
+            'is_under_18',
+            'signature',
+            'ticket_status'
+        ])
+        ->using(EventOrderTicket::class);
+    }
     public function participatedEvents(){
         return $this->belongsToMany(Event::class, 'event_order_tickets', 'volunteer_id', 'event_id');
     }

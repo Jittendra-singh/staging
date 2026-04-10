@@ -1384,22 +1384,27 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                         <div class="row mt-3">
                                                             <div class="col-sm-6">
                                                                 <div class="form-group">
-                                                                    <label class="form-label fs-6">Team Name</label>
-                                                                    <input id="team_name" class="form-control h_50" type="text" value="{{ old('team_name', $form_data->team_name ?? '') }}" name="team_name" placeholder="" value="">
+                                                                    <label class="form-label fs-6">Team Name*</label>
+                                                                    <input id="team_name" class="form-control h_50" type="text" value="{{ old('team_name', $form_data->team_name ?? '') }}" name="team_name" placeholder="" required>
                                                                 </div>
                                                             </div>
                                                             <div class="col-sm-6">
                                                                 <div class="form-group">
-                                                                    <label class="form-label fs-6">Post Event Narrative</label>
-                                                                    <input id="post_event_notes" class="form-control h_50" type="text" value="{{ old('post_event_notes', $form_data->post_event_notes ?? '') }}" name="post_event_notes" placeholder="" value="">
+                                                                    <label class="form-label fs-6">Post Event Narrative*</label>
+                                                                    <input id="post_event_notes" class="form-control h_50" type="text" value="{{ old('post_event_notes', $form_data->post_event_notes ?? '') }}" name="post_event_notes" placeholder="" required>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                         <div class="row mt-3">
                                                             <div class="col-sm-6">
                                                                 <div class="form-group">
-                                                                    <label class="form-label fs-6">Images <small class="text-muted"> (max 4 images allowed)</small></label>
-                                                                    <input style="line-height: 3;" id="after_event_images" class="form-control h_50" type="file" name="after_event_images[]" accept="image/*" multiple>
+                                                                    @if(isset($form_data) && isset($form_data->id) && isset($form_data->after_event_images) && !empty($form_data->after_event_images))
+                                                                        @php 
+                                                                        $images = !empty($form_data->after_event_images) ? json_decode($form_data->after_event_images) : null;
+                                                                        @endphp 
+                                                                    @endif
+                                                                    <label class="form-label fs-6">Images* <small class="text-muted"> (max 4 images allowed)</small></label>
+                                                                    <input style="line-height: 3;" id="after_event_images" class="form-control h_50" type="file" name="after_event_images[]" accept="image/*" multiple {{ (isset($images) && !empty($images)) ? '' : 'required' }}>
 
                                                                     @if(isset($form_data) && isset($form_data->id) && isset($form_data->after_event_images) && !empty($form_data->after_event_images))
                                                                         @php 

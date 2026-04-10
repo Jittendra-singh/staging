@@ -1339,6 +1339,16 @@ $(document).ready(function () {
 			$('#area_cleaned').focus();
 			return false;
 		}
+		if($('#team_name').val()==''){
+			showError('Please enter the team name', 'error');
+			$('#team_name').focus();
+			return false;
+		}
+		if($('#post_event_notes').val()==''){
+			showError('Please enter the post event notes', 'error');
+			$('#post_event_notes').focus();
+			return false;
+		}
 		var control = this;
 		var url = $(this).attr('url');
 		$(control).attr('disabled', 'disabled');
@@ -2140,7 +2150,7 @@ $(document).ready(function () {
 			success: function (response) {
 				if (response.status) {
 					showError(response.message, 'success');
-					$(control).after('<h6 class="coupon-status"><span class="badge custom-badge-danger">Requested</span></h6>');
+					$(control).after('<h6 class="coupon-status"><span class="badge custom-badge-warning">Requested</span></h6>');
 					$(control).remove();
 				}
 				else {

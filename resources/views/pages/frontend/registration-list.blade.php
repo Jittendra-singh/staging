@@ -36,12 +36,14 @@
 											<div class="filter-input-wrap">
 												<i class="fa fa-search filter-icon"></i>
 												<select class="selectpicker filter-field" name="event" data-live-search="true" title="Find an event by name...">
+                                                @if(isset($events) && $events->isNotEmpty())
 													@foreach($events as $event)
 														<option value="{{ $event->id }}" @selected(request()->event == $event->id)
 															data-content="{{ $event->event_name }}<br/><small class='p-0'>{{ date('M d, Y h:i A', strtotime($event->start_datetime)) }} - {{ date('M d, Y h:i A', strtotime($event->end_datetime)) }}</small>">
 															{{ $event->event_name }}
 														</option>
 													@endforeach
+												@endif
 												</select>
 											</div>
 										</div>

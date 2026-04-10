@@ -134,7 +134,12 @@
 														</div>
 														<div class="card-event-dt">
 															<h5 class="m-0">{{ $event->event_name }}</h5>
-															<p>{{ $event->fullAddress }}</p>
+															<p class="m-0">{{ $event->fullAddress }}</p>
+															@if($event->is_active!=1)
+															<h6 class="coupon-status">
+																<span class="badge custom-badge-danger 1">Not Active</span>
+															</h6>
+															@endif
 														</div>
 													</div>
 													
@@ -151,7 +156,7 @@
 																data-registration='@json($data_registration)'  >
 																<i class="fa-solid fa-gear me-3"></i>Ticket Details
 															</a>				
-															@if(!empty($event->waiver_form_type) && !$registration->is_under_18 && $registration->rsvp_confirmation!==0)	
+															@if(!empty($event->waiver_form_type) && !$registration->is_under_18 && $registration->rsvp_confirmation!==0 && $event->is_active==1)	
 															<a class="dropdown-item" target="_blank" href="{{route('view-waiver-form', ['ticket' => encrypt($registration->id)])}}"><i class="fa-solid fa-link me-3"></i>
 																@if(!empty($registration->waiver_filled_at))
 																View Waiver
@@ -273,7 +278,7 @@
 															<i class="fa-solid fa-certificate"></i>
 														</span>
 														<p>Community Service Form</p>
-														@if($registration->rsvp_confirmation==1)
+														@if($registration->rsvp_confirmation==1 && $event->is_active==1)
 															@if($registration->checkin==1)
 																<!-- <a class="btn btn-sm" href="{{ $registration->community_form_pdf }}" download>Download PDF</a> -->
 																@if($registration->community_form_status=='approved')
@@ -287,15 +292,19 @@
 																<h6 class="coupon-status">
 																	<span class="badge custom-badge-danger">Awaiting</span>
 																</h6>
-															@elseif($registration->checkin!=1 && $registration->community_form_status!='requested')
+															@elseif($registration->checkin!=1 && $registration->community_form_status=='pending')
 																<button class="btn btn-sm btn-warning send-community-form-request" url="{{ route('request-community-form',[encrypt($registration->id)]) }}">Request Now</button>
 															@elseif($registration->checkin!=1 && $registration->community_form_status=='requested') 
 																<h6 class="coupon-status">
-																	<span class="badge custom-badge-danger">Requested</span>
+																	<span class="badge custom-badge-warning">Requested</span>
+																</h6>
+															@elseif($registration->checkin!=1 && $registration->community_form_status=='rejected')
+																<h6 class="coupon-status">
+																	<span class="badge custom-badge-danger">Rejected</span>
 																</h6>
 															@else 
 																<h6 class="coupon-status">
-																	<span class="badge custom-badge-danger 1">Awaiting</span>
+																	<span class="badge custom-badge-danger">Awaiting</span>
 																</h6>
 															@endif
 														@else 

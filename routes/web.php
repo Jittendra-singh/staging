@@ -64,7 +64,7 @@ Route::controller(\App\Http\Controllers\FrontOrderController::class)->group(func
 
     Route::get('update-ticket-dates', 'updateTicketDates')->name('update-ticket-dates');
 
-    Route::get('cleanup-report-images/{event}' , 'cleanupReportImages')->name('cleanup-report-images');
+    Route::get('cleanup-highlights/{event}' , 'cleanupHighlights')->name('cleanup-highlights');
 });
 Route::controller(\App\Http\Controllers\FrontController::class)->group(function(){
 
@@ -154,6 +154,8 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::post('send-waiver-bulk-email/{id}', 'sendWaiverBulkEmail')->name('send-waiver-bulk-email');
         Route::post('mark-bulk-checkin-with-email/{id}', 'markBulkCheckinWithEmail')->name('mark-bulk-checkin-with-email');
         Route::post('resend-waiver/{ticket}', 'resendWaiver')->name('resend-waiver');
+
+        Route::get('certificate-requests', 'certificateRequests')->name('front-certificate-requests');
         
         
         /**EVENT REGISTRATION */

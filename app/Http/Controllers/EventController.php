@@ -812,14 +812,16 @@ class EventController extends Controller
     public function toggleStatus($placeholder){
         Gate::authorize('update', $this->gateHandler);
         $obj = $this->modelClass::findOrFail(decrypt($placeholder));
-        $startdate = $obj->start_datetime->format('Y-m-d');
+        $obj->is_active = !$obj->is_active; 
+        $this->setFlashSession($obj->save());
+        /* $startdate = $obj->start_datetime->format('Y-m-d');
         $enddate = $obj->end_datetime->format('Y-m-d');
         if($obj->is_active && ($startdate <= date('Y-m-d') && $enddate >= date('Y-m-d'))){
             $this->setFlashSession(false , 'Opps! this is an ongoing event today so it is not possible to inactive this.');
         }else{
             $obj->is_active = !$obj->is_active ; 
             $this->setFlashSession($obj->save());
-        }
+        } */
         return redirect()->back();
     }
     
@@ -1183,7 +1185,7 @@ class EventController extends Controller
                             "waste_collected" => $event->waste_collected,
                             "area_cleaned" => $event->area_cleaned,
                             "service_hours" => 'N/A',
-                            'images_link' => $this->mailUrl('cleanup-report-images', ['event' => encrypt($event->id)]),
+                            'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
                             'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]),
                         ],
                     ];

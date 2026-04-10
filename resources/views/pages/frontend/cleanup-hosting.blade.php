@@ -227,10 +227,16 @@ a[disabled]{
                                                 <div class="card-event-dt">
                                                     <h5 class="m-0">{{ $event->event_name }}</h5>
                                                     <p class="mb-2">{{ $event->fullAddress }}</p>
+                                                    @if($event->is_active!=1)
+                                                    	<h6 class="coupon-status">
+                                                    		<span data-bs-toggle="tooltip" data-bs-original-title="This event has been marked as inactive by admin." class="badge custom-badge-danger 1">Not Active</span>
+                                                    	</h6>
+                                                    @else
                                                     <div class="card-event-dt">
                                                         <button {{ $event->is_completed==1?'disabled':'' }} class="btn btn-sm btn-default border-default show-alert-run-url" message="You want to send the waiver email to all attendees" url="{{route('send-waiver-bulk-email', ['id' => $event->encrypted_id])}}"><i class="fa fa-envelope me-2"></i>Send Wavier To All</button>
                                                         <button {{ $event->is_completed==1?'disabled':'' }} class="btn btn-sm btn-default ms-2 border-default show-alert-run-url" message="You want to mark all attendees as checked-in" url="{{route('mark-bulk-checkin-with-email', ['id' => $event->encrypted_id])}}"><i class="fa fa-check-square me-2"></i>Check-in All</button>
                                                     </div>
+                                                    @endif
                                                 </div>
                                             </div>
                                             <div class="dropdown">
@@ -349,8 +355,8 @@ a[disabled]{
                                             </div>
                                         </div>
                                         <div class="bottom d-flex flex-wrap justify-content-end align-items-center p-4">
-                                            <a class="primary-btn w-fit" href="{{route('front-reschedule-event', ['id' => $event->encrypted_id])}}" {{ $event->is_completed==1?'disabled':'' }}>Reschedule</a>
-                                            <a class="sign-up-btn text-white w-fit ms-3" href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step5'])}}" {{ $eventStatusClass!='action_required'?'disabled':'' }}>Submit Wrap-Up Report</a>
+                                            <a class="primary-btn w-fit" href="{{route('front-reschedule-event', ['id' => $event->encrypted_id])}}" {{ ($event->is_completed==1 || $event->is_active!=1)?'disabled':'' }}>Reschedule</a>
+                                            <a class="sign-up-btn text-white w-fit ms-3" href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step5'])}}" {{ ($eventStatusClass!='action_required' || $event->is_active!=1)?'disabled':'' }}>Submit Wrap-Up Report</a>
                                         </div>
                                     </div>
                                 </div>

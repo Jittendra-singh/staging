@@ -690,9 +690,10 @@ class FrontOrderController extends Controller
 
     }
 
-    public function cleanupReportImages($event){
+    public function cleanupHighlights($event){
         $event = Event::findOrFail(decrypt($event));
-        return view('pages.frontend.cleanup-report-images', [
+        return view('pages.frontend.cleanup-highlights', [
+            'seo_details' => (object) ['title' => 'Cleanup Highlights'],
             'event'      => $event,
         ]);
     }

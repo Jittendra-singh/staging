@@ -228,14 +228,14 @@
                             <div class="col-md-6 mb-2">
                                 <div class="form-group">
                                     <label for="">Team Name</label>
-                                    <input type="text" value="{{ $event->team_name }}" class="form-control"
+                                    <input type="text" value="{{ $event->team_name }}" class="form-control" required
                                         name="team_name" placeholder="Team Name" />
                                 </div>
                             </div>
                             <div class="col-md-6 mb-2">
                                 <div class="form-group">
                                     <label for="">Post Event Notes</label>
-                                    <input type="text" value="{{ $event->post_event_notes }}" class="form-control "
+                                    <input type="text" value="{{ $event->post_event_notes }}" class="form-control " required
                                         name="post_event_notes" placeholder="Post Event Notes" />
                                 </div>
                             </div>
@@ -243,8 +243,13 @@
                                 <div class="row">
                                     <div class="col-sm-6">
                                         <div class="form-group">
-                                            <label class="form-label fs-6">Images <small class="text-muted"> (max 4 images allowed)</small></label>
-                                            <input id="after_event_images" class="form-control h_50" type="file" name="after_event_images[]" accept="image/*" multiple>
+                                            @if(isset($event) && isset($event->id) && isset($event->after_event_images) && !empty($event->after_event_images))
+                                                @php 
+                                                $images = !empty($event->after_event_images) ? json_decode($event->after_event_images) : null;
+                                                @endphp 
+                                            @endif
+                                            <label class="form-label fs-6">Images* <small class="text-muted"> (max 4 images allowed)</small></label>
+                                            <input id="after_event_images" class="form-control h_50" type="file" name="after_event_images[]" accept="image/*" multiple {{ (isset($images) && !empty($images))?'':'required' }}>
 
                                             @if(isset($event) && isset($event->id) && isset($event->after_event_images) && !empty($event->after_event_images))
                                                 @php 
