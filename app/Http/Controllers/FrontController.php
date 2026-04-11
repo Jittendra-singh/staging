@@ -2245,8 +2245,265 @@ class FrontController extends Controller
     public function certificateRequests(){
         $data = [];
         $data['events'] = auth()->guard('front')->user()->participatedEvents()->distinct()->get();
+        //$data['requests'] = auth()->guard('front')->user()->attendingEventsWithoutActive()->wherePivotNotNull('certificate_requested_at')->get();
+        $query = auth()->guard('front')->user()->attendingEventsWithoutActive()
+        ->wherePivotNotNull('certificate_requested_at');
+
+        // Filter by Event
+        if (request()->filled('event')) {
+            $query->where('events.id', request()->event);
+        }
+
+        // Filter by Organizer (name, email, phone)
+        if (request()->filled('organizer_search')) {
+            $search = request()->organizer_search;
+            $query->whereHas('creator', function($q) use ($search) {
+                $q->where('first_name', 'LIKE', "%{$search}%")
+                ->orWhere('last_name', 'LIKE', "%{$search}%")
+                ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$search}%"])
+                ->orWhere('email_address', 'LIKE', "%{$search}%")
+                ->orWhere('phone', 'LIKE', "%{$search}%");
+            });
+        }
+
+        // Filter by Date (certificate_requested_at date)
+        if (request()->filled('by_date')) {
+            $rawDate = request()->by_date;
+        
+            // Try parsing with Carbon's flexible parse (handles m/d/Y, d/m/Y, Y-m-d etc.)
+            $date = \Carbon\Carbon::parse($rawDate)->format('Y-m-d');
+            $query->wherePivot('certificate_requested_at', 'LIKE', "%{$date}%");
+        }
+
+        $data['requests'] = $query->get();
+        $data['by_date']  = request()->by_date;
         $data['seo_details'] = (object)['title' => 'Certificate Requests'];
         return view('pages.frontend.certificate-requests', $data); 
+    }
+    public function certificateRequestDetail($id){
+        $orderTicket = EventOrderTicket::with(['volunteer', 'event', 'event.creator'])->findOrFail(decrypt($id));
+        
+        // Security: only the volunteer who owns this ticket can view it
+        $authUser = auth()->guard('front')->user();
+        if($orderTicket->volunteer_id != $authUser->id){
+            abort(403, 'Unauthorized action.');
+        }
+
+        $data['ticket']      = $orderTicket;
+        $data['event']       = $orderTicket->event;
+        $data['volunteer']   = $orderTicket->volunteer;
+        $data['seo_details'] = (object)['title' => 'Certificate Request Detail'];
+        return view('pages.frontend.certificate-request-detail', $data); 
+    }
+    public function certificateManagement(){
+        $data = [];
+        $authUser = auth()->guard('front')->user();
+        $cohost_events     = $authUser->cohostingEvents()->orderBy('start_datetime', 'desc')->get();
+        $organising_events = $authUser->events()->orderBy('start_datetime', 'desc')->get();
+        $all_events        = $cohost_events->merge($organising_events);
+        $event_ids = $all_events->pluck('id');
+        $query = EventOrderTicket::with(['volunteer', 'event'])
+            ->whereIn('event_id', $event_ids)
+            ->whereNotNull('certificate_requested_at');
+
+        // Filter by Event
+        if (request()->filled('event')) {
+            $query->where('event_id', request()->event);
+        }
+
+        // Filter by Volunteer (name, email, phone)
+        if (request()->filled('volunteer_search')) {
+            $search = request()->volunteer_search;
+            $query->whereHas('volunteer', function($q) use ($search) {
+                $q->where('first_name', 'LIKE', "%{$search}%")
+                ->orWhere('last_name', 'LIKE', "%{$search}%")
+                ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$search}%"])
+                ->orWhere('email_address', 'LIKE', "%{$search}%")
+                ->orWhere('phone', 'LIKE', "%{$search}%");
+            });
+        }
+
+        // Filter by Status
+        if (request()->filled('status')) {
+            $query->where('community_form_status', request()->status);
+        }
+
+        // Filter by Date
+        if (request()->filled('by_date')) {
+            try {
+                $date = \Carbon\Carbon::parse(request()->by_date)->format('Y-m-d');
+                $query->whereDate('certificate_requested_at', $date);
+            } catch (\Exception $e) {}
+        }
+
+        $data['requests']  = $query->latest('certificate_requested_at')->get();
+        $data['events']    = $organising_events;
+        $data['by_date']   = request()->by_date;
+        $data['seo_details'] = (object)['title' => 'Certificate Management'];
+        return view('pages.frontend.certificate-management', $data);
+    }
+    public function approveCertificateRequest($ticket_id){
+        try {
+            $orderTicket = EventOrderTicket::findOrFail(decrypt($ticket_id));
+            $authUser = auth()->guard('front')->user();
+
+            if(empty(trim($orderTicket->waiver_filled_at))){
+                return $this->generateJsonResponse(false, 'A waiver must be signed before the request can be approved.');
+            }
+
+            // Security: make sure this ticket belongs to organizer's event
+            $cohost_events     = $authUser->cohostingEvents()->pluck('events.id');
+            $organising_events = $authUser->events()->pluck('events.id');
+            $all_event_ids     = $cohost_events->merge($organising_events);
+
+            if (!$all_event_ids->contains($orderTicket->event_id)) {
+                return $this->generateJsonResponse(false, 'Unauthorized action.');
+            }
+
+            if ($orderTicket->community_form_status === 'approved') {
+                return $this->generateJsonResponse(false, 'This certificate is already approved.');
+            }
+
+            if (!(isset($orderTicket->volunteer) && isset($orderTicket->volunteer->id))) {
+                return $this->generateJsonResponse(false, 'Invalid volunteer information.');
+            }
+
+            // Role: 1 = organizer (event creator), 2 = cohost
+            $role = $orderTicket->event->creator_id == $authUser->id ? 1 : 2;
+
+            $orderTicket->community_form_status             = 'approved';
+            $orderTicket->certificate_approve_reject_at     = now();
+            $orderTicket->certificate_approve_reject_by     = $authUser->id;
+            $orderTicket->certificate_approve_reject_by_role = $role;
+            $orderTicket->checkin = 1;
+            $orderTicket->save();
+            $event = $orderTicket->event;
+            $volunteer = $orderTicket->volunteer;
+            if($orderTicket->community_form_pdf){
+                $community_form = $orderTicket->community_form_pdf; 
+            }else{
+                $data = [
+                    'event'            => $event,
+                    'volunteerName'    => $volunteer->name,
+                    'hours'            => $orderTicket->hours_completed,
+                    'organization_name'   => $event->creator->organisation_name,
+                    'organizer_name'   => $event->creator->first_name.' '.$event->creator->last_name,
+                    'organizer_link'   => route('organizer-detail', ['slug' => $event->creator->organisation_landing_slug]),
+                ];
+                try{
+                    $html = view('pages.events.community-form-new', $data)->render();
+                    $pdf = \PDF::setOptions(['isHtml5ParserEnabled' => true,'isRemoteEnabled' => true])->loadHTML($html);
+                    $filename = 'community_form_' . $orderTicket->id . '_' . time() . '.pdf';
+                    $path = 'events/community_forms/' . $filename;
+                    $publicPath = public_path($path);
+                    if (!file_exists(dirname($publicPath))) {
+                        mkdir(dirname($publicPath), 0755, true);
+                    }
+                    file_put_contents($publicPath, $pdf->output());
+                    $orderTicket->community_form_pdf = $path;
+                    $orderTicket->save();
+                    $community_form = url('/').'/'.$path;
+                }catch(\Exception $e){
+                    return $this->generateJsonResponse(false, "Issues occured while making generating PDF",[
+                        'error' => $e->getMessage(),
+                        'line'  => $e->getLine(),
+                        'file'  => $e->getFile(),
+                        // 'trace' => $e->getTraceAsString() // uncomment if needed
+                    ]);
+                }
+            }
+            try{
+                if($event->is_completed==1){
+                    $to_arr = [];
+                    $log_arr = [];
+                    if (isset($volunteer) && isset($volunteer->id)) {
+                        $tickets = $event->tickets()->where('checkin', 1)->whereNotNull('waiver_filled_at')->get();
+                        $email = $volunteer->email_address;
+                        $name = $volunteer->first_name.' '.$volunteer->last_name;
+                        if(!empty(trim($email))){
+                            $to_arr[] = 
+                            [
+                                "to" => [
+                                    ["email" => trim($email)]
+                                    //["email" => 'learningdcm@gmail.com']
+                                ],
+                                "dynamic_template_data" => [
+                                    "volunteer_name" => $name,
+                                    "volunteer_email" => $email,
+                                    "event_name" =>  $event->event_name,
+                                    "event_date" => $event->startTimeAndEndTime,
+                                    "event_location" => $event->fullAddress,
+                                    "organizer_name" => $event->creator->first_name.' '.$event->creator->last_name,
+                                    "total_volunteers" => $tickets->count(),
+                                    "waste_collected" => $event->waste_collected,
+                                    "area_cleaned" => $event->area_cleaned,
+                                    "service_hours" => 'N/A',
+                                    'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
+                                    'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($orderTicket->id)]),
+                                ],
+                            ];
+                            $log_arr[] = [
+                                "id" => $orderTicket->id,
+                                "email" => trim($email)
+                            ];
+                        }
+                    }
+                    if(!empty($to_arr)){
+                        $this->sendSendgridTemplateEmailWithoutLog($to_arr,"d-84b101582dbb408aa6f90cf53b2be2d0");
+                    }
+                }
+            }catch(\Exception $e){
+                return $this->generateJsonResponse(false, "Issues occured while sending the email.");
+            }
+
+            return $this->generateJsonResponse(true, 'Certificate approved successfully.');
+
+        } catch (\Exception $e) {
+            return $this->generateJsonResponse(false, 'Failed to approve certificate: ' . $e->getMessage());
+        }
+    }
+
+    public function rejectCertificateRequest($ticket_id){
+        request()->validate([
+            'reject_reason' => 'required|string',
+        ]);
+
+        try {
+            $orderTicket = EventOrderTicket::findOrFail(decrypt($ticket_id));
+            $authUser = auth()->guard('front')->user();
+
+            // Security: make sure this ticket belongs to organizer's event
+            $cohost_events     = $authUser->cohostingEvents()->pluck('events.id');
+            $organising_events = $authUser->events()->pluck('events.id');
+            $all_event_ids     = $cohost_events->merge($organising_events);
+
+            if (!$all_event_ids->contains($orderTicket->event_id)) {
+                return $this->generateJsonResponse(false, 'Unauthorized action.');
+            }
+
+            if ($orderTicket->community_form_status === 'approved') {
+                return $this->generateJsonResponse(false, 'Cannot reject an already approved certificate.');
+            }
+
+            if ($orderTicket->community_form_status === 'rejected') {
+                return $this->generateJsonResponse(false, 'This certificate is already rejected.');
+            }
+
+            // Role: 1 = organizer (event creator), 2 = cohost
+            $role = $orderTicket->event->creator_id == $authUser->id ? 1 : 2;
+
+            $orderTicket->community_form_status              = 'rejected';
+            $orderTicket->certificate_reject_reason          = request()->reject_reason;
+            $orderTicket->certificate_approve_reject_at      = now();
+            $orderTicket->certificate_approve_reject_by      = $authUser->id;
+            $orderTicket->certificate_approve_reject_by_role = $role;
+            $orderTicket->save();
+
+            return $this->generateJsonResponse(true, 'Certificate request rejected successfully.');
+
+        } catch (\Exception $e) {
+            return $this->generateJsonResponse(false, 'Failed to reject certificate: ' . $e->getMessage());
+        }
     }
     public function embeddedWidget()
     {

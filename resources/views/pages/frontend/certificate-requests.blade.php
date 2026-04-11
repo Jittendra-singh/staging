@@ -95,19 +95,39 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    @if(isset($listing_data) && $listing_data->isNotEmpty())
-                                                    @foreach ($listing_data as $data)
-                                                        @php 
-                                                        $last_view_log = $data->view_logs->last();
-                                                        $lastActiveDate = isset($last_view_log->id)?date(config('app.dateFormat'),strtotime($last_view_log->created_at)):'-';
-                                                        @endphp 
+                                                    @if(isset($requests) && $requests->isNotEmpty())
+                                                    @foreach ($requests as $data)
                                                         <tr class="single-tr">										
-                                                            <td>{{$data->wid_number}}</td>								
-                                                            <td>{{$data->view_logs->count() }}</td>	
-                                                            <td>{{$data->click_logs->count() }}</td>	
-                                                            <td>{{$data->order_logs->count() }}</td>	
-                                                            <td>{{$lastActiveDate}}</td>
-                                                            <td>{{date(config('app.dateFormat'),strtotime($data->created_at))}}</td>
+                                                            <td>
+                                                            <b class="mb-1">{{$data->event_name}}</b><br/>
+                                                            <p class="mb-0">Organizer: {{ $data->creator->first_name.' '.$data->creator->last_name }}</p>
+                                                            <p class="text-primary"><i class="fa fa-calendar me-1"></i>{{ $data->eventStartDateTime }}</p>
+                                                            </td>								
+                                                            <td>{{date(config('app.dateTimeFormat'),strtotime($data->pivot->certificate_requested_at))}}
+                                                                @if($data->pivot->is_late_checkin==1)
+                                                                <br/><span class="badge custom-badge-warning mt-2">Late Request</span>
+                                                                @endif
+                                                            </td>	
+                                                            <td>
+                                                            @if($data->pivot->community_form_status=='approved')
+                                                                <span class="badge custom-badge-success">Approved</span>
+                                                            @elseif($data->pivot->community_form_status=='rejected')
+                                                                <span class="badge custom-badge-danger">Rejected</span>
+                                                                @if($data->pivot->certificate_approve_reject_at)
+                                                                    <br/><small class="text-muted">{{ date(config('app.dateFormat'), strtotime($data->pivot->certificate_approve_reject_at)) }}</small>
+                                                                @endif
+                                                            @else
+                                                                <span class="badge custom-badge-warning">Pending</span>
+                                                            @endif
+                                                            </td>	
+                                                            <td>
+                                                                <div class="d-flex flex-wrap  align-items-center">
+                                                                <a data-bs-toggle="tooltip" data-bs-original-title="View Details" class="secondary-btn w-fit px-3" href=""><i class="fa fa-eye"></i></a>
+                                                                @if($data->pivot->community_form_status=='approved')
+                                                                <a data-bs-toggle="tooltip" data-bs-original-title="Download Certificate" class="primary-btn w-fit px-3 ms-2" href="{{ route('show-community-service-pdf', ['ticket' => encrypt($data->pivot->id)]) }}" target="_blank"><i class="fa fa-download"></i></a>
+                                                                @endif
+                                                                </div>
+                                                            </td>	
                                                         </tr>
                                                     @endforeach
                                                     @else

@@ -156,6 +156,10 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::post('resend-waiver/{ticket}', 'resendWaiver')->name('resend-waiver');
 
         Route::get('certificate-requests', 'certificateRequests')->name('front-certificate-requests');
+        Route::get('certificate-request-detail/{id}', 'certificateRequestDetail')->name('front-certificate-request-detail');
+        Route::get('certificate-management', 'certificateManagement')->name('front-certificate-management');
+        Route::post('approve-certificate/{ticket_id}', 'approveCertificateRequest')->name('front-approve-certificate');
+        Route::post('reject-certificate/{ticket_id}', 'rejectCertificateRequest')->name('front-reject-certificate'); 
         
         
         /**EVENT REGISTRATION */

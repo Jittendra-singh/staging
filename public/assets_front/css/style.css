@@ -7454,7 +7454,7 @@ ul.list-styled {
     text-transform: uppercase;
     font-weight: 500;
     border: 0;
-    border: 1px solid transparent;
+    border: 2px solid #f1f5f9;
     transition: all 0.1s;
 }
 
@@ -7479,7 +7479,7 @@ a.secondary-btn:hover,
 button.secondary-btn:hover {
     background-color: #fff !important;
     color: var(--linear-gradient-2) !important;
-    border: 1px solid var(--linear-gradient-2) !important;
+    border: 2px solid var(--linear-gradient-2) !important;
 }
 
 .primary-btn.outlined {
