@@ -2,7 +2,8 @@
 /* ── Filter Card ── */
 .filter-card {
     background: #fff;
-    border: 1.5px solid var(--linear-gradient-2);
+    /* border: 1.5px solid var(--linear-gradient-2); */
+    border: 1.5px solid var(--bs-border-color);
     border-radius: 10px;
 }
 
