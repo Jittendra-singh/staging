@@ -61,6 +61,7 @@
 											<select class="selectpicker filter-field w-100" name="event_type" title="Status: All">
 												<option value="">Status: All</option>
 												<option value="1" @selected(request()->event_type == '1')>Upcoming</option>
+												<option value="3" @selected(request()->event_type == '3')>In-progress</option>
 												<option value="2" @selected(request()->event_type == '2')>Past</option>
 											</select>
 										</div>

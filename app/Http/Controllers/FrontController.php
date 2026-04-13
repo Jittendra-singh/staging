@@ -214,6 +214,9 @@ class FrontController extends Controller
                                             $q->where("start_datetime" ,">",$now);
                                         }elseif(request()->event_type==2){
                                             $q->where("end_datetime" , "<",$now);
+                                        }elseif(request()->event_type==3){
+                                            $q->where("start_datetime", "<=", $now)
+                                            ->where("end_datetime", ">=", $now);
                                         }
                                     }
                                 })->latest()->paginate()->withQueryString();
@@ -1928,6 +1931,9 @@ class FrontController extends Controller
                 $orderTicket->community_form_status = 'requested';
                 $orderTicket->checkin = 0;
                 $orderTicket->certificate_requested_at = date('Y-m-d H:i:s');
+                if($event->is_completed==1){
+                    $orderTicket->is_late_checkin = 1;
+                }
                 $orderTicket->save();
                 return $this->generateJsonResponse(true, 'Request email has been sent to organizer for your community service form.');
             }catch(\Exception $e){
@@ -1935,6 +1941,89 @@ class FrontController extends Controller
             }
         }
         return $this->generateJsonResponse(true, 'Issue occured while sending request email.');
+    }
+    public function submitCertificateRequest(){
+        request()->validate([
+            'registration_id' => 'required|string',
+            'request_reason' => 'required|string',
+            'proof_images'     => 'required|array|min:1|max:4',
+            'proof_images.*'   => 'required|image|mimes:jpeg,png,jpg,gif|max:3072',
+        ],[
+            'proof_images.required'    => 'Please upload at least 1 proof image.',
+            'proof_images.min'         => 'Please upload at least 1 proof image.',
+            'proof_images.max'         => 'You can upload a maximum of 4 images.',
+            'proof_images.*.image'     => 'Each file must be a valid image.',
+            'proof_images.*.mimes'     => 'Only jpeg, png, jpg, and gif images are allowed.',
+            'proof_images.*.max'       => 'Each image must not exceed 3MB.',
+            'request_reason.required'  => 'Please enter a reason for your certificate request.',
+        ]);
+        $orderTicket = EventOrderTicket::findOrFail(decrypt(request()->registration_id));
+        if (!isset($orderTicket->id)) {
+            $this->setFlashSession(false, 'Ticket not found.');
+            return redirect()->back();
+        }
+        if ($orderTicket->community_form_status === 'approved') {
+            $this->setFlashSession(false, 'Cannot request for an already approved certificate.');
+            return redirect()->back();
+        }
+        if ($orderTicket->community_form_status === 'rejected') {
+            $this->setFlashSession(false, 'Cannot request for an already rejected certificate.');
+            return redirect()->back();
+        }
+        $event = $orderTicket->event;
+        $volunteer = $orderTicket->volunteer;
+        if($orderTicket->checkin!=1 && $orderTicket->community_form_status=='pending'){
+            try{
+                $emailData = [
+                    'org_name'=>$event->creator->first_name.' '.$event->creator->last_name,
+                    'volunteer'=>$volunteer->first_name.' '.$volunteer->last_name,
+                    'event_name'=>$event->event_name,
+                    //'dashboard_link'=>route('front-cleanup-attending'),
+                    'dashboard_link'=>$this->mailUrl('front-registration-list'),
+                ];
+                $sub = 'Community Service Request – '.$emailData['volunteer'].' for '.$event->event_name;
+                $this->sendEmail($event->creator->email_address, $sub, $emailData, "request-community-service-form");
+                $orderTicket->community_form_status = 'requested';
+                $orderTicket->checkin = 0;
+                $orderTicket->certificate_requested_at = date('Y-m-d H:i:s');
+                $orderTicket->certificate_request_text = request()->request_reason;
+                if($event->is_completed==1){
+                    $orderTicket->is_late_checkin = 1;
+                }
+                if (request()->hasFile('proof_images')) {
+                    $files = request()->file('proof_images');
+                    // Wrap in array if single file, so loop works for both cases
+                    if (!is_array($files)) {
+                        $files = [$files];
+                    }
+                    $existingImages = [];
+                    if (!empty($event->proof_images)) {
+                        $existingImages = json_decode($event->proof_images, true) ?? [];
+                    }
+                    /* if (count($files) > 4) {
+                        return $this->generateJsonResponse(false,'You can only upload a maximum of 4 images');
+                    } */
+                    if (count($existingImages) + count($files) > 4) {
+                        $this->setFlashSession(false, 'You can only upload a maximum of 4 images');
+                        return redirect()->back();
+                    }
+                    $newPhotoPaths = [];
+                    foreach ($files as $photo) {
+                        $newPhotoPaths[] = $this->moveFiles($photo, 'events/certificate_requests');
+                    }
+                    $allPhotos = array_merge($existingImages, $newPhotoPaths);
+                    $orderTicket->certificate_request_images = json_encode($allPhotos);
+                }
+                $orderTicket->save();
+                $this->setFlashSession(true, 'Request email has been sent to organizer for your community service form.');
+                return redirect()->back();
+            }catch(\Exception $e){
+                $this->setFlashSession(false, "Issues occured while sending emails.");
+                return redirect()->back();
+            }
+        }
+        $this->setFlashSession(false, 'Issue occured while requesting certificate.');
+        return redirect()->back();
     }
     public function ticketMarkCheckin($ticket,$callFromBackend=false){
         $orderTicket = EventOrderTicket::findOrFail(decrypt($ticket));
@@ -2004,7 +2093,7 @@ class FrontController extends Controller
                     $orderTicket->checkin = 1;
                     if($event->is_completed==1){
                         $orderTicket->community_form_status = 'approved';
-                        $orderTicket->is_late_checkin = 1;
+                        //$orderTicket->is_late_checkin = 1;
                     }
                     $orderTicket->save();
                     if($event->is_completed==1){
@@ -2283,12 +2372,15 @@ class FrontController extends Controller
     public function certificateRequestDetail($id){
         $orderTicket = EventOrderTicket::with(['volunteer', 'event', 'event.creator'])->findOrFail(decrypt($id));
         
-        // Security: only the volunteer who owns this ticket can view it
         $authUser = auth()->guard('front')->user();
-        if($orderTicket->volunteer_id != $authUser->id){
+        $cohostCreatorIds = $orderTicket->event->cohosts()->where('request_status', 'approved')->pluck('volunteer_id')->toArray();
+        $cohostCreatorIds[] = $orderTicket->event->creator_id;
+        if(!in_array($authUser->id, array_merge($cohostCreatorIds, [$orderTicket->volunteer_id])) || empty(trim($orderTicket->certificate_requested_at))){
             abort(403, 'Unauthorized action.');
         }
 
+        $data['cohostCreatorIds']      = $cohostCreatorIds;
+        $data['authUser']      = $authUser;
         $data['ticket']      = $orderTicket;
         $data['event']       = $orderTicket->event;
         $data['volunteer']   = $orderTicket->volunteer;
@@ -2342,22 +2434,24 @@ class FrontController extends Controller
         $data['seo_details'] = (object)['title' => 'Certificate Management'];
         return view('pages.frontend.certificate-management', $data);
     }
-    public function approveCertificateRequest($ticket_id){
+    public function approveCertificateRequest($ticket_id,$callFromBackend=false){
         try {
             $orderTicket = EventOrderTicket::findOrFail(decrypt($ticket_id));
-            $authUser = auth()->guard('front')->user();
 
             if(empty(trim($orderTicket->waiver_filled_at))){
                 return $this->generateJsonResponse(false, 'A waiver must be signed before the request can be approved.');
             }
+            
+            if(!$callFromBackend){
+                $authUser = auth()->guard('front')->user();
+                // Security: make sure this ticket belongs to organizer's event
+                $cohost_events     = $authUser->cohostingEvents()->pluck('events.id');
+                $organising_events = $authUser->events()->pluck('events.id');
+                $all_event_ids     = $cohost_events->merge($organising_events);
 
-            // Security: make sure this ticket belongs to organizer's event
-            $cohost_events     = $authUser->cohostingEvents()->pluck('events.id');
-            $organising_events = $authUser->events()->pluck('events.id');
-            $all_event_ids     = $cohost_events->merge($organising_events);
-
-            if (!$all_event_ids->contains($orderTicket->event_id)) {
-                return $this->generateJsonResponse(false, 'Unauthorized action.');
+                if (!$all_event_ids->contains($orderTicket->event_id)) {
+                    return $this->generateJsonResponse(false, 'Unauthorized action.');
+                }
             }
 
             if ($orderTicket->community_form_status === 'approved') {
@@ -2369,11 +2463,15 @@ class FrontController extends Controller
             }
 
             // Role: 1 = organizer (event creator), 2 = cohost
-            $role = $orderTicket->event->creator_id == $authUser->id ? 1 : 2;
+            if(!$callFromBackend){
+                $role = $orderTicket->event->creator_id == $authUser->id ? 1 : 2;
+            } else {
+                $role = 3;
+            }
 
             $orderTicket->community_form_status             = 'approved';
             $orderTicket->certificate_approve_reject_at     = now();
-            $orderTicket->certificate_approve_reject_by     = $authUser->id;
+            $orderTicket->certificate_approve_reject_by     = ($callFromBackend)?auth()->user()->id:$authUser->id;
             $orderTicket->certificate_approve_reject_by_role = $role;
             $orderTicket->checkin = 1;
             $orderTicket->save();
@@ -2463,22 +2561,24 @@ class FrontController extends Controller
         }
     }
 
-    public function rejectCertificateRequest($ticket_id){
+    public function rejectCertificateRequest($ticket_id,$callFromBackend=false){
         request()->validate([
             'reject_reason' => 'required|string',
         ]);
 
         try {
             $orderTicket = EventOrderTicket::findOrFail(decrypt($ticket_id));
-            $authUser = auth()->guard('front')->user();
+            if(!$callFromBackend){
+                $authUser = auth()->guard('front')->user();
 
-            // Security: make sure this ticket belongs to organizer's event
-            $cohost_events     = $authUser->cohostingEvents()->pluck('events.id');
-            $organising_events = $authUser->events()->pluck('events.id');
-            $all_event_ids     = $cohost_events->merge($organising_events);
+                // Security: make sure this ticket belongs to organizer's event
+                $cohost_events     = $authUser->cohostingEvents()->pluck('events.id');
+                $organising_events = $authUser->events()->pluck('events.id');
+                $all_event_ids     = $cohost_events->merge($organising_events);
 
-            if (!$all_event_ids->contains($orderTicket->event_id)) {
-                return $this->generateJsonResponse(false, 'Unauthorized action.');
+                if (!$all_event_ids->contains($orderTicket->event_id)) {
+                    return $this->generateJsonResponse(false, 'Unauthorized action.');
+                }
             }
 
             if ($orderTicket->community_form_status === 'approved') {
@@ -2490,12 +2590,16 @@ class FrontController extends Controller
             }
 
             // Role: 1 = organizer (event creator), 2 = cohost
-            $role = $orderTicket->event->creator_id == $authUser->id ? 1 : 2;
+            if(!$callFromBackend){
+                $role = $orderTicket->event->creator_id == $authUser->id ? 1 : 2;
+            } else {
+                $role = 3;
+            }
 
             $orderTicket->community_form_status              = 'rejected';
             $orderTicket->certificate_reject_reason          = request()->reject_reason;
             $orderTicket->certificate_approve_reject_at      = now();
-            $orderTicket->certificate_approve_reject_by      = $authUser->id;
+            $orderTicket->certificate_approve_reject_by      = ($callFromBackend)?auth()->user()->id:$authUser->id;
             $orderTicket->certificate_approve_reject_by_role = $role;
             $orderTicket->save();
 

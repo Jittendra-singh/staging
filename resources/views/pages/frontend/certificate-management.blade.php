@@ -62,14 +62,12 @@
                                 {{-- Status Filter --}}
                                 <div class="col-md-2">
                                     <label class="form-label filter-label">Status</label>
-                                    <div class="filter-input-wrap">
-                                        <select class="form-select filter-field" name="status">
-                                            <option value="">All Status</option>
-                                            <option value="requested" @selected(request()->status == 'requested')>Requested</option>
-                                            <option value="approved" @selected(request()->status == 'approved')>Approved</option>
-                                            <option value="rejected" @selected(request()->status == 'rejected')>Rejected</option>
-                                        </select>
-                                    </div>
+                                    <select class="selectpicker filter-field w-100" name="status" title="Status: All">
+                                        <option value="">Status: All</option>
+                                        <option value="requested" @selected(request()->status == 'requested')>Requested</option>
+                                        <option value="approved" @selected(request()->status == 'approved')>Approved</option>
+                                        <option value="rejected" @selected(request()->status == 'rejected')>Rejected</option>
+                                    </select>
                                 </div>
 
                                 {{-- Date Filter --}}
@@ -164,7 +162,7 @@
                                                         {{-- Actions --}}
                                                         <td>
                                                             <div class="d-flex flex-wrap align-items-center gap-2">
-                                                                <a data-bs-toggle="tooltip" data-bs-original-title="View Details" class="secondary-btn w-fit px-3" href=""><i class="fa fa-eye"></i></a>
+                                                                <a data-bs-toggle="tooltip" data-bs-original-title="View Details" class="secondary-btn w-fit px-3" href="{{route('front-certificate-request-detail', encrypt($ticket->id))}}"><i class="fa fa-eye"></i></a>
 
                                                                 @if($ticket->community_form_status != 'approved' && $ticket->community_form_status != 'rejected')
                                                                 <button

@@ -257,7 +257,8 @@ class VolunteerController extends Controller
             $volunteers = Volunteer::where('status', 1)
                 ->where('is_organiser', 0)
                 ->where(function($query) use ($search) {
-                    $query->where('first_name', 'like', '%' . $search . '%')
+                    $query->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $search . '%'])
+                        ->orWhere('first_name', 'like', '%' . $search . '%')
                         ->orWhere('last_name', 'like', '%' . $search . '%')
                         ->orWhere('email_address', 'like', '%' . $search . '%');
                 })->get();
@@ -274,11 +275,21 @@ class VolunteerController extends Controller
     }
     function getAllVolunteerOptions(){
         $search = request()->search;
+        $is_organiser = isset(request()->is_organiser)??null;
         $options = [];
         if (!empty($search)) {
             $volunteers = Volunteer::where('status', 1)
+                ->where(function($query) use ($is_organiser) {
+                    if($is_organiser==='yes'){
+                        $query->where('is_organiser',1);
+                    }
+                    if($is_organiser==='no'){
+                        $query->where('is_organiser',0);
+                    }
+                })
                 ->where(function($query) use ($search) {
-                    $query->where('first_name', 'like', '%' . $search . '%')
+                    $query->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$search}%"])
+                        ->orWhere('first_name', 'like', '%' . $search . '%')
                         ->orWhere('last_name', 'like', '%' . $search . '%')
                         ->orWhere('email_address', 'like', '%' . $search . '%');
                 })->get();

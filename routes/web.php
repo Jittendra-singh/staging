@@ -160,6 +160,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::get('certificate-management', 'certificateManagement')->name('front-certificate-management');
         Route::post('approve-certificate/{ticket_id}', 'approveCertificateRequest')->name('front-approve-certificate');
         Route::post('reject-certificate/{ticket_id}', 'rejectCertificateRequest')->name('front-reject-certificate'); 
+        Route::post('submit-certificate-request', 'submitCertificateRequest')->name('front-submit-certificate-request'); 
         
         
         /**EVENT REGISTRATION */
@@ -314,6 +315,11 @@ Route::prefix(config('app.admin_prefix'))->group(function () {
             Route::post('/remove-after-event-image/{index}/{id}', 'removeAfterEventImage')->name('remove-after-event-image');
             Route::post('send-waiver-bulk-email-admin/{id}', 'sendWaiverBulkEmail')->name('send-waiver-bulk-email-admin');
             Route::post('mark-bulk-checkin-with-email-admin/{id}', 'markBulkCheckinWithEmail')->name('mark-bulk-checkin-with-email-admin');
+            // service request 
+            Route::get('/certificate-requests' , 'certificateRequests' )->name('certificate-requests');
+            Route::post('approve-certificate/{ticket_id}', 'approveCertificateRequest')->name('approve-certificate');
+            Route::post('reject-certificate/{ticket_id}', 'rejectCertificateRequest')->name('reject-certificate'); 
+            Route::get('certificate-request-detail/{id}', 'certificateRequestDetail')->name('certificate-request-detail');
         });
         Route::controller(\App\Http\Controllers\OrderController::class)->group(function () {
             Route::get('/orders', 'index')->name('index-orders');

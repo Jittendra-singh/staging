@@ -122,7 +122,7 @@
                                                             </td>	
                                                             <td>
                                                                 <div class="d-flex flex-wrap  align-items-center">
-                                                                <a data-bs-toggle="tooltip" data-bs-original-title="View Details" class="secondary-btn w-fit px-3" href=""><i class="fa fa-eye"></i></a>
+                                                                <a data-bs-toggle="tooltip" data-bs-original-title="View Details" class="secondary-btn w-fit px-3" href="{{route('front-certificate-request-detail', encrypt($data->pivot->id))}}"><i class="fa fa-eye"></i></a>
                                                                 @if($data->pivot->community_form_status=='approved')
                                                                 <a data-bs-toggle="tooltip" data-bs-original-title="Download Certificate" class="primary-btn w-fit px-3 ms-2" href="{{ route('show-community-service-pdf', ['ticket' => encrypt($data->pivot->id)]) }}" target="_blank"><i class="fa fa-download"></i></a>
                                                                 @endif

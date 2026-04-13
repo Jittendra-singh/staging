@@ -41,6 +41,7 @@
 											<select class="selectpicker filter-field w-100" name="event_type" title="Status: All">
 												<option value="">Status: All</option>
 												<option value="1" @selected(request()->event_type == '1')>Upcoming</option>
+												<option value="3" @selected(request()->event_type == '3')>In-progress</option>
 												<option value="2" @selected(request()->event_type == '2')>Past</option>
 											</select>
 										</div>
@@ -293,7 +294,7 @@
 																	<span class="badge custom-badge-danger">Awaiting</span>
 																</h6>
 															@elseif($registration->checkin!=1 && $registration->community_form_status=='pending')
-																<button class="btn btn-sm btn-warning send-community-form-request" url="{{ route('request-community-form',[encrypt($registration->id)]) }}">Request Now</button>
+																<button registration_id="{{ encrypt($registration->id) }}" is_event_completed={{ $event->is_completed }} class="btn btn-sm btn-warning send-community-form-request" url="{{ route('request-community-form',[encrypt($registration->id)]) }}">Request Now</button>
 															@elseif($registration->checkin!=1 && $registration->community_form_status=='requested') 
 																<h6 class="coupon-status">
 																	<span class="badge custom-badge-warning">Requested</span>
@@ -454,6 +455,49 @@
 		</div>
 	</div>
 </div>
+<div class="modal fade" id="request-certificate-popup" tabindex="-1" aria-labelledby="requestCertificatePopupLabel" aria-hidden="false">
+	<div class="modal-dialog modal-medium-2 modal-dialog-centered modal-sm-height modal-lg">
+		<div class="modal-content modal-dialog-scrollable">
+			<div class="modal-header">
+				<h5 class="modal-title" id="requestCertificatePopupLabel">Request Certificate</h5>
+				<button type="button" class="close-model-btn" data-bs-dismiss="modal" aria-label="Close"><i class="fa fa-times"></i></button>
+			</div>
+			<form class="validateform" action="{{route('front-submit-certificate-request')}}" method="POST" enctype="multipart/form-data">
+				@csrf
+				<input type="hidden" name="registration_id" id="registration_id" value="">
+				<div class="modal-body">
+					<div class="model-content main-form">
+						<div class="row">
+							<div class="col-sm-12 mt-3">
+								<div class="form-group">
+									<label class="form-label fs-6">Reason*</label>
+									<div class="text-editor">
+										<textarea required="" id="request_reason" value="" name="request_reason" class="form-control" rows="4"></textarea>
+									</div>
+								</div>
+							</div>
+							<div class="col-sm-12 mt-3">
+								<div class="form-group">
+									<label class="form-label fs-6">Upload Proof Images* <small class="text-muted"> (max 4 images allowed)</small></label>
+									<input style="line-height: 3;" id="after_event_images" class="form-control h_50" type="file" name="proof_images[]" accept="image/*" multiple required>
+									<div class="d-flex flex-wrap align-items-center mt-2" >
+									<div class="d-flex flex-wrap align-items-center mt-2" id="savedImages">
+									</div>
+									<div class="d-flex flex-wrap align-items-center mt-2" id="newImagePreview">
+									</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="submit" class="primary-btn w-fit">Request Now</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
     <x-reusables.frontend.registration-popups />
 	@push('script')
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -506,6 +550,30 @@
 		}
 		#option-1:checked:checked~.option-1 .dot, #option-2:checked:checked~.option-2 .dot, #option-3:checked:checked~.option-3 .dot{
 			background: var(--linear-gradient-2)!important;;
+		}
+
+
+		.remove-new-img {
+			position: absolute;
+			top: -5px;
+			right: -5px;
+			background: #dc3545;
+			color: white;
+			border: none;
+			border-radius: 50%;
+			width: 18px;
+			height: 18px;
+			font-size: 10px;
+			cursor: pointer;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 0;
+			line-height: 1;
+		}
+
+		.remove-new-img:hover {
+			background: #b02a37;
 		}
 	</style>
 	<link rel="stylesheet" href="{{ asset('assets_front/css/filter-css.css') }} ">

@@ -79,6 +79,9 @@ class EventOrderTicket extends Pivot
                                 $subQ->where("start_datetime" ,">",$now);
                             }elseif(request()->event_type==2){
                                 $subQ->where("end_datetime" , "<",$now);
+                            }elseif(request()->event_type==3){
+                                $subQ->where("start_datetime", "<=", $now)
+                                ->where("end_datetime", ">=", $now);
                             }
                         });
                     }
@@ -96,6 +99,10 @@ class EventOrderTicket extends Pivot
     public function volunteer()
     {
         return $this->belongsTo(Volunteer::class, 'volunteer_id');
+    }
+    public function certificateApproverRejectBy()
+    {
+        return $this->belongsTo(Volunteer::class, 'certificate_approve_reject_by');
     }
     public function ticket()
     {

@@ -1018,6 +1018,90 @@ $(document).ready(function () {
 			$('#after_event_images')[0].files = dataTransfer.files;
 		}
 	}
+      
+	// ── APPROVE CERTIFICATE ───────────────────────────────────────────────────
+	$(document).on('click', '.btn-approve-certificate', function () {
+		var url  = $(this).attr('url');
+		var name = $(this).attr('data-name');
+		var control = this;
+
+		Swal.fire({
+			title: "Approve Certificate?",
+			html: `You are approving the certificate request for <b>${name}</b>. This action cannot be undone.`,
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonColor: '#3085d6',
+			cancelButtonColor: '#d33',
+			confirmButtonText: 'Yes, approve it!'
+		}).then((result) => {
+			if (result.isConfirmed) {
+				$(control).attr('disabled', 'disabled');
+				$.ajax({
+					url: url,
+					method: 'POST',
+					data: {},
+					success: function (response) {
+						$(control).removeAttr('disabled');
+						if (response.status) {
+							showError(response.message, 'success');
+							setTimeout(() => { window.location.reload(); }, 1000);
+						} else {
+							showError(response.message, 'error');
+						}
+					}
+				});
+			}
+		});
+	});
+
+	// ── REJECT CERTIFICATE ────────────────────────────────────────────────────
+	$(document).on('click', '.btn-reject-certificate', function () {
+		var url  = $(this).attr('url');
+		var name = $(this).attr('data-name');
+		var control = this;
+
+		Swal.fire({
+			title: "Reject Certificate Request?",
+			html: `You are rejecting the certificate for <b>${name}</b>.`,
+			input: "textarea",
+			inputPlaceholder: "Enter reason for rejection...",
+			inputAttributes: {
+				rows: 4,
+				style: "resize:none;"
+			},
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonColor: '#d33',
+			cancelButtonColor: '#6c757d',
+			confirmButtonText: 'Reject',
+			cancelButtonText: 'Cancel',
+			inputValidator: (value) => {
+				if (!value || !value.trim()) {
+					return 'Please enter a reason for rejection.';
+				}
+			}
+		}).then((result) => {
+			if (result.isConfirmed) {
+				$(control).attr('disabled', 'disabled');
+				$.ajax({
+					url: url,
+					method: 'POST',
+					data: {
+						reject_reason: result.value
+					},
+					success: function (response) {
+						$(control).removeAttr('disabled');
+						if (response.status) {
+							showError(response.message, 'success');
+							setTimeout(() => { window.location.reload(); }, 1000);
+						} else {
+							showError(response.message, 'error');
+						}
+					}
+				});
+			}
+		});
+	});
 });
 function callImaskForEmail(id) {
       IMask(document.getElementById(id), {

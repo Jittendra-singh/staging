@@ -1329,4 +1329,59 @@ class EventController extends Controller
         $frontController = new FrontController();
         return $frontController->markBulkCheckinWithEmail($id);
     }
+    public function certificateRequestDetail($id){
+        $orderTicket = EventOrderTicket::with(['volunteer', 'event', 'event.creator'])->findOrFail(decrypt($id));
+        $data['ticket']      = $orderTicket;
+        $data['event']       = $orderTicket->event;
+        $data['volunteer']   = $orderTicket->volunteer;
+        $data['module']      = 'certificate-requests';
+        return view($this->viewDirectory.'certificate-request-detail', $data); 
+    }
+    public function approveCertificateRequest($id){
+        $frontController = new FrontController();
+        return $frontController->approveCertificateRequest($id,true);
+    }
+    public function rejectCertificateRequest($id){
+        $frontController = new FrontController();
+        return $frontController->rejectCertificateRequest($id,true);
+    }
+    public function certificateRequests()
+    {
+        Gate::authorize('view', 'certificate-requests');
+        $selected_volunteer = request()->volunteer_id ? Volunteer::find(request()->volunteer_id) : null;
+        $selected_organizer = request()->organizer_id ? Volunteer::find(request()->organizer_id) : null;
+        $selected_event = request()->event_id ? Event::find(request()->event_id) : null;
+        $listingData = EventOrderTicket::whereNotNull('certificate_requested_at')
+            ->where(function($q){
+                if(request()->volunteer_id){
+                    $q->where('volunteer_id', request()->volunteer_id);
+                }
+                if(request()->organizer_id){
+                    $q->whereHas('event', function($query){
+                        $query->where('creator_id', request()->organizer_id);
+                    });
+                    // now EventOrderTicket don't have organizer_id column but it can event_id which is connected to Event modal/table and events table have creator_id which is actually organizer_id means organizer_id= creator_id so how to add this condition here 
+                }
+                if(request()->event_id){
+                    $q->where('event_id', request()->event_id);
+                }
+                if(request()->start_date)
+                    $q->whereDate('certificate_requested_at', '>=' , request()->start_date);
+                if(request()->end_date)
+                    $q->whereDate('certificate_requested_at', '<=' , request()->end_date);
+            });
+        if(request()->sort_by){
+            $listingData = $listingData->orderBy('certificate_requested_at', request()->sort_by == 1 ? 'desc' : 'asc');
+        } else {
+            $listingData = $listingData->orderBy('certificate_requested_at','desc');
+        }
+        $listingData = $listingData->paginate(50)->withQueryString();
+        return view($this->viewDirectory.'certificate-requests', [
+            'selected_volunteer'=>$selected_volunteer,
+            'selected_organizer'=>$selected_organizer,
+            'selected_event'=>$selected_event,
+            'listingData' => $listingData,
+            'module' => 'certificate-requests',
+        ]);
+    }
 }

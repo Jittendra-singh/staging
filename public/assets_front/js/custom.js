@@ -2142,22 +2142,44 @@ $(document).ready(function () {
 	$('.send-community-form-request').click(function () {
 		var url = $(this).attr('url');
 		var control = this;
-		$(control).attr('disabled', 'disabled');
-		$.ajax({
-			url: url,
-			method: 'POST',
-			data: {},
-			success: function (response) {
-				if (response.status) {
-					showError(response.message, 'success');
-					$(control).after('<h6 class="coupon-status"><span class="badge custom-badge-warning">Requested</span></h6>');
-					$(control).remove();
+		console.log('asdf');
+		if($(this).attr('is_event_completed') == '1'){
+			$('#registration_id').val($(this).attr('registration_id'));
+			$('#request_reason').val('');
+			$('#after_event_images').val('');
+			$('#newImagePreview').html('');
+			$('#request-certificate-popup').modal('show');
+			return true;
+		} else {
+			Swal.fire({
+				title: "Are you sure?",
+				text: `You want to request for the community certificate?`,
+				icon: "warning",
+				showCancelButton: true,
+				confirmButtonColor: '#3085d6',
+				cancelButtonColor: '#d33',
+				confirmButtonText: 'Yes, request it!'
+			}).then((willDelete) => {
+				if (willDelete.isConfirmed) {
+					$(control).attr('disabled', 'disabled');
+					$.ajax({
+						url: url,
+						method: 'POST',
+						data: {},
+						success: function (response) {
+							if (response.status) {
+								showError(response.message, 'success');
+								$(control).after('<h6 class="coupon-status"><span class="badge custom-badge-warning">Requested</span></h6>');
+								$(control).remove();
+							}
+							else {
+								showError(response.message, 'error');
+							}
+						}
+					});
 				}
-				else {
-					showError(response.message, 'error');
-				}
-			}
-		});
+			});
+		}
 	});
 	$('.event_publish_toggle').change(function () {
 		var eventId = $(this).data('event-id');
