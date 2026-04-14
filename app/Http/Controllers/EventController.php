@@ -1331,6 +1331,7 @@ class EventController extends Controller
     }
     public function certificateRequestDetail($id){
         $orderTicket = EventOrderTicket::with(['volunteer', 'event', 'event.creator'])->findOrFail(decrypt($id));
+        $data['authUser']    = auth()->user();
         $data['ticket']      = $orderTicket;
         $data['event']       = $orderTicket->event;
         $data['volunteer']   = $orderTicket->volunteer;

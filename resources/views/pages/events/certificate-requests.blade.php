@@ -114,10 +114,7 @@
                                 </td>
                                 <td>
                                     <div class="d-flex gap-2 justify-content-start action-button">
-                                        <!-- <a class="me-1" href="{{route('certificate-request-detail',encrypt($data->id))}}" target="_blank" >
-                                            <i class="fs-5 mdi mdi-eye" title="View Request"></i>
-                                        </a> -->
-                                        <a class="me-1" href="" >
+                                        <a class="me-1" href="{{route('certificate-request-detail',encrypt($data->id))}}" target="_blank" >
                                             <i class="fs-5 mdi mdi-eye" title="View Request"></i>
                                         </a>
                                         @if($data->community_form_status != 'approved' && $data->community_form_status != 'rejected')
