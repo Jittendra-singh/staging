@@ -2153,7 +2153,7 @@ $(document).ready(function () {
 		} else {
 			Swal.fire({
 				title: "Are you sure?",
-				text: `You want to request for the community certificate?`,
+				text: `You want to request a community certificate?`,
 				icon: "warning",
 				showCancelButton: true,
 				confirmButtonColor: '#3085d6',

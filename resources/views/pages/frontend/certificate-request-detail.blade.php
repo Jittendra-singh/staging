@@ -298,9 +298,15 @@
                             <i class="fa-solid fa-certificate me-3 mb-3"></i>
                             Certificate Request Details
                             
+                            @if($authUser->id==$ticket->volunteer_id)
                             <a href="{{ route('front-certificate-requests') }}" class="cert-back-link float-end">
                                 <i class="fa fa-arrow-left"></i> Back to Certificates
                             </a>
+                            @else 
+                            <a href="{{ route('front-certificate-management') }}" class="cert-back-link float-end">
+                                <i class="fa fa-arrow-left"></i> Back to Certificates
+                            </a>
+                            @endif
                             <!-- @if($ticket->community_form_status == 'approved')
                                 <span class="badge custom-badge-success ms-2">Approved</span>
                             @elseif($ticket->community_form_status == 'rejected')
@@ -519,13 +525,17 @@
                     @if($ticket->community_form_status == 'approved' && $ticket->community_form_pdf)
                     <div class="cert-download-card">
                         <div class="cert-download-title"><i class="fa fa-certificate me-1"></i> Certificate Ready</div>
-                        <p class="cert-download-text">Your certificate is ready to download.</p>
+                        @if(in_array($authUser->id, $cohostCreatorIds))
+                            <p class="cert-download-text">Certificate is ready to download.</p>
+                        @else 
+                            <p class="cert-download-text">Your certificate is ready to download.</p>
+                        @endif
                         <a href="{{ route('show-community-service-pdf', encrypt($ticket->id)) }}" target="_blank" class="primary-btn w-100 text-center d-block">
                             <i class="fa fa-download me-2"></i> Download Certificate
                         </a>
                     </div>
                     @endif
-                    @if(in_array($authUser->id, $cohostCreatorIds) && $ticket->community_form_status == 'requested')
+                    @if(in_array($authUser->id, $cohostCreatorIds) && $ticket->community_form_status != 'approved' && $ticket->community_form_status != 'rejected')
                     <div class="cert-sidebar-card">
                         <div class="cert-sidebar-label">
                             Take action no the request

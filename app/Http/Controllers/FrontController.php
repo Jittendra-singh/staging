@@ -1915,6 +1915,15 @@ class FrontController extends Controller
     }
     public function requestCommunityForm($ticket){
         $orderTicket = EventOrderTicket::findOrFail(decrypt($ticket));
+        if (!isset($orderTicket->id)) {
+            return $this->generateJsonResponse(false, 'Ticket not found.');
+        }
+        if ($orderTicket->community_form_status === 'approved') {
+            return $this->generateJsonResponse(false, 'Cannot request for an already approved certificate.');
+        }
+        if ($orderTicket->community_form_status === 'rejected') {
+            return $this->generateJsonResponse(false, 'Cannot request for an already rejected certificate.');
+        }
         $event = $orderTicket->event;
         $volunteer = $orderTicket->volunteer;
         if($orderTicket->checkin!=1 && $orderTicket->community_form_status=='pending'){
@@ -1924,7 +1933,7 @@ class FrontController extends Controller
                     'volunteer'=>$volunteer->first_name.' '.$volunteer->last_name,
                     'event_name'=>$event->event_name,
                     //'dashboard_link'=>route('front-cleanup-attending'),
-                    'dashboard_link'=>$this->mailUrl('front-registration-list'),
+                    'dashboard_link'=>$this->mailUrl('front-certificate-management'),
                 ];
                 $sub = 'Community Service Request – '.$emailData['volunteer'].' for '.$event->event_name;
                 $this->sendEmail($event->creator->email_address, $sub, $emailData, "request-community-service-form");
@@ -1979,7 +1988,7 @@ class FrontController extends Controller
                     'volunteer'=>$volunteer->first_name.' '.$volunteer->last_name,
                     'event_name'=>$event->event_name,
                     //'dashboard_link'=>route('front-cleanup-attending'),
-                    'dashboard_link'=>$this->mailUrl('front-registration-list'),
+                    'dashboard_link'=>$this->mailUrl('front-certificate-management'),
                 ];
                 $sub = 'Community Service Request – '.$emailData['volunteer'].' for '.$event->event_name;
                 $this->sendEmail($event->creator->email_address, $sub, $emailData, "request-community-service-form");
@@ -2602,6 +2611,31 @@ class FrontController extends Controller
             $orderTicket->certificate_approve_reject_by      = ($callFromBackend)?auth()->user()->id:$authUser->id;
             $orderTicket->certificate_approve_reject_by_role = $role;
             $orderTicket->save();
+
+            if (isset($orderTicket->volunteer) && isset($orderTicket->volunteer->id) && isset($orderTicket->event) && isset($orderTicket->event->id)) {
+                $email = $orderTicket->volunteer->email_address;
+                $name = $orderTicket->volunteer->first_name.' '.$orderTicket->volunteer->last_name;
+                if(!empty(trim($email))){
+                    $to_arr = [];
+                    $to_arr[] = 
+                    [
+                        "to" => [
+                            ["email" => trim($email)]
+                            //["email" => 'learningdcm@gmail.com']
+                        ],
+                        "dynamic_template_data" => [
+                            "volunteer_name" => $name,
+                            "volunteer_email" => $email,
+                            "event_name" =>  $orderTicket->event->event_name,
+                            "reject_reason" => request()->reject_reason,
+                            'request_page_link' => $this->mailUrl('front-certificate-requests'),
+                        ],
+                    ];
+                    if(!empty($to_arr)){
+                        $this->sendSendgridTemplateEmailWithoutLog($to_arr,"d-d730056de6fd472ab482a9f8de33078d");
+                    }
+                }
+            }
 
             return $this->generateJsonResponse(true, 'Certificate request rejected successfully.');
 

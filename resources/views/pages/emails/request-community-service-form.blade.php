@@ -6,7 +6,7 @@
 
     <p>To issue the certificate, please confirm their attendance by marking them as <strong>Checked In</strong> on your event dashboard:</p>
 
-    <p> 👉 <a href="{{$dashboard_link}}">Dashboard Link</a></p>
+    <p> 👉 <a href="{{$dashboard_link}}">Certificate Management</a></p>
 
     <p>Once you check them in, the certificate will be generated automatically and emailed to the volunteer.</p>
 

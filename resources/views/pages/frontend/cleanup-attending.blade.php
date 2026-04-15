@@ -289,7 +289,7 @@
 																	<span class="badge custom-badge-warning">Checked-In, Certificate Pending</span>
 																</h6>
 																@endif
-															@elseif(strtotime(date('Y-m-d H:i:s')) < strtotime($event->eventEndDateTime))
+															@elseif(strtotime(date('Y-m-d H:i:s')) < strtotime($event->eventStartDateTime))
 																<h6 class="coupon-status">
 																	<span class="badge custom-badge-danger">Awaiting</span>
 																</h6>
