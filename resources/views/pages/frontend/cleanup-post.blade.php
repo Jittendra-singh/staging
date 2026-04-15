@@ -1462,12 +1462,12 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                     <button class="primary-btn w-fit go-to-next" is_event_unpublish={{ $is_event_unpublish?1:0 }} is_event_completed="{{ (isset($form_data->encrypted_id) && $form_data->is_completed==1)?1:0 }}" is_event_end="{{$is_event_end?1:0}}" type="button">Save & Next</button>
                                     <!-- <a style="display: none;" href="javascript:void(0);" onclick="redirectWithMessage(this,'success')" message="{{$eventCloseMsg}}" url="{{ route('front-cleanup-hosting','organizer') }}" class="primary-btn w-fit close-post-cleanup-btn" type="button">Save & Exit</a> -->
 
-                                    @if(isset($form_data->id) && !empty($form_data->end_datetime) && strtotime($form_data->end_datetime)>strtotime(date('Y-m-d H:i:s')))
+                                    @if(isset($form_data->id) && !empty($form_data->end_datetime) && strtotime($form_data->end_datetime)<strtotime(date('Y-m-d H:i:s')))
                                     @if(isset($form_data->encrypted_id) && $form_data->is_completed!=1)
                                         <button style="display:none;" type="button" url="{{route('check-event-for-wrapup',$form_data->encrypted_id ?? 0)}}" class="primary-btn w-fit float-end submit-send-wrapup-btn" data-bs-toggle="tooltip" data-bs-original-title="Send Wrap-Up Email & Certificate to All Attendees and Complete Cleanup">Save & Finalize Cleanup Report</button>
                                     @endif
                                     @endif
-                                    
+
                                     @if($is_event_unpublish)
                                     <a style="display: none;" href="{{ route('front-cleanup-hosting','organizer') }}" class="primary-btn w-fit close-post-cleanup-btn" type="button">Save as Draft</a>
                                     <a style="display: none;" href="javascript:void(0);" url2="{{ route('front-cleanup-hosting','organizer') }}" url="{{route('update-event-publish-status')}}" class="primary-btn w-fit close-post-cleanup-btn save_publish_event" type="button">Publish Event</a>
