@@ -91,6 +91,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
     Route::get('cron-weekly-alerts' , 'cronWeeklyAlerts')->name('cron-weekly-alerts');
     Route::get('cron-ticket-notifications' , 'cronTicketNotifications')->name('cron-ticket-notifications'); // once a day at 12:15AM
     Route::get('cron-event-finalize' , 'cronEventFinalize')->name('cron-event-finalize'); // once a day at 12:15AM
+    Route::get('cron-event-finalize-reminder' , 'cronEventFinalizeReminder')->name('cron-event-finalize'); // once a day at 12:15AM
     
     Route::get('send-cancel-event-email', 'sendCancelEMail')->name('send-cancel-event-email');
     /*--------------------------------------------------------------------------------------- *
