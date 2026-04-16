@@ -3577,7 +3577,6 @@ class FrontController extends Controller
         ]);
     }
     public function cronEventFinalize(){
-        echo 'run';die();
         set_time_limit(0);
         ini_set('max_execution_time', 0);
         $records = Event::with('creator:id,first_name,last_name,email_address')->where('is_completed',0)->whereDate('end_datetime', '=', now()->subDay()->toDateString())->get();
@@ -3701,7 +3700,6 @@ class FrontController extends Controller
         }
     }
     public function cronEventFinalizeReminder(){ // call after first finalize email with 72 hours duration
-        echo 'run';die();
         set_time_limit(0);
         ini_set('max_execution_time', 0);
         $records = Event::with('creator:id,first_name,last_name,email_address')
