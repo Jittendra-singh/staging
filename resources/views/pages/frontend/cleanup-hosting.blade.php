@@ -347,8 +347,13 @@ a[disabled]{
                                                 <div class="form-group">
                                                     <div class="d-flex align-items-start">
                                                         <label class="btn-switch m-0 me-3">
+                                                            @if($event->is_completed==1)
+                                                            <input disabled type="checkbox" {{ $event->status == 'published' ? 'checked' : '' }} class="event_publish_toggle" data-event-id="{{ $event->encrypted_id }}">
+                                                            <span class="checkbox-slider" onclick=redirectWithMessage(this) url="" message="Publish status cannot be changed after the event is completed."></span>
+                                                            @else 
                                                             <input {{ $event->tickets()->active()->count()>0?'disabled':'' }} type="checkbox" {{ $event->status == 'published' ? 'checked' : '' }} class="event_publish_toggle" data-event-id="{{ $event->encrypted_id }}">
                                                             <span class="checkbox-slider" {{ $event->tickets()->active()->count()>0?'onclick=redirectWithMessage(this)':'' }} url="" message="An event cannot be unpublished once an attendee has registered."></span>
+                                                            @endif
                                                         </label>
                                                     </div>
                                                 </div>

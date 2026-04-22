@@ -1223,6 +1223,9 @@ class FrontController extends Controller
             if($validated['max_qty_allowed_per_order']==0 || empty($validated['max_qty_allowed_per_order'])){
                 throw new \Exception("Max tickets allowed per order should be greater than 0.");
             }
+            if(strtotime($validated['sell_start_time']) >= strtotime($validated['sell_end_time'])){
+                throw new \Exception("Ticket sell end date must be greater than the ticket sell start date.");
+            }
             $ticketData = [
                 'ticket_name' => $validated['ticket_name'],
                 'ticket_type' => $validated['ticket_type'],
@@ -1753,7 +1756,7 @@ class FrontController extends Controller
             if($validated['status']=='draft'){
                 $tickets = $event->tickets()->where('rsvp_confirmation', 1)->get();
                 if($tickets->count() > 0){
-                    return $this->generateJsonResponse(false, 'An event cannot be unpublished once an attendee has registered.',route('view-event-details', ['slug' => $event->slug]));
+                    return $this->generateJsonResponse(false, 'An event cannot be unpublished once an attendee has registered.',$this->mailUrl('view-event-details', ['slug' => $event->slug]));
                 }
             }
             $event->status = $validated['status'];
@@ -1775,10 +1778,10 @@ class FrontController extends Controller
                 $this->sendEmail(SUPPORT_EMAIL, EVENT_PUBLISH_MAIL_SUB.$event->event_name, $email_content, "email-to-admin-for-publish");
             }
         } catch (\Exception $e) {
-            return $this->generateJsonResponse(false, 'Failed to update event publish status.',route('view-event-details', ['slug' => $event->slug]));
+            return $this->generateJsonResponse(false, 'Failed to update event publish status.',$this->mailUrl('view-event-details', ['slug' => $event->slug]));
             //return $this->generateJsonResponse(false, 'Failed to update event publish status: ' . $e->getMessage());
         }
-        return $this->generateJsonResponse(true, 'Event publish status updated successfully.',route('view-event-details', ['slug' => $event->slug]));
+        return $this->generateJsonResponse(true, 'Event publish status updated successfully.',$this->mailUrl('view-event-details', ['slug' => $event->slug]));
     }
     public function updateTicketStatus($id){
         try {

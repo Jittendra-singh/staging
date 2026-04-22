@@ -840,7 +840,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                     </div>
                                                     @if(!(!empty(auth()->guard('front')->user()->stripe_email) && !empty(auth()->guard('front')->user()->stripe_account_id)))
                                                     <div class="alert alert-warning" role="alert">
-                                                        Connect your Stripe account to display paid tickets on the front end. <a target="_blank" href="{{ route('front-profile') }}">Connect Now</a>
+                                                        Connect your Stripe account to display paid tickets on the front end. <a target="_blank" href="{{ route('front-stripe-connect') }}">Connect Now</a>
                                                     </div>
                                                     @endif
 
