@@ -92,6 +92,8 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
     Route::get('cron-ticket-notifications' , 'cronTicketNotifications')->name('cron-ticket-notifications'); // once a day at 12:15AM
     Route::get('cron-event-finalize' , 'cronEventFinalize')->name('cron-event-finalize'); // once a day at 12:15AM
     Route::get('cron-event-finalize-reminder' , 'cronEventFinalizeReminder')->name('cron-event-finalize-reminder'); // once a day at 12:15AM
+    Route::get('cron-send-event-cancel-email' , 'cronSendEventCancelEmail')->name('cron-send-event-cancel-email'); // every 5min
+    Route::get('cron-cancel-refund-event-tickets', 'cronCancelRefundEventTickets')->name('cron-cancel-refund-event-tickets'); // every 5min
     
     Route::get('send-cancel-event-email', 'sendCancelEMail')->name('send-cancel-event-email');
     /*--------------------------------------------------------------------------------------- *
@@ -155,6 +157,8 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::post('send-waiver-bulk-email/{id}', 'sendWaiverBulkEmail')->name('send-waiver-bulk-email');
         Route::post('mark-bulk-checkin-with-email/{id}', 'markBulkCheckinWithEmail')->name('mark-bulk-checkin-with-email');
         Route::post('resend-waiver/{ticket}', 'resendWaiver')->name('resend-waiver');
+        Route::get('cancel-event/{id}', 'cancelEvent')->name('front-cancel-event');
+        Route::get('ticket-convert-to-donation/{id}', 'ticketConvertToDonation')->name('front-ticket-convert-to-donation');
 
         Route::get('certificate-requests', 'certificateRequests')->name('front-certificate-requests');
         Route::get('certificate-request-detail/{id}', 'certificateRequestDetail')->name('front-certificate-request-detail');

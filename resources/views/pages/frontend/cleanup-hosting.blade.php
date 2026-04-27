@@ -211,6 +211,9 @@ a[disabled]{
                                 @php 
                                     $eventStatusClass = strtolower($event->runningStatus);
                                     $now = \Carbon\Carbon::now();
+                                    $canCancelEvent = auth()->guard('front')->user()->id == $event->creator_id
+                                        && $event->is_completed != 1
+                                        && (!empty($event->end_datetime) ? $event->end_datetime->gte($now) : true);
                                     if($event->end_datetime && \Carbon\Carbon::parse($event->end_datetime)->lt($now) && $event->is_completed != 1)
                                     {
                                         $eventStatusClass = 'action_required';
@@ -227,11 +230,16 @@ a[disabled]{
                                                 <div class="card-event-dt">
                                                     <h5 class="m-0">{{ $event->event_name }}</h5>
                                                     <p class="mb-2">{{ $event->fullAddress }}</p>
+                                                    @if(!empty($event->cancelled_at))
+                                                    <h6 class="coupon-status">
+                                                        <span data-bs-toggle="tooltip" data-bs-original-title="This event has been cancelled at {{ date(config('app.dateTimeFormat'),strtotime($event->cancelled_at)) }}" class="badge custom-badge-danger 1">Not Cancelled</span>
+                                                    </h6>
+                                                    @endif
                                                     @if($event->is_active!=1)
                                                     	<h6 class="coupon-status">
                                                     		<span data-bs-toggle="tooltip" data-bs-original-title="This event has been marked as inactive by admin." class="badge custom-badge-danger 1">Not Active</span>
                                                     	</h6>
-                                                    @else
+                                                    @elseif(empty($event->cancelled_at))
                                                     <div class="card-event-dt">
                                                         <button {{ $event->is_completed==1?'disabled':'' }} class="btn btn-sm btn-default border-default show-alert-run-url" message="You want to send the waiver email to all attendees" url="{{route('send-waiver-bulk-email', ['id' => $event->encrypted_id])}}"><i class="fa fa-envelope me-2"></i>Send Wavier To All</button>
                                                         <button {{ $event->is_completed==1?'disabled':'' }} class="btn btn-sm btn-default ms-2 border-default show-alert-run-url" message="You want to mark all attendees as checked-in" url="{{route('mark-bulk-checkin-with-email', ['id' => $event->encrypted_id])}}"><i class="fa fa-check-square me-2"></i>Check-in All</button>
@@ -273,6 +281,11 @@ a[disabled]{
                                                     <a message="You want to mark all attendees as checked-in" href="javascript:void(0);" url="{{route('mark-bulk-checkin-with-email', ['id' => $event->encrypted_id])}}" class="dropdown-item show-alert-run-url">
                                                         <i class="fa-solid fa-envelope me-3"></i> Check-in All
                                                     </a> -->
+                                                    @endif
+                                                    @if($canCancelEvent)
+                                                    <a class="dropdown-item btn-cancel-event" data-url="" href="javascript:void(0);" reschedule-url="{{ route('front-reschedule-event', ['id' => $event->encrypted_id]) }}" cancel-url="{{ route('front-cancel-event', ['id' => $event->encrypted_id]) }}">
+                                                        <i class="fa-solid fa-ban me-3"></i>Cancel Event
+                                                    </a>
                                                     @endif
                                                     @if(auth()->guard('front')->user()->id==$event->creator_id)
                                                     <a class="dropdown-item delete-record" data-url="{{route('front-cleanup-hosting-delete', ['id'=> $event->id])}}">

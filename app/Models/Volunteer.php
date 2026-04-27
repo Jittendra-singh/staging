@@ -158,7 +158,12 @@ class Volunteer extends Authenticatable
             'rsvp_filled_at',
             'is_under_18',
             'signature',
-            'ticket_status'
+            'is_amt_donated',
+            'cancelled_at',
+            'is_cancel_email_sent',
+            'refund_status',
+            'ticket_status',
+            'cancel_ticket_error'
         ])
         ->using(EventOrderTicket::class);
     }

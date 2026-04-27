@@ -3349,7 +3349,390 @@ class FrontController extends Controller
             return $this->generateJsonResponse(true, 'Waiver emails sent successfully to all attendees.');
         }
     }
-    
+    public function ticketConvertToDonation($id){
+        $orderTicket = EventOrderTicket::find(decrypt($id));
+        if(isset($orderTicket->id) && isset($orderTicket->eventOrder)){
+            $order = $orderTicket->eventOrder;
+            $total_donation_amount = !empty($order->donation_amount)?$order->donation_amount:0;
+            $orderTicket->update(['is_amt_donated'=>1,'rsvp_confirmation'=>0]);
+            $total_donation_amount += $orderTicket->price; 
+            $order->donation_amount = $total_donation_amount;
+            $order->save();
+            $email = $orderTicket->volunteer->email_address;
+            if($orderTicket->is_under_18==1){
+                $email = $orderTicket->waiver_handler_email;
+            }
+            if(!empty(trim($email))){
+                $event = $orderTicket->event;
+                $subject = "Thank you for donating your ticket amount for ".$event->event_name;
+                $to_arr = [];
+                $to_arr[] = 
+                [
+                    "to" => [
+                        ["email" => trim($email)]
+                        //["email" => 'learningdcm@gmail.com']
+                    ],
+                    "dynamic_template_data" => [
+                        "subject" => $subject,
+                        "is_under_18" => $orderTicket->is_under_18 == 1 ? true : false,
+                        "volunteer_name" => $orderTicket->volunteer->first_name.' '.$orderTicket->volunteer->last_name,
+                        "volunteer_email" => $orderTicket->volunteer->email_address,
+                        "guardian_name" => $orderTicket->waiver_handler_name,
+                        "guardian_email" => $orderTicket->waiver_handler_email,
+                        "event_name" =>  $event->event_name,
+                        'event_date' => $event->startTimeAndEndTime,
+                        'event_location' => $event->fullAddress,
+                        'organizer_name' => $event->creator->first_name.' '.$event->creator->last_name,
+                    ],
+                ];
+                // need to change the template id for this email 
+                //$this->sendSendgridTemplateEmailWithoutLog($to_arr,"d-1ef71dffbc644dce914ab333526c922d");
+            }
+            $this->setFlashSession(true, "Ticket amount has been donated successfully.");
+            return redirect()->back();
+        }
+        $this->setFlashSession(true, "Ticket not found.");
+        return redirect()->back();
+    }
+    public function cancelEvent($id){
+        $event = Event::find(decrypt($id));
+        if(!$event){
+            abort(404, 'Event not found.');
+        }
+        if($event->is_completed==1){
+            $this->setFlashSession(false, 'Completed events cannot be cancelled.');
+            return redirect()->back();
+        }
+        if(strtotime($event->end_datetime) < strtotime(now())){
+            $this->setFlashSession(false, 'Event cannot be cancelled after it has ended.');
+            return redirect()->back();
+        }
+        $event->update([
+            'cancelled_at' => date('Y-m-d H:i:s'),
+        ]);
+        // update the tickets status for cancellation
+        $event->tickets()
+        ->where('rsvp_confirmation', 1)
+        ->where('price', '>', 0)
+        ->update([
+            'rsvp_confirmation' => 0,
+            'cancelled_at' => date('Y-m-d H:i:s'),
+            'refund_status'       => 1,
+            'cancel_ticket_error' => null,
+        ]);
+        $event->tickets()
+        ->where('rsvp_confirmation', 1)
+        ->where('price', '<=', 0)
+        ->update([
+            'rsvp_confirmation' => 0,
+            'cancelled_at' => date('Y-m-d H:i:s'),
+            'refund_status'       => 4,
+            'cancel_ticket_error' => null,
+        ]);
+        $this->setFlashSession(true, 'Event cancelled successfully.');
+        return redirect()->back();
+    }
+    public function cronSendEventCancelEmail(){        
+        set_time_limit(0);
+        ini_set('max_execution_time', 0);
+        /* $tickets = EventOrderTicket::with([
+                'volunteer:id,first_name,last_name,email_address',
+                'event:id,event_name,start_datetime,end_datetime,venue,pincode,creator_id,slug',
+                'event.creator:id,first_name,last_name,email_address',
+            ])
+            ->where('rsvp_confirmation', 0)
+            ->where('is_cancel_email_sent', 0)
+            ->whereHas('event', function ($q) {
+                $q->whereNotNull('cancelled_at');
+            })
+            ->whereHas('volunteer', function ($q) {
+                $q->whereNotNull('email_address')->where('email_address', '!=', '');
+            })
+            ->limit(500)
+            ->get(); */
+        $tickets = EventOrderTicket::with([
+            'volunteer:id,first_name,last_name,email_address',
+            'event:id,event_name,start_datetime,end_datetime,venue,pincode,creator_id,slug,cancelled_at',
+            'event.creator:id,first_name,last_name,email_address',
+        ])
+        ->join('events', 'events.id', '=', 'event_order_tickets.event_id')
+        ->select('event_order_tickets.*')
+        ->where('event_order_tickets.rsvp_confirmation', 0)
+        ->where('event_order_tickets.is_cancel_email_sent', 0)
+        ->whereHas('event', function ($q) {
+            $q->whereNotNull('cancelled_at');
+        })
+        ->whereHas('volunteer', function ($q) {
+            $q->whereNotNull('email_address')->where('email_address', '!=', '');
+        })
+        ->orderBy('events.cancelled_at', 'asc')
+        ->limit(500)
+        ->get();
+
+        if ($tickets->isEmpty()) {
+            return false;
+        }
+
+        $to_arr  = [];
+        $log_arr = [];
+        $updateIds = [];
+
+        foreach ($tickets as $ticket) {
+            if (!isset($ticket->volunteer) || !isset($ticket->volunteer->id)) {
+                continue;
+            }
+
+            if ($ticket->is_under_18 == 1) {
+                $email = $ticket->waiver_handler_email;
+                $name  = $ticket->waiver_handler_name;
+            } else {
+                $email = $ticket->volunteer->email_address;
+                $name  = $ticket->volunteer->first_name . ' ' . $ticket->volunteer->last_name;
+            }
+
+            if (empty(trim($email))) {
+                continue;
+            }
+
+            $to_arr[] = [
+                "to" => [
+                    ["email" => trim($email)],
+                ],
+                "dynamic_template_data" => [
+                    "is_under_18" => $ticket->is_under_18 == 1 ? true : false,
+                    "volunteer_name" => $ticket->volunteer->first_name.' '.$ticket->volunteer->last_name,
+                    "volunteer_email" => $ticket->volunteer->email_address,
+                    "guardian_name" => $ticket->waiver_handler_name,
+                    "guardian_email" => $ticket->waiver_handler_email,
+                    "event_name" =>  $ticket->event->event_name,
+                    'event_date' => $ticket->event->startTimeAndEndTime,
+                    'event_location' => $ticket->event->fullAddress,
+                    'organizer_name' => $ticket->event->creator->first_name.' '.$ticket->event->creator->last_name,
+                    "organizer_email" => $ticket->event->creator->email_address,
+                    'is_free_ticket' => $ticket->price>0?false:true,
+                    'convert_to_donation_link' => $this->mailUrl('front-cleanup-attending'),
+                ],
+            ];
+
+            $log_arr[] = [
+                "id"       => $ticket->id,
+                "email"    => trim($email),
+                "event_id" => $ticket->event_id,
+            ];
+
+            $updateIds[] = $ticket->id;
+        }
+
+        if (!empty($to_arr) && count($to_arr) > 0) {
+            $this->runCronSendEventCancelEmail($to_arr, $log_arr, $updateIds);
+        }
+    }
+    public function runCronSendEventCancelEmail($to_arr,$log_arr,$updateIds){
+        $jayParsedAry = [
+            "personalizations" => $to_arr, 
+            "from" => [
+                        "name" => "VolunteerCleanup.Org" ,
+                        "email" => "outreach@volunteercleanup.org" 
+                    ], 
+            "template_id" => "d-90ce664df7e04903aca3bf79264b7db8" 
+        ]; 
+
+        // Convert the post data to a string
+        $postDataString = http_build_query($jayParsedAry);
+        // Calculate the size of the post data in bytes
+        $postDataSizeBytes = strlen($postDataString);
+        // Convert bytes to megabytes
+        $postDataSizeMB = round($postDataSizeBytes / (1024 * 1024),2);
+
+        $response = $this->SendSendgridEmail('','','',$jayParsedAry);
+
+        //print_r($response);
+        $is_success = 1;
+        $response_code = 202;
+        if(isset($response) && !empty($response)){
+            if(isset($response['response']) && !empty($response['response'])){
+                if(isset($response['response']['code']) && !empty($response['response']['code']) && ($response['response']['code']==202 || $response['response']['code']==200)){
+                    $is_success = 1;
+                    $response_code = $response['response']['code'];
+                    //echo 'SUCCESS '.$resUnjson['response']['code'];
+                }
+                else{
+                    $is_success = 0;
+                    $response_code = $response['response']['code'];
+                    //echo 'FAILED '.$resUnjson['response']['code'];
+                }
+            }
+            else{
+                //echo 'FAILED';
+            }
+        }
+        else{
+            //echo 'FAILED';
+        }
+        if (!empty($updateIds)) {
+            EventOrderTicket::whereIn('id', $updateIds)->update(['is_cancel_email_sent' => 1]);
+        }
+    }
+    public function cronCancelRefundEventTickets(){
+        set_time_limit(0);
+        ini_set('max_execution_time', 0);
+
+        // Fetch 25 distinct order_ids from event_order_tickets
+        // where refund_status = 1 (not initiated) and ticket is cancelled
+        // and the event is cancelled
+        // 25 orders × 4 Stripe API calls × ~1.5s = ~37 seconds safely under limit
+        // grouped by order_id so we process one Stripe call per order
+        $orderIds = EventOrderTicket::join('events', 'events.id', '=', 'event_order_tickets.event_id')
+            ->join('event_orders', 'event_orders.id', '=', 'event_order_tickets.order_id')
+            ->select('event_order_tickets.order_id')
+            ->where('event_order_tickets.refund_status', 1)    // 1 = not initiated
+            ->where('event_order_tickets.is_amt_donated', 0) // skip donated tickets
+            ->where('event_order_tickets.rsvp_confirmation',0)    // ticket must be cancelled
+            //->where('event_orders.payment_status', 'paid')     // only paid orders
+            ->whereNotNull('event_order_tickets.cancelled_at') // ticket must be cancelled
+            ->whereNotNull('events.cancelled_at')              // event must be cancelled
+            ->where('events.cancelled_at', '<=', now()->subHours(48))               // 48 hours must have passed
+            ->orderBy('events.cancelled_at', 'asc')
+            ->orderBy('event_order_tickets.order_id', 'asc')
+            ->groupBy('event_order_tickets.order_id')
+            ->limit(25)
+            ->pluck('event_order_tickets.order_id')
+            ->toArray();
+
+        if (empty($orderIds)) {
+            return response()->json($this->generateResponse(true, 'No pending orders found.'));
+        }
+
+        foreach ($orderIds as $orderId) {
+
+            $order = EventOrder::find($orderId);
+            if (!$order) {
+                continue;
+            }
+
+            // Mark only refund_status = 1 tickets of this order as initiated
+            // before hitting Stripe so if cron overlaps next run
+            // same order will not be picked again
+            // refund_status = 2 means initiated
+            EventOrderTicket::where('order_id', $orderId)
+                ->where('refund_status', 1)
+                ->where('is_amt_donated', 0)
+                ->where('rsvp_confirmation', 0)
+                ->whereNotNull('cancelled_at')
+                ->update([
+                    'refund_status'       => 2,
+                    'cancel_ticket_error' => null,
+                ]);
+
+            // Fetch ONLY tickets marked as initiated by above update (refund_status = 2)
+            // Tickets already cancelled before event cancellation
+            // will have refund_status = 3 or 4 so they will NOT be fetched here
+            // This ensures we only refund amount of remaining active tickets
+            $tickets = EventOrderTicket::where('order_id', $orderId)
+                ->where('refund_status', 2)
+                ->where('is_amt_donated', 0)
+                ->where('rsvp_confirmation', 0)
+                ->whereNotNull('cancelled_at')
+                ->get();
+
+            if ($tickets->isEmpty()) {
+                continue;
+            }
+
+            // Sum ONLY the remaining tickets amount
+            // Previously cancelled tickets are excluded automatically
+            // so this total is correct for partial refund on the order
+            $total_amount = $tickets->sum('price');
+            $total_fee    = $tickets->sum('ticket_platform_fee');
+
+            try {
+                if ($total_amount <= 0) {
+                    // Free tickets — no Stripe call needed
+                    // refund_status = 4 means taken by organizer
+                    EventOrderTicket::where('order_id', $orderId)
+                        ->where('refund_status', 2)
+                        ->where('is_amt_donated', 0)
+                        ->where('rsvp_confirmation', 0)
+                        ->whereNotNull('cancelled_at')
+                        ->update([
+                            'refund_status'       => 4,
+                            'cancel_ticket_error' => null,
+                        ]);
+
+                } else {
+                    // Paid tickets — hit Stripe once for remaining tickets of this order
+                    // Stripe supports multiple partial refunds on same payment_intent
+                    // so even if some tickets were already refunded individually before,
+                    // this will correctly refund only the remaining amount
+                    $stripeCon = new StripeController();
+                    $res = $stripeCon->refundCharge(
+                        $order->id,
+                        $order->payment_intent,
+                        $total_amount,
+                        $total_fee
+                    );
+
+                    if ($res['status'] == true) {
+                        // refund_status = 3 means refunded successfully
+                        EventOrderTicket::where('order_id', $orderId)
+                            ->where('refund_status', 2)
+                            ->where('is_amt_donated', 0)
+                            ->where('rsvp_confirmation', 0)
+                            ->whereNotNull('cancelled_at')
+                            ->update([
+                                'refund_status'       => 3,
+                                'cancel_ticket_error' => null,
+                            ]);
+
+                    } else {
+                        // refund_status = 5 means Stripe call failed
+                        // save the error response in cancel_ticket_error for manual review
+                        EventOrderTicket::where('order_id', $orderId)
+                            ->where('refund_status', 2)
+                            ->where('is_amt_donated', 0)
+                            ->where('rsvp_confirmation', 0)
+                            ->whereNotNull('cancelled_at')
+                            ->update([
+                                'refund_status'       => 5,
+                                'cancel_ticket_error' => json_encode([
+                                    'type'            => 'stripe_refund_failed',
+                                    'order_id'        => $order->id,
+                                    'payment_intent'  => $order->payment_intent,
+                                    'total_amount'    => $total_amount,
+                                    'total_fee'       => $total_fee,
+                                    'stripe_response' => $res,
+                                    'failed_at'       => date('Y-m-d H:i:s'),
+                                ]),
+                            ]);
+                    }
+                }
+            } catch (\Exception $e) {
+                // refund_status = 5 means failed — needs manual review
+                // save full exception details in cancel_ticket_error
+                EventOrderTicket::where('order_id', $orderId)
+                    ->where('refund_status', 2)
+                    ->where('is_amt_donated', 0)
+                    ->where('rsvp_confirmation', 0)
+                    ->whereNotNull('cancelled_at')
+                    ->update([
+                        'refund_status'       => 5,
+                        'cancel_ticket_error' => json_encode([
+                            'type'           => 'exception',
+                            'order_id'       => $order->id,
+                            'payment_intent' => $order->payment_intent,
+                            'total_amount'   => $total_amount,
+                            'total_fee'      => $total_fee,
+                            'error'          => $e->getMessage(),
+                            'line'           => $e->getLine(),
+                            'file'           => $e->getFile(),
+                            'failed_at'      => date('Y-m-d H:i:s'),
+                        ]),
+                    ]);
+            }
+        }
+
+        return response()->json($this->generateResponse(true, 'Refund cron executed successfully.'));
+    }
     public function rescheduleEvent($id){
         $event = Event::find(decrypt($id));
         if(!$event){

@@ -141,6 +141,11 @@
 																<span class="badge custom-badge-danger 1">Not Active</span>
 															</h6>
 															@endif
+															@if(!empty($event->cancelled_at))
+															<h6 class="coupon-status">
+																<span data-bs-toggle="tooltip" data-bs-original-title="This event has been cancelled at {{ date(config('app.dateTimeFormat'),strtotime($event->cancelled_at)) }}" class="badge custom-badge-danger 1">Not Cancelled</span>
+															</h6>
+															@endif
 														</div>
 													</div>
 													
@@ -237,7 +242,20 @@
 														<p>RSVP</p>
 														<h6 class="coupon-status">
 															@if($registration->rsvp_confirmation===0)
-															<span class="badge custom-badge-danger">Cancelled</span>
+															<span class="badge custom-badge-danger">
+																Cancelled
+																@if($registration->price>0)
+																	@if($registration->is_amt_donated==1)
+																	, Amount Donated
+																	@elseif($registration->refund_status==1)
+																	, Pending Refund
+																	@elseif($registration->refund_status==2)
+																	, Refund Processed
+																	@elseif($registration->refund_status==3)
+																	, Refunded
+																	@endif
+																@endif
+															</span>
 															@elseif($registration->rsvp_confirmation==1)
 															<span class="badge custom-badge-success">Active</span>
 															@else
@@ -333,6 +351,11 @@
 														<button class="primary-btn w-fit active" type="button">Unregister</button>
 													</div>												 --}}
 												</div>
+												@if(!empty($event->cancelled_at) && $registration->rsvp_confirmation==0 && $registration->price>0 && $registration->is_amt_donated==0 && $registration->refund_status==1) 
+												<div class="bottom d-flex flex-wrap justify-content-end align-items-center p-4">
+													<a data-bs-toggle="tooltip" data-bs-original-title="Convert your ticket into a donation. If no action is taken within 48 hours from the event cancellation time, your amount will be automatically refunded." class="primary-btn w-fit btn-convert-to-donation" href="javascript:void(0);" url="{{route('front-ticket-convert-to-donation', ['id' => $registration->encrypted_id])}}">Convert to Donation</a>
+												</div>
+												@endif
 											</div>
 										</div>
 									@empty

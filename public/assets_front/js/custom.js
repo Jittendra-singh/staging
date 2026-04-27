@@ -2142,7 +2142,6 @@ $(document).ready(function () {
 	$('.send-community-form-request').click(function () {
 		var url = $(this).attr('url');
 		var control = this;
-		console.log('asdf');
 		if($(this).attr('is_event_completed') == '1'){
 			$('#registration_id').val($(this).attr('registration_id'));
 			$('#request_reason').val('');
@@ -2768,6 +2767,57 @@ $(document).ready(function () {
 						}
 					}
 				});
+			}
+		});
+	});
+	$(document).on('click', '.btn-cancel-event', function () {
+		var cancelUrl = $(this).attr('cancel-url');
+		var rescheduleUrl = $(this).attr('reschedule-url');
+		Swal.fire({
+			title: "What would you like to do?",
+			html: 
+            '<div style="display: inline-block;margin-left: auto;margin-right: auto;"><div class="text-left mb-2"><b>Cancel Event will:</b></div>'+
+            '<ul class="text-left">'+
+                '<li>• Notify all attendees</li>'+
+                '<li>• Stop all check-ins and registrations</li>'+
+                '<li>• Disable certificates</li>'+
+                '<li>• Issue refunds for paid tickets</li>'+
+            '</ul>'+
+            '<div class="text-left mb-2 mt-3"><b>Reschedule Event will:</b></div>'+
+            '<ul class="text-left">'+
+                '<li>• Let you select a new date and time</li>'+
+                '<li>• Keep existing registrations</li>'+
+                '<li>• Send email to attendees </li>'+
+            '</ul></div>',
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonColor: '#3085d6',
+			cancelButtonColor: '#34D399',
+			confirmButtonText: 'Cancel Event',
+			cancelButtonText: 'Reschedule Event',
+		}).then((willDelete) => {
+			if (willDelete.isConfirmed) {
+				window.location.href = cancelUrl;
+			} else {
+				window.open(rescheduleUrl, '_blank');
+			}
+		});
+	});
+	$(document).on('click', '.btn-convert-to-donation', function () {
+		var url = $(this).attr('url');
+		var control = this;
+		Swal.fire({
+			title: "Are you sure?",
+			text: `You want to donate your ticket amount`,
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonColor: '#3085d6',
+			cancelButtonColor: '#d33',
+			confirmButtonText: 'Yes, donate it!'
+		}).then((willDelete) => {
+			if (willDelete.isConfirmed) {
+				$(control).attr('disabled', 'disabled');
+				window.location.href = url;
 			}
 		});
 	});

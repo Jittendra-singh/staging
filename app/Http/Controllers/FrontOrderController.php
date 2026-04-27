@@ -795,7 +795,7 @@ class FrontOrderController extends Controller
             if(!$orderTicket) 
                 abort(404);
                 
-            $orderTicket->update(['rsvp_confirmation' => 0]);
+            $orderTicket->update(['rsvp_confirmation' => 0,'refund_status' => 4,'cancelled_at'=>date('Y-m-d H:i:s')]);
             $this->sendRSVPCancelledMail($orderTicket);
             if($is_ajax!=1){
                 return redirect()->back();
@@ -810,7 +810,7 @@ class FrontOrderController extends Controller
             $total_fee = $orderTicket->ticket_platform_fee;
             
             if($total_amount<=0){                
-                $orderTicket->update(['rsvp_confirmation' => 0]);
+                $orderTicket->update(['rsvp_confirmation' => 0,'refund_status' => 3,'cancelled_at'=>date('Y-m-d H:i:s')]);
                 $this->sendRSVPCancelledMail($orderTicket);
                 if($is_ajax!=1){
                     return redirect()->back();
@@ -821,7 +821,7 @@ class FrontOrderController extends Controller
                 $res = $stripeCon->refundCharge($order->id,$order->payment_intent,$total_amount,$total_fee);
                 //echo '<pre>';print_r($res);die();
                 if($res['status']==true){
-                    $orderTicket->update(['rsvp_confirmation' => 0]);
+                    $orderTicket->update(['rsvp_confirmation' => 0,'cancelled_at'=>date('Y-m-d H:i:s'),'refund_status'=>3]);
                     $this->sendRSVPCancelledMail($orderTicket);
                     if($is_ajax!=1){
                         return redirect()->back();
@@ -861,7 +861,7 @@ class FrontOrderController extends Controller
                 if(!$orderTicket) 
                     abort(404);
                 
-                $orderTicket->update(['rsvp_confirmation' => 0]);
+                $orderTicket->update(['rsvp_confirmation' => 0,'refund_status' => 4,'cancelled_at'=>date('Y-m-d H:i:s')]);
                 $this->sendRSVPCancelledMail($orderTicket,false,true);
             }
             $this->sendRSVPCancelledMail($orderTicket,true,false,['ticket_count'=>count($request->ticket),'ticket_refund_amount'=>0]);
@@ -900,7 +900,7 @@ class FrontOrderController extends Controller
             if($total_amount<=0){
                 foreach ($request->ticket as $key => $value) {
                     $orderTicket = EventOrderTicket::find(decrypt($value));
-                    $orderTicket->update(['rsvp_confirmation' => 0]);
+                    $orderTicket->update(['rsvp_confirmation' => 0,'refund_status' => 3,'cancelled_at'=>date('Y-m-d H:i:s')]);
                     $this->sendRSVPCancelledMail($orderTicket,false,true);
                 }
                 $this->sendRSVPCancelledMail($orderTicket,true,false,['ticket_count'=>count($request->ticket),'ticket_refund_amount'=>0]);
@@ -912,7 +912,7 @@ class FrontOrderController extends Controller
                 if($res['status']==true){
                     foreach ($request->ticket as $key => $value) {
                         $orderTicket = EventOrderTicket::find(decrypt($value));
-                        $orderTicket->update(['rsvp_confirmation' => 0]);
+                        $orderTicket->update(['rsvp_confirmation' => 0,'cancelled_at'=>date('Y-m-d H:i:s'),'refund_status'=>3]);
                         $this->sendRSVPCancelledMail($orderTicket,false,true);
                     }
                     $this->sendRSVPCancelledMail($orderTicket,true,false,['ticket_count'=>count($request->ticket),'ticket_refund_amount'=>$total_amount]);
@@ -932,7 +932,7 @@ class FrontOrderController extends Controller
                 if(!$orderTicket) 
                     abort(404);
                 
-                $orderTicket->update(['rsvp_confirmation' => 0,'is_amt_donated'=>1]);
+                $orderTicket->update(['rsvp_confirmation' => 0,'is_amt_donated'=>1,'cancelled_at'=>date('Y-m-d H:i:s')]);
                 $total_donation_amount += $orderTicket->price; 
                 $this->sendRSVPCancelledMail($orderTicket,false,true);
             }
@@ -986,7 +986,7 @@ class FrontOrderController extends Controller
                 $fee = ($amount*$order->platform_fee_per)/100;
             }
             if($amount<=0){
-                $orderTicket->update(['rsvp_confirmation' => 0]);
+                $orderTicket->update(['rsvp_confirmation' => 0,'refund_status' => 3,'cancelled_at'=>date('Y-m-d H:i:s')]);
                 $this->sendRSVPCancelledMail($orderTicket);
                 $this->setFlashSession(true, "Ticket has been cancelled.");
                 return redirect()->back();
@@ -994,7 +994,7 @@ class FrontOrderController extends Controller
                 $stripeCon = new StripeController();
                 $res = $stripeCon->refundCharge($order->id,$order->payment_intent,$amount,$fee);
                 if($res['status']==true){
-                    $orderTicket->update(['rsvp_confirmation' => 0]);
+                    $orderTicket->update(['rsvp_confirmation' => 0,'cancelled_at'=>date('Y-m-d H:i:s'),'refund_status'=>3]);
                     $this->sendRSVPCancelledMail($orderTicket);
                     $this->setFlashSession(true, "Ticket cancelled successfully. Refund initiated. Depending on your bank, it may take 5–10 business days for the amount to reflect in your account.");
                     return redirect()->back();
@@ -1009,7 +1009,7 @@ class FrontOrderController extends Controller
             if(!$orderTicket) 
                 abort(404);
 
-            $orderTicket->update(['rsvp_confirmation' => 0,'is_amt_donated'=>1]);
+            $orderTicket->update(['rsvp_confirmation' => 0,'is_amt_donated'=>1,'cancelled_at'=>date('Y-m-d H:i:s')]);
 
             $order = $orderTicket->eventOrder;
             $donation_amt = !empty($order->donation_amount)?$order->donation_amount:0;
