@@ -1936,7 +1936,7 @@ class FrontController extends Controller
                     'volunteer'=>$volunteer->first_name.' '.$volunteer->last_name,
                     'event_name'=>$event->event_name,
                     //'dashboard_link'=>route('front-cleanup-attending'),
-                    'dashboard_link'=>$this->mailUrl('front-certificate-management'),
+                    'dashboard_link'=>$this->mailUrl('front-certificate-volunteer-requests'),
                 ];
                 $sub = 'Community Service Request – '.$emailData['volunteer'].' for '.$event->event_name;
                 $this->sendEmail($event->creator->email_address, $sub, $emailData, "request-community-service-form");
@@ -1991,7 +1991,7 @@ class FrontController extends Controller
                     'volunteer'=>$volunteer->first_name.' '.$volunteer->last_name,
                     'event_name'=>$event->event_name,
                     //'dashboard_link'=>route('front-cleanup-attending'),
-                    'dashboard_link'=>$this->mailUrl('front-certificate-management'),
+                    'dashboard_link'=>$this->mailUrl('front-certificate-volunteer-requests'),
                 ];
                 $sub = 'Community Service Request – '.$emailData['volunteer'].' for '.$event->event_name;
                 $this->sendEmail($event->creator->email_address, $sub, $emailData, "request-community-service-form");
@@ -2631,7 +2631,7 @@ class FrontController extends Controller
                             "volunteer_email" => $email,
                             "event_name" =>  $orderTicket->event->event_name,
                             "reject_reason" => request()->reject_reason,
-                            'request_page_link' => $this->mailUrl('front-certificate-requests'),
+                            'request_page_link' => $this->mailUrl('front-certificate-my-requests'),
                         ],
                     ];
                     if(!empty($to_arr)){

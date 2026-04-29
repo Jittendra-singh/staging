@@ -2152,7 +2152,7 @@ $(document).ready(function () {
 		} else {
 			Swal.fire({
 				title: "Are you sure?",
-				text: `You want to request a community certificate?`,
+				text: `You want to request a Community Service Certificate ?`,
 				icon: "warning",
 				showCancelButton: true,
 				confirmButtonColor: '#3085d6',
@@ -2667,6 +2667,37 @@ $(document).ready(function () {
 			confirmButtonColor: '#3085d6',
 			cancelButtonColor: '#d33',
 			confirmButtonText: 'Yes'
+		}).then((willDelete) => {
+			if (willDelete.isConfirmed) {
+				$(control).attr('disabled', 'disabled');
+				$.ajax({
+					url: url,
+					method: 'POST',
+					data: {},
+					success: function (response) {
+						$(control).removeAttr('disabled');
+						if (response.status) {
+							showError(response.message, 'success');
+						}
+						else {
+							showError(response.message, 'error');
+						}
+					}
+				});
+			}
+		});
+	});
+	$(document).on('click', '.btn-resend-waiver', function () {
+		var control = this;
+		var url = $(control).attr('url');
+		Swal.fire({
+			title: "Resend waiver email?",
+			text: "The attendee will receive a new email to complete the waiver.",
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonColor: '#3085d6',
+			cancelButtonColor: '#d33',
+			confirmButtonText: 'Resend Email'
 		}).then((willDelete) => {
 			if (willDelete.isConfirmed) {
 				$(control).attr('disabled', 'disabled');

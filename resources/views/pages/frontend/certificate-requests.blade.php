@@ -12,13 +12,13 @@
                 <div class="row">
                     <div class="col-md-12 d-flex justify-content-between">
                         <div class="d-main-title">
-                            <h3><i class="fa-solid fa-calendar-days me-3 mb-3"></i>Certificate Requests</h3>
+                            <h3><i class="fa-solid fa-calendar-days me-3 mb-3"></i>My Requests</h3>
 							<p class="mb-2">Track the status of your community service certificate requests and download approved certificates.</p>
                             @php
                                 $breadcrumbs = [ 
                                     [
-                                        'name' => 'Certificate Requests', 
-                                        'url' => route('front-certificate-requests')
+                                        'name' => 'My Requests', 
+                                        'url' => route('front-certificate-my-requests')
                                     ],
                                 ]
                             @endphp     

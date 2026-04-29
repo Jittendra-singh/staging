@@ -226,6 +226,10 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                 @php
                                     $breadcrumbs = [
                                         [
+                                            'name' => old('event_name', $form_data->event_name ?? ''), 
+                                            'url' => route('front-post-a-event',[$form_data->encrypted_id])
+                                        ],
+                                        [
                                             'name' => 'Edit Cleanup', 
                                             'url' => route('front-post-a-event',[$form_data->encrypted_id])
                                         ],

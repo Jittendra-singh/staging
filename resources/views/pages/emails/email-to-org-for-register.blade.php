@@ -42,9 +42,9 @@
         <hr>
         <p><strong>Payment Summary:</strong></p>
         <ul>
-            <li><strong>Gross Amount Paid:</strong> {{ round($order->grand_total,2) }}</li>
-            <li><strong>Platform Fees:</strong> {{ round($platform_fee,2) }}</li>
-            <li><strong>Net Amount Credited:</strong> {{ round($order->grand_total-$platform_fee, 2) }}</li>
+            <li><strong>Gross Amount Paid:</strong> ${{ round($order->grand_total,2) }}</li>
+            <li><strong>Platform Fees:</strong> ${{ round($platform_fee,2) }}</li>
+            <li><strong>Net Amount Credited:</strong> ${{ round($order->grand_total-$platform_fee, 2) }}</li>
         </ul><br/>
         <hr>
         <p>Funds (minus processing and platform fees) have been deposited into your connected account.</p>

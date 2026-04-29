@@ -11,11 +11,11 @@
             <div class="row">
                 <div class="col-md-12 d-flex justify-content-between">
                     <div class="d-main-title">
-                        <h3><i class="fa-solid fa-certificate me-3 mb-3"></i>Certificate Management</h3>
+                        <h3><i class="fa-solid fa-certificate me-3 mb-3"></i>Volunteer Requests</h3>
                         <p class="mb-2">Review and manage community service certificate requests from volunteers.</p>
                         @php
                             $breadcrumbs = [
-                                ['name' => 'Certificate Management', 'url' => route('front-certificate-management')]
+                                ['name' => 'Volunteer Requests', 'url' => route('front-certificate-volunteer-requests')]
                             ]
                         @endphp
                         <x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs"/>

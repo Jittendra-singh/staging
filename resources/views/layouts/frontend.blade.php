@@ -564,7 +564,18 @@ $is_session = session()->get('checkout_event');
                             <span class="menu--label">Weekly Email Alerts</span>
                         </a>
                     </li>
-                    <li class="menu--item menu--item__has_sub_menu {{ url()->current() == route('front-certificate-requests') ? 'menu--subitens__opened' : '' }} {{ url()->current() == route('front-certificate-management') ? 'menu--subitens__opened' : '' }}">
+
+                    @php
+                        $isCertificateDetailMyRequest = request()->routeIs('front-certificate-request-detail')
+                            && isset($ticket)
+                            && $adminUser->id == $ticket->volunteer_id;
+
+                        $isCertificateDetailVolunteerRequest = request()->routeIs('front-certificate-request-detail')
+                            && isset($ticket)
+                            && $adminUser->id != $ticket->volunteer_id;
+                    @endphp
+                    <li class="menu--item menu--item__has_sub_menu {{ request()->routeIs('front-certificate-my-requests') || request()->routeIs('front-certificate-volunteer-requests') || $isCertificateDetailMyRequest || $isCertificateDetailVolunteerRequest ? 'menu--subitens__opened' : '' }}">
+                    <!-- <li class="menu--item menu--item__has_sub_menu {{ url()->current() == route('front-certificate-my-requests') ? 'menu--subitens__opened' : '' }} {{ url()->current() == route('front-certificate-volunteer-requests') ? 'menu--subitens__opened' : '' }}"> -->
                         <a class="menu--link">
                             <i class="menu--icon fa fa-vcard"></i>
                             <span class="menu--label">Certificates </span>
@@ -573,20 +584,25 @@ $is_session = session()->get('checkout_event');
                         <ul class="sub_menu mt-0">
                             @if($adminUser->attendingEventsWithoutActive()->count()>0)
                             <li>
-                                <a href="{{ route('front-certificate-requests') }}" class="sub_menu--link {{ url()->current() == route('front-certificate-requests') ? 'active' : '' }}" title="Track your requests and download your certificates once approved" data-bs-toggle="tooltip" data-bs-placement="right">My Requests</a>
+                                <a href="{{ route('front-certificate-my-requests') }}" class="sub_menu--link {{ request()->routeIs('front-certificate-my-requests') || $isCertificateDetailMyRequest ? 'active' : '' }}" title="Track your requests and download your certificates once approved" data-bs-toggle="tooltip" data-bs-placement="right">My Requests</a>
+
+                                <!-- <a href="{{ route('front-certificate-my-requests') }}" class="sub_menu--link {{ url()->current() == route('front-certificate-my-requests') ? 'active' : '' }}" title="Track your requests and download your certificates once approved" data-bs-toggle="tooltip" data-bs-placement="right">My Requests</a> -->
                             </li>
                             @endif
                             @if($adminUser->is_organiser == '1')
                             <li>
-                                <a href="{{ route('front-certificate-management') }}" class="sub_menu--link {{ url()->current() == route('front-certificate-management') ? 'active' : '' }}" title="Check volunteer requests and approve or reject them" data-bs-toggle="tooltip" data-bs-placement="right">Volunteer Requests</a>
+
+                                <a href="{{ route('front-certificate-volunteer-requests') }}" class="sub_menu--link {{ request()->routeIs('front-certificate-volunteer-requests') || $isCertificateDetailVolunteerRequest ? 'active' : '' }}" title="Check volunteer requests and approve or reject them" data-bs-toggle="tooltip" data-bs-placement="right">Volunteer Requests</a>
+
+                                <!-- <a href="{{ route('front-certificate-volunteer-requests') }}" class="sub_menu--link {{ url()->current() == route('front-certificate-volunteer-requests') ? 'active' : '' }}" title="Check volunteer requests and approve or reject them" data-bs-toggle="tooltip" data-bs-placement="right">Volunteer Requests</a> -->
                             </li>
                             @endif
                         </ul>
                     </li>
                     @endif
                     <!-- <li class="menu--item">
-                        <a href="{{ route('front-certificate-requests') }}"
-                            class="menu--link {{ url()->current() == route('front-certificate-requests') ? 'active' : '' }}"
+                        <a href="{{ route('front-certificate-my-requests') }}"
+                            class="menu--link {{ url()->current() == route('front-certificate-my-requests') ? 'active' : '' }}"
                             title="Certificate Requests" data-bs-toggle="tooltip" data-bs-placement="right">
                             <i class="fa-solid fa-vcard menu--icon"></i>
                             <span class="menu--label">Certificate Requests</span>
@@ -594,8 +610,8 @@ $is_session = session()->get('checkout_event');
                     </li> -->
                     @if($adminUser->is_organiser == '1')
                     <!-- <li class="menu--item">
-                        <a href="{{ route('front-certificate-management') }}"
-                            class="menu--link {{ url()->current() == route('front-certificate-management') ? 'active' : '' }}"
+                        <a href="{{ route('front-certificate-volunteer-requests') }}"
+                            class="menu--link {{ url()->current() == route('front-certificate-volunteer-requests') ? 'active' : '' }}"
                             title="Certificate Management" data-bs-toggle="tooltip" data-bs-placement="right">
                             <i class="fa-solid fa-certificate menu--icon"></i>
                             <span class="menu--label">Certificate Management</span>
@@ -626,7 +642,7 @@ $is_session = session()->get('checkout_event');
                             <span class="menu--label">Inbox</span>
                         </a>
                     </li>
-                    <li class="menu--item menu--item__has_sub_menu {{ url()->current() == route('front-sales-report') ? 'menu--subitens__opened' : '' }} {{ url()->current() == route('front-orders') ? 'menu--subitens__opened' : '' }} {{ url()->current() == route('front-stripe-connect') ? 'menu--subitens__opened' : '' }}">
+                    <li class="menu--item menu--item__has_sub_menu {{ request()->routeIs('front-sales-report') || request()->routeIs('front-orders') || request()->routeIs('front-order-details') || request()->routeIs('front-stripe-connect') ? 'menu--subitens__opened' : '' }}">
                         <a class="menu--link">
                             <i class="menu--icon fa fa-dollar"></i>
                             <span class="menu--label">Financials</span>
@@ -639,15 +655,16 @@ $is_session = session()->get('checkout_event');
                                 <a href="{{ route('front-sales-report') }}" class="sub_menu--link {{ url()->current() == route('front-sales-report') ? 'active' : '' }}" title="Attendees & Bookings" data-bs-toggle="tooltip" data-bs-placement="right">Paid Tickets & Donations</a>
                             </li>
                             <li>
-                                <a href="{{ route('front-orders') }}" class="sub_menu--link {{ url()->current() == route('front-orders') ? 'active' : '' }}" title="Revenue and Donation Summary" data-bs-toggle="tooltip" data-bs-placement="right">Orders</a>
+                                <a href="{{ route('front-orders') }}" class="sub_menu--link {{ request()->routeIs('front-orders') || request()->routeIs('front-order-details') ? 'active' : '' }}" title="Revenue and Donation Summary" data-bs-toggle="tooltip" data-bs-placement="right">Orders</a>
+
                             </li>
                         </ul>
                     </li>
                     @else 
                     <li class="menu--item">
                         <a href="{{ route('front-orders') }}"
-                            class="menu--link {{ url()->current() == route('front-orders') ? 'active' : '' }}"
-                            title="Orders" data-bs-toggle="tooltip" data-bs-placement="right">
+                        class="menu--link {{ request()->routeIs('front-orders') || request()->routeIs('front-order-details') ? 'active' : '' }}"
+                        title="Orders" data-bs-toggle="tooltip" data-bs-placement="right">
                             <i class="fa-solid fa-shopping-cart menu--icon"></i>
                             <span class="menu--label">Orders</span>
                         </a>

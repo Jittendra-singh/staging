@@ -160,9 +160,9 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::get('cancel-event/{id}', 'cancelEvent')->name('front-cancel-event');
         Route::get('ticket-convert-to-donation/{id}', 'ticketConvertToDonation')->name('front-ticket-convert-to-donation');
 
-        Route::get('certificate-requests', 'certificateRequests')->name('front-certificate-requests');
+        Route::get('certificates/my-requests', 'certificateRequests')->name('front-certificate-my-requests');
         Route::get('certificate-request-detail/{id}', 'certificateRequestDetail')->name('front-certificate-request-detail');
-        Route::get('certificate-management', 'certificateManagement')->name('front-certificate-management');
+        Route::get('certificates/volunteer-requests', 'certificateManagement')->name('front-certificate-volunteer-requests');
         Route::post('approve-certificate/{ticket_id}', 'approveCertificateRequest')->name('front-approve-certificate');
         Route::post('reject-certificate/{ticket_id}', 'rejectCertificateRequest')->name('front-reject-certificate'); 
         Route::post('submit-certificate-request', 'submitCertificateRequest')->name('front-submit-certificate-request'); 

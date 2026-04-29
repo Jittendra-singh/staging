@@ -299,11 +299,11 @@
                             Certificate Request Details
                             
                             @if($authUser->id==$ticket->volunteer_id)
-                            <a href="{{ route('front-certificate-requests') }}" class="cert-back-link float-end">
+                            <a href="{{ route('front-certificate-my-requests') }}" class="cert-back-link float-end">
                                 <i class="fa fa-arrow-left"></i> Back to Certificates
                             </a>
                             @else 
-                            <a href="{{ route('front-certificate-management') }}" class="cert-back-link float-end">
+                            <a href="{{ route('front-certificate-volunteer-requests') }}" class="cert-back-link float-end">
                                 <i class="fa fa-arrow-left"></i> Back to Certificates
                             </a>
                             @endif
@@ -318,11 +318,26 @@
                             @endif -->
                         </h3>
                         @php
-                            $breadcrumbs = [
-                                ['name' => 'Certificate Requests', 'url' => route('front-certificate-requests')],
+                            /* $breadcrumbs = [
+                                ['name' => 'Certificate Requests', 'url' => route('front-certificate-my-requests')],
                                 ['name' => 'Request Details', 'url' => '#'],
-                            ]
+                            ]; */
+                            $isMyCertificateRequest = $authUser->id == $ticket->volunteer_id;
+
+                            $certificateParentRoute = $isMyCertificateRequest
+                                ? route('front-certificate-my-requests')
+                                : route('front-certificate-volunteer-requests');
+
+                            $certificateParentLabel = $isMyCertificateRequest
+                                ? 'My Requests'
+                                : 'Volunteer Requests';
+
+                            $breadcrumbs = [
+                                ['name' => $certificateParentLabel, 'url' => $certificateParentRoute],
+                                ['name' => 'Request Details', 'url' => '#'],
+                            ];
                         @endphp
+
                         <x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs"/>
                     </div>
                 </div>
@@ -343,7 +358,7 @@
             @endif
 
             {{-- BACK LINK --}}
-            <!-- <a href="{{ route('front-certificate-requests') }}" class="cert-back-link">
+            <!-- <a href="{{ route('front-certificate-my-requests') }}" class="cert-back-link">
                 <i class="fa fa-arrow-left"></i> Back to Certificates
             </a> -->
 

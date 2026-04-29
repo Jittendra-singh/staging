@@ -218,6 +218,8 @@ a[disabled]{
                                     {
                                         $eventStatusClass = 'action_required';
                                     }
+                                    $approvedCohostCount = $event->cohostRecords->where('request_status', 'approved')->count();
+                                    $totalCohostCount = $event->cohostRecords->count();
                                 @endphp 
                                 <div class="main-card mt-2 event-row-{{$eventStatusClass}}">
                                     <div class="contact-list">
@@ -265,9 +267,9 @@ a[disabled]{
                                                         </a>
                                                     @endif
 
-                                                    <a target="_blank" href="{{route('front-registration-list', ['event' => $event->id])}}" class="dropdown-item">
-                                                    <i class="fa-solid fa-eye me-3"></i>View Attendees</a>
                                                     <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step3'])}}" class="dropdown-item"> <i class="fa-solid fa-user-plus me-3"></i>Manage Co-Host</a>
+                                                    <a target="_blank" href="{{route('front-registration-list', ['event' => $event->id])}}" class="dropdown-item">
+                                                    <i class="fa-solid fa-eye me-3"></i>Manage Check-ins</a>
                                                     <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step5'])}}" class="dropdown-item"> <i class="fa-solid fa-bar-chart me-3"></i>Event Cleanup Report</a>
                                                     @if(!empty($event->slug))
                                                     <a href="{{route('front-duplicate-an-event', ['slug' => $event->slug])}}" class="dropdown-item">
@@ -302,6 +304,13 @@ a[disabled]{
                                                 </span>
                                                 <p>Starts on</p>
                                                 <h6 class="coupon-status">{{$event->start_datetime->format(config('app.dateTimeFormat'))}}</h6>
+                                            </div>
+                                            <div class="icon-box ">
+                                                <span class="icon">
+                                                    <i class="fa-solid fa-user-group"></i>
+                                                </span>
+                                                <p>Co-Hosts</p>
+                                                <h6 class="coupon-status">{{ $approvedCohostCount }} / {{ $totalCohostCount }}</h6>
                                             </div>
                                             <div class="icon-box ">
                                                 <span class="icon">
@@ -352,7 +361,28 @@ a[disabled]{
                                                 <p>Visibility</p>
                                                 <h6 class="coupon-status">{{$event->is_private ? 'Private' : 'Public'}}</h6>
                                             </div> -->
-                                            <div class="icon-box">
+                                            <!-- <div class="icon-box">
+                                                <span class="icon">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </span>
+                                                <p>Publish</p>
+                                                <div class="form-group">
+                                                    <div class="d-flex align-items-start">
+                                                        <label class="btn-switch m-0 me-3">
+                                                            @if($event->is_completed==1)
+                                                            <input disabled type="checkbox" {{ $event->status == 'published' ? 'checked' : '' }} class="event_publish_toggle" data-event-id="{{ $event->encrypted_id }}">
+                                                            <span class="checkbox-slider" onclick=redirectWithMessage(this) url="" message="Publish status cannot be changed after the event is completed."></span>
+                                                            @else 
+                                                            <input {{ $event->tickets()->active()->count()>0?'disabled':'' }} type="checkbox" {{ $event->status == 'published' ? 'checked' : '' }} class="event_publish_toggle" data-event-id="{{ $event->encrypted_id }}">
+                                                            <span class="checkbox-slider" {{ $event->tickets()->active()->count()>0?'onclick=redirectWithMessage(this)':'' }} url="" message="An event cannot be unpublished once an attendee has registered."></span>
+                                                            @endif
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div> -->
+                                        </div>
+                                        <div class="bottom d-flex flex-wrap justify-content-end align-items-center p-4">
+                                            <div class="icon-box me-auto">
                                                 <span class="icon">
                                                     <i class="fa-solid fa-eye"></i>
                                                 </span>
@@ -371,8 +401,6 @@ a[disabled]{
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div class="bottom d-flex flex-wrap justify-content-end align-items-center p-4">
                                             <a class="primary-btn w-fit" href="{{route('front-reschedule-event', ['id' => $event->encrypted_id])}}" {{ ($event->is_completed==1 || $event->is_active!=1)?'disabled':'' }}>Reschedule</a>
                                             <a class="sign-up-btn text-white w-fit ms-3" href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step5'])}}" {{ ($eventStatusClass!='action_required' || $event->is_active!=1)?'disabled':'' }}>Submit Wrap-Up Report</a>
                                         </div>

@@ -611,7 +611,8 @@ class FrontOrderController extends Controller
                     'registration_list_link'=>$this->mailUrl('front-registration-list',['event'=>$event->id]),
                     //'event_url'=>route('view-event-details', ['slug' => $event->slug]),
                 ];
-                $subject = "New registration for ".$event->event_name.' : '.$emailData['org_name'];
+                //$subject = "New registration for ".$event->event_name.' : '.$emailData['org_name'];
+                $subject = "New Registration for your event : ".$event->event_name;
                 $this->sendEmail($event->creator->email_address, $subject, $emailData, "email-to-org-for-register");
 
                 // send email to who purchase the tickets

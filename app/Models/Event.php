@@ -66,7 +66,7 @@ class Event extends Model
     }
     public function scopeListactive($query): void{
         // Apply active status and only events whose end date >= today
-        $query->detailActive()->where('status', 'published');
+        $query->detailActive()->where('status', 'published')->whereNull('cancelled_at');
             // ->whereDate('end_datetime', '>=', now());
 
         // Apply filter box queries if present

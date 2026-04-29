@@ -602,10 +602,10 @@
 .quantity-control {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 8px;
     background: white;
     border-radius: 25px;
-    padding: 0.5rem;
+    padding: 6px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 

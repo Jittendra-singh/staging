@@ -336,7 +336,7 @@
 															@else
 															<span class="badge custom-badge-danger">Unsigned</span> 
 															<a href="{{ route('view-waiver-form', ['ticket' => encrypt($registration->id)]) }}" data-bs-toggle="tooltip" data-bs-original-title="Waiver Page Link" target="_blank"><span class="badge custom-badge-warning"><i class="fa fa-external-link"></i></span></a><br/>
-															<button class="btn btn-sm btn-outline-primary mt-2 show-alert-run-url border-radius-30" url="{{ route('resend-waiver', ['ticket' => encrypt($registration->id)]) }}" message="You want to resend email for waiver">Resend</button>
+															<button class="btn btn-sm btn-outline-primary mt-2 btn-resend-waiver border-radius-30" url="{{ route('resend-waiver', ['ticket' => encrypt($registration->id)]) }}">Resend</button>
 															@endif 
 														</h6>
 													</div>	

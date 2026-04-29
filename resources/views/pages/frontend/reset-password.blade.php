@@ -24,12 +24,31 @@
                     	            <x-reusables.frontend.alert />
                                     <div class="col-12 mb-3">
                                         <input type="hidden" name="token" value="{{$token}}">
-                                        <label for="password" class="form-label">Password</label>
-                                        <input type="password" class="form-control h_50" name="password" id="password" placeholder="Password" required />
+                                        <!-- <label for="password" class="form-label">Password</label>
+                                        <input type="password" class="form-control h_50" name="password" id="password" placeholder="Password" required /> -->
+                                        <div class="form-group mt-4">
+                                            <div class="field-password">
+                                                <label class="form-label">Password*</label>
+                                            </div>
+                                            <div class="loc-group position-relative">
+                                                <input class="form-control h_50" type="password" name="password" id="password" placeholder="Enter your password" required />
+                                                <span class="pass-show-eye"><i class="fas fa-eye-slash"></i></span>
+                                            </div>
+                                        </div>
+
                                     </div>
                                     <div class="col-12 mb-3">
-                                        <label for="password_confirmation" class="form-label">Confirm Password</label>
-                                        <input type="password" class="form-control h_50" name="password_confirmation" id="password_confirmation" placeholder="Confirm Password" required />
+                                        <!-- <label for="password_confirmation" class="form-label">Confirm Password</label>
+                                        <input type="password" class="form-control h_50" name="password_confirmation" id="password_confirmation" placeholder="Confirm Password" required /> -->
+                                        <div class="form-group mt-4">
+                                            <div class="field-password">
+                                                <label for="password_confirmation" class="form-label">Confirm Password*</label>
+                                            </div>
+                                            <div class="loc-group position-relative">
+                                                <input class="form-control h_50" type="password" name="password_confirmation" id="password_confirmation" placeholder="Confirm your password" required />
+                                                <span class="pass-show-eye"><i class="fas fa-eye-slash"></i></span>
+                                            </div>
+                                        </div>
                                     </div>
                                     <input type="submit" value="Reset Password" class="primary-btn w-fit " >
                                 </form>
