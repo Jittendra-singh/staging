@@ -7970,3 +7970,15 @@ input[type="time"],
 textarea, select, .dropdown-toggle.btn, .ck.ck-editor {
         border-radius: 6px !important;
 }
+.alert-innter-ul{
+    background: #F9FAFB;
+    border-radius: 10px;
+    font-size: 15px;
+    text-align: left;
+}
+.alert-innter-ul ul{
+    list-style-type: inherit;
+}
+.alert-innter-ul ul li{
+    margin-top:10px;
+}

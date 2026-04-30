@@ -420,7 +420,7 @@
                                     @endif
                                     have rejected this certificate request. The volunteer has been notified along with the reason provided.</p>
                             @else
-                                <p class="cert-status-msg-text">This certificate request is pending your review. Please verify the submission details and take appropriate action to approve or reject the request.</p>
+                                <p class="cert-status-msg-text">This request is pending your review. Please verify the details and approve or reject it accordingly.</p>
                             @endif
                         </div>
                         @else 
@@ -459,16 +459,23 @@
 
                         @if(!empty($ticket->certificate_request_text))
                         <div class="cert-meta-item">
-                            <div class="cert-label">Motivation</div>
+                            <!-- <div class="cert-label">Motivation</div> -->
                             <div class="cert-motivation-text">{{ $ticket->certificate_request_text }}</div>
                         </div>
                         @else
-                        <p class="cert-status-msg-text text-muted">No submission details provided.</p>
+                        <div class="cert-proof-placeholder">
+                            <div class="col-sm-8 offset-sm-2">
+                                <i class="fa fa-file-text"></i>
+                                <h5>Standard Participation Request</h5>
+                                No additional submission details were required for this event type. Hours have been automatically cross-referenced with the event check-in logs.
+                            </div>
+                        </div>
                         @endif
-
-                        {{-- Proof of Participation --}}
-                        <hr class="cert-divider">
-                        <div class="cert-label mb-3">Proof of Participation</div>
+                    </div>
+                    <div class="cert-card">
+                        <div class="cert-card-title">
+                            <span><i class="fa fa-image"></i> Proof of Participation</span>
+                        </div>
 
                         @php
                             $proofImages = [];
@@ -491,8 +498,11 @@
                             </div>
                         @else
                             <div class="cert-proof-placeholder">
-                                <i class="fa fa-image"></i>
-                                No proof images submitted
+                                <div class="col-sm-8 offset-sm-2">
+                                    <i class="fa fa-image"></i>
+                                    <h5>No Proof Documentation Required</h5>
+                                    Visual proof is currently optional for established community partners. Administrative logs serve as the primary source of truth.
+                                </div>
                             </div>
                         @endif
                     </div>

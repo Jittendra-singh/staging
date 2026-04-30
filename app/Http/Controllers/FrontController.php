@@ -514,7 +514,8 @@ class FrontController extends Controller
         $new_event->status  = 'draft';
         $new_event->waste_collected  = null;
         $new_event->area_cleaned  = null;
-        $new_event->team_name  = null;
+        //$new_event->team_name  = null;
+        $new_event->volunteer_hours  = null;
         $new_event->post_event_notes  = null;
         $new_event->click_views  = 0;
         $new_event->start_datetime = date('Y-m-d H:i:s', strtotime('+1 day', strtotime($today_dt)));
@@ -1301,7 +1302,8 @@ class FrontController extends Controller
             'event_id'           => 'required',
             'waste_collected'    => 'required|max:255',
             'area_cleaned'       => 'required|max:255',
-            'team_name'          => 'required|string',
+            //'team_name'          => 'required|string',
+            'volunteer_hours'    => 'required|numeric|min:0',
             'post_event_notes'   => 'required|string',
         ]);
 
@@ -1309,7 +1311,8 @@ class FrontController extends Controller
             $event = \App\Models\Event::findOrFail(decrypt($validated['event_id']));
             $event->waste_collected = $validated['waste_collected'];
             $event->area_cleaned = $validated['area_cleaned'];
-            $event->team_name = $validated['team_name'];
+            //$event->team_name = $validated['team_name'];
+            $event->volunteer_hours = ceil($validated['volunteer_hours']);
             $event->post_event_notes = $validated['post_event_notes'];
             if (request()->hasFile('after_event_images')) {
                 $files = request()->file('after_event_images');
@@ -1557,33 +1560,39 @@ class FrontController extends Controller
                 } else {
                     $link = '<a target="_blank" href="'.route('front-registration-list',['event' => $event->id]).'">check-ins</a>';
                 }
-                $message = '<div class="text-left fw-bold mb-2">You have '.$notCheckedIntickets->count().' attendees who are not checked-in. Only checked-in attendees will receive certificates.</div>
-                <div class="text-left mb-2">
-                You can review and update '.$link.' before submitting. Once you submit:</div>
-                <ul class="text-left">
-                    <li>• Certificates will be generated.</li>
-                    <li>• Emails will be sent immediately.</li>
-                </ul>';
+                $message = '<div class="text-left fw-bold mb-4 text-center">You have <span class="text-danger">'.$notCheckedIntickets->count().' attendees</span> who are not checked-in. Only checked-in attendees will receive certificates.</div>
+                <div class="alert-innter-ul p-4">
+                    <div class="text-left mb-2">
+                    You can review and update '.$link.' before submitting. Once you submit:</div>
+                    <ul class="text-left ps-4">
+                        <li>Certificates will be generated.</li>
+                        <li>Emails will be sent immediately.</li>
+                    </ul>
+                </div>';
             } else {
                 $checkedIntickets = $event->tickets()->where('checkin', 1)->where('rsvp_confirmation', 1)->get();
-                $message = '<div class="text-left fw-bold mb-2">You have '.$checkedIntickets->count().' checked-in attendees and they will receive certificates.</div>
-                <div class="text-left mb-2">
-                You can proceed to submit the wrap-up. Once submitted:</div>
-                <ul class="text-left">
-                    <li>• Certificates will be generated.</li>
-                    <li>• Emails will be sent immediately.</li>
-                </ul>';
+                $message = '<div class="text-left fw-bold mb-4 text-center">You have <span class="text-success">'.$checkedIntickets->count().' checked-in attendees</span> and they will receive certificates.</div>
+                <div class="alert-innter-ul p-4">
+                    <div class="text-left mb-2">
+                    You can proceed to submit the wrap-up. Once submitted:</div>
+                    <ul class="text-left ps-4">
+                        <li>Certificates will be generated.</li>
+                        <li>Emails will be sent immediately.</li>
+                    </ul>
+                </div>';
             }
         } else {
-            $message = '<div class="text-left fw-bold mb-2">There are no registered or checked-in attendees for this event.</div>
-            <div class="text-left mb-2">
-            You can still proceed to submit the wrap-up. Once submitted:
-            </div>
-            <ul class="text-left">
-                <li>• Your cleanup impact will be recorded and contribute to overall community impact.</li>
-                <li>• No certificates will be generated.</li>
-                <li>• No emails will be sent.</li>
-            </ul>';
+            $message = '<div class="text-left fw-bold mb-4 text-center">There are no registered or checked-in attendees for this event.</div>
+            <div class="alert-innter-ul p-4">
+                <div class="text-left mb-2">
+                You can still proceed to submit the wrap-up. Once submitted:
+                </div>
+                <ul class="text-left ps-4">
+                    <li>Your cleanup impact will be recorded and contribute to overall community impact.</li>
+                    <li>No certificates will be generated.</li>
+                    <li>No emails will be sent.</li>
+                </ul>
+            </div>';
         }
         return $this->generateJsonResponse(true, 'Event is ready for wrap-up email.', $message);
     }
@@ -1595,8 +1604,8 @@ class FrontController extends Controller
         if($event->is_completed==1){
             return $this->generateJsonResponse(false, 'Event is already marked as completed and wrap-up email has been sent.');
         }
-        if(empty($event->waste_collected) || empty($event->area_cleaned)){
-            return $this->generateJsonResponse(false, 'Waste Collected and Area Cleaned should be saved before sending the email.');
+        if(empty($event->waste_collected) || empty($event->area_cleaned) || empty($event->volunteer_hours)){
+            return $this->generateJsonResponse(false, 'Waste Collected, Area Cleaned, and Volunteer Hours should be saved before sending the email.');
         }
         $event->is_completed = 1;
         $event->wrapup_email_sent_by = auth()->guard('front')->user()->id;
@@ -1650,7 +1659,7 @@ class FrontController extends Controller
                             "total_volunteers" => $tickets->count(),
                             "waste_collected" => $event->waste_collected,
                             "area_cleaned" => $event->area_cleaned,
-                            "service_hours" => 'N/A',
+                            "service_hours" => $event->volunteer_hours ?? 'N/A',
                             'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
                             'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]),
                         ],
@@ -1712,8 +1721,8 @@ class FrontController extends Controller
         ]);
 
         $event = Event::with('creator')->findOrFail(decrypt($validated['event_id']));
-        if(empty($event->waste_collected) || empty($event->area_cleaned)){
-            return $this->generateJsonResponse(false, 'Waste Collected and Area Cleaned should be saved before sending the email.');
+        if(empty($event->waste_collected) || empty($event->area_cleaned) || empty($event->volunteer_hours)){
+            return $this->generateJsonResponse(false, 'Waste Collected, Area Cleaned, and Volunteer Hours should be saved before sending the email.');
         }
         $tickets = $event->tickets()->where('checkin', 1)->where('community_form_status', 'pending')->get();
         if($tickets->count() == 0){
@@ -1730,7 +1739,8 @@ class FrontController extends Controller
                     'communityServiceFormLink' => $event->allow_community_service_form ? $this->mailUrl('community-form', ['placeholder' => $event->encrypted_id]) : null,
                     //'feedbackFormLink' => route('event-feedback', ['placeholder' => $event->encrypted_id]),
                     'feedbackFormLink' => $this->mailUrl('event-feedback', ['placeholder' => $event->encrypted_id]),
-                    'teamName' => $event->team_name,
+                    //'teamName' => $event->team_name,
+                    'volunteerHours' => $event->volunteer_hours ?? 'N/A',
                     'instaLink' => $event->creator->organisation_instagram,
                     'facebookLink' => $event->creator->organisation_facebook,
                     'linkedinLink' => $event->creator->organisation_linkedin,
@@ -2132,7 +2142,7 @@ class FrontController extends Controller
                                         "total_volunteers" => $tickets->count(),
                                         "waste_collected" => $event->waste_collected,
                                         "area_cleaned" => $event->area_cleaned,
-                                        "service_hours" => 'N/A',
+                                        "service_hours" => $event->volunteer_hours ?? 'N/A',
                                         'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
                                         'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($orderTicket->id)]),
                                     ],
@@ -2547,7 +2557,7 @@ class FrontController extends Controller
                                     "total_volunteers" => $tickets->count(),
                                     "waste_collected" => $event->waste_collected,
                                     "area_cleaned" => $event->area_cleaned,
-                                    "service_hours" => 'N/A',
+                                    "service_hours" => $event->volunteer_hours ?? 'N/A',
                                     'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
                                     'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($orderTicket->id)]),
                                 ],

@@ -13,6 +13,13 @@ if(isset($form_data->id) && $form_data->status=='published'){
     $eventCloseMsg = 'Event details saved successfully.';
     $is_event_unpublish = false;
 }
+$notCheckedInAttendeesCount = 0;
+if(isset($form_data->id)){
+    $notCheckedInAttendeesCount = $form_data->tickets()
+        ->where('checkin', 0)
+        ->where('rsvp_confirmation', 1)
+        ->count();
+}
 @endphp 
 @push('style')
 <link rel="stylesheet" href="{{ asset('assets/libs/datetimepicker/jquery.datetimepicker.min.css') }} ">
@@ -210,6 +217,55 @@ if(isset($form_data->id) && $form_data->status=='published'){
 
     .remove-new-img:hover {
         background: #b02a37;
+    }
+
+
+.checkin-alert-box{
+        border:1px solid #f2d2b4;
+        background:#fff6ee;
+        border-radius:8px;
+        padding:14px 16px;
+    }
+
+    .checkin-alert-icon{
+        width:20px;
+        min-width:20px;
+        color:#f08a24;
+        font-size:15px;
+        line-height:1;
+        margin-top:2px;
+    }
+
+    .checkin-alert-title{
+        margin:0;
+        font-size:14px;
+        font-weight:600;
+        line-height:1.4;
+        color:#9f5310;
+    }
+
+    .checkin-alert-text{
+        margin:2px 0 0;
+        font-size:12px;
+        line-height:1.5;
+        color:#bf6e19;
+    }
+
+    .checkin-alert-btn{
+        border:1px solid #efc79f;
+        background:#fff1e2;
+        color:#b86711!important;
+        font-size:12px;
+        font-weight:600;
+        padding:8px 14px;
+        border-radius:6px;
+        text-decoration:none;
+        white-space:nowrap;
+    }
+
+    .checkin-alert-btn:hover{
+        background:#ffe7cf;
+        color:#9e560d;
     }
 </style>
 @endpush
@@ -1386,15 +1442,21 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                             </div>
                                                         </div>
                                                         <div class="row mt-3">
-                                                            <div class="col-sm-6">
+                                                            <!-- <div class="col-sm-6">
                                                                 <div class="form-group">
                                                                     <label class="form-label fs-6">Team Name*</label>
                                                                     <input id="team_name" class="form-control h_50" type="text" value="{{ old('team_name', $form_data->team_name ?? '') }}" name="team_name" placeholder="" required>
                                                                 </div>
+                                                            </div> -->
+                                                            <div class="col-sm-6">
+                                                                <div class="form-group">
+                                                                    <label class="form-label fs-6">Total Volunteer Hours*</label>
+                                                                    <input id="volunteer_hours" class="form-control h_50" type="number" step="0.01" min="0" value="{{ old('volunteer_hours', $form_data->volunteer_hours ?? '') }}" name="volunteer_hours" placeholder="" required>
+                                                                </div>
                                                             </div>
                                                             <div class="col-sm-6">
                                                                 <div class="form-group">
-                                                                    <label class="form-label fs-6">Post Event Narrative*</label>
+                                                                    <label class="form-label fs-6">Post Event Comments*</label>
                                                                     <input id="post_event_notes" class="form-control h_50" type="text" value="{{ old('post_event_notes', $form_data->post_event_notes ?? '') }}" name="post_event_notes" placeholder="" required>
                                                                 </div>
                                                             </div>
@@ -1447,6 +1509,31 @@ if(isset($form_data->id) && $form_data->status=='published'){
                                                         @endif
                                                     </div>
                                                 </div>
+                                                @if(isset($form_data->id) && $notCheckedInAttendeesCount > 0 && $form_data->is_completed!=1)
+                                                <div class="checkin-alert-box mt-3">
+                                                    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                                                        <div class="d-flex align-items-start">
+                                                            <div class="checkin-alert-icon me-2">
+                                                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                                            </div>
+                                                            <div>
+                                                                <h6 class="checkin-alert-title">
+                                                                    You have {{ $notCheckedInAttendeesCount }} attendees who are not checked in.
+                                                                </h6>
+                                                                <p class="checkin-alert-text">
+                                                                    Review and update attendance before submitting. Only checked-in attendees will receive certificates.
+                                                                </p>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="text-md-end">
+                                                            <a target="_blank" href="{{ route('front-registration-list', ['event' => $form_data->id]) }}" class="checkin-alert-btn d-inline-block">
+                                                                Review Check-Ins
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endif
                                             </div>
                                         </form>
                                         @if(!$is_event_end)
@@ -1468,7 +1555,7 @@ if(isset($form_data->id) && $form_data->status=='published'){
 
                                     @if(isset($form_data->id) && !empty($form_data->end_datetime) && strtotime($form_data->end_datetime)<strtotime(date('Y-m-d H:i:s')))
                                     @if(isset($form_data->encrypted_id) && $form_data->is_completed!=1)
-                                        <button style="display:none;" type="button" url="{{route('check-event-for-wrapup',$form_data->encrypted_id ?? 0)}}" class="primary-btn w-fit float-end submit-send-wrapup-btn" data-bs-toggle="tooltip" data-bs-original-title="Send Wrap-Up Email & Certificate to All Attendees and Complete Cleanup">Save & Finalize Cleanup Report</button>
+                                        <button style="display:none;" type="button" url="{{route('check-event-for-wrapup',$form_data->encrypted_id ?? 0)}}" class="primary-btn w-fit float-end submit-send-wrapup-btn" data-bs-toggle="tooltip" data-bs-original-title="Send Wrap-Up Email & Certificate to All Attendees and Complete Cleanup">Submit Final Report</button>
                                     @endif
                                     @endif
 

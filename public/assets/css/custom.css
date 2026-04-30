@@ -211,3 +211,15 @@ input[disabled] {
 .table-responsive{
     min-height: 300px;
 }
+.alert-innter-ul{
+    background: #F9FAFB;
+    border-radius: 10px;
+    font-size: 15px;
+    text-align: left;
+}
+.alert-innter-ul ul{
+    list-style-type: inherit;
+}
+.alert-innter-ul ul li{
+    margin-top:10px;
+}

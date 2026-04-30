@@ -7,6 +7,7 @@
     <li><strong>🧍‍♀️ Total Volunteers Checked In: {{ $volunteersCount }}</strong></li>
     <li><strong>🗑️ Total Waste Collected: {{ $wasteCollected }} Pound (lb)</strong></li>
     <li><strong>📍 Total Area Cleaned: {{ $areaCleaned }} Yards</strong></li>
+    <li><strong>⏱️ Total Volunteer Hours: {{ $volunteerHours }} Hours</strong></li>
 </ul>
 <p>Your commitment to protecting our environment and keeping our community clean is inspiring. Every plastic bottle picked, every step taken — it all mattered.<br/>
 We’re deeply grateful for your time, effort, and energy.</p>

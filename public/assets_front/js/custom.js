@@ -1339,9 +1339,9 @@ $(document).ready(function () {
 			$('#area_cleaned').focus();
 			return false;
 		}
-		if($('#team_name').val()==''){
-			showError('Please enter the team name', 'error');
-			$('#team_name').focus();
+		if($('#volunteer_hours').val()==''){
+			showError('Please enter the total volunteer hours', 'error');
+			$('#volunteer_hours').focus();
 			return false;
 		}
 		if($('#post_event_notes').val()==''){

@@ -20,12 +20,6 @@
 @section('css')
     <x-reusables.datatablecss />
     <style>
-    #swal2-html-container{
-        text-align: left;
-    }
-    #swal2-html-container ul{
-        list-style-type: none;
-    }
     .remove-new-img {
         position: absolute;
         top: -5px;
@@ -225,11 +219,17 @@
                                     <div class="input-group-text">Yards</div>
                                 </div>
                             </div>
-                            <div class="col-md-6 mb-2">
+                            <!-- <div class="col-md-6 mb-2">
                                 <div class="form-group">
                                     <label for="">Team Name</label>
                                     <input type="text" value="{{ $event->team_name }}" class="form-control" required
                                         name="team_name" placeholder="Team Name" />
+                                </div>
+                            </div> -->
+                            <div class="col-md-6 mb-2">
+                                <div class="form-group">
+                                    <label for="">Total Volunteer Hours</label>
+                                    <input type="number" step="0.01" min="0" value="{{ $event->volunteer_hours }}" class="form-control" required name="volunteer_hours" placeholder="Total Volunteer Hours" />
                                 </div>
                             </div>
                             <div class="col-md-6 mb-2">
