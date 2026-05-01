@@ -267,6 +267,34 @@ if(isset($form_data->id)){
         background:#ffe7cf;
         color:#9e560d;
     }
+
+
+.event-image-upload-btn input[type="file"]{
+    display: none;
+}
+
+.event-image-upload-btn label{
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background: #fff;
+    color: #212529;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s ease;
+}
+
+.event-image-upload-btn label:hover{
+    border-color: var(--bs-primary);
+    color: var(--bs-primary);
+    background: #f8fbff;
+}
+
 </style>
 @endpush
 @section('content')
@@ -704,12 +732,23 @@ if(isset($form_data->id)){
                                                                                             <input accept="image/*" type="file" class="change-image-preview" id="banner_image" name="banner_image">
                                                                                             <label for="banner_image">Change Image</label>
                                                                                         </div> -->
-                                                                                        <div class="thumb-change-btn">
-									                                                        <input type="hidden" name="cropped_image" id="cropped_image">
+<input type="hidden" name="cropped_image" id="cropped_image">
 
-                                                                                            <input accept="image/*" type="file" class="change-image-preview" id="image-input" name="banner_image">
-                                                                                            <label id="upload-btn" for="banner_image">Change Image</label>
-                                                                                        </div>
+<div class="row g-2 mb-2 col-sm-5 offset-sm-7">
+    <div class="col-sm-6">
+        <div class="thumb-change-btn w-100 event-image-upload-btn">
+            <input accept="image/*" type="file" class="change-image-preview" id="image-input" name="banner_image">
+            <label id="upload-btn" for="image-input" class="w-100 mb-0">Landscape Image</label>
+        </div>
+    </div>
+
+    <div class="col-sm-6">
+        <div class="thumb-change-btn w-100 event-image-upload-btn">
+            <input accept="image/*" type="file" class="change-image-preview" id="portrait-image-input" name="banner_image">
+            <label id="portrait-upload-btn" for="portrait-image-input" class="w-100 mb-0">Portrait Image</label>
+        </div>
+    </div>
+</div>
                                                                                     </div>
                                                                                     @php 
                                                                                     $banner_image = isset($form_data) ? $form_data->formattedBanner() : asset('assets_front/images/event-imgs/big-2.jpg');
@@ -729,7 +768,7 @@ if(isset($form_data->id)){
                                                                                     <input type="hidden" name="banner_image_data" value="{{json_encode($bimage)}}">
                                                                                     @endif 
                                                                                 </div>
-                                                                                <p class="mt-1">Recommended file size: 5 MB and image size: 1000 × 660 px</p>
+                                                                                <p class="mt-1">Recommended file size: 5 MB. Landscape: 1000 × 660 px or Portrait: 660 × 1000 px</p>
                                                                             </div>
                                                                         </div>
                                                                         <input type="hidden" name="flyer_image">
@@ -1767,7 +1806,7 @@ if(isset($form_data->id)){
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Crop Event Banner</h5>
+                <h5 class="modal-title" id="cropper-modal-title">Crop Event Banner</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -1829,7 +1868,7 @@ if(isset($form_data->id)){
             }
         }
 
-
+/* 
 $(document).ready(function () {
     let cropperInstance = null;
     // Step 1: When user picks a file, show the modal with cropper
@@ -1899,6 +1938,105 @@ $(document).ready(function () {
 	$('#upload-btn').on('click', function () {
 		$('#image-input').trigger('click');
 	});
+}); */
+$(document).ready(function () {
+    let cropperInstance = null;
+    let cropperAspectRatio = 1000 / 660;
+    let cropperWidth = 1000;
+    let cropperHeight = 660;
+
+    function setCropperMode(mode) {
+        if (mode === 'portrait') {
+            cropperAspectRatio = 660 / 1000;
+            cropperWidth = 660;
+            cropperHeight = 1000;
+            $('#cropper-modal-title').text('Crop Event Portrait Image');
+        } else {
+            cropperAspectRatio = 1000 / 660;
+            cropperWidth = 1000;
+            cropperHeight = 660;
+            $('#cropper-modal-title').text('Crop Event Landscape Image');
+        }
+    }
+
+    function openCropperWithFile(file) {
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            $('#image-to-crop').attr('src', event.target.result);
+            $('#cropper-modal').modal('show');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    $('#image-input').on('click', function () {
+        setCropperMode('landscape');
+    });
+
+    $('#portrait-image-input').on('click', function () {
+        setCropperMode('portrait');
+    });
+
+    $('#image-input').on('change', function (e) {
+        setCropperMode('landscape');
+        const file = e.target.files[0];
+        openCropperWithFile(file);
+    });
+
+    $('#portrait-image-input').on('change', function (e) {
+        setCropperMode('portrait');
+        const file = e.target.files[0];
+        openCropperWithFile(file);
+    });
+
+    $('#cropper-modal').on('shown.bs.modal', function () {
+        if (cropperInstance) {
+            $('#image-to-crop').cropper('destroy');
+            cropperInstance = null;
+        }
+
+        $('#image-to-crop').cropper({
+            aspectRatio: cropperAspectRatio,
+            viewMode: 1,
+            autoCropArea: 0.8,
+            movable: true,
+            zoomable: true,
+            scalable: true,
+            preview: '.img-preview-container',
+        });
+
+        cropperInstance = true;
+    });
+
+    $('#cropper-modal').on('hidden.bs.modal', function () {
+        if (cropperInstance) {
+            $('#image-to-crop').cropper('destroy');
+            cropperInstance = null;
+        }
+
+        if ($('#cropped_image').val() != '') {
+            $('#current-preview').attr('src', $('#cropped_image').val());
+        }
+
+        $('#image-input').val('');
+        $('#portrait-image-input').val('');
+    });
+
+    $('#crop-btn').on('click', function () {
+        const canvas = $('#image-to-crop').cropper('getCroppedCanvas', {
+            width: cropperWidth,
+            height: cropperHeight,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high',
+        });
+
+        const base64Data = canvas.toDataURL('image/jpeg', 0.85);
+        $('#cropped_image').val(base64Data);
+        $('#current-preview').attr('src', base64Data);
+        $('#save-btn').prop('disabled', false);
+        $('#cropper-modal').modal('hide');
+    });
 });
     </script>
 @endpush

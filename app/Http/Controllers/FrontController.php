@@ -2314,6 +2314,10 @@ class FrontController extends Controller
             'organisation_instagram' => 'nullable|string|max:255',
             'organisation_twitter' => 'nullable|string|max:255',
             'organisation_linkedin' => 'nullable|string|max:255',
+            'organisation_prev_cleanups_count' => 'nullable|integer',
+            'organisation_prev_volunteers_count' => 'nullable|integer',
+            'organisation_prev_waste_collected_pounds_count' => 'nullable|integer',
+            'organisation_prev_volunteer_hours_count' => 'nullable|integer',
             'organisation_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'cropped_image' => 'nullable|string',
         ]);

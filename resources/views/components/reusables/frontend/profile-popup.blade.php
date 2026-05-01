@@ -183,56 +183,105 @@
 										<br/>
 										<small>Recommended size: 400 × 400 px</small>
 									</div>
-									<div class="col-lg-12 col-md-12">
-										<div class="form-group">
-											<label class="form-label" for="organisation_name">Organization Name*</label>
-											<input required type="text" class="form-control h_40" id="organisation_name" name="organisation_name" placeholder="" value="{{ old('organisation_name', $user->organisation_name ?? '') }}">
+									<div class="col-sm-12 my-3">
+										<div class="main-card p-4 ">
+											<div class="bp-title">
+												<h4 class="pt-0 ps-0">Organizer's Personal Information</h4>
+											</div>
+											<div class="row">
+												<div class="col-lg-12 col-md-12">
+													<div class="form-group mt-4">
+														<label class="form-label" for="organisation_name">Organization Name*</label>
+														<input required type="text" class="form-control h_40" id="organisation_name" name="organisation_name" placeholder="" value="{{ old('organisation_name', $user->organisation_name ?? '') }}">
+													</div>
+												</div>
+												<div class="col-lg-6 col-md-12">
+													<div class="form-group mt-4">
+														<label class="form-label" for="organisation_website">Website</label>
+														<input class="form-control h_40 urlmask" type="text" id="organisation_website" name="organisation_website" placeholder="" value="{{ old('organisation_website', $user->organisation_website ?? '') }}">																								
+													</div>
+												</div>
+												<div class="col-lg-6 col-md-12">
+													<div class="form-group mt-4">
+														<label class="form-label" for="organisation_landing_slug">Landing Page Slug*</label>
+														<input required class="form-control h_40" type="text" id="organisation_landing_slug" name="organisation_landing_slug" placeholder="" value="{{ old('organisation_landing_slug', $user->organisation_landing_slug ?? '') }}">																								
+													</div>
+												</div>
+												<div class="col-lg-12 col-md-12">
+													<div class="form-group mt-4">
+														<label class="form-label" for="organisation_short_description">Short Description</label>
+														<textarea name="organisation_short_description" class="form-control ckeditor" id="organisation_short_description" cols="30" rows="10">{{ old('organisation_short_description', $user->organisation_short_description ?? '') }}</textarea>
+													</div>
+												</div>
+											</div>
 										</div>
 									</div>
-									<div class="col-lg-6 col-md-12">
-										<div class="form-group mt-4">
-											<label class="form-label" for="organisation_website">Website</label>
-											<input class="form-control h_40 urlmask" type="text" id="organisation_website" name="organisation_website" placeholder="" value="{{ old('organisation_website', $user->organisation_website ?? '') }}">																								
+									<div class="col-sm-12 my-3">
+										<div class="main-card p-4 ">
+											<div class="bp-title">
+												<h4 class="pt-0 ps-0">Impact Metrics</h4>
+											</div>
+											<div class="row">
+												<div class="col-lg-6 col-md-12">
+													<div class="form-group mt-4">
+														<label class="form-label" for="organisation_prev_cleanups_count">Previous Cleanups</label>
+														<input class="form-control h_40 integeronly" type="text" id="organisation_prev_cleanups_count" name="organisation_prev_cleanups_count" placeholder="" value="{{ old('organisation_prev_cleanups_count', $user->organisation_prev_cleanups_count ?? '') }}">																								
+													</div>
+												</div>
+												<div class="col-lg-6 col-md-12">
+													<div class="form-group mt-4">
+														<label class="form-label" for="organisation_prev_volunteers_count">Previous Volunteers</label>
+														<input class="form-control h_40 integeronly" type="text" id="organisation_prev_volunteers_count" name="organisation_prev_volunteers_count" placeholder="" value="{{ old('organisation_prev_volunteers_count', $user->organisation_prev_volunteers_count ?? '') }}">																								
+													</div>
+												</div>
+												<div class="col-lg-6 col-md-12">
+													<div class="form-group mt-4">
+														<label class="form-label" for="organisation_prev_waste_collected_pounds_count">Previous Pounds (of trash collected)</label>
+														<input class="form-control h_40 integeronly" type="text" id="organisation_prev_waste_collected_pounds_count" name="organisation_prev_waste_collected_pounds_count" placeholder="" value="{{ old('organisation_prev_waste_collected_pounds_count', $user->organisation_prev_waste_collected_pounds_count ?? '') }}">
+													</div>
+												</div>
+												<div class="col-lg-6 col-md-12">
+													<div class="form-group mt-4">
+														<label class="form-label" for="organisation_prev_volunteer_hours_count">Previous Volunteer Hours</label>
+														<input class="form-control h_40 integeronly" type="text" id="organisation_prev_volunteer_hours_count" name="organisation_prev_volunteer_hours_count" placeholder="" value="{{ old('organisation_prev_volunteer_hours_count', $user->organisation_prev_volunteer_hours_count ?? '') }}">
+													</div>
+												</div>
+											</div>
 										</div>
 									</div>
-									<div class="col-lg-6 col-md-12">
-										<div class="form-group mt-4">
-											<label class="form-label" for="organisation_landing_slug">Landing Page Slug*</label>
-											<input required class="form-control h_40" type="text" id="organisation_landing_slug" name="organisation_landing_slug" placeholder="" value="{{ old('organisation_landing_slug', $user->organisation_landing_slug ?? '') }}">																								
+									<div class="col-sm-12 my-3">
+										<div class="main-card p-4 ">
+											<div class="bp-title">
+												<h4 class="pt-0 ps-0">Social Media Details</h4>
+											</div>
+											<div class="row">
+												<div class="col-lg-6 col-md-12">
+													<div class="form-group mt-4">
+														<label class="form-label" for="organisation_facebook">Facebook (URL)</label>
+														<input class="form-control h_40 urlmask" type="text" id="organisation_facebook" name="organisation_facebook" placeholder="" value="{{ old('organisation_facebook', $user->organisation_facebook ?? '') }}">																								
+													</div>
+												</div>
+												<div class="col-lg-6 col-md-12">
+													<div class="form-group mt-4">
+														<label class="form-label" for="organisation_instagram">Instagram (URL)</label>
+														<input class="form-control h_40 urlmask" type="text" id="organisation_instagram" name="organisation_instagram" placeholder="" value="{{ old('organisation_instagram', $user->organisation_instagram ?? '') }}">																								
+													</div>
+												</div>
+												<div class="col-lg-6 col-md-12">
+													<div class="form-group mt-4">
+														<label class="form-label" for="organisation_twitter">X (URL)</label>
+														<input class="form-control h_40 urlmask" type="text" id="organisation_twitter" name="organisation_twitter" placeholder="" value="{{ old('organisation_twitter', $user->organisation_twitter ?? '') }}">																								
+													</div>
+												</div>
+												<div class="col-lg-6 col-md-12">
+													<div class="form-group mt-4">
+														<label class="form-label" for="organisation_linkedin">LinkedIn (URL)</label>
+														<input class="form-control h_40 urlmask" type="text" id="organisation_linkedin" name="organisation_linkedin" placeholder="" value="{{ old('organisation_linkedin', $user->organisation_linkedin ?? '') }}">																								
+													</div>
+												</div>
+											</div>
 										</div>
 									</div>
-									<div class="col-lg-12 col-md-12">
-										<div class="form-group mt-4">
-											<label class="form-label" for="organisation_short_description">Short Description</label>
-											<textarea name="organisation_short_description" class="form-control ckeditor" id="organisation_short_description" cols="30" rows="10">{{ old('organisation_short_description', $user->organisation_short_description ?? '') }}</textarea>
-										</div>
-									</div>
-									
-									<div class="col-lg-6 col-md-12">
-										<div class="form-group mt-4">
-											<label class="form-label" for="organisation_facebook">Facebook (URL)</label>
-											<input class="form-control h_40 urlmask" type="text" id="organisation_facebook" name="organisation_facebook" placeholder="" value="{{ old('organisation_facebook', $user->organisation_facebook ?? '') }}">																								
-										</div>
-									</div>
-									<div class="col-lg-6 col-md-12">
-										<div class="form-group mt-4">
-											<label class="form-label" for="organisation_instagram">Instagram (URL)</label>
-											<input class="form-control h_40 urlmask" type="text" id="organisation_instagram" name="organisation_instagram" placeholder="" value="{{ old('organisation_instagram', $user->organisation_instagram ?? '') }}">																								
-										</div>
-									</div>
-									<div class="col-lg-6 col-md-12">
-										<div class="form-group mt-4">
-											<label class="form-label" for="organisation_twitter">X (URL)</label>
-											<input class="form-control h_40 urlmask" type="text" id="organisation_twitter" name="organisation_twitter" placeholder="" value="{{ old('organisation_twitter', $user->organisation_twitter ?? '') }}">																								
-										</div>
-									</div>
-									<div class="col-lg-6 col-md-12">
-										<div class="form-group mt-4">
-											<label class="form-label" for="organisation_linkedin">LinkedIn (URL)</label>
-											<input class="form-control h_40 urlmask" type="text" id="organisation_linkedin" name="organisation_linkedin" placeholder="" value="{{ old('organisation_linkedin', $user->organisation_linkedin ?? '') }}">																								
-										</div>
-									</div>
-									
 								</div>
 							</div>
 						</div>

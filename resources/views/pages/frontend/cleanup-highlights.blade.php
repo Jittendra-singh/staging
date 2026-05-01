@@ -1,218 +1,469 @@
 @php
-$outPages = true;
+    $outPages = true;
+
+    $checkedInVolunteerCount = $event->tickets()->active()->where('checkin', 1)->count();
+    $hasNarrative = !empty(trim($event->post_event_notes ?? ''));
+
+    $images = [];
+    if (!empty($event->after_event_images)) {
+        $decodedImages = json_decode($event->after_event_images);
+        if (!empty($decodedImages)) {
+            $images = $decodedImages;
+        }
+    }
+
+    $hasImages = !empty($images);
+
+    $wasteCollected = !empty($event->waste_collected) ? $event->waste_collected . ' lbs' : '-- lbs';
+    $areaCleaned = !empty($event->area_cleaned) ? $event->area_cleaned . ' yards' : '-- yards';
+    $volunteerHours = !empty($event->volunteer_hours) ? $event->volunteer_hours . ' hrs' : '-- hrs';
 @endphp
+
 @extends('layouts.frontend')
 
 @push('style')
 <style>
-    .title {
-        font-weight: 700;
-        color: #2d3748;
-        margin-bottom: 5px;
+    .cleanup-highlights-page {
+        background: #f8fafc;
     }
 
-    .meta {
-        color: #718096;
-        font-size: 14px;
+    .cleanup-highlights-wrap {
+        padding: 70px 0 56px;
     }
 
-    .share-btn {
-        background: #eef1f5;
-        border-radius: 8px;
-        padding: 6px 14px;
-        font-size: 14px;
-        border: none;
-    }
-
-    /* LEFT PANEL */
-    .left-card {
+    .cleanup-highlights-card {
         background: #fff;
-        padding: 18px;
-        border-radius: 12px;
+        border: 1px solid #edf1f5;
+        border-radius: 18px;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+        overflow: hidden;
     }
 
-    .highlight-title {
-        font-size: 13px;
+    .cleanup-highlights-head {
+        padding: 28px 28px 22px;
+        border-bottom: 1px solid #edf1f5;
+        background: #fff;
+    }
+
+    .cleanup-highlights-body {
+        padding: 28px;
+    }
+
+    .cleanup-back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #667085;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        margin-bottom: 16px;
+    }
+
+    .cleanup-back-link:hover {
+        color: var(--bs-primary);
+    }
+
+    .cleanup-page-title {
+        margin: 0;
+        color: #101828;
+        font-size: 2.25rem;
+        line-height: 1.15;
         font-weight: 700;
-        color: #5a67d8;
-        margin-bottom: 15px;
     }
 
-    .highlight-item {
+    .cleanup-meta-row {
         display: flex;
         align-items: center;
-        gap: 12px;
-        background: #f8f8f8;
-        border-radius: 10px;
-        padding: 12px;
-        margin-bottom: 10px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        gap: 18px;
+        flex-wrap: wrap;
+        margin-top: 14px;
     }
 
-    .icon {
-        width: 36px;
-        height: 36px;
-        background: #edf2ff;
-        display: flex;
+    .cleanup-meta-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #667085;
+        font-size: 15px;
+        font-weight: 500;
+    }
+
+    .cleanup-meta-item i {
+        color: #337af6;
+        font-size: 14px;
+    }
+
+    .cleanup-share-btn {
+        min-width: 118px;
+        min-height: 44px;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        border-radius: 8px;
-        font-size: 16px;
+        gap: 8px;
+        border: 0;
+        border-radius: 10px;
+        background: #f2f4f7;
+        color: #1d2939;
+        font-size: 15px;
+        font-weight: 500;
+        padding: 10px 18px;
     }
 
-    .label {
-        font-size: 11px;
-        color: #a3a3a3;
-        font-weight: 600;
+    .cleanup-share-btn:hover {
+        background: #e9edf2;
+        color: #101828;
     }
 
-    .value {
-        font-size: 16px;
+    .cleanup-side-panel {
+        background: #f8fafc;
+        border: 1px solid #e8edf3;
+        border-radius: 16px;
+        padding: 20px;
+        height: 100%;
+    }
+
+    .cleanup-side-title {
+        margin: 0 0 18px;
+        color: #2051b7;
+        font-size: 14px;
         font-weight: 700;
-        color: #2d3748;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
     }
 
-    /* IMAGE GRID */
-    .image-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
+    .cleanup-stat-card {
+        display: flex;
+        align-items: center;
         gap: 14px;
+        background: #fff;
+        border: 1px solid #edf1f5;
+        border-radius: 14px;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+        padding: 16px;
     }
 
-    .img-box {
+    .cleanup-stat-card + .cleanup-stat-card {
+        margin-top: 14px;
+    }
+
+    .cleanup-stat-icon {
+        width: 48px;
+        height: 48px;
         border-radius: 12px;
-        overflow: hidden;
-        height: 170px;
+        background: #eaf2ff;
+        color: #2158c9;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex: 0 0 48px;
     }
 
-    .img-box img {
+    .cleanup-stat-label {
+        margin: 0 0 4px;
+        color: #98a2b3;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        line-height: 1.2;
+    }
+
+    .cleanup-stat-value {
+        margin: 0;
+        color: #101828;
+        font-size: 15px;
+        line-height: 1.35;
+        font-weight: 700;
+    }
+
+    .cleanup-stat-value.is-muted {
+        color: #344054;
+    }
+
+    .cleanup-gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .cleanup-gallery-item {
+        background: #fff;
+        border: 1px solid #edf1f5;
+        border-radius: 16px;
+        overflow: hidden;
+        min-height: 240px;
+    }
+
+    .cleanup-gallery-item img {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        display: block;
     }
 
-    /* NARRATIVE */
-    .narrative h5 {
-        font-weight: 700;
-        margin-bottom: 10px;
+    .cleanup-empty-media {
+        min-height: 420px;
+        border: 2px dashed #d6dbe4;
+        border-radius: 20px;
+        background: #fbfcfe;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 28px;
     }
 
-    .narrative p {
-        color: #718096;
+    .cleanup-empty-media-icon {
+        width: 68px;
+        height: 68px;
+        margin: 0 auto 16px;
+        border-radius: 18px;
+        background: #eef2f7;
+        color: #c4cad4;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+    }
+
+    .cleanup-empty-media-title {
+        margin: 0 0 6px;
+        color: #98a2b3;
+        font-size: 18px;
+        line-height: 1.3;
+        font-weight: 500;
+    }
+
+    .cleanup-empty-media-text {
+        margin: 0;
+        color: #98a2b3;
         font-size: 14px;
         line-height: 1.6;
     }
-    .booking-confirmed-content .main-card {
-        border-radius: 12px;
+
+    .cleanup-narrative {
+        margin-top: 32px;
+    }
+
+    .cleanup-narrative-title {
+        margin: 0 0 10px;
+        color: #101828;
+        font-size: 28px;
+        line-height: 1.2;
+        font-weight: 700;
+    }
+
+    .cleanup-narrative-text {
+        margin: 0;
+        color: #667085;
+        font-size: 15px;
+        line-height: 1.8;
+    }
+
+    .cleanup-narrative-text.is-empty {
+        font-style: italic;
+        color: #98a2b3;
+    }
+
+    @media (max-width: 991.98px) {
+        .cleanup-page-title {
+            font-size: 1.9rem;
+        }
+
+        .cleanup-gallery-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .cleanup-empty-media {
+            min-height: 320px;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .cleanup-highlights-wrap {
+            padding: 24px 0 40px;
+        }
+
+        .cleanup-highlights-head,
+        .cleanup-highlights-body {
+            padding: 20px;
+        }
+
+        .cleanup-page-title {
+            font-size: 1.55rem;
+        }
+
+        .cleanup-meta-item {
+            font-size: 14px;
+        }
+
+        .cleanup-share-btn {
+            width: 100%;
+            min-width: 100%;
+        }
+
+        .cleanup-empty-media {
+            min-height: 260px;
+            padding: 20px;
+        }
+
+        .cleanup-empty-media-title {
+            font-size: 16px;
+        }
+
+        .cleanup-empty-media-text {
+            font-size: 13px;
+        }
+
+        .cleanup-narrative-title {
+            font-size: 24px;
+        }
+
+        .cleanup-narrative-text {
+            font-size: 14px;
+        }
     }
 </style>
 @endpush
+
 @section('content')
-<!-- Body Start-->
-<div class="wrapper" style="background-color: #f5f5f5cf">
-	<div class="event-dt-block p-80">
+<div class="wrapper cleanup-highlights-page">
+    <div class="event-dt-block cleanup-highlights-wrap">
+        <div class="container">
+            <div class="cleanup-highlights-card">
+                <div class="cleanup-highlights-head">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                        <div class="flex-grow-1">
+                            @if(!empty($event->slug))
+                                <a href="{{ route('view-event-details', ['slug' => $event->slug]) }}" class="cleanup-back-link">
+                                    <i class="fa-solid fa-arrow-left"></i>
+                                    <span>Back to Event</span>
+                                </a>
+                            @endif
+                            <button type="button" class="cleanup-share-btn float-end mb-4" onclick="copyText('{{ route('cleanup-highlights', $event->encrypted_id) }}')">
+                                <i class="fa-solid fa-share-nodes"></i>
+                                <span>Share</span>
+                            </button>
 
-        <div class="container py-4">
+                            <h1 class="cleanup-page-title">{{ $event->event_name }}
 
-            <!-- Header -->
-            <div class="d-flex justify-content-between align-items-start mb-4">
-                <div>
-                    <h2 class="title">{{ $event->event_name }}</h2>
-                    <div class="meta mt-3">
-                        <span><i class="fa fa-calendar me-1 text-primary"></i> {{$event->eventStartDateTime}}</span>
-                        <span class="mx-2">•</span>
-                        <span><i class="fa fa-map-marker me-1 text-primary"></i> {{$event->fullAddress}}</span>
+
+                            </h1>
+
+                            <div class="cleanup-meta-row">
+                                <div class="cleanup-meta-item">
+                                    <i class="fa-solid fa-calendar-days"></i>
+                                    <span>{{ $event->eventStartDateTime }}</span>
+                                </div>
+                                <div class="cleanup-meta-item">
+                                    <i class="fa-solid fa-location-dot"></i>
+                                    <span>{{ $event->fullAddress }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- <div class="w-100 w-md-auto">
+                            <button type="button" class="cleanup-share-btn" onclick="copyText('{{ route('cleanup-highlights', $event->encrypted_id) }}')">
+                                <i class="fa-solid fa-share-nodes"></i>
+                                <span>Share</span>
+                            </button>
+                        </div> -->
                     </div>
                 </div>
 
-                <button type="button" class="btn btn-primary mt-3" onclick="copyText('{{ route('cleanup-highlights', $event->encrypted_id) }}')">
-                    <i class="fa fa-link me-1"></i> Share
-                </button>
-            </div>
+                <div class="cleanup-highlights-body">
+                    <div class="row g-4 align-items-start">
+                        <div class="col-lg-4">
+                            <div class="cleanup-side-panel">
+                                <h3 class="cleanup-side-title">Cleanup Highlights</h3>
 
-            <div class="row g-4 pt-2">
-
-                <!-- LEFT PANEL -->
-                <div class="col-lg-4">
-                    <div class="left-card">
-
-                        <div class="highlight-title">CLEANUP HIGHLIGHTS</div>
-
-                        <div class="highlight-item">
-                            <div class="icon"><i class="fa fa-trash text-primary"></i></div>
-                            <div>
-                                <div class="label">TOTAL DEBRIS</div>
-                                <div class="value">{{$event->waste_collected}} lbs</div>
-                            </div>
-                        </div>
-
-                        <div class="highlight-item">
-                            <div class="icon"><i class="fa fa-thumbs-up text-primary"></i></div>
-                            <div>
-                                <div class="label">AREA CLEANED</div>
-                                <div class="value">{{$event->area_cleaned}} yards</div>
-                            </div>
-                        </div>
-
-                        <div class="highlight-item">
-                            <div class="icon"><i class="fa fa-users text-primary"></i></div>
-                            <div>
-                                <div class="label">VOLUNTEERS</div>
-                                <div class="value">{{$event->tickets()->active()->where('checkin',1)->count()}} Active</div>
-                            </div>
-                        </div>
-
-                        @if(!empty($event->team_name))
-                        <div class="highlight-item">
-                            <div class="icon"><i class="fa fa-flag text-primary"></i></div>
-                            <div>
-                                <div class="label">TEAM NAME</div>
-                                <div class="value">{{ $event->team_name }}</div>
-                            </div>
-                        </div>
-                        @endif
-                    </div>
-                </div>
-
-                <!-- RIGHT CONTENT -->
-                <div class="col-lg-8">
-                    <!-- Narrative -->
-                    <div class="narrative">
-                        <h5>Post Event Narrative</h5>
-                        <p>{{$event->post_event_notes}}</p>
-                    </div>
-                    @if(isset($event) && isset($event->id) && isset($event->after_event_images) && !empty($event->after_event_images))
-                    <div class="row justify-content-center my-4">
-                        @php 
-                        $images = !empty($event->after_event_images) ? json_decode($event->after_event_images) : null;
-                        @endphp 
-                        @if(!empty($images))
-                            @foreach($images as $key => $image)
-                                @php
-                                    $imagePath = is_object($image) ? $image->path : $image;
-                                @endphp
-                                <div class="col-sm-6 mb-3">
-                                    <div class="booking-confirmed-content">
-                                        <div class="main-card" style="height: 300px; overflow: hidden; background-color: #f8f9fa;">
-                                            <img src="{{ asset($imagePath) }}" 
-                                                alt="" 
-                                                class="w-100 h-100" 
-                                                style="object-fit: contain; object-position: center;">
-                                        </div>
+                                <div class="cleanup-stat-card">
+                                    <div class="cleanup-stat-icon">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </div>
+                                    <div>
+                                        <p class="cleanup-stat-label">Total Debris</p>
+                                        <h4 class="cleanup-stat-value">{{ $wasteCollected }}</h4>
                                     </div>
                                 </div>
-                            @endforeach
-                        @endif
+
+                                <div class="cleanup-stat-card">
+                                    <div class="cleanup-stat-icon">
+                                        <i class="fa-solid fa-grip-lines"></i>
+                                    </div>
+                                    <div>
+                                        <p class="cleanup-stat-label">Area Cleaned</p>
+                                        <h4 class="cleanup-stat-value">{{ $areaCleaned }}</h4>
+                                    </div>
+                                </div>
+
+                                <div class="cleanup-stat-card">
+                                    <div class="cleanup-stat-icon">
+                                        <i class="fa-solid fa-user"></i>
+                                    </div>
+                                    <div>
+                                        <p class="cleanup-stat-label">Volunteers</p>
+                                        <h4 class="cleanup-stat-value {{ $checkedInVolunteerCount ? '' : 'is-muted' }}">
+                                            {{ $checkedInVolunteerCount ? $checkedInVolunteerCount : '--' }}
+                                        </h4>
+                                    </div>
+                                </div>
+
+                                <div class="cleanup-stat-card">
+                                    <div class="cleanup-stat-icon">
+                                        <i class="fa-solid fa-flag"></i>
+                                    </div>
+                                    <div>
+                                        <p class="cleanup-stat-label">Volunteer Hours</p>
+                                        <h4 class="cleanup-stat-value">{{ $volunteerHours }}</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-8">
+                            @if($hasImages)
+                                <div class="cleanup-gallery-grid">
+                                    @foreach($images as $image)
+                                        @php
+                                            $imagePath = is_object($image) ? $image->path : $image;
+                                        @endphp
+                                        <div class="cleanup-gallery-item">
+                                            <img src="{{ asset($imagePath) }}" alt="{{ $event->event_name }}">
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="cleanup-empty-media">
+                                    <div>
+                                        <div class="cleanup-empty-media-icon">
+                                            <i class="fa-regular fa-image"></i>
+                                        </div>
+                                        <h4 class="cleanup-empty-media-title">No images available yet</h4>
+                                        <p class="cleanup-empty-media-text">
+                                            Photos will appear here once uploaded by the coordinator.
+                                        </p>
+                                    </div>
+                                </div>
+                            @endif
+
+                            <div class="cleanup-narrative">
+                                <h2 class="cleanup-narrative-title">Post Event Comments</h2>
+
+                                @if($hasNarrative)
+                                    <p class="cleanup-narrative-text">{{ $event->post_event_notes }}</p>
+                                @else
+                                    <p class="cleanup-narrative-text is-empty">
+                                        The event summary will appear here once the report is finalized.
+                                    </p>
+                                @endif
+                            </div>
+                        </div>
                     </div>
-                    @endif
-
-
                 </div>
-
             </div>
-
         </div>
 	</div>
 </div>
-<!-- Body End-->
 @endsection

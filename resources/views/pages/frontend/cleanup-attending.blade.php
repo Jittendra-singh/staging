@@ -184,6 +184,11 @@
 															>
 																<i class="fa-solid fa-download me-3"></i>Download Ticket
 															</a>	
+															@if($event->is_completed==1)
+															<a target="_blank" href="{{route('cleanup-highlights',['event'=>encrypt($event->id)])}}" class="dropdown-item">
+																<i class="fa-solid fa-bar-chart me-3"></i>View Impact Report
+															</a>	
+															@endif
 															@if(strtotime($event->start_datetime) > time() && !$registration->is_under_18 && $registration->rsvp_confirmation==1 && $registration->checkin==0)
 																@if($ticket->ticket_type=='paid')
 																	@if($event->allow_refund==1)

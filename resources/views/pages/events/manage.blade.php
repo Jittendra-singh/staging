@@ -137,6 +137,16 @@
 		max-width: 100%;
 		max-height: 60vh;
 	}
+
+
+    .admin-image-upload-btn input[type="file"]{
+    display: none;
+}
+
+.admin-image-upload-btn .btn{
+    min-height: 42px;
+    font-weight: 500;
+}
     </style>
 @endsection
 @section('js')
@@ -161,7 +171,7 @@
             }
             $('#waiver_form_type').on('change', toggleWaiverInput);
         });
-$(document).ready(function () {
+/* $(document).ready(function () {
     let cropperInstance = null;
     // Step 1: When user picks a file, show the modal with cropper
     $('#image-input').on('change', function (e) {
@@ -230,7 +240,107 @@ $(document).ready(function () {
 	$('#upload-btn').on('click', function () {
 		$('#image-input').trigger('click');
 	});
+}); */
+$(document).ready(function () {
+    let cropperInstance = null;
+    let cropperAspectRatio = 1000 / 660;
+    let cropperWidth = 1000;
+    let cropperHeight = 660;
+
+    function setCropperMode(mode) {
+        if (mode === 'portrait') {
+            cropperAspectRatio = 660 / 1000;
+            cropperWidth = 660;
+            cropperHeight = 1000;
+            $('#cropper-modal-title').text('Crop Event Portrait Image');
+        } else {
+            cropperAspectRatio = 1000 / 660;
+            cropperWidth = 1000;
+            cropperHeight = 660;
+            $('#cropper-modal-title').text('Crop Event Landscape Image');
+        }
+    }
+
+    function openCropperWithFile(file) {
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            $('#image-to-crop').attr('src', event.target.result);
+            $('#cropper-modal').modal('show');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    $('#image-input').on('click', function () {
+        setCropperMode('landscape');
+    });
+
+    $('#portrait-image-input').on('click', function () {
+        setCropperMode('portrait');
+    });
+
+    $('#image-input').on('change', function (e) {
+        setCropperMode('landscape');
+        const file = e.target.files[0];
+        openCropperWithFile(file);
+    });
+
+    $('#portrait-image-input').on('change', function (e) {
+        setCropperMode('portrait');
+        const file = e.target.files[0];
+        openCropperWithFile(file);
+    });
+
+    $('#cropper-modal').on('shown.bs.modal', function () {
+        if (cropperInstance) {
+            $('#image-to-crop').cropper('destroy');
+            cropperInstance = null;
+        }
+
+        $('#image-to-crop').cropper({
+            aspectRatio: cropperAspectRatio,
+            viewMode: 1,
+            autoCropArea: 0.8,
+            movable: true,
+            zoomable: true,
+            scalable: true,
+            preview: '.img-preview-container',
+        });
+
+        cropperInstance = true;
+    });
+
+    $('#cropper-modal').on('hidden.bs.modal', function () {
+        if (cropperInstance) {
+            $('#image-to-crop').cropper('destroy');
+            cropperInstance = null;
+        }
+
+        if ($('#cropped_image').val() != '') {
+            $('#current-preview').attr('src', $('#cropped_image').val());
+        }
+
+        $('#image-input').val('');
+        $('#portrait-image-input').val('');
+    });
+
+    $('#crop-btn').on('click', function () {
+        const canvas = $('#image-to-crop').cropper('getCroppedCanvas', {
+            width: cropperWidth,
+            height: cropperHeight,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high',
+        });
+
+        const base64Data = canvas.toDataURL('image/jpeg', 0.85);
+        $('#cropped_image').val(base64Data);
+        $('#current-preview').attr('src', base64Data);
+        $('#save-btn').prop('disabled', false);
+        $('#cropper-modal').modal('hide');
+    });
 });
+
     </script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBqlhfqT1MQ2MscLa_1z_MqFy8T9rwOOZ8&libraries=places&callback=initMap" async></script>
     <script>
@@ -473,18 +583,10 @@ $(document).ready(function () {
                     <div class="card-body">
                         <h4 class="card-title pb-3 border-bottom fw-bold admin-card-header">Other Details</h4>
                         <div class="row mt-3">
-                            <div class="col-md-12">
+                            <!-- <div class="col-md-12">
                                 <label for="banner_image" class="form-label">Banner Image</label> <small>(Recommended file size: 5 MB and image size: 1000 × 660 px)</small>
                             </div>
                             <div class="col-md-12 text-center">
-                                <!-- <input type="file" accept="image/*" class="form-control" id="banner_image" name="banner_image">
-                                @if ($banner_image)
-                                    <div class="mt-2">
-                                        <img src="{{ asset($banner_image) }}" alt="Banner Image" class="img-fluid"
-                                            style="max-height: 50px;">
-                                    </div>
-                                @endif -->
-
                                 <input type="hidden" name="cropped_image" id="cropped_image">
                                 <div class="img-preview-container">
                                     <img src="{{ asset($banner_image) }}" id="current-preview" alt="Profile" style="width:100%; height:100%; object-fit:cover;">
@@ -493,7 +595,34 @@ $(document).ready(function () {
                                 <button type="button" class="btn btn-outline-primary" id="upload-btn">
                                     Update Banner Image
                                 </button>
+                            </div> -->
+                            <div class="col-md-12">
+                                <label class="form-label">Banner Image</label>
+                                <small>(Recommended file size: 5 MB. Landscape: 1000 × 660 px or Portrait: 660 × 1000 px)</small>
                             </div>
+                            <div class="col-md-12 text-center">
+                                <input type="hidden" name="cropped_image" id="cropped_image">
+
+                                <div class="img-preview-container">
+                                    <img src="{{ asset($banner_image) }}" id="current-preview" alt="Banner Preview" style="width:100%; height:100%; object-fit:cover;">
+                                </div>
+
+                                <div class="row g-2 justify-content-center mt-2">
+                                    <div class="col-sm-6 col-md-4 admin-image-upload-btn">
+                                        <input type="file" id="image-input" accept="image/*">
+                                        <label for="image-input" class="btn btn-outline-primary w-100 mb-0" id="upload-btn">
+                                            Upload Landscape Image
+                                        </label>
+                                    </div>
+                                    <div class="col-sm-6 col-md-4 admin-image-upload-btn">
+                                        <input type="file" id="portrait-image-input" accept="image/*">
+                                        <label for="portrait-image-input" class="btn btn-outline-primary w-100 mb-0" id="portrait-upload-btn">
+                                            Upload Portrait Image
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
                             <input type="hidden" name="flyer_image" value="">
                             <!-- <div class="col-md-3">
                                 <label for="flyer_image" class="form-label">Flyer Image</label>
@@ -834,7 +963,7 @@ $(document).ready(function () {
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Crop Event Banner</h5>
+                <h5 class="modal-title" id="cropper-modal-title">Crop Event Banner</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">

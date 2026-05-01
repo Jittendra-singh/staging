@@ -34,11 +34,20 @@
                         {{$event->fullAddress}}</span>
                 </div>
             </div>
-            <a class="text-white" href="{{route('view-event-details',['slug'=> $event->slug])}}">
-                <div class="event-logo">
-                    <div class="mini-badge">View Event</div>
-                </div>
-            </a>
+            <div class="d-flex justify-content-start gap-3">
+                <a class="text-white" href="{{route('view-event-details',['slug'=> $event->slug])}}">
+                    <div class="event-logo">
+                        <div class="mini-badge">View Event</div>
+                    </div>
+                </a>
+                @if(strtotime($event->end_datetime)<=strtotime(date('Y-m-d H:i:s')))
+                <a target="_blank" class="text-white" href="{{route('cleanup-highlights',['event'=> encrypt($event->id)])}}">
+                    <div class="event-logo">
+                        <div class="mini-badge">Impact Report</div>
+                    </div>
+                </a>
+                @endif
+            </div>
         </div>
     </div>
     @endif
