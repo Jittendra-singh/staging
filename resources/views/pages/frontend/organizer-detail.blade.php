@@ -256,13 +256,13 @@
         font-size: 0.86rem;
         font-weight: 700;
         padding: 10px 16px;
-        border-radius: 999px;
+        border-radius: 5px;
     }
 
     .organizer-sub-tabs .nav-link.active,
     .organizer-sub-tabs .nav-link:hover{
-        background: #34D399 !important;
-        border-color: #34D399 !important;
+        background: var(--bs-primary) !important;
+        border-color: var(--bs-primary) !important;
         color: #fff!important;
     }
 
@@ -365,6 +365,12 @@
         .organizer-sub-tabs .nav-link{
             width: 100%;
         }
+    }
+    #upcoming-events-tab-btn.active,#past-events-tab-btn.active,#upcoming-events-tab-btn:hover,#past-events-tab-btn:hover{
+        color:white !important;
+    }
+    #upcoming-events-tab-btn,#past-events-tab-btn{
+        color:var(--bs-btn-color) !important;
     }
 </style>
 @endpush
@@ -523,7 +529,7 @@
                                     <div class="organizer-events-head">
                                         <h3 class="organizer-events-title">Events</h3>
 
-                                        <ul class="nav nav-tabs organizer-sub-tabs" id="extra-tab" role="tablist">
+                                        <!-- <ul class="nav nav-tabs organizer-sub-tabs" id="extra-tab" role="tablist">
                                             <li class="nav-item" role="presentation">
                                                 <button
                                                     class="nav-link {{ request()->get('tab')=='upcoming_event' ? 'active' : (!request()->get('tab') ? 'active' : '') }}"
@@ -552,7 +558,31 @@
                                                     Past Events
                                                 </button>
                                             </li>
-                                        </ul>
+                                        </ul> -->
+                                        <div class="btn-group nav nav-tabs" role="group">
+                                            <button
+                                                    class="btn btn-outline-primary {{ request()->get('tab')=='upcoming_event' ? 'active text-white' : (!request()->get('tab') ? 'active text-white' : '') }}"
+                                                    id="upcoming-events-tab-btn"
+                                                    data-bs-toggle="tab"
+                                                    data-bs-target="#upcoming-events-tab"
+                                                    type="button"
+                                                    role="tab"
+                                                    aria-controls="upcoming-events-tab"
+                                                    aria-selected="false">
+                                                Upcoming Event
+                                            </button>
+                                            <button
+                                                    class="btn btn-outline-primary px-3 py-2 {{ request()->get('tab')=='past_event' ? 'active text-white' : '' }}"
+                                                    id="past-events-tab-btn"
+                                                    data-bs-toggle="tab"
+                                                    data-bs-target="#past-events-tab"
+                                                    type="button"
+                                                    role="tab"
+                                                    aria-controls="past-events-tab"
+                                                    aria-selected="false">
+                                                Past Event
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div class="tab-content w-100" id="organizerInnerTabsContent">
