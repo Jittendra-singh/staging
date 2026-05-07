@@ -177,6 +177,8 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::get('export-registration', 'exportRegistration')->name('front-export-registration');
         Route::post('ticket-mark-checkin/{id}', 'ticketMarkCheckin')->name('ticket-mark-checkin');
         Route::post('request-community-form/{id}', 'requestCommunityForm')->name('request-community-form');
+        Route::post('send-custom-email-attendee/{id}', 'sendCustomEmailAttendee')->name('front-send-custom-email-attendee');
+        Route::post('send-custom-email-event-attendees/{id}', 'sendCustomEmailEventAttendees')->name('front-send-custom-email-event-attendees');
         
         
         /**PROFILE HANDLER */

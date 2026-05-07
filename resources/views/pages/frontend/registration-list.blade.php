@@ -23,6 +23,7 @@
 						</button>
 					</div>
 					<div class="col-md-12">
+                    	<x-reusables.frontend.alert />
 						<div class="filter-card mt-4">
 							<div class="card-body p-4">
 								<div class="filter-card-header mb-3">
@@ -275,6 +276,9 @@
 																data-bs-toggle="modal" data-bs-target="#registrationDetails">
 																<i class="fa-solid fa-info-circle me-3"></i>Details
 															</a>
+															<a ref="javascript:void(0);" class="dropdown-item send-attendee-email" data-route="{{ route('front-send-custom-email-attendee', ['id' => encrypt($registration->id)]) }}" data-bs-toggle="modal" data-bs-target="#sendAttendeeEmailModal">
+																<i class="fa-solid fa-envelope me-3"></i>Send Email
+															</a>
 														</div>
 													</div>
 												</div>
@@ -422,8 +426,44 @@
 	</div>
 	
     <x-reusables.frontend.registration-popups/> 
+<div class="modal fade" id="sendAttendeeEmailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <form method="POST" id="sendAttendeeEmailForm">
+            @csrf
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-primary">Send Email</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+					<div class="model-content main-form pt-4">
+						<div class="row">
+							<div class="col-sm-12">
+								<div class="form-group mb-3">
+									<label>Subject*</label>
+									<input type="text" name="subject" class="form-control" required>
+								</div>
+
+								<div class="form-group mb-3">
+									<label>Content*</label>
+									<textarea name="content" id="description" class="form-control ckeditor" rows="8"></textarea>
+								</div>
+							</div>
+						</div>
+					</div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="primary-btn w-fit btn-send-custom-email">Send Email</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 
 	@push('script')
+        <script src="{{ asset('assets/libs/@ckeditor/ckeditor5-build-classic/build/ckeditor.js') }}"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 		<script>
 			const opt = {
@@ -461,7 +501,16 @@
 				$('.filter-form').attr('action', '{{route("front-export-registration")}}')
 				$('.filter-form').submit();
 			})
-
+			$('.send-attendee-email').click(function () {
+				$('#sendAttendeeEmailForm').attr('action', $(this).data('route'));
+				$('#sendAttendeeEmailForm')[0].reset();
+				$('#description').val('');
+			});
+			$('.btn-send-custom-email').click(function(e){
+				e.preventDefault();
+				$(this).text('Sending...').attr('disabled', true);
+				$('#sendAttendeeEmailForm').submit();
+			});
 		</script>
 	@endpush
 	@style

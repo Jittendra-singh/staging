@@ -3146,6 +3146,109 @@ class FrontController extends Controller
         $content = $this->getEventMetaDataByAi($event);
         return $this->generateJsonResponse(true, '', json_decode($content));
     }
+    public function sendCustomEmailAttendee($id)
+    {
+        request()->validate([
+            'subject' => 'required|string',
+            'content' => 'required|string',
+        ]);
+
+        $ticket = EventOrderTicket::with(['volunteer', 'event.creator'])->findOrFail(decrypt($id));
+
+        if (!$ticket->event || $ticket->event->creator_id != auth()->guard('front')->user()->id) {
+            abort(403);
+        }
+
+        if (!$ticket->volunteer || empty(trim($ticket->volunteer->email_address))) {
+            $this->setFlashSession(false, 'Attendee email address is not available.');
+            return redirect()->back();
+        }
+
+        $templateId = 'd-32906ded89e44bacbaa331f49cef43f0';
+
+        $to_arr[] = [
+            "to" => [
+                ["email" => trim($ticket->volunteer->email_address)]
+            ],
+            "dynamic_template_data" => [
+                "subject" => request()->subject,
+                "content" => request()->content,
+                "attendee_name" => $ticket->volunteer->first_name.' '.$ticket->volunteer->last_name,
+                "attendee_email" => $ticket->volunteer->email_address,
+            ],
+        ];
+
+        $this->sendSendgridTemplateEmailWithoutLog($to_arr, $templateId);
+
+        $this->setFlashSession(true, 'Email sent successfully.');
+        return redirect()->back();
+    }
+    public function sendCustomEmailEventAttendees($id)
+    {
+        request()->validate([
+            'subject' => 'required|string',
+            'content' => 'required|string',
+        ]);
+
+        set_time_limit(0);
+        ini_set('max_execution_time', 0);
+
+        $event = Event::with('creator')->findOrFail(decrypt($id));
+
+        if ($event->creator_id != auth()->guard('front')->user()->id) {
+            abort(403);
+        }
+
+        $tickets = $event->tickets()->with('volunteer')->where('rsvp_confirmation', 1)->get();
+
+        if ($tickets->count() == 0) {
+            $this->setFlashSession(false, 'No RSVP confirmed attendees found.');
+            return redirect()->back();
+        }
+
+        $templateId = 'd-32906ded89e44bacbaa331f49cef43f0';
+
+        $to_arr = [];
+        $sentEmails = [];
+
+        foreach ($tickets as $ticket) {
+            if (!$ticket->volunteer || empty(trim($ticket->volunteer->email_address))) {
+                continue;
+            }
+
+            $email = trim($ticket->volunteer->email_address);
+
+            if (in_array($email, $sentEmails)) {
+                continue;
+            }
+
+            $to_arr[] = [
+                "to" => [
+                    ["email" => $email]
+                ],
+                "dynamic_template_data" => [
+                    "subject" => request()->subject,
+                    "content" => request()->content,
+                    "attendee_name" => $ticket->volunteer->first_name.' '.$ticket->volunteer->last_name,
+                    "attendee_email" => $email,
+                ],
+            ];
+
+            $sentEmails[] = $email;
+        }
+
+        if (empty($to_arr)) {
+            $this->setFlashSession(false, 'No attendee email address found.');
+            return redirect()->back();
+        }
+
+        foreach (array_chunk($to_arr, 300) as $chunk) {
+            $this->sendSendgridTemplateEmailWithoutLog($chunk, $templateId);
+        }
+
+        $this->setFlashSession(true, 'Email sent successfully to all RSVP confirmed attendees.');
+        return redirect()->back();
+    }
     public function resendWaiver($ticket){
         $ticket = EventOrderTicket::find(decrypt($ticket));
         if(!$ticket){

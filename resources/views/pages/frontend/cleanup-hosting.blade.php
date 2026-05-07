@@ -289,6 +289,13 @@ a[disabled]{
                                                         <i class="fa-solid fa-ban me-3"></i>Cancel Event
                                                     </a>
                                                     @endif
+                                                    <a href="javascript:void(0);"
+                                                    class="dropdown-item send-event-attendees-email"
+                                                    data-route="{{ route('front-send-custom-email-event-attendees', ['id' => $event->encrypted_id]) }}"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#sendEventAttendeesEmailModal">
+                                                        <i class="fa-solid fa-envelope me-3"></i>Send Email
+                                                    </a>
                                                     @if(auth()->guard('front')->user()->id==$event->creator_id)
                                                     <a class="dropdown-item delete-record" data-url="{{route('front-cleanup-hosting-delete', ['id'=> $event->id])}}">
                                                         <i class="fa-solid fa-trash-can me-3"></i>Delete
@@ -417,4 +424,54 @@ a[disabled]{
         </div>
     </div>
     <x-reusables.frontend.manage-cohosts  />
+<div class="modal fade" id="sendEventAttendeesEmailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <form method="POST" id="sendEventAttendeesEmailForm">
+            @csrf
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-primary">Send Email</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+					<div class="model-content main-form pt-4">
+						<div class="row">
+							<div class="col-sm-12">
+								<div class="form-group mb-3">
+									<label>Subject*</label>
+									<input type="text" name="subject" class="form-control" required>
+								</div>
+
+								<div class="form-group mb-3">
+									<label>Content*</label>
+									<textarea name="content" id="description" class="form-control ckeditor" rows="8"></textarea>
+								</div>
+							</div>
+						</div>
+					</div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="primary-btn w-fit btn-send-custom-email">Send Email</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+@push('script')
+    <script src="{{ asset('assets/libs/@ckeditor/ckeditor5-build-classic/build/ckeditor.js') }}"></script>
+    <script>
+        $('.send-event-attendees-email').click(function () {
+            $('#sendEventAttendeesEmailForm').attr('action', $(this).data('route'));
+            $('#sendEventAttendeesEmailForm')[0].reset();
+            $('#description').val('');
+        });
+        $('.btn-send-custom-email').click(function(e){
+            e.preventDefault();
+            $(this).text('Sending...').attr('disabled', true);
+            $('#sendEventAttendeesEmailForm').submit();
+        });
+    </script>
+@endpush
 @endsection
