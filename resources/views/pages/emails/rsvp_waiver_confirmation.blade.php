@@ -49,7 +49,11 @@
         <li>RSVP: ❌ Pending</li>
         @endif 
         @if($is_waiver_signed)
-        <li>Waiver: ✅ Signed</li>
+        <li>Waiver: ✅ Signed 
+            @if($is_rsvp_confirmed)
+            <small><a target="_blank" href="{{ route('view-waiver-pdf', ['ticket' => encrypt($ticket->id)]) }}">Waiver PDF</a></small>
+            @endif 
+        </li>
         @else    
         <li>Waiver: ❌ Pending</li>
         @endif 
@@ -111,7 +115,11 @@
             <li>RSVP: ❌ Pending</li>
             @endif 
             @if($is_waiver_signed)
-            <li>Waiver: ✅ Signed</li>
+            <li>Waiver: ✅ Signed
+                @if($is_rsvp_confirmed)
+                <small><a target="_blank" href="{{ route('view-waiver-pdf', ['ticket' => encrypt($ticket->id)]) }}">Waiver PDF</a></small>
+                @endif 
+            </li>
             @else    
             <li>Waiver: ❌ Pending</li>
             @endif 

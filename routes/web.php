@@ -55,6 +55,7 @@ Route::controller(\App\Http\Controllers\FrontOrderController::class)->group(func
     Route::post('cancel-refund-paid-ticket' , 'cancelRefundPaidTicket')->name('cancel-refund-paid-ticket');
     Route::post('cancel-refund-paid-ticket-attendee/{ticket}/{type}' , 'cancelRefundPaidTicketAttendee')->name('cancel-refund-paid-ticket-attendee');
     Route::get('rsvp-cancelled-page/{event}', 'rsvpCancelledPage')->name('rsvp-cancelled-page');
+    Route::get('view-waiver-pdf/{ticket}' , 'viewWaiverPdf')->name('view-waiver-pdf');
     
     Route::get('cancel-registration-front/{ticket}', 'cancelRegistrationFront')->name('cancel-registration-front');
     Route::get('confirm-cancel-registration-front/{ticket}/{type}', 'confirmCancelRegistrationFront')->name('confirm-cancel-registration-front');
@@ -79,7 +80,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
     Route::post('save-organizer-lead' , 'saveOrganizerLead')->name('save-organizer-lead');
     Route::get('download-registration-calendar/{slug}', 'generateIcs')->name('front-registration-calendar');
     Route::get('booking-confirmed/{order}', 'bookingConfirmed')->name('front-booking-confirmed');
-    Route::get('rsvp-confirmation/{event}', 'rsvpWaiverConfirmed')->name('front-rsvp-confirmation');
+    Route::get('rsvp-confirmation/{id}', 'rsvpWaiverConfirmed')->name('front-rsvp-confirmation');
     Route::get('unsubscribe-alert/{user}/{alert?}', 'unsubscribeAlert')->name('unsubscribe-alert');
     Route::get('confirmed-unsubscribe-alert/{user}/{alert?}', 'confirmedUnsubscribeAlert')->name('confirmed-unsubscribe-alert');
     Route::get('show-community-service-pdf/{ticket}', 'showCommunityServicePdf')->name('show-community-service-pdf');

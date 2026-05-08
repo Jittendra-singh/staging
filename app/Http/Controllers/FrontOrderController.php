@@ -698,6 +698,90 @@ class FrontOrderController extends Controller
             'event'      => $event,
         ]);
     }
+    /* public function viewWaiverPdf($ticket){
+        $ticket = EventOrderTicket::with('volunteer')->findOrFail(decrypt($ticket));
+        $event  = $ticket->event;
+        $waiver_form_content = $event->waiverFormContentFilter();
+        if($event->waiver_form_type=='pdf'){
+            $waiver_form_content = '<a target="_blank" href="'.asset($waiver_form_content).'">View Waiver Document</a>';
+        }
+        if($event->waiver_form_type=='external_link'){
+            $waiver_form_content = '<a target="_blank" href="'.$waiver_form_content.'">Open Waiver External Link</a>';
+        }
+        $volunteerName = $ticket->volunteer->first_name.' '.$ticket->volunteer->last_name.' ('.$ticket->volunteer->email_address.')';
+        if($ticket->is_under_18==1){
+            $volunteerName = $ticket->waiver_handler_name.' ('.$ticket->waiver_handler_email.')';
+        }
+        return view('pages.frontend.waiver-pdf', [
+            'event'      => $event,
+            'ticket'      => $ticket,
+            'seo_details' => (object) ['title' => 'RSVP Confirmation & Waiver Form'],
+            'waiverTerms' => $waiver_form_content,
+            'signerName'  => $volunteerName,
+            'eventName'   => $event->event_name,
+            'signature'   => $ticket->signature,
+            'eventDateTime'   => $event->start_datetime->format(config('app.dateTimeFormat')),
+            'eventVenue'   => $event->venue.' '.$event->pincode,
+            'signature_required' => $ticket->is_under_18 ? true : false,
+        ]);
+    } */
+    public function viewWaiverPdf($ticket){
+        $ticket = EventOrderTicket::with('volunteer')->findOrFail(decrypt($ticket));
+        if(empty($ticket->waiver_filled_at) || empty($ticket->signature)){
+            abort(404, 'Waiver is not signed yet.');
+        }
+        $event  = $ticket->event;
+        $waiver_form_content = $event->waiverFormContentFilter();
+
+        if($event->waiver_form_type=='pdf'){
+            $waiver_form_content = '<a target="_blank" href="'.asset($waiver_form_content).'">View Waiver Document</a>';
+        }
+        if($event->waiver_form_type=='external_link'){
+            $waiver_form_content = '<a target="_blank" href="'.$waiver_form_content.'">Open Waiver External Link</a>';
+        }
+
+        $volunteerName = $ticket->volunteer->first_name.' '.$ticket->volunteer->last_name;
+        if($ticket->is_under_18 == 1){
+            $volunteerName = $ticket->waiver_handler_name;
+        }
+
+        $data = [
+            'event'              => $event,
+            'ticket'             => $ticket,
+            'waiverTerms'        => $waiver_form_content,
+            'signerName'         => $volunteerName,
+            'eventName'          => $event->event_name,
+            'signature'          => $ticket->signature,
+            'eventDateTime'      => $event->eventStartDateTime,
+            'eventVenue'         => $event->fullAddress,
+            'signature_required' => $ticket->is_under_18 ? true : false,
+        ];
+
+        try {
+            $html = view('pages.frontend.waiver-pdf-view', $data)->render();
+
+            $pdf = \PDF::setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled'      => true,
+                'defaultFont'          => 'serif',
+                'dpi'                  => 150,
+                'defaultPaperSize'     => 'a4',
+            ])->loadHTML($html);
+
+            $filename = 'waiver_' . $ticket->id . '_' . time() . '.pdf';
+
+            return $pdf->stream($filename);
+
+        } catch(\Exception $e) {
+            \Log::error('Waiver PDF generation failed', [
+                'ticket_id' => $ticket->id,
+                'error'     => $e->getMessage(),
+                'line'      => $e->getLine(),
+                'file'      => $e->getFile(),
+            ]);
+            return back()->with('error', 'Unable to generate waiver PDF. Please try again.');
+        }
+    }
     public function viewWaiverForm($ticket){
         
         $ticket = EventOrderTicket::with('volunteer')->findOrFail(decrypt($ticket));
@@ -737,7 +821,7 @@ class FrontOrderController extends Controller
         if(!$orderTicket) 
             abort(404);
 
-        if($orderTicket->waiver_filled_at != null)
+        if($orderTicket->waiver_filled_at != null && !empty($orderTicket->signature))
             throw new CustomException("This waiver is already filled and signed. if you have any doubt, please contact organizer.", 408);
             
         $orderTicket->update(['waiver_filled_at' => now(), 'signature' => $request->signature]);
@@ -746,7 +830,7 @@ class FrontOrderController extends Controller
         $this->sendRSVPandWaiverMail($orderTicket);
         $this->setFlashSession(true, "Waiver form has been successfully submitted and signed.");
         //return redirect()->route('view-events');
-        return redirect()->route('front-rsvp-confirmation',['event'=>encrypt($orderTicket->event_id)]);
+        return redirect()->route('front-rsvp-confirmation',['id'=>encrypt($orderTicket->id)]);
     }
     public function submitRSVPForm($ticket , Request $request){
         return redirect()->route('front-cleanup-attending');
@@ -768,7 +852,7 @@ class FrontOrderController extends Controller
         if(!empty($orderTicket->event->waiver_form_type)){
             return redirect()->route('view-waiver-form',['ticket'=>$ticket]);
         }
-        return redirect()->route('front-rsvp-confirmation',['event'=>encrypt($orderTicket->event_id)]); */
+        return redirect()->route('front-rsvp-confirmation',['id'=>encrypt($orderTicket->id)]); */
     }
     public function cancelRSVP($ticket,$type=null){
         return redirect()->route('front-cleanup-attending');
@@ -1105,6 +1189,7 @@ class FrontOrderController extends Controller
         $is_rsvp_confirmed = ($orderTicket->rsvp_confirmation==1 && !empty($orderTicket->rsvp_filled_at))?true:false; 
         $is_waiver_signed = !empty($orderTicket->waiver_filled_at)?true:false; 
         $emailContentData = [
+            'ticket' => $orderTicket,
             'event' => $orderTicket->event,
             'event_name' => $orderTicket->event->event_name,
             'event_date' => $orderTicket->event->startTimeAndEndTime,

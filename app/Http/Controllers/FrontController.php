@@ -2981,14 +2981,16 @@ class FrontController extends Controller
         return view('pages.frontend.booking-confirmed', $data);
     }
     
-    public function rsvpWaiverConfirmed($event_id)
+    public function rsvpWaiverConfirmed($id)
     {
         $data = [];
-        $event = Event::where('id', decrypt($event_id))->first();
-        if(!$event_id){
+        $orderTicket = EventOrderTicket::findOrFail(decrypt($id));
+        $event = $orderTicket->event;
+        if(!$id || !$event){
             abort(404, 'Event not found.');
         }
         $data['event'] = $event; 
+        $data['ticket'] = $orderTicket;
         $data['seo_details'] = (object)['title' => 'RSVP Confirmation Form'];
         return view('pages.frontend.rsvp-confirmed', $data);
     }

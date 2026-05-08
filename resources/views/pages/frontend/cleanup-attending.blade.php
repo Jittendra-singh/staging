@@ -184,6 +184,11 @@
 															>
 																<i class="fa-solid fa-download me-3"></i>Download Ticket
 															</a>	
+															@if(!empty($registration->waiver_filled_at))
+															<a class="dropdown-item download-ticket" href="{{ route('view-waiver-pdf', ['ticket' => encrypt($registration->id)]) }}" target="_blank">
+																<i class="fa-solid fa-download me-3"></i>Download Waiver PDF
+															</a>
+															@endif
 															@if($event->is_completed==1)
 															<a target="_blank" href="{{route('cleanup-highlights',['event'=>encrypt($event->id)])}}" class="dropdown-item">
 																<i class="fa-solid fa-bar-chart me-3"></i>View Impact Report

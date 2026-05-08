@@ -257,6 +257,11 @@
 															>
 																<i class="fa-solid fa-download me-3"></i>Download Ticket
 															</a>
+															@if(!empty($registration->waiver_filled_at))
+															<a class="dropdown-item download-ticket" href="{{ route('view-waiver-pdf', ['ticket' => encrypt($registration->id)]) }}" target="_blank">
+																<i class="fa-solid fa-download me-3"></i>Download Waiver PDF
+															</a>
+															@endif
 															@if($ticket->ticket_status)
 																<a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editRegistraionStatus">
 																	<i class="fa-solid fa-gear me-3"></i>Edit Status
@@ -336,7 +341,7 @@
 														<p>Waiver</p>
 														<h6 class="coupon-status">
 															@if(!empty($registration->waiver_filled_at))
-															Signed at {{date(config('app.dateTimeFormat'),strtotime($registration->waiver_filled_at))}}
+															Signed at {{date(config('app.dateTimeFormat'),strtotime($registration->waiver_filled_at))}} <!-- <a href="{{ route('view-waiver-pdf', ['ticket' => encrypt($registration->id)]) }}" data-bs-toggle="tooltip" data-bs-original-title="Download Waiver PDF" target="_blank" class="ms-1"><span class="badge custom-badge-success"><i class="fa fa-download"></i></span></a> -->
 															@else
 															<span class="badge custom-badge-danger">Unsigned</span> 
 															<a href="{{ route('view-waiver-form', ['ticket' => encrypt($registration->id)]) }}" data-bs-toggle="tooltip" data-bs-original-title="Waiver Page Link" target="_blank"><span class="badge custom-badge-warning"><i class="fa fa-external-link"></i></span></a><br/>

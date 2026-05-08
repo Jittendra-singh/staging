@@ -70,6 +70,16 @@ $icalStrData = getiCalData($event);
 										</svg>
 										Add to Calendar
 									</a>
+									<a target="_blank" href="{{route('view-waiver-pdf',['ticket'=>encrypt($ticket->id)])}}" class="secondary-btn w-100 mt-2">
+										<svg class="lucide lucide-download" fill="none" height="20" stroke="currentColor"
+											stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+											viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
+											<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+											<polyline points="7 10 12 15 17 10"></polyline>
+											<line x1="12" x2="12" y1="15" y2="3"></line>
+										</svg>
+										Download Waiver PDF
+									</a>
 									<!-- <a href="javascript:void(0);" icaldata='{!! htmlspecialchars($icalStrData, ENT_QUOTES, 'UTF-8') !!}' icaltitle="{{$event->event_name}}" onclick="downloadICS(this);" class="secondary-btn w-100 mt-2">
 										<svg class="lucide lucide-download" fill="none" height="20" stroke="currentColor"
 											stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

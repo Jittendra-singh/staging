@@ -12,8 +12,8 @@
             <div class="container">
                 @if($event->waiverFormContentFilter())
                 <div class="content-grid mt-5">
-                    <x-reusables.frontend.alert />
                     <div class="waiver-form">
+                    <x-reusables.frontend.alert />
                         <h2>Event Waiver Form</h2>
                         <p>
                             Please read the following waiver carefully before signing.
