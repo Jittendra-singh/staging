@@ -2718,6 +2718,48 @@ $(document).ready(function () {
 			}
 		});
 	});
+	$(document).on('click', '.btn-resend-waiver-modal', function () {
+		var control = this;
+		var url = $(control).attr('url');
+		var defaultemail = $(control).attr('defaultemail');
+		if(defaultemail.trim()==''){
+			defaultemail = 'NO EMAIL';
+		}
+		$('#resendWaiverEmailModal').find('form').attr('action', url);
+		$('#resend_waiver_default_email').text(defaultemail);
+		$('#alternative_waiver_email').val('');
+    	selectResendOption(1);
+		$('#resendWaiverEmailModal').modal('show');
+	});
+	$(document).on('click', '.submit-btn-send-waiver-email', function (e) {
+		var control = this;
+		var checkedRadio = $('input[name="resend_waiver_type"]:checked').val();
+		var alternativeEmail = $('#alternative_waiver_email').val();
+		if(checkedRadio==2 && alternativeEmail==''){
+			showError('Please enter alternative email address.', 'error');
+			$('#alternative_waiver_email').focus();
+			return false;
+		}
+		$(control).text('Sending...').attr('disabled', true);
+		var formData = $('#resendWaiverEmailModal').find('form').serialize();
+		var url = $('#resendWaiverEmailModal').find('form').attr('action');
+		$.ajax({
+			url: url,
+			method: 'POST',
+			data: formData,
+			success: function (response) {
+				$(control).text('Send Email').removeAttr('disabled');
+				if (response.status) {
+					showError(response.message, 'success');
+					$('#alternative_waiver_email').val('');
+					$('#resendWaiverEmailModal').modal('hide');
+				}
+				else {
+					showError(response.message, 'error');
+				}
+			}
+		});
+	});
 	// ── APPROVE CERTIFICATE ───────────────────────────────────────────────────
 	$(document).on('click', '.btn-approve-certificate', function () {
 		var url  = $(this).attr('url');
@@ -2856,6 +2898,30 @@ $(document).ready(function () {
 	fieldmasking();
 });
 
+function selectResendOption(n) {
+	$('#resend_waiver_type1, #resend_waiver_type2').prop('checked', false);
+	$('#resend_waiver_type' + n).prop('checked', true);
+
+	$('#optionCard1, #optionCard2').removeClass('selected');
+	$('#radioDot1, #radioDot2').removeClass('on');
+	$('#optionCard' + n).addClass('selected');
+	$('#radioDot' + n).addClass('on');
+
+	if (n === 2) {
+		$('#alternative_waiver_email').prop('disabled', false).focus();
+		$('#resend_waiver_note').html(
+			'<span class="resend-note-label">Override email selected — </span>' +
+			'The waiver link will be sent to the address entered above instead of the registered one. ' +
+			'This action will be logged. The volunteer\'s profile email will <u>not</u> be changed.'
+		);
+	} else {
+		$('#alternative_waiver_email').prop('disabled', true).val('');
+		$('#resend_waiver_note').html(
+			'<span class="resend-note-label">Registered email selected — </span>' +
+			'The waiver link will be resent to the volunteer\'s email on record. The volunteer\'s profile will not be modified.'
+		);
+	}
+}
 
 function calcPriceBreakdown() {
 	/* var isOrgPayFee = $('input[name="charge_bear_by"]:checked').val();

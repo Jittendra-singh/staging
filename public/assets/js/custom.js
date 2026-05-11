@@ -1102,7 +1102,73 @@ $(document).ready(function () {
 			}
 		});
 	});
+      
+	$(document).on('click', '.btn-resend-waiver-modal', function () {
+		var control = this;
+		var url = $(control).attr('url');
+		var defaultemail = $(control).attr('defaultemail');
+		if(defaultemail.trim()==''){
+			defaultemail = 'NO EMAIL';
+		}
+		$('#resendWaiverEmailModal').find('form').attr('action', url);
+		$('#resend_waiver_default_email').text(defaultemail);
+		$('#alternative_waiver_email').val('');
+    	selectResendOption(1);
+		$('#resendWaiverEmailModal').modal('show');
+	});
+	$(document).on('click', '.submit-btn-send-waiver-email', function (e) {
+		var control = this;
+		var checkedRadio = $('input[name="resend_waiver_type"]:checked').val();
+		var alternativeEmail = $('#alternative_waiver_email').val();
+		if(checkedRadio==2 && alternativeEmail==''){
+			showError('Please enter alternative email address.', 'error');
+			$('#alternative_waiver_email').focus();
+			return false;
+		}
+		$(control).text('Sending...').attr('disabled', true);
+		var formData = $('#resendWaiverEmailModal').find('form').serialize();
+		var url = $('#resendWaiverEmailModal').find('form').attr('action');
+		$.ajax({
+			url: url,
+			method: 'POST',
+			data: formData,
+			success: function (response) {
+				$(control).text('Send Email').removeAttr('disabled');
+				if (response.status) {
+					showError(response.message, 'success');
+					$('#alternative_waiver_email').val('');
+					$('#resendWaiverEmailModal').modal('hide');
+				}
+				else {
+					showError(response.message, 'error');
+				}
+			}
+		});
+	});
 });
+function selectResendOption(n) {
+	$('#resend_waiver_type1, #resend_waiver_type2').prop('checked', false);
+	$('#resend_waiver_type' + n).prop('checked', true);
+
+	$('#optionCard1, #optionCard2').removeClass('selected');
+	$('#radioDot1, #radioDot2').removeClass('on');
+	$('#optionCard' + n).addClass('selected');
+	$('#radioDot' + n).addClass('on');
+
+	if (n === 2) {
+		$('#alternative_waiver_email').prop('disabled', false).focus();
+		$('#resend_waiver_note').html(
+			'<span class="resend-note-label">Alternative email selected — </span>' +
+			'The link goes to the address entered above only. This does <u>not</u> update the volunteer\'s profile email.'
+		);
+	} else {
+		$('#alternative_waiver_email').prop('disabled', true).val('');
+		$('#resend_waiver_note').html(
+			'<span class="resend-note-label">Original email selected — </span>' +
+			'The waiver link will be resent to the volunteer\'s registered address. This does not change their profile email.'
+		);
+	}
+}
 function callImaskForEmail(id) {
       IMask(document.getElementById(id), {
             mask: value => {

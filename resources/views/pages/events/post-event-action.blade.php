@@ -43,6 +43,108 @@
         background: #b02a37;
     }
     </style>
+	<style>
+		.resend-opt-card {
+			border: 1.5px solid #dee2e6;
+			border-radius: 10px;
+			padding: 14px 16px;
+			cursor: pointer;
+			background: #f8f9fa;
+			transition: border-color 0.15s, background 0.15s;
+			margin-bottom: 10px;
+		}
+		.resend-opt-card.selected {
+			border-color: #414598;
+			background: #E6F1FB;
+		}
+		.resend-opt-card:hover:not(.selected) {
+			border-color: #adb5bd;
+			background: #f1f3f5;
+		}
+		.resend-radio-dot {
+			width: 18px;
+			height: 18px;
+			border-radius: 50%;
+			border: 2px solid #adb5bd;
+			flex-shrink: 0;
+			margin-top: 2px;
+			position: relative;
+			transition: border-color 0.15s, background 0.15s;
+		}
+		.resend-radio-dot.on {
+			border-color: #414598;
+			background: #414598;
+		}
+		.resend-radio-dot.on::after {
+			content: '';
+			display: block;
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: white;
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+		}
+		.resend-opt-title {
+			margin: 0 0 3px;
+			font-size: 14px;
+			font-weight: 600;
+			color: #212529;
+		}
+		.resend-opt-desc {
+			margin: 0 0 10px;
+			font-size: 12px;
+			color: #6c757d;
+			line-height: 1.5;
+		}
+		.resend-email-badge {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			padding: 4px 10px;
+			border-radius: 6px;
+			background: white;
+			border: 1px solid #B5D4F4;
+			font-size: 12px;
+			font-weight: 500;
+			color: #414598;
+		}
+		.resend-email-badge .ti { font-size: 13px; }
+		.resend-alt-input {
+			font-size: 13px !important;
+			transition: opacity 0.15s;
+		}
+		.resend-alt-input:disabled {
+			opacity: 0.55;
+			cursor: not-allowed;
+			background: #f8f9fa !important;
+		}
+		.resend-note {
+			display: flex;
+			align-items: flex-start;
+			gap: 8px;
+			padding: 10px 12px;
+			background: #f0f7ff;
+			border-left: 3px solid #414598;
+			border-radius: 0 6px 6px 0;
+			margin-top: 4px;
+			font-size: 12px;
+			color: #6c757d;
+			line-height: 1.6;
+		}
+		.resend-note-icon {
+			font-size: 15px;
+			color: #414598;
+			flex-shrink: 0;
+			margin-top: 1px;
+		}
+		.resend-note-label {
+			font-weight: 600;
+			color: #212529;
+		}
+	</style>
 @endsection
 @section('js')
     <x-reusables.datatablejs />
@@ -86,7 +188,8 @@
                                         @endif
                                         Signed At (<i data-bs-toggle="tooltip" data-bs-original-title="{{ $data->pivot->waiver_handler_name.' ('.$data->pivot->waiver_handler_email.')' }}" class="mdi mdi-account"></i>):<br/> <span class="text-danger">Pending</span> 
                                         <a href="{{ route('view-waiver-form', encrypt($data->pivot->id)) }}" target="_blank" data-bs-toggle="tooltip" data-bs-original-title="Waiver Page Link" target="_blank"><span class="badge bg-warning"><i class="mdi mdi-link-variant"></i></span></a> 
-                                        <a href="javascript:void(0);" url="{{ route('send-waiver-invitation', ['ticket' => $data->pivot->encrypted_id]) }}" message="You want to resend email for waiver" data-bs-toggle="tooltip" data-bs-original-title="Resend Waiver Email" class="show-alert-run-url"><span class="badge bg-info"><i class="mdi mdi-email-send"></i></span></a><br/>
+                                        <!-- <a href="javascript:void(0);" url="{{ route('send-waiver-invitation', ['ticket' => $data->pivot->encrypted_id]) }}" message="You want to resend email for waiver" data-bs-toggle="tooltip" data-bs-original-title="Resend Waiver Email" class="show-alert-run-url"><span class="badge bg-info"><i class="mdi mdi-email-send"></i></span></a> -->
+                                        <a href="javascript:void(0);" data-bs-toggle="tooltip" data-bs-original-title="Resend Waiver Email" defaultemail="{{ $data->pivot->is_under_18==1?$data->pivot->waiver_handler_email:$data->email_address }}" url="{{ route('send-waiver-invitation', ['ticket' => $data->pivot->encrypted_id]) }}" class="btn-resend-waiver-modal"><span class="badge bg-info"><i class="mdi mdi-email-send"></i></span></a><br/>
                                     @endif
                                     @if($data->pivot->rsvp_confirmation===0)
                                     <br/>RSVP: <span class="text-danger">Cancelled</span>
@@ -342,4 +445,69 @@
         </div><!-- /.modal-dialog -->
     </div>
     <!-- /.modal -->
+<div class="modal fade" id="resendWaiverEmailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <form method="POST" id="resendWaiverEmailForm">
+            @csrf
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Resend Waiver Email</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+				<div class="modal-body p-4">
+
+                    {{-- Hidden radio inputs --}}
+                    <input type="radio" name="resend_waiver_type" id="resend_waiver_type1" value="1" checked hidden>
+                    <input type="radio" name="resend_waiver_type" id="resend_waiver_type2" value="2" hidden>
+
+                    {{-- Option 1: Original Email --}}
+                    <div class="resend-opt-card selected" id="optionCard1" onclick="selectResendOption(1)">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="resend-radio-dot on" id="radioDot1"></div>
+                            <div class="flex-grow-1">
+                                <p class="resend-opt-title">Resend to volunteer's registered email</p>
+                                <p class="resend-opt-desc">The waiver link will be sent to the email address registered against this ticket.</p>
+                                <span class="resend-email-badge">
+                                    <i class="fa fa-envelope"></i>
+                                    <span id="resend_waiver_default_email">example@gmail.com</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Option 2: Alternative Email --}}
+                    <div class="resend-opt-card" id="optionCard2" onclick="selectResendOption(2)">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="resend-radio-dot" id="radioDot2"></div>
+                            <div class="flex-grow-1">
+                                <p class="resend-opt-title">Resend to a different email address</p>
+                                <p class="resend-opt-desc">Send the waiver link to a different address. Useful when the volunteer has reported an incorrect or inaccessible email.</p>
+                                <input type="email"
+                                    name="alternative_waiver_email"
+                                    id="alternative_waiver_email"
+                                    class="form-control form-control-sm resend-alt-input mt-1"
+                                    placeholder="Enter email address"
+                                    disabled>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Admin Note --}}
+                    <div class="resend-note">
+                        <i class="ti ti-info-circle resend-note-icon"></i>
+                        <p class="mb-0" id="resend_waiver_note">
+                            <span class="resend-note-label">Registered email selected — </span>
+                            The waiver link will be resent to the volunteer's email on record. The volunteer's profile will not be modified.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary waves-effect waves-light submit-btn-send-waiver-email">Send Email</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection

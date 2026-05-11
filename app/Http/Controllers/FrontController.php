@@ -31,6 +31,7 @@ use App\Models\VolunteerWidgetLog;
 use App\Models\EventTicketNotification;
 use App\Models\EventFinalizeEmailLog;
 use App\Models\EventRescheduleLog;
+use App\Models\TicketResendWaiverLog;
 class FrontController extends Controller
 {
     public function viewEvents(){
@@ -3251,7 +3252,7 @@ class FrontController extends Controller
         $this->setFlashSession(true, 'Email sent successfully to all RSVP confirmed attendees.');
         return redirect()->back();
     }
-    public function resendWaiver($ticket){
+    /* public function resendWaiver($ticket){
         $ticket = EventOrderTicket::find(decrypt($ticket));
         if(!$ticket){
             return $this->generateJsonResponse(false, 'Ticket not found.');
@@ -3312,6 +3313,99 @@ class FrontController extends Controller
             return $this->generateJsonResponse(true, 'Waiver email sent successfully.');
         }
         return $this->generateJsonResponse(false, 'Failed to send waiver email.');
+    } */
+    public function resendWaiver(Request $request, $ticket, $callByAdmin=false)
+    {
+        $ticket = EventOrderTicket::find(decrypt($ticket));
+        if (!$ticket) {
+            return $this->generateJsonResponse(false, 'Ticket not found.');
+        }
+        if ($ticket->waiver_filled_at) {
+            return $this->generateJsonResponse(false, 'Waiver has already been filled for this ticket.');
+        }
+        $volunteer = $ticket->volunteer;
+        if (!isset($volunteer->id)) {
+            return $this->generateJsonResponse(false, 'Volunteer not found.');
+        }
+        $event = $ticket->event;
+        if (!$event) {
+            return $this->generateJsonResponse(false, 'Event not found for this ticket.');
+        }
+
+        // Determine send type from request
+        $resendWaiverType = $request->input('resend_waiver_type', 1); // 1 = original, 2 = alternative
+        $alternativeEmail = $request->input('alternative_waiver_email');
+
+        // Validate alternative email if type is 2
+        if ($resendWaiverType == 2) {
+            if (empty(trim($alternativeEmail))) {
+                return $this->generateJsonResponse(false, 'Please enter alternative email address.');
+            }
+            if (!filter_var(trim($alternativeEmail), FILTER_VALIDATE_EMAIL)) {
+                return $this->generateJsonResponse(false, 'Please enter a valid alternative email address.');
+            }
+        }
+
+        // Determine original recipient based on age
+        if ($ticket->is_under_18 == 1) {
+            $originalEmail = $ticket->waiver_handler_email;
+            $name          = $ticket->waiver_handler_name;
+        } else {
+            $originalEmail = $volunteer->email_address;
+            $name          = $volunteer->first_name . ' ' . $volunteer->last_name;
+        }
+
+        // Decide which email to actually send to
+        if ($resendWaiverType == 2) {
+            $sendToEmail    = trim($alternativeEmail);
+            $linkSendType   = 2; // alternative
+        } else {
+            $sendToEmail    = $originalEmail;
+            $linkSendType   = 1; // original
+        }
+
+        if (empty(trim($sendToEmail))) {
+            return $this->generateJsonResponse(false, 'Email address is not available.');
+        }
+
+        $subject = "Action Required : Sign Waiver for " . $event->event_name;
+        if ($ticket->is_under_18 == 1) {
+            $subject = "Action Required: " . $name . ", Please Sign Waiver for " . $volunteer->first_name . " – " . $event->event_name;
+        }
+
+        $to_arr = [
+            [
+                "to" => [
+                    ["email" => $sendToEmail]
+                ],
+                "dynamic_template_data" => [
+                    "subject"          => $subject,
+                    "is_under_18"      => $ticket->is_under_18 == 1 ? true : false,
+                    "volunteer_name"   => $volunteer->first_name . ' ' . $volunteer->last_name,
+                    "volunteer_email"  => $volunteer->email_address,
+                    "guardian_name"    => $ticket->waiver_handler_name,
+                    "guardian_email"   => $ticket->waiver_handler_email,
+                    "event_name"       => $event->event_name,
+                    'event_date'       => $event->startTimeAndEndTime,
+                    'event_location'   => $event->fullAddress,
+                    'organizer_name'   => $event->creator->first_name . ' ' . $event->creator->last_name,
+                    'waiver_link'      => $this->mailUrl('view-waiver-form', ['ticket' => encrypt($ticket->id)]),
+                    'event_link'       => $this->mailUrl('view-event-details', ['slug' => $event->slug]),
+                ],
+            ]
+        ];
+
+        $sent = $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-1ef71dffbc644dce914ab333526c922d");
+
+        // Save log after successful send
+        TicketResendWaiverLog::create([
+            'ticket_id'         => $ticket->id,
+            'link_send_type'    => $linkSendType,   // 1 = original, 2 = alternative
+            'link_send_to_email'=> $sendToEmail,
+            'link_send_by'      => $callByAdmin?auth()->user()->id:auth()->guard('front')->user()->id,
+        ]);
+
+        return $this->generateJsonResponse(true, 'Waiver email sent successfully.');
     }
     public function markBulkCheckinWithEmail($event_id){
         set_time_limit(0);

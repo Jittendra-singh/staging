@@ -1269,9 +1269,9 @@ class EventController extends Controller
         $this->setFlashSession(true, 'Thank you request emails sent successfully.');
         return redirect()->back();
     }
-    public function reSendWaiverInvitation($ticket){
+    public function reSendWaiverInvitation(Request $request, $ticket){
         $frontController = new FrontController();
-        $res = $frontController->resendWaiver($ticket);
+        $res = $frontController->resendWaiver($request, $ticket, true);
         return $res;
     }
     public function reSendWaiverInvitationOld($ticket){
