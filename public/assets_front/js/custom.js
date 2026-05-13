@@ -1932,6 +1932,15 @@ $(document).ready(function () {
 	$('#cancel-all-ticket-btn').click(function () {
 		$('#cancel-all-ticket-popup').modal('show');
 	});
+	$('.cancel-refund-ticket-organizer').click(function () {
+		var ticket_amt = $(this).attr('price');
+		var ticket_id = $(this).attr('ticket_id');
+		$('#single-cancel-ticket-id').val(ticket_id);
+		$('[name="refund_type"]').prop('checked', false);
+		$('#option-2').prop('checked', true);
+		$('.ticket-cancel-amt').text(ticket_amt);
+		$('#cancel-ticket-popup').modal('show');
+	});
 	$('.cancel-refund-ticket').click(function () {
 		var ticket_type = $(this).attr('ticket_type');
 		var allow_refund = $(this).attr('allow_refund');

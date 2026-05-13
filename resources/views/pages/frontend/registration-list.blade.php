@@ -284,6 +284,17 @@
 															<a ref="javascript:void(0);" class="dropdown-item send-attendee-email" data-route="{{ route('front-send-custom-email-attendee', ['id' => encrypt($registration->id)]) }}" data-bs-toggle="modal" data-bs-target="#sendAttendeeEmailModal">
 																<i class="fa-solid fa-envelope me-3"></i>Send Email
 															</a>
+															@if($registration->rsvp_confirmation==1 && $registration->checkin==0 && $event->is_completed!=1)
+																@if($registration->price>0)
+																	<a class="dropdown-item cancel-refund-ticket-organizer {{ auth()->guard('front')->user()->id }}" href="javascript:void(0);" price="{{ $registration->price }}" ticket_id="{{ encrypt($registration->id) }}"><i class="fa-solid fa-ban me-3"></i>
+																		Cancel Registration
+																	</a>
+																@else
+																<a class="dropdown-item cancel-refund-ticket-attendee" href="javascript:void(0);" alert-title="If you proceed, this ticket will be cancelled and the attendee will no longer be marked as attending this event. This ticket has no amount associated with it, so no refund will be processed." url="{{route('cancel-refund-paid-ticket-attendee', ['ticket' => encrypt($registration->id),'type'=>2])}}"><i class="fa-solid fa-ban me-3"></i>
+																	Cancel Registration
+																</a>	
+																@endif		
+															@endif	
 														</div>
 													</div>
 												</div>
@@ -301,7 +312,7 @@
 															<i class="fa-solid fa-calendar-days"></i>
 														</span>
 														<p>Ticket / Registration Date</p>
-														<h6 class="coupon-status">{{$ticket->ticket_name}} - {{$ticket->ticket_price ? '$'.$ticket->ticket_price : 'Free'}} <br/>{{$registration->createdDateTime}}</h6>
+														<h6 class="coupon-status">{{$ticket->ticket_name}} - {{$registration->price>0 ? '$'.$registration->price : 'Free'}} <br/>{{$registration->createdDateTime}}</h6>
 													</div>
 													<!-- <div class="icon-box">
 														<span class="icon">
@@ -317,20 +328,25 @@
 														<p>RSVP</p>
 														<h6 class="coupon-status">
 															@if($registration->rsvp_confirmation===0)
-															<span class="badge custom-badge-danger">Cancelled</span>
+															<span class="badge custom-badge-danger">
+																Cancelled
+																@if($registration->price>0)
+																	@if($registration->is_amt_donated==1)
+																	, Amount Donated
+																	@elseif($registration->refund_status==1)
+																	, Pending Refund
+																	@elseif($registration->refund_status==2)
+																	, Refund Processed
+																	@elseif($registration->refund_status==3)
+																	, Refunded
+																	@endif
+																@endif
+															</span>
 															@elseif($registration->rsvp_confirmation==1)
 															<span class="badge custom-badge-success">Active</span>
 															@else
 															<span class="badge custom-badge-pending">Pending</span>
 															@endif 
-														<!-- @if($registration->rsvp_confirmation===0)
-														Declined at {{date(config('app.dateTimeFormat'),strtotime($registration->rsvp_filled_at))}}
-														@elseif($registration->rsvp_confirmation==1)
-														Approved at {{date(config('app.dateTimeFormat'),strtotime($registration->rsvp_filled_at))}}
-														@else
-														Pending
-														@endif  -->
-														<!-- <a title="RSVP Confirmation Form" target="_blank" href="{{route('view-waiver-form', ['ticket' => encrypt($registration->id)])}}"><i class="fa-solid fa-link ms-1"></i></a> -->
 														</h6>
 													</div>				
 													@if(!empty($event->waiver_form_type))							
@@ -550,6 +566,51 @@
     </div>
 </div>
 
+<div class="modal fade" id="cancel-ticket-popup" tabindex="-1" aria-labelledby="cancelTicketPopupLabel" aria-hidden="false">
+	<div class="modal-dialog modal-medium-2 modal-dialog-centered modal-sm-height modal-lg">
+		<div class="modal-content modal-dialog-scrollable">
+			<div class="modal-header">
+				<h5 class="modal-title" id="cancelTicketPopupLabel">Cancel Ticket</h5>
+				<button type="button" class="close-model-btn" data-bs-dismiss="modal" aria-label="Close"><i class="fa fa-times"></i></button>
+			</div>
+			<form class="validateform" action="{{route('cancel-refund-paid-ticket')}}" method="POST" enctype="multipart/form-data">
+				@csrf
+				<input type="hidden" name="ticket[]" id="single-cancel-ticket-id" value="">
+				<div class="modal-body">
+					<div class="model-content main-form">
+						<div class="row">
+							<div class="col-lg-12 col-md-12">
+								<div class="premium-select">
+									<div class="row">
+										<div class="col-sm-6" id="option-2-div">
+											<input value="2" type="radio" name="refund_type" id="option-2">
+											<label for="option-2" class="option option-2">
+												<p><span class="dot m-auto"></span></p>
+												<b>Cancel Registration & Refund the Amount</b>
+												<span>This registration will be cancelled, and the $<b class="ticket-cancel-amt">0</b> amount will be refunded.</span>
+											</label>
+										</div>
+										<div class="col-sm-6" id="option-3-div">
+											<input value="3" type="radio" name="refund_type" id="option-3">
+											<label for="option-3" class="option option-3">
+												<p><span class="dot m-auto"></span></p>
+												<b>Cancel Registration & No Amount Refund</b>
+												<span>This registration will be cancelled, and no amount will be refunded.</span>
+											</label>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="submit" class="primary-btn w-fit">Submit Now</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
 	@push('script')
         <script src="{{ asset('assets/libs/@ckeditor/ckeditor5-build-classic/build/ckeditor.js') }}"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -608,6 +669,18 @@
 		}
 		.border-radius-30{
 			border-radius: 30px;
+		}
+
+
+		#option-1:checked:checked~.option-1, #option-2:checked:checked~.option-2, #option-3:checked:checked~.option-3{
+			border-color: var(--linear-gradient-2)!important;
+		}
+		#option-1:checked:checked~.option-1 .dot, #option-2:checked:checked~.option-2 .dot, #option-3:checked:checked~.option-3 .dot{
+			background: var(--linear-gradient-2)!important;;
+		}
+		#option-1:checked:checked~.option-1 .dot::before, #option-2:checked:checked~.option-2 .dot::before, #option-3:checked:checked~.option-3 .dot::before{
+			opacity: 1;
+    		transform: scale(1);
 		}
 	</style>
 	<link rel="stylesheet" href="{{ asset('assets_front/css/filter-css.css') }} ">

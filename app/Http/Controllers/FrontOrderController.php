@@ -989,7 +989,7 @@ class FrontOrderController extends Controller
                     $this->sendRSVPCancelledMail($orderTicket,false,true);
                 }
                 $this->sendRSVPCancelledMail($orderTicket,true,false,['ticket_count'=>count($request->ticket),'ticket_refund_amount'=>0]);
-                $this->setFlashSession(true, "Ticket cancelled successfully. Refund initiated. Depending on your bank, it may take 5–10 business days for the amount to reflect in your account.");
+                $this->setFlashSession(true, "Ticket cancelled successfully. Refund initiated. Depending on bank, it may take 5–10 business days for the amount to reflect in account.");
                 return redirect()->back();
             } else {
                 $stripeCon = new StripeController();
@@ -1001,7 +1001,7 @@ class FrontOrderController extends Controller
                         $this->sendRSVPCancelledMail($orderTicket,false,true);
                     }
                     $this->sendRSVPCancelledMail($orderTicket,true,false,['ticket_count'=>count($request->ticket),'ticket_refund_amount'=>$total_amount]);
-                    $this->setFlashSession(true, "Ticket cancelled successfully. Refund initiated. Depending on your bank, it may take 5–10 business days for the amount to reflect in your account.");
+                    $this->setFlashSession(true, "Ticket cancelled successfully. Refund initiated. Depending on bank, it may take 5–10 business days for the amount to reflect in account.");
                     return redirect()->back();
                 } else {
                     $this->setFlashSession(false, "Something wen wrong. Please try again later");

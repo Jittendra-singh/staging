@@ -337,6 +337,7 @@ Route::prefix(config('app.admin_prefix'))->group(function () {
             Route::get('/toggle-order-status/{placeholder}', 'toggleStatus')->name('toggle-order-status');
             Route::delete('/orders/{placeholder}', 'delete')->name('delete-order');
             Route::get('/sales-report', 'salesReport')->name('index-sales-report');
+            Route::post('cancel-refund-paid-ticket-admin' , 'cancelRefundPaidTicketAdmin')->name('cancel-refund-paid-ticket-admin');
         });
         Route::controller(\App\Http\Controllers\GlobalTypeController::class)->group(function () {
             Route::prefix('global-types')->group(function () {

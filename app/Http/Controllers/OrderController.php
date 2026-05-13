@@ -110,4 +110,8 @@ class OrderController extends Controller
     {
         // Delete order
     }
+    public function cancelRefundPaidTicketAdmin(){
+        $frontOrderController = new FrontOrderController();
+        return $frontOrderController->cancelRefundPaidTicket();
+    }
 }

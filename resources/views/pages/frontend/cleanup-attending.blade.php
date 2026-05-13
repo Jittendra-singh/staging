@@ -584,6 +584,10 @@
 		#option-1:checked:checked~.option-1 .dot, #option-2:checked:checked~.option-2 .dot, #option-3:checked:checked~.option-3 .dot{
 			background: var(--linear-gradient-2)!important;;
 		}
+		#option-1:checked:checked~.option-1 .dot::before, #option-2:checked:checked~.option-2 .dot::before, #option-3:checked:checked~.option-3 .dot::before{
+			opacity: 1;
+    		transform: scale(1);
+		}
 
 
 		.remove-new-img {

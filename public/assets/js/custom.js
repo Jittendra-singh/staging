@@ -1145,6 +1145,30 @@ $(document).ready(function () {
 			}
 		});
 	});
+	$('#cancel-all-ticket-btn').click(function () {
+		$('#cancel-all-ticket-popup').modal('show');
+	});
+      $('.select-all-ticket-checkbox').change(function () {
+		if ($(this).prop('checked')) {
+			$('.attendee-ticket-checkbox').prop('checked', 'checked');
+		} else {
+			$('.attendee-ticket-checkbox').prop('checked', false);
+		}
+		calcTicketPriceForPopup();
+	});
+	$('.attendee-ticket-checkbox').change(function () {
+		calcTicketPriceForPopup();
+	});
+	function calcTicketPriceForPopup() {
+		var amount = 0;
+		$('.attendee-ticket-checkbox').each(function (c, e) {
+			if ($(e).prop('checked')) {
+				var price = $(e).attr('price');
+				amount += parseFloat(price);
+			}
+		});
+		$('.ticket-cancel-amt').text(amount);
+	}
 });
 function selectResendOption(n) {
 	$('#resend_waiver_type1, #resend_waiver_type2').prop('checked', false);

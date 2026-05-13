@@ -67,7 +67,7 @@
 									$showCancelBtn = false;
 								}
 							@endphp 
-							@if($showCancelBtn)
+							@if($showCancelBtn && $order->event->is_completed==0)
 							<div class="col-md-4">
 								<button id="cancel-all-ticket-btn" class="primary-btn w-fit float-end">Cancel Ticket/Registration</button>
 							</div>

@@ -8,6 +8,117 @@
     ['name' => 'Order Details', 'route' => ''],
 ]])
 @section('content')
+<style>
+    
+.premium-select {
+    margin-top: 20px;
+}
+
+.premium-select .option {
+    margin-top: 1.5rem;
+    text-align: center;
+    display: block;
+    justify-content: space-evenly;
+    border-radius: 5px;
+    cursor: pointer;
+    padding: 40px;
+    border: 2px solid #efefef;
+    background-color: #ffffff;
+    width: 100%;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.premium-select .option .dot {
+    height: 20px;
+    width: 20px;
+    background: #d9d9d9;
+    border-radius: 50%;
+    position: relative;
+    display: inline-block;
+}
+
+.premium-select .option .dot::before {
+    position: absolute;
+    content: "";
+    top: 4px;
+    left: 4px;
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border-radius: 50%;
+    opacity: 0;
+    transform: scale(1.5);
+    transition: all 0.3s ease;
+}
+
+.premium-select input[type="radio"] {
+    display: none;
+}
+
+#option-1:checked:checked~.option-1,
+#option-2:checked:checked~.option-2 {
+    border: 2px solid #6ac045;
+    background: #fff;
+}
+
+#option-1:checked:checked~.option-1 .dot,
+#option-2:checked:checked~.option-2 .dot {
+    background: #6ac045;
+}
+
+#option-1:checked:checked~.option-1 .dot::before,
+#option-2:checked:checked~.option-2 .dot::before {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.wrapper .option span {
+    font-size: 18px;
+    font-weight: 500;
+    color: #000;
+    display: block;
+    margin: 13px 0 10px;
+}
+
+.wrapper .option span:last-child {
+    font-size: 16px;
+    font-weight: 400;
+    color: #717171;
+    display: block;
+    margin-bottom: 0;
+}
+
+#option-1:checked:checked~.option-1 span,
+#option-2:checked:checked~.option-2 span {
+    color: #000;
+}
+
+#option-1:checked:checked~.option-1 span:last-child,
+#option-2:checked:checked~.option-2 span:last-child {
+    color: #717171;
+    display: block;
+}
+.contact-list .bottom .icon-box{
+    width: 20%!important;
+}
+
+.border-radius-30{
+    border-radius: 30px;
+}
+
+
+#option-1:checked:checked~.option-1, #option-2:checked:checked~.option-2, #option-3:checked:checked~.option-3{
+    border-color: var(--bs-primary)!important;
+}
+#option-1:checked:checked~.option-1 .dot, #option-2:checked:checked~.option-2 .dot, #option-3:checked:checked~.option-3 .dot{
+    background: var(--bs-primary)!important;;
+}
+#option-1:checked:checked~.option-1 .dot::before, #option-2:checked:checked~.option-2 .dot::before, #option-3:checked:checked~.option-3 .dot::before{
+    opacity: 1;
+    transform: scale(1);
+}
+</style>
     <div class="">
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -92,7 +203,25 @@
                 </div>
             </div>
         </div>
-        <h4 class="mb-3  font-size-18">Tickets</h4>
+        @php 
+            $totalTickets = count($order->tickets);
+            $cancelledTickets = 0;
+            foreach ($order->tickets as $key => $ticket){
+                if($ticket->rsvp_confirmation!=1){
+                    $cancelledTickets++;
+                }
+            }
+            $showCancelBtn = $cancelledTickets!=$totalTickets?true:false;
+            if(strtotime($order->event->start_datetime) <= time()){
+                $showCancelBtn = false;
+            }
+        @endphp 
+        <h4 class="mb-3 font-size-18 d-flex justify-content-between">
+            <span>Tickets</span>
+            @if($showCancelBtn && $order->event->is_completed==0)
+                <button id="cancel-all-ticket-btn" class="btn btn-primary">Cancel Ticket/Registration</button>
+            @endif
+        </h4>
         <div class="card">
             <div class="card-body p-0"></div>
                 <table class="table table-bordered mb-0">
@@ -200,4 +329,92 @@
             </div>
         </div>
     </div>
+<div class="modal fade" id="cancel-all-ticket-popup" tabindex="-1" aria-labelledby="cancelAllTicketPopupLabel" aria-hidden="false">
+	<div class="modal-dialog modal-medium-2 modal-dialog-centered modal-sm-height modal-lg">
+		<div class="modal-content modal-dialog-scrollable">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelAllTicketPopupLabel">Cancel Ticket</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+			<form class="" action="{{route('cancel-refund-paid-ticket-admin')}}" method="POST" enctype="multipart/form-data">
+				@csrf
+				<div class="modal-body">
+					<div class="model-content main-form">
+						<div class="row">
+							<div class="col-lg-12 col-md-12">
+								<div class="premium-select mt-0 mb-3">
+									<div class="row">
+										<div class="col-sm-6" id="option-3-div">
+											<input value="3" checked type="radio" name="refund_type" id="option-3">
+											<label for="option-3" class="option option-3">
+												<p><span class="dot m-auto"></span></p>
+												<b>Cancel Registration & No Amount Refund</b>
+												<span>Your registration will be cancelled, and no amount will be refunded.</span>
+											</label>
+										</div>
+										<div class="col-sm-6" id="option-2-div">
+											<input {{ $order->event->id }} value="2" type="radio" name="refund_type" id="option-2">
+											<label for="option-2" class="option option-2">
+												<p><span class="dot m-auto"></span></p>
+												<b>Cancel Registration & Refund the Amount</b>
+												<span>Your registration will be cancelled, and the $<b class="ticket-cancel-amt">0</b> amount will be refunded.</span>
+											</label>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="col-lg-12 col-md-12">
+								<table class="table table-ordered">
+									 <caption>Choose the attendees whose tickets should be cancelled.</caption>
+									<tr>
+										<th><input class="select-all-ticket-checkbox" type="checkbox"></th>
+										<th><b>Attendee Name</b></th>
+										<th><b>Email Address</b></th>
+										<th><b>Phone Number</b></th>
+										<th><b>Ticket Price</b></th>
+									</tr>
+									@if(isset($order->tickets[0]))
+										@foreach ($order->tickets as $key => $ticket)
+											@php
+											$showCheckbox = false;
+											$dMsg = '';
+											if($ticket->rsvp_confirmation==1 && $ticket->checkin==0){
+												$showCheckbox = true;
+											}
+											if($ticket->rsvp_confirmation!=1 && $ticket->is_amt_donated==1){
+												$dMsg = 'Cancelled & Amt Donated';
+											} else if($ticket->rsvp_confirmation!=1){
+												$dMsg = 'Cancelled';
+											} else if($ticket->checkin==1){
+												$dMsg = 'Checked-in';
+											}
+											@endphp 
+											<tr>
+												<td>
+													@if($showCheckbox)	
+													<input value="{{ encrypt($ticket->id) }}" name="ticket[]" price="{{ $ticket->price }}" class="attendee-ticket-checkbox" type="checkbox">
+													@else 
+													<span class="badge primary-btn">{{$dMsg}}</span>
+													@endif
+												</td>
+												<td>{{$ticket->volunteer->name}}</td>
+												<td>{{$ticket->volunteer->email_address}}</td>
+												<td>{{$ticket->volunteer->phone}}</td>
+												<td>{{config('app.currency').formatAmt($ticket->price)}}</td>
+											</tr>
+										@endforeach
+									@else 
+									@endif 
+								</table>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="submit" class="btn btn-primary waves-effect waves-light">Submit Now</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
 @endsection
