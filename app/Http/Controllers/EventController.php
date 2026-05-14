@@ -1274,6 +1274,11 @@ class EventController extends Controller
         $res = $frontController->resendWaiver($request, $ticket, true);
         return $res;
     }
+    public function checkResendWaiverAdmin($ticket){
+        $frontController = new FrontController();
+        $res = $frontController->checkResendWaiver($ticket);
+        return $res;
+    }
     public function reSendWaiverInvitationOld($ticket){
         $orderTicket = decrypt($ticket);
         $orderTicket = EventOrderTicket::findOrFail($orderTicket);

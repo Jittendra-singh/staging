@@ -230,6 +230,14 @@
 												$formateddate = new DateTime($registration->waiver_filled_at);
 												$registration->waiver_filled_at_formated = $formateddate->format('d M, Y g:iA');
 											}
+											$resendWaiverLogs = $registration->resendWaiverLogs()->latest('created_at')->get()->map(function($log) {
+												return [
+													'type' => $log->link_send_type == 1 ? 'Original Email' : 'Alternative Email',
+													'email' => $log->link_send_to_email,
+													'send_at' => $log->createdDateTime,
+												];
+											});
+
 										@endphp
 										<div class="main-card mt-4">
 											<div class="contact-list">
@@ -283,6 +291,13 @@
 															</a>
 															<a ref="javascript:void(0);" class="dropdown-item send-attendee-email" data-route="{{ route('front-send-custom-email-attendee', ['id' => encrypt($registration->id)]) }}" data-bs-toggle="modal" data-bs-target="#sendAttendeeEmailModal">
 																<i class="fa-solid fa-envelope me-3"></i>Send Email
+															</a>
+															<a href="javascript:void(0);"
+																class="dropdown-item btn-resend-waiver-logs-modal"
+																data-logs='@json($resendWaiverLogs)'
+																data-bs-toggle="modal"
+																data-bs-target="#resendWaiverLogsModal">
+																<i class="fa-solid fa-clock-rotate-left me-3"></i>Resend Waiver Logs
 															</a>
 															@if($registration->rsvp_confirmation==1 && $registration->checkin==0 && $event->is_completed!=1)
 																@if($registration->price>0)
@@ -362,7 +377,7 @@
 															<span class="badge custom-badge-danger">Unsigned</span> 
 															<a href="{{ route('view-waiver-form', ['ticket' => encrypt($registration->id)]) }}" data-bs-toggle="tooltip" data-bs-original-title="Waiver Page Link" target="_blank"><span class="badge custom-badge-warning"><i class="fa fa-external-link"></i></span></a><br/>
 															<!-- <button class="btn btn-sm btn-outline-primary mt-2 btn-resend-waiver border-radius-30" url="{{ route('resend-waiver', ['ticket' => encrypt($registration->id)]) }}">Resend</button> -->
-															<button class="btn btn-sm btn-outline-primary mt-2 border-radius-30 btn-resend-waiver-modal" defaultemail="{{ $registration->is_under_18==1?$registration->waiver_handler_email:$registration->volunteer->email_address }}" url="{{ route('resend-waiver', ['ticket' => encrypt($registration->id)]) }}">Resend</button>
+															<button class="btn btn-sm btn-outline-primary mt-2 border-radius-30 btn-resend-waiver-modal" defaultemail="{{ $registration->is_under_18==1?$registration->waiver_handler_email:$registration->volunteer->email_address }}" url="{{ route('resend-waiver', ['ticket' => encrypt($registration->id)]) }}" checkurl="{{ route('check-resend-waiver', ['ticket' => encrypt($registration->id)]) }}">Resend</button>
 															@endif 
 														</h6>
 													</div>	
@@ -538,6 +553,32 @@
 							The waiver link will be resent to the volunteer's registered address. This does not change their profile email.
 						</p>
 					</div>
+					{{-- Last Resend Waiver Log --}}
+					<div class="resend-last-log-box" id="resend_waiver_last_log_box">
+						<div class="resend-last-log-header">
+							<i class="fa fa-clock-rotate-left"></i>
+							<span>Last Resend Record</span>
+						</div>
+
+						<div class="resend-last-log-empty" id="resend_waiver_last_log_empty">
+							No resend waiver email record found.
+						</div>
+
+						<div class="resend-last-log-content" id="resend_waiver_last_log_content" style="display:none;">
+							<div class="resend-last-log-row">
+								<span class="resend-last-log-label">Type</span>
+								<span class="resend-last-log-value" id="resend_waiver_last_log_type"></span>
+							</div>
+							<div class="resend-last-log-row">
+								<span class="resend-last-log-label">Email</span>
+								<span class="resend-last-log-value" id="resend_waiver_last_log_email"></span>
+							</div>
+							<div class="resend-last-log-row mb-0">
+								<span class="resend-last-log-label">Sent At</span>
+								<span class="resend-last-log-value" id="resend_waiver_last_log_datetime"></span>
+							</div>
+						</div>
+					</div>
 
 				</div>
                 <!-- <div class="modal-body">
@@ -611,6 +652,42 @@
 		</div>
 	</div>
 </div>
+<div class="modal fade" id="resendWaiverLogsModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title text-primary">Resend Waiver Logs</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+
+			<div class="modal-body p-4">
+				<div class="resend-waiver-log-empty text-center py-4" style="display:none;">
+					<i class="fa-solid fa-clock-rotate-left fa-2x text-muted mb-3"></i>
+					<h6 class="mb-1">No logs found</h6>
+					<p class="text-muted small mb-0">No waiver resend email has been sent yet.</p>
+				</div>
+
+				<div class="table-responsive resend-waiver-log-table-wrap">
+					<table class="table table-bordered table-hover align-middle resend-waiver-log-table mb-0">
+						<thead>
+							<tr>
+								<th>Type</th>
+								<th>Email</th>
+								<th>Send At</th>
+							</tr>
+						</thead>
+						<tbody id="resendWaiverLogsTableBody"></tbody>
+					</table>
+				</div>
+			</div>
+
+			<div class="modal-footer">
+				<button type="button" class="primary-btn w-fit" data-bs-dismiss="modal">Close</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 	@push('script')
         <script src="{{ asset('assets/libs/@ckeditor/ckeditor5-build-classic/build/ckeditor.js') }}"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -785,6 +862,80 @@
 			font-weight: 600;
 			color: #212529;
 		}
+
+		/* resend last log box */
+		.resend-last-log-box {
+			margin-top: 12px;
+			padding: 12px 14px;
+			border: 1px solid #D7E6F5;
+			border-radius: 10px;
+			background: #fbfdff;
+		}
+		.resend-last-log-header {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			margin-bottom: 10px;
+			font-size: 13px;
+			font-weight: 700;
+			color: #185FA5;
+		}
+		.resend-last-log-empty {
+			font-size: 12px;
+			color: #6c757d;
+			background: #f8f9fa;
+			border-radius: 6px;
+			padding: 9px 10px;
+		}
+		.resend-last-log-row {
+			display: flex;
+			justify-content: space-between;
+			gap: 12px;
+			margin-bottom: 8px;
+			font-size: 12px;
+		}
+		.resend-last-log-label {
+			color: #6c757d;
+			font-weight: 600;
+			min-width: 70px;
+		}
+		.resend-last-log-value {
+			color: #212529;
+			font-weight: 600;
+			text-align: right;
+			word-break: break-word;
+		}
+		/* resend waiver log table  */
+		.resend-waiver-log-table {
+	font-size: 13px;
+	border-color: #D7E6F5;
+}
+.resend-waiver-log-table thead th {
+	background: #E6F1FB;
+	color: #185FA5;
+	font-weight: 700;
+	border-color: #D7E6F5;
+	white-space: nowrap;
+}
+.resend-waiver-log-table tbody td {
+	color: #212529;
+	border-color: #E6EEF7;
+	vertical-align: middle;
+}
+.resend-waiver-log-table tbody tr:hover {
+	background: #fbfdff;
+}
+.resend-waiver-log-type {
+	display: inline-flex;
+	align-items: center;
+	padding: 4px 10px;
+	border-radius: 6px;
+	background: #f0f7ff;
+	color: #185FA5;
+	font-weight: 600;
+	font-size: 12px;
+}
+
 	</style>
 	@endstyle
 @endsection

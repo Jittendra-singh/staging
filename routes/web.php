@@ -158,6 +158,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::post('send-waiver-bulk-email/{id}', 'sendWaiverBulkEmail')->name('send-waiver-bulk-email');
         Route::post('mark-bulk-checkin-with-email/{id}', 'markBulkCheckinWithEmail')->name('mark-bulk-checkin-with-email');
         Route::post('resend-waiver/{ticket}', 'resendWaiver')->name('resend-waiver');
+        Route::post('check-resend-waiver/{ticket}', 'checkResendWaiver')->name('check-resend-waiver');
         Route::get('cancel-event/{id}', 'cancelEvent')->name('front-cancel-event');
         Route::get('ticket-convert-to-donation/{id}', 'ticketConvertToDonation')->name('front-ticket-convert-to-donation');
 
@@ -300,6 +301,7 @@ Route::prefix(config('app.admin_prefix'))->group(function () {
             Route::get('/clone-event/{placeholder}', 'cloneEvent')->name('clone-event');
             Route::get('/send-community-form/{ticket}', 'sendCommunityForm')->name('send-community-form');
             Route::post('/send-waiver-invitation/{ticket}', 'reSendWaiverInvitation')->name('send-waiver-invitation');
+            Route::post('/check-resend-waiver-admin/{ticket}', 'checkResendWaiverAdmin')->name('check-resend-waiver-admin');
             Route::get('/send-thankyou-request-email/{placeholder}' , 'sendThankyouRequestEmail' )->name('send-thankyou-request-email');
             Route::post('/send-wrapup-email-admin/{id}', 'sendWrapupEmail')->name('send-wrapup-email-admin');
             Route::post('check-event-for-wrapup-admin/{id}', 'checkEventForWrapup')->name('check-event-for-wrapup-admin');

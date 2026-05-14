@@ -2730,15 +2730,56 @@ $(document).ready(function () {
 	$(document).on('click', '.btn-resend-waiver-modal', function () {
 		var control = this;
 		var url = $(control).attr('url');
+		var checkurl = $(control).attr('checkurl');
 		var defaultemail = $(control).attr('defaultemail');
-		if(defaultemail.trim()==''){
-			defaultemail = 'NO EMAIL';
-		}
-		$('#resendWaiverEmailModal').find('form').attr('action', url);
-		$('#resend_waiver_default_email').text(defaultemail);
-		$('#alternative_waiver_email').val('');
-    	selectResendOption(1);
-		$('#resendWaiverEmailModal').modal('show');
+		$(control).attr('disabled', 'disabled');
+		$(control).text('Opening..');
+		$.ajax({
+			url: checkurl,
+			method: 'POST',
+			data: {},
+			success: function (response) {
+				$(control).removeAttr('disabled');
+				$(control).text('Resend');
+				if (response.status) {
+					var log = response.data.log;
+					var lrwlType = '';
+					var lrwlEmail = '';
+					var lrwlDatetime = '';
+					if(log!=''){
+						lrwlType = log.link_send_type==1?'Original':'Alternative' || '';
+						lrwlEmail = log.link_send_to_email || '';
+						lrwlDatetime = log.createdDateTime || '';
+					}
+					if(defaultemail.trim()==''){
+						defaultemail = 'NO EMAIL';
+					}
+					$('#resendWaiverEmailModal').find('form').attr('action', url);
+					$('#resend_waiver_default_email').text(defaultemail);
+					$('#alternative_waiver_email').val('');
+
+					if (lrwlType.trim() != '' || lrwlEmail.trim() != '' || lrwlDatetime.trim() != '') {
+						$('#resend_waiver_last_log_empty').hide();
+						$('#resend_waiver_last_log_content').show();
+						$('#resend_waiver_last_log_type').text(lrwlType);
+						$('#resend_waiver_last_log_email').text(lrwlEmail);
+						$('#resend_waiver_last_log_datetime').text(lrwlDatetime);
+					} else {
+						$('#resend_waiver_last_log_content').hide();
+						$('#resend_waiver_last_log_empty').show();
+						$('#resend_waiver_last_log_type').text('');
+						$('#resend_waiver_last_log_email').text('');
+						$('#resend_waiver_last_log_datetime').text('');
+					}
+
+					selectResendOption(1);
+					$('#resendWaiverEmailModal').modal('show');
+				}
+				else {
+					showError(response.message, 'error');
+				}
+			}
+		});
 	});
 	$(document).on('click', '.submit-btn-send-waiver-email', function (e) {
 		var control = this;
@@ -2903,10 +2944,46 @@ $(document).ready(function () {
 			}
 		});
 	});
+	$(document).on('click', '.btn-resend-waiver-logs-modal', function () {
+		var logs = $(this).data('logs');
+
+		if (typeof logs === 'string') {
+			try {
+				logs = JSON.parse(logs);
+			} catch (e) {
+				logs = [];
+			}
+		}
+
+		var rows = '';
+
+		if (logs && logs.length > 0) {
+			logs.forEach(function (log) {
+				rows += `
+					<tr>
+						<td><span class="resend-waiver-log-type">${escapeHtml(log.type || '')}</span></td>
+						<td>${escapeHtml(log.email || '')}</td>
+						<td>${escapeHtml(log.send_at || '')}</td>
+					</tr>
+				`;
+			});
+
+			$('#resendWaiverLogsTableBody').html(rows);
+			$('.resend-waiver-log-empty').hide();
+			$('.resend-waiver-log-table-wrap').show();
+		} else {
+			$('#resendWaiverLogsTableBody').html('');
+			$('.resend-waiver-log-table-wrap').hide();
+			$('.resend-waiver-log-empty').show();
+		}
+	});
+
 
 	fieldmasking();
 });
-
+function escapeHtml(value) {
+	return $('<div>').text(value).html();
+}
 function selectResendOption(n) {
 	$('#resend_waiver_type1, #resend_waiver_type2').prop('checked', false);
 	$('#resend_waiver_type' + n).prop('checked', true);

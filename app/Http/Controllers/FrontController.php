@@ -3398,14 +3398,44 @@ class FrontController extends Controller
         $sent = $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-1ef71dffbc644dce914ab333526c922d");
 
         // Save log after successful send
-        TicketResendWaiverLog::create([
+        $log = TicketResendWaiverLog::create([
             'ticket_id'         => $ticket->id,
             'link_send_type'    => $linkSendType,   // 1 = original, 2 = alternative
             'link_send_to_email'=> $sendToEmail,
             'link_send_by'      => $callByAdmin?auth()->user()->id:auth()->guard('front')->user()->id,
         ]);
 
-        return $this->generateJsonResponse(true, 'Waiver email sent successfully.');
+        return $this->generateJsonResponse(true, 'Waiver email sent successfully.', $log);
+    }
+    public function checkResendWaiver($ticket){
+        $registration = EventOrderTicket::find(decrypt($ticket));
+        if(isset($registration->id)){
+            $responseArr = [];
+            $responseArr['log'] = [];
+            $responseArr['max_resend_limit_exceed'] = false;
+            $responseArr['wait_before_resend'] = false;
+            $totalResendCount = $registration->resendWaiverLogs()->count();
+            // Check if max limit exceeded (5 times)
+            if($totalResendCount >= 5){
+                $responseArr['max_resend_limit_exceed'] = true;
+                return $this->generateJsonResponse(false, 'Maximum resend limit exceeded. You cannot resend the waiver email more than 5 times.', $responseArr);
+            }
+
+            $lastResendWaiverLog = $registration->resendWaiverLogs()->latest('created_at')->first();
+            if(isset($lastResendWaiverLog->id)){
+                // Check 60 second gap
+                $secondsSinceLastSend = now()->diffInSeconds(\Carbon\Carbon::parse($lastResendWaiverLog->createdDateTimeStr));
+                if($secondsSinceLastSend < 60){
+                    $responseArr['wait_before_resend'] = true;
+                    $responseArr['wait_seconds'] = 60 - $secondsSinceLastSend;
+                    return $this->generateJsonResponse(false, 'Please wait ' . (60 - $secondsSinceLastSend) . ' seconds before resending the waiver email.', $responseArr);
+                }
+                $lastResendWaiverLog->createdDateTime = $lastResendWaiverLog->createdDateTime;
+                $responseArr['log'] = $lastResendWaiverLog->toArray();
+            }
+            return $this->generateJsonResponse(true, 'Waiver email sent successfully.', $responseArr);
+        }
+        return $this->generateJsonResponse(false, 'No registration found.');
     }
     public function markBulkCheckinWithEmail($event_id){
         set_time_limit(0);

@@ -22,7 +22,7 @@
         .header-table {
             width: 100%;
             background-color: #1a1a1a;
-            padding: 12px 36px;
+            padding: 20px 36px;
         }
 
         .header-logo {
@@ -47,7 +47,7 @@
 
         /* ── TITLE ── */
         .title-wrap {
-            padding: 22px 36px 14px 36px;
+            padding: 30px 36px 25px 36px;
             border-bottom: 3px solid #1a1a1a;
         }
 
@@ -66,8 +66,8 @@
             font-weight: bold;
             color: #1a1a1a;
             letter-spacing: -0.5px;
-            line-height: 1.1;
-            margin-bottom: 4px;
+            line-height: 1.5;
+            margin-bottom: 10px;
         }
 
         .doc-subtitle {
@@ -106,13 +106,15 @@
             color: #999999;
             letter-spacing: 1.5px;
             text-transform: uppercase;
-            margin-bottom: 4px;
+            margin-bottom: 7px;
+            margin-top: 10px;
         }
 
         .detail-value {
             font-size: 11.5px;
             font-weight: bold;
             color: #1a1a1a;
+            margin-bottom: 10px;
         }
 
         .detail-value-green {
@@ -232,6 +234,9 @@
             letter-spacing: 1.5px;
             text-transform: uppercase;
             margin-bottom: 5px;
+        }
+        .sig-date-value-label{
+            margin-top: 20px;
         }
 
         .sig-name-text {
@@ -400,7 +405,7 @@
 
                     <div class="sig-spacer"></div>
 
-                    <div class="sig-label">Date Signed</div>
+                    <div class="sig-label sig-date-value-label">Date Signed</div>
                     <div class="sig-date-value">
                         {{ !empty($ticket->waiver_filled_at)
                             ? \Carbon\Carbon::parse($ticket->waiver_filled_at)->format('M d, Y')

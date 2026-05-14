@@ -144,6 +144,48 @@
 			font-weight: 600;
 			color: #212529;
 		}
+		/* resend last log box */
+		.resend-last-log-box {
+			margin-top: 12px;
+			padding: 12px 14px;
+			border: 1px solid #D7E6F5;
+			border-radius: 10px;
+			background: #fbfdff;
+		}
+		.resend-last-log-header {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			margin-bottom: 10px;
+			font-size: 13px;
+			font-weight: 700;
+			color: #185FA5;
+		}
+		.resend-last-log-empty {
+			font-size: 12px;
+			color: #6c757d;
+			background: #f8f9fa;
+			border-radius: 6px;
+			padding: 9px 10px;
+		}
+		.resend-last-log-row {
+			display: flex;
+			justify-content: space-between;
+			gap: 12px;
+			margin-bottom: 8px;
+			font-size: 12px;
+		}
+		.resend-last-log-label {
+			color: #6c757d;
+			font-weight: 600;
+			min-width: 70px;
+		}
+		.resend-last-log-value {
+			color: #212529;
+			font-weight: 600;
+			text-align: right;
+			word-break: break-word;
+		}
 	</style>
 @endsection
 @section('js')
@@ -159,6 +201,15 @@
                     <x-reusables.table-header :tableHead="$tableHead" />
                     <tbody>
                         @forelse ($listingData as $data)
+                            @php 
+                                $resendWaiverLogs = $data->pivot->resendWaiverLogs()->latest('created_at')->get()->map(function($log) {
+                                    return [
+                                        'type'    => $log->link_send_type == 1 ? 'Original Email' : 'Alternative Email',
+                                        'email'   => $log->link_send_to_email,
+                                        'send_at' => $log->createdDateTime,
+                                    ];
+                                });
+                            @endphp 
                             <tr>
                                 <td>{{ $data->name }}
                                     <div class="tr-detail d-none">
@@ -170,7 +221,7 @@
                                     {{ $data->pivot->ticket->ticket_price ? '/ $' . $data->pivot->ticket->ticket_price : '' }}
                                 </td>
                                 <td>{{ $data->pivot->createdDateTime }}</td>
-                                <td>
+                                <td width="12%">
                                     <!-- elseif ($data->pivot->event->waiver_form_type == 'external_link')
                                         <a href="{{ $data->pivot->event->waiver_form_content }}" target="_BLANK"
                                             class="text-primary">External Link</a> -->
@@ -189,7 +240,8 @@
                                         Signed At (<i data-bs-toggle="tooltip" data-bs-original-title="{{ $data->pivot->waiver_handler_name.' ('.$data->pivot->waiver_handler_email.')' }}" class="mdi mdi-account"></i>):<br/> <span class="text-danger">Pending</span> 
                                         <a href="{{ route('view-waiver-form', encrypt($data->pivot->id)) }}" target="_blank" data-bs-toggle="tooltip" data-bs-original-title="Waiver Page Link" target="_blank"><span class="badge bg-warning"><i class="mdi mdi-link-variant"></i></span></a> 
                                         <!-- <a href="javascript:void(0);" url="{{ route('send-waiver-invitation', ['ticket' => $data->pivot->encrypted_id]) }}" message="You want to resend email for waiver" data-bs-toggle="tooltip" data-bs-original-title="Resend Waiver Email" class="show-alert-run-url"><span class="badge bg-info"><i class="mdi mdi-email-send"></i></span></a> -->
-                                        <a href="javascript:void(0);" data-bs-toggle="tooltip" data-bs-original-title="Resend Waiver Email" defaultemail="{{ $data->pivot->is_under_18==1?$data->pivot->waiver_handler_email:$data->email_address }}" url="{{ route('send-waiver-invitation', ['ticket' => $data->pivot->encrypted_id]) }}" class="btn-resend-waiver-modal"><span class="badge bg-info"><i class="mdi mdi-email-send"></i></span></a><br/>
+                                        <a href="javascript:void(0);" data-bs-toggle="tooltip" data-bs-original-title="Resend Waiver Email" defaultemail="{{ $data->pivot->is_under_18==1?$data->pivot->waiver_handler_email:$data->email_address }}" url="{{ route('send-waiver-invitation', ['ticket' => $data->pivot->encrypted_id]) }}" checkurl="{{ route('check-resend-waiver-admin', ['ticket' => $data->pivot->encrypted_id]) }}" class="btn-resend-waiver-modal"><span class="badge bg-info"><i class="mdi mdi-email-send"></i></span></a>
+                                        <a href="javascript:void(0);" data-logs='@json($resendWaiverLogs)' data-bs-toggle="modal" data-bs-target="#resendWaiverLogsModal" data-bs-toggle="tooltip" data-bs-original-title="Resend Waiver Logs" class="btn-resend-waiver-logs-modal"><span class="badge bg-primary"><i class="mdi mdi-history"></i></span></a><br/>
                                     @endif
                                     @if($data->pivot->rsvp_confirmation===0)
                                     <br/>RSVP: <span class="text-danger">Cancelled</span>
@@ -500,6 +552,32 @@
                             The waiver link will be resent to the volunteer's email on record. The volunteer's profile will not be modified.
                         </p>
                     </div>
+					{{-- Last Resend Waiver Log --}}
+					<div class="resend-last-log-box" id="resend_waiver_last_log_box">
+						<div class="resend-last-log-header">
+							<i class="mdi mdi-history"></i>
+							<span>Last Resend Record</span>
+						</div>
+
+						<div class="resend-last-log-empty" id="resend_waiver_last_log_empty">
+							No resend waiver email record found.
+						</div>
+
+						<div class="resend-last-log-content" id="resend_waiver_last_log_content" style="display:none;">
+							<div class="resend-last-log-row">
+								<span class="resend-last-log-label">Type</span>
+								<span class="resend-last-log-value" id="resend_waiver_last_log_type"></span>
+							</div>
+							<div class="resend-last-log-row">
+								<span class="resend-last-log-label">Email</span>
+								<span class="resend-last-log-value" id="resend_waiver_last_log_email"></span>
+							</div>
+							<div class="resend-last-log-row mb-0">
+								<span class="resend-last-log-label">Sent At</span>
+								<span class="resend-last-log-value" id="resend_waiver_last_log_datetime"></span>
+							</div>
+						</div>
+					</div>
 
                 </div>
 
@@ -509,5 +587,36 @@
             </div>
         </form>
     </div>
+</div>
+<div class="modal fade" id="resendWaiverLogsModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+                <h5 class="modal-title">Resend Waiver Logs</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+
+			<div class="modal-body p-4">
+				<div class="resend-waiver-log-empty text-center py-4" style="display:none;">
+					<i class="fa-solid fa-clock-rotate-left fa-2x text-muted mb-3"></i>
+					<h6 class="mb-1">No logs found</h6>
+					<p class="text-muted small mb-0">No waiver resend email has been sent yet.</p>
+				</div>
+
+				<div class="table-responsive resend-waiver-log-table-wrap">
+					<table class="table table-bordered table-hover align-middle resend-waiver-log-table mb-0">
+						<thead>
+							<tr>
+								<th>Type</th>
+								<th>Email</th>
+								<th>Send At</th>
+							</tr>
+						</thead>
+						<tbody id="resendWaiverLogsTableBody"></tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
 </div>
 @endsection
