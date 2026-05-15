@@ -197,6 +197,8 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
     });
 });
 Route::controller(\App\Http\Controllers\FrontAuthController::class)->group(function(){
+    Route::get('api/auth-status' , 'checkAuthStatus')->name('front-check-auto-status');
+
     Route::middleware(['guest:front'])->group(function () {
         Route::get('login' , 'login')->name('front-login');
         Route::post('login' , 'handleLogin')->name('front-login-post');

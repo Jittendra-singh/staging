@@ -321,4 +321,33 @@ class FrontAuthController extends Controller
         } */
         //print_r($data);
     }
+    // AuthController.php
+
+    public function checkAuthStatus(Request $request) {
+
+        /* // ✅ Only allow requests coming from volunteercleanup.org
+        $referer = $request->headers->get('referer');
+        $origin  = $request->headers->get('origin');
+
+        $allowed = 'https://volunteercleanup.org';
+
+        if (
+            !str_starts_with($referer, $allowed) &&
+            !str_starts_with($origin, $allowed)
+        ) {
+            return response()->json(['logged_in' => false], 403);
+        } */
+
+        // ✅ Proceed with auth check
+        if (\Auth::guard('front')->check()) {
+            $user = \Auth::guard('front')->user();
+            return response()->json([
+                'logged_in' => true,
+                'name'      => $user->name,
+                'email'     => $user->email_address,
+            ]);
+        }
+
+        return response()->json(['logged_in' => false]);
+    }
 }
