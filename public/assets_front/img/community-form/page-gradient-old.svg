@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="612" height="792" viewBox="0 0 612 792" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="certBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#6eb5d8"/>
+      <stop offset="38%" stop-color="#d4eaf5"/>
+      <stop offset="62%" stop-color="#edf6fb"/>
+      <stop offset="100%" stop-color="#7ec0de"/>
+    </linearGradient>
+  </defs>
+  <rect width="612" height="792" fill="url(#certBg)"/>
+</svg>

@@ -1055,9 +1055,11 @@ class EventController extends Controller
             $data = [
                 'event'            => $event,
                 'volunteerName'    => $volunteer->name,
-                'hours'            => $orderTicket->hours_completed,
+                //'hours'            => $orderTicket->hours_completed,
+                'hours'            => $event->volunteer_hours,
                 'organization_name'   => $event->creator->organisation_name,
                 'organizer_name'   => $event->creator->first_name.' '.$event->creator->last_name,
+                'organization_email'   => $event->creator->email_address,
                 'organizer_link'   => route('organizer-detail', ['slug' => $event->creator->organisation_landing_slug]),
             ];
             try{

@@ -2048,6 +2048,51 @@ class FrontController extends Controller
         $this->setFlashSession(false, 'Issue occured while requesting certificate.');
         return redirect()->back();
     }
+    public function ticketMarkCheckinTest($ticket){
+        $orderTicket = EventOrderTicket::findOrFail(decrypt($ticket));
+        $event = $orderTicket->event;
+        $volunteer = $orderTicket->volunteer;
+
+        $data = [
+            'event'            => $event,
+            'volunteerName'    => $volunteer->name,
+            //'hours'            => $orderTicket->hours_completed,
+            'hours'            => $event->volunteer_hours,
+            'organization_name'   => $event->creator->organisation_name,
+            'organizer_name'   => $event->creator->first_name.' '.$event->creator->last_name,
+            'organization_email'   => $event->creator->email_address,
+            'organizer_link'   => route('organizer-detail', ['slug' => $event->creator->organisation_landing_slug]),
+        ];
+        try{
+            $html = view('pages.events.community-form-new', $data)->render();
+            $pdf = \PDF::setOptions(['isHtml5ParserEnabled' => true,'isRemoteEnabled' => true])->loadHTML($html);
+            //$filename = 'community_form_' . $orderTicket->id . '_' . time() . '.pdf';
+            $filename = 'community_form_123.pdf';
+            $path = 'events/community_forms/' . $filename;
+            $publicPath = public_path($path);
+            if (!file_exists(dirname($publicPath))) {
+                mkdir(dirname($publicPath), 0755, true);
+            }
+            file_put_contents($publicPath, $pdf->output());
+            $orderTicket->community_form_pdf = $path;
+            $orderTicket->save();
+            $community_form = url('/').'/'.$path;
+        }catch(\Exception $e){
+            if($callFromBackend){
+                $this->setFlashSession(false , "Issues occured while making generating PDF");
+                return redirect()->back();
+            } else {
+                return $this->generateJsonResponse(false, "Issues occured while making generating PDF",[
+                    'error' => $e->getMessage(),
+                    'line'  => $e->getLine(),
+                    'file'  => $e->getFile(),
+                    // 'trace' => $e->getTraceAsString() // uncomment if needed
+                ]);
+            }
+        }
+        return $this->generateJsonResponse(true, "DONE");
+
+    }
     public function ticketMarkCheckin($ticket,$callFromBackend=false){
         $orderTicket = EventOrderTicket::findOrFail(decrypt($ticket));
         $event = $orderTicket->event;
@@ -2058,9 +2103,11 @@ class FrontController extends Controller
             $data = [
                 'event'            => $event,
                 'volunteerName'    => $volunteer->name,
-                'hours'            => $orderTicket->hours_completed,
+                //'hours'            => $orderTicket->hours_completed,
+                'hours'            => $event->volunteer_hours,
                 'organization_name'   => $event->creator->organisation_name,
                 'organizer_name'   => $event->creator->first_name.' '.$event->creator->last_name,
+                'organization_email'   => $event->creator->email_address,
                 'organizer_link'   => route('organizer-detail', ['slug' => $event->creator->organisation_landing_slug]),
             ];
             try{
@@ -2510,9 +2557,11 @@ class FrontController extends Controller
                 $data = [
                     'event'            => $event,
                     'volunteerName'    => $volunteer->name,
-                    'hours'            => $orderTicket->hours_completed,
+                    //'hours'            => $orderTicket->hours_completed,
+                    'hours'            => $event->volunteer_hours,
                     'organization_name'   => $event->creator->organisation_name,
                     'organizer_name'   => $event->creator->first_name.' '.$event->creator->last_name,
+                    'organization_email'   => $event->creator->email_address,
                     'organizer_link'   => route('organizer-detail', ['slug' => $event->creator->organisation_landing_slug]),
                 ];
                 try{
@@ -3458,9 +3507,11 @@ class FrontController extends Controller
                     $data = [
                         'event'            => $event,
                         'volunteerName'    => $value->volunteer->first_name.' '.$value->volunteer->last_name,
-                        'hours'            => $value->hours_completed,
+                        //'hours'            => $value->hours_completed,
+                        'hours'            => $event->volunteer_hours,
                         'organization_name'   => $event->creator->organisation_name,
                         'organizer_name'   => $event->creator->first_name.' '.$event->creator->last_name,
+                        'organization_email'   => $event->creator->email_address,
                         'organizer_link'   => route('organizer-detail', ['slug' => $event->creator->organisation_landing_slug]),
                     ];
                     try{
