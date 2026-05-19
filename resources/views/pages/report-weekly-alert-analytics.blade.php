@@ -265,7 +265,7 @@
             <div class="card alert-analytics-card h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="alert-chart-title mb-0">Highest Interest States</div>
+                        <div class="alert-chart-title mb-0">Highest Interest States (Top 5)</div>
                     </div>
 
                     @forelse($topStates as $state)
