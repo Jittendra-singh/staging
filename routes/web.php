@@ -254,6 +254,9 @@ Route::prefix(config('app.admin_prefix'))->group(function () {
         });
         Route::controller(\App\Http\Controllers\DashboardController::class)->group(function () {
             Route::get('/dashboard', 'index')->name('dashboard');
+            Route::get('/subscribers', 'subscribers')->name('index-subscribers');
+            Route::get('/weekly-alerts', 'weeklyAlerts')->name('index-weekly-alerts');
+            Route::get('/weekly-alert-analytics', 'weeklyAlertsAnalytics')->name('index-weekly-alert-analytics');
         });
         Route::controller(\App\Http\Controllers\ContactController::class)->group(function () {
             Route::get('/other-inquiry', 'index')->name('other-inquiry');
