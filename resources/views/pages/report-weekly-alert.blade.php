@@ -1,5 +1,5 @@
 @php
-    $pageName = 'Alerts';
+    $pageName = 'Weekly Alerts';
     $tableHead = ['Alert Name', 'Location (Zipcode)', 'Created By', 'Created Date', 'Status', 'Action'];
 
     $counterCards = [
