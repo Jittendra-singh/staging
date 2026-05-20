@@ -235,6 +235,9 @@
                 if (!point) {
                     return;
                 }
+                if (item.count<=10) {
+                    return;
+                }
 
                 if (
                     point.x < padding ||
