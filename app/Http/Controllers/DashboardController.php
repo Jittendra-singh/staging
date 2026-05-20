@@ -45,6 +45,7 @@ class DashboardController extends Controller
         $yearStart = Carbon::now()->startOfYear();
 
         $baseQuery = Volunteer::withCount('alerts')
+            ->withMax('alerts', 'created_at')
             ->whereHas('alerts');
 
         $listingData = (clone $baseQuery)
@@ -61,7 +62,7 @@ class DashboardController extends Controller
             ->when(request()->filled('status'), function ($q) {
                 $q->where('status', request()->status);
             })
-            ->latest()
+            ->orderByDesc('alerts_max_created_at')
             ->paginate(50)
             ->withQueryString();
 
@@ -94,7 +95,12 @@ class DashboardController extends Controller
         $monthStart = Carbon::now()->startOfMonth();
         $yearStart = Carbon::now()->startOfYear();
 
-        $baseQuery = VolunteerAlert::with(['volunteer','location']);
+        $baseQuery = VolunteerAlert::with([
+            'volunteer',
+            'location',
+            'statusUpdatedByVolunteer',
+            'statusUpdatedByAdmin',
+        ]);
 
         $listingData = (clone $baseQuery)
             ->when(request()->alert_name, function ($q) {
@@ -215,10 +221,19 @@ class DashboardController extends Controller
                     'state' => $stateCode,
                     'name' => $location->state_full_name ?: $stateCode,
                     'count' => 0,
+                    'lat_sum' => 0,
+                    'lng_sum' => 0,
+                    'location_count' => 0,
                 ];
             }
 
             $stateStats[$mapStateCode]['count']++;
+
+            if (!empty($location->location_lat) && !empty($location->location_long)) {
+                $stateStats[$mapStateCode]['lat_sum'] += (float) $location->location_lat;
+                $stateStats[$mapStateCode]['lng_sum'] += (float) $location->location_long;
+                $stateStats[$mapStateCode]['location_count']++;
+            }
         }
 
         $topStates = collect($stateStats)
@@ -231,6 +246,23 @@ class DashboardController extends Controller
                 return [$item['code'] => $item['count']];
             })
             ->toArray();
+
+        $stateLabels = collect($stateStats)
+            ->filter(function ($item) {
+                return $item['location_count'] > 0;
+            })
+            ->map(function ($item) {
+                return [
+                    'code' => $item['code'],
+                    'state' => $item['state'],
+                    'name' => $item['name'],
+                    'count' => $item['count'],
+                    'lat' => $item['lat_sum'] / $item['location_count'],
+                    'lng' => $item['lng_sum'] / $item['location_count'],
+                ];
+            })
+            ->values();
+
 
 
         $data = [
@@ -252,9 +284,34 @@ class DashboardController extends Controller
             'yearlyData' => $yearlyData,
             'topStates' => $topStates,
             'mapData' => $mapData,
+            'stateLabels' => $stateLabels,
         ];
 
         return view('pages.report-weekly-alert-analytics', $data);
     }
+    public function toggleWeeklyAlertStatus($placeholder)
+    {
+        Gate::authorize('update', 'weekly-alerts');
+        $obj = VolunteerAlert::findOrFail(decrypt($placeholder));
+        if ($obj->status == 1) {
+            $obj->status = 0;
+            $obj->status_updated_by = auth()->user()->id; 
+            $obj->status_updated_by_role = 2;
+
+            $this->setFlashSession($obj->save(), 'Alert disabled successfully.');
+        } else {
+            if ($obj->status_updated_by_role == 2) {
+                $obj->status = 1;
+                $obj->status_updated_by = auth()->user()->id; 
+                $obj->status_updated_by_role = 2;
+
+                $this->setFlashSession($obj->save(), 'Alert enabled successfully.');
+            } else {
+                $this->setFlashSession(false, 'This alert was disabled by the subscriber, so admin cannot enable it.');
+            }
+        }
+        return redirect()->route('index-weekly-alerts');
+    }
+
 
 }

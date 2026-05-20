@@ -195,6 +195,44 @@
                                     {{ $data->created_at ? date(config('app.dateTimeFormat'), strtotime($data->created_at)) : '' }}
                                 </td>
                                 <td>
+                                    @php
+                                        $disabledByName = 'N/a';
+
+                                        if (!$data->status) {
+                                            if ($data->status_updated_by_role == 2) {
+                                                $disabledByName = @$data->statusUpdatedByAdmin->name ?: 'Admin';
+                                            } else {
+                                                $disabledByName = @$data->statusUpdatedByVolunteer->name ?: @$data->volunteer->name ?: 'Subscriber';
+                                            }
+                                        }
+
+                                        $canToggleStatus = $data->status == 1 || ($data->status == 0 && $data->status_updated_by_role == 2);
+                                    @endphp
+
+                                    @if($canToggleStatus)
+                                        <x-reusables.list-switch
+                                            :onlabel="'Enable'"
+                                            :offlabel="'Disabled'"
+                                            :data="$data"
+                                            url="{{ route('toggle-weekly-alert-status', ['placeholder' => $data->encrypted_id]) }}"
+                                        />
+                                    @else
+                                        <div class="form-check form-switch form-switch-md mb-1" dir="ltr">
+                                            <input class="form-check-input" type="checkbox" disabled>
+                                        </div>
+                                    @endif
+
+                                    @if(!$data->status)
+                                        <span class="alert-status-meta">
+                                            By
+                                            <span class="alert-disabled-by" data-bs-toggle="tooltip" data-bs-original-title="Disabled at {{ $data->updated_at ? date(config('app.dateTimeFormat'), strtotime($data->updated_at)) : 'N/a' }}">
+                                                {{ $disabledByName }}
+                                            </span>
+                                        </span>
+                                    @endif
+                                </td>
+
+                                <!-- <td>
                                     @if($data->status)
                                         <span class="badge bg-success">Enable</span>
                                     @else
@@ -207,7 +245,7 @@
 
                                         </span>
                                     @endif
-                                </td>
+                                </td> -->
                                 <td>
                                     <div class="dropdown">
                                         <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false">

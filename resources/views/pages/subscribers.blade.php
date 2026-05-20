@@ -1,6 +1,6 @@
 @php
     $pageName = 'Subscribers';
-    $tableHead = ['Subscriber', 'User Type', 'Alert Counts', 'Status'];
+    $tableHead = ['Subscriber', 'User Type', 'Alert Counts', 'Last Alert Created', 'Status', 'Action'];
 
     $counterCards = [
         ['label' => 'Total Subscribers', 'value' => $counters->total_subscribers, 'icon' => 'mdi mdi-account-group-outline'],
@@ -184,11 +184,21 @@
                                     <span class="badge bg-primary">{{ number_format($data->alerts_count) }}</span>
                                 </td>
                                 <td>
+                                    {{ $data->alerts_max_created_at ? date(config('app.dateTimeFormat'), strtotime($data->alerts_max_created_at)) : 'N/a' }}
+                                </td>
+                                <td>
                                     @if($data->status)
                                         <span class="badge bg-success">Active</span>
                                     @else
                                         <span class="badge bg-danger">Inactive</span>
                                     @endif
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2 justify-content-start action-button">
+                                        <a target="_blank" href="{{ route('show-volunteer',encrypt($data->id)) }}">
+                                            <i class="fs-5 mdi mdi-eye"></i>
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         @empty

@@ -257,6 +257,7 @@ Route::prefix(config('app.admin_prefix'))->group(function () {
             Route::get('/subscribers', 'subscribers')->name('index-subscribers');
             Route::get('/weekly-alerts', 'weeklyAlerts')->name('index-weekly-alerts');
             Route::get('/weekly-alert-analytics', 'weeklyAlertsAnalytics')->name('index-weekly-alert-analytics');
+            Route::get('/toggle-weekly-alert-status/{placeholder}', 'toggleWeeklyAlertStatus')->name('toggle-weekly-alert-status');
         });
         Route::controller(\App\Http\Controllers\ContactController::class)->group(function () {
             Route::get('/other-inquiry', 'index')->name('other-inquiry');

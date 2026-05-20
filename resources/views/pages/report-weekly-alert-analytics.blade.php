@@ -94,6 +94,32 @@
             font-weight: 700;
             color: #4656c9;
         }
+        #weekly-alert-map {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .state-count-label {
+            position: absolute;
+            z-index: 5;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, .92);
+            border: 1px solid rgba(70, 86, 201, .18);
+            border-radius: 6px;
+            color: #1f2937;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 1.15;
+            padding: 3px 6px;
+            white-space: nowrap;
+            pointer-events: none;
+            box-shadow: 0 4px 10px rgba(15, 23, 42, .08);
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+
     </style>
 @endsection
 
@@ -112,6 +138,7 @@
         var yearlyLabels = @json($yearlyLabels);
         var yearlyData = @json($yearlyData);
         var mapData = @json($mapData);
+        var stateLabels = @json($stateLabels);
 
         new ApexCharts(document.querySelector("#weekly-alert-chart"), {
             series: [{ name: 'Alerts', data: weeklyData }],
@@ -183,8 +210,65 @@
             onRegionTipShow: function(e, el, code) {
                 var count = mapData[code] || 0;
                 el.html(el.html() + ' - ' + count + ' alerts');
+            },
+            onViewportChange: function() {
+                window.setTimeout(renderStateLabels, 80);
             }
         });
+
+        function renderStateLabels() {
+            var $map = $('#weekly-alert-map');
+            var mapObject = $map.vectorMap('get', 'mapObject');
+            var mapWidth = $map.width();
+            var mapHeight = $map.height();
+            var padding = 8;
+
+            $map.find('.state-count-label').remove();
+
+            stateLabels.forEach(function(item) {
+                if (!item.lat || !item.lng) {
+                    return;
+                }
+
+                var point = mapObject.latLngToPoint(item.lat, item.lng);
+
+                if (!point) {
+                    return;
+                }
+
+                if (
+                    point.x < padding ||
+                    point.y < padding ||
+                    point.x > (mapWidth - padding) ||
+                    point.y > (mapHeight - padding)
+                ) {
+                    return;
+                }
+
+                var $label = $('<div class="state-count-label"></div>')
+                    .text(item.name + ': ' + item.count)
+                    .appendTo($map);
+
+                var labelWidth = $label.outerWidth();
+                var labelHeight = $label.outerHeight();
+
+                var left = Math.max(labelWidth / 2 + padding, Math.min(point.x, mapWidth - (labelWidth / 2) - padding));
+                var top = Math.max(labelHeight / 2 + padding, Math.min(point.y, mapHeight - (labelHeight / 2) - padding));
+
+                $label.css({
+                    left: left + 'px',
+                    top: top + 'px'
+                });
+            });
+        }
+
+
+        window.setTimeout(renderStateLabels, 300);
+
+        $(window).on('resize', function() {
+            window.setTimeout(renderStateLabels, 200);
+        });
+
     </script>
 @endsection
 

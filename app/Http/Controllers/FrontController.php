@@ -262,7 +262,8 @@ class FrontController extends Controller
     public function emailAlerts()
     {
         $data['seo_details'] = (object)['title' => 'Email Alerts'];
-        $data['listing_data'] = auth()->guard()->user()->alerts;
+        //$data['listing_data'] = auth()->guard()->user()->alerts;
+        $data['listing_data'] = auth()->guard()->user()->alerts()->with('statusUpdatedByAdmin')->get();
         return view('pages.frontend.cleanup-alerts', $data);
     }
     public function unsubscribeAlert($user,$alert=null){
@@ -289,14 +290,38 @@ class FrontController extends Controller
         $data['msg'] = $msg; 
         return view('pages.frontend.alert-unsubscribed', $data);
     }
-    public function disableEmailAlerts($id){
+    /* public function disableEmailAlerts($id){
         $emailAlert = VolunteerAlert::where('volunteer_id', auth()->guard('front')->user()->id)
                         ->where('id', $id)->firstOrFail();
         $emailAlert->status = !$emailAlert->status;
         $emailAlert->save();
         $this->setFlashSession(true);
         return redirect()->back();
+    } */
+    public function disableEmailAlerts($id)
+    {
+        $user = auth()->guard('front')->user();
+
+        $emailAlert = VolunteerAlert::where('volunteer_id', $user->id)
+            ->where('id', $id)
+            ->firstOrFail();
+
+        if ($emailAlert->status == 0 && $emailAlert->status_updated_by_role == 2) {
+            $this->setFlashSession(false, 'This alert was disabled by admin, so you cannot enable it.');
+            return redirect()->back();
+        }
+
+        $emailAlert->status = !$emailAlert->status;
+        $emailAlert->status_updated_by = $user->id;
+        $emailAlert->status_updated_by_role = 1;
+        $emailAlert->save();
+
+        $this->setFlashSession(true);
+
+        return redirect()->back();
     }
+
+
     public function deleteAlerts($id){
         $emailAlert = VolunteerAlert::where('volunteer_id', auth()->guard('front')->user()->id)
                         ->where('id', $id)->firstOrFail();

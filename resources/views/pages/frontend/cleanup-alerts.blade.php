@@ -68,13 +68,31 @@
 																		<td>Booking Page</td>
 																	@endif
 																	<td>{{$data->created_at}}</td>
+																	<!-- <td>
+																		@if($data->status)
+																			<span class="text-success">Enable</span>
+																		@else
+																			<span class="text-danger">Disabled</span>
+																		@endif
+																	</td> -->
 																	<td>
 																		@if($data->status)
-																			<span class="text-success">Active</span>
+																			<span class="text-success">Enable</span>
 																		@else
-																			<span class="text-danger">Inactive</span>
+																			<span class="text-danger">Disabled</span>
+
+																			@if($data->status_updated_by_role == 2)
+																				<br>
+																				<small class="text-muted">
+																					By
+																					<span data-bs-toggle="tooltip" data-bs-original-title="Disabled at {{ $data->updated_at ? date(config('app.dateTimeFormat'), strtotime($data->updated_at)) : 'N/a' }}">
+																						{{ @$data->statusUpdatedByAdmin->name ?: 'Admin' }}
+																					</span>
+																				</small>
+																			@endif
 																		@endif
 																	</td>
+
                                                                     <td>
                                                                         <div class="dropdown position-absolute translate-middle" >
                                                                             <button class="option-btn" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
@@ -87,9 +105,11 @@
 																					<i class="fa-solid fa-envelope"></i> Trigger Email
 																				</a>
 																				@endif
+																				@if(!($data->status == 0 && $data->status_updated_by_role == 2))
                                                                                 <a class="dropdown-item" href="{{route('front-disable-email-alerts', ['id' => $data->id])}}">
 																					<i class="fa-solid fa-ban"></i> {{$data->status ? 'Disable trigger' : 'Enable trigger'}}
 																				</a>
+																				@endif
                                                                                 <a class="dropdown-item delete-record" data-url="{{route('front-delete-alerts', ['id' => $data->id])}}">
 																					<i class="fa-solid fa-trash-can"></i> Delete
 																				</a>

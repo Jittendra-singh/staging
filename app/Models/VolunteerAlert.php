@@ -19,4 +19,14 @@ class VolunteerAlert extends Model
     public function location(){
         return $this->belongsTo(CityStateZip::class , 'csz_id');
     }
+    public function statusUpdatedByVolunteer()
+    {
+        return $this->belongsTo(Volunteer::class, 'status_updated_by');
+    }
+
+    public function statusUpdatedByAdmin()
+    {
+        return $this->belongsTo(User::class, 'status_updated_by');
+    }
+
 }
