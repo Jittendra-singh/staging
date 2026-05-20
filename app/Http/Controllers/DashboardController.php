@@ -159,7 +159,10 @@ class DashboardController extends Controller
         Gate::authorize('view', 'weekly-alert-analytics');
 
         $now = Carbon::now();
+        $weekStart = $now->copy()->startOfWeek();
         $monthStart = $now->copy()->startOfMonth();
+        $quarterStart = $now->copy()->startOfQuarter();
+        $yearStart = $now->copy()->startOfYear();
 
         $baseQuery = VolunteerAlert::with(['volunteer', 'location']);
 
@@ -270,10 +273,28 @@ class DashboardController extends Controller
             'pageName' => 'Weekly Alert Analytics',
             'counters' => (object) [
                 'total_alerts' => (clone $baseQuery)->count(),
+                'active_alerts' => (clone $baseQuery)->where('status', 1)->count(),
+                'inactive_alerts' => (clone $baseQuery)->where('status', 0)->count(),
+
                 'disabled_alerts' => (clone $baseQuery)->where('status', 0)->count(),
-                'new_alerts' => (clone $baseQuery)->whereDate('created_at', '>=', $monthStart)->count(),
+                'disabled_week' => (clone $baseQuery)->where('status', 0)->whereDate('updated_at', '>=', $weekStart)->count(),
+                'disabled_month' => (clone $baseQuery)->where('status', 0)->whereDate('updated_at', '>=', $monthStart)->count(),
+                'disabled_quarter' => (clone $baseQuery)->where('status', 0)->whereDate('updated_at', '>=', $quarterStart)->count(),
+                'disabled_year' => (clone $baseQuery)->where('status', 0)->whereDate('updated_at', '>=', $yearStart)->count(),
+
+                'new_alerts' => (clone $baseQuery)->whereDate('created_at', '>=', $yearStart)->count(),
+                'new_alerts_week' => (clone $baseQuery)->whereDate('created_at', '>=', $weekStart)->count(),
+                'new_alerts_month' => (clone $baseQuery)->whereDate('created_at', '>=', $monthStart)->count(),
+                'new_alerts_quarter' => (clone $baseQuery)->whereDate('created_at', '>=', $quarterStart)->count(),
+                'new_alerts_year' => (clone $baseQuery)->whereDate('created_at', '>=', $yearStart)->count(),
+
                 'subscribers' => (clone $baseQuery)->distinct('volunteer_id')->count('volunteer_id'),
+                'subscribers_week' => VolunteerAlert::select('volunteer_id')->groupBy('volunteer_id')->havingRaw('MIN(created_at) >= ?', [$weekStart])->count(),
+                'subscribers_month' => VolunteerAlert::select('volunteer_id')->groupBy('volunteer_id')->havingRaw('MIN(created_at) >= ?', [$monthStart])->count(),
+                'subscribers_quarter' => VolunteerAlert::select('volunteer_id')->groupBy('volunteer_id')->havingRaw('MIN(created_at) >= ?', [$quarterStart])->count(),
+                'subscribers_year' => VolunteerAlert::select('volunteer_id')->groupBy('volunteer_id')->havingRaw('MIN(created_at) >= ?', [$yearStart])->count(),
             ],
+
             'weeklyLabels' => $weeklyLabels,
             'weeklyData' => $weeklyData,
             'monthlyLabels' => $monthlyLabels,

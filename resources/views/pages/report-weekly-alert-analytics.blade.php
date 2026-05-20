@@ -2,11 +2,55 @@
     $pageName = 'Weekly Alert Analytics';
 
     $counterCards = [
-        ['label' => 'Total Alerts', 'value' => $counters->total_alerts, 'icon' => 'mdi mdi-bell-outline'],
-        ['label' => 'Disabled Alerts', 'value' => $counters->disabled_alerts, 'icon' => 'mdi mdi-bell-off-outline'],
-        ['label' => 'New Alerts', 'value' => $counters->new_alerts, 'icon' => 'mdi mdi-bell-plus-outline'],
-        ['label' => 'Subscribers', 'value' => $counters->subscribers, 'icon' => 'mdi mdi-account-group-outline'],
+        [
+            'label' => 'Total Alerts',
+            'value' => $counters->total_alerts,
+            'icon' => 'mdi mdi-bell-outline',
+            'url' => route('index-weekly-alerts'),
+            'items' => [
+                'Enable' => $counters->active_alerts,
+                'Disabled' => $counters->inactive_alerts,
+            ],
+        ],
+        [
+            'label' => 'Disabled Alerts',
+            'value' => $counters->disabled_alerts,
+            'icon' => 'mdi mdi-bell-off-outline',
+            'url' => route('index-weekly-alerts',['status'=>'0']),
+            'items' => [
+                'W' => $counters->disabled_week,
+                'M' => $counters->disabled_month,
+                'Q' => $counters->disabled_quarter,
+                'Y' => $counters->disabled_year,
+            ],
+        ],
+        [
+            'label' => 'New Alerts',
+            'value' => $counters->new_alerts,
+            'icon' => 'mdi mdi-bell-plus-outline',
+            'url' => route('index-weekly-alerts', ['start_date' => date('Y-01-01')]),
+            'items' => [
+                'W' => $counters->new_alerts_week,
+                'M' => $counters->new_alerts_month,
+                'Q' => $counters->new_alerts_quarter,
+                'Y' => $counters->new_alerts_year,
+            ],
+        ],
+        [
+            'label' => 'Subscribers',
+            'value' => $counters->subscribers,
+            'icon' => 'mdi mdi-account-group-outline',
+            'url' => route('index-subscribers'),
+            'items' => [
+                'W' => $counters->subscribers_week,
+                'M' => $counters->subscribers_month,
+                'Q' => $counters->subscribers_quarter,
+                'Y' => $counters->subscribers_year,
+            ],
+        ],
     ];
+
+
 @endphp
 
 @extends('layouts.backend_new', ['pageName' => $pageName, 'parentPageName' => $pageName])
@@ -118,7 +162,84 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        .alert-stat-bottom {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 12px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, .78);
+        }
 
+        .alert-stat-bottom span {
+            white-space: nowrap;
+        }
+
+        .alert-stat-card.light .alert-stat-bottom {
+            color: #6b7280;
+        }
+
+        .alert-stat-bottom strong {
+            color: inherit;
+            font-weight: 700;
+        }
+
+        .alert-stat-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .alert-stat-footer .alert-stat-bottom {
+            margin-top: 0;
+        }
+
+        .alert-stat-detail-link {
+            color: rgba(255, 255, 255, .82);
+            font-size: 11px;
+            font-weight: 600;
+            text-decoration: underline;
+            white-space: nowrap;
+        }
+
+        .alert-stat-detail-link:hover {
+            color: #fff;
+        }
+
+        .alert-stat-card.light .alert-stat-detail-link {
+            color: #4656c9;
+        }
+
+        .alert-stat-card.light .alert-stat-detail-link:hover {
+            color: #25339b;
+        }
+        .alert-stat-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 12px;
+            width: 100%;
+        }
+
+        .alert-stat-footer .alert-stat-bottom {
+            margin-top: 0;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .alert-stat-detail-link {
+            margin-left: auto;
+            text-align: right;
+            color: rgba(255, 255, 255, .82);
+            font-size: 11px;
+            font-weight: 600;
+            text-decoration: underline;
+            white-space: nowrap;
+        }
 
     </style>
 @endsection
@@ -295,13 +416,24 @@
                             <div>
                                 <div class="alert-stat-label">{{ $card['label'] }}</div>
                                 <div class="alert-stat-value">{{ number_format($card['value']) }}</div>
-                                <a href="{{ $boxLink }}"><small class="{{ $index == 3 ? 'text-muted' : 'text-white-50' }}">
+                                <!-- <a href="{{ $boxLink }}"><small class="{{ $index == 3 ? 'text-muted' : 'text-white-50' }}">
                                     View Details <i class="mdi mdi-arrow-right"></i>
-                                </small></a>
+                                </small></a> -->
+
+
                             </div>
                             <span class="alert-stat-icon">
                                 <i class="{{ $card['icon'] }}"></i>
                             </span>
+                        </div>
+                        <div class="alert-stat-footer">
+                            <div class="alert-stat-bottom">
+                                @foreach($card['items'] as $itemLabel => $itemValue)
+                                    <span>{{ $itemLabel }}: <strong>{{ number_format($itemValue) }}</strong></span>
+                                @endforeach
+                            </div>
+
+                            <a target="_blank" href="{{ $card['url'] }}" class="alert-stat-detail-link">Details</a>
                         </div>
                     </div>
                 </div>
