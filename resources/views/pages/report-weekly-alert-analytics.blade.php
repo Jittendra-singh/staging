@@ -3,13 +3,15 @@
 
     $counterCards = [
         [
-            'label' => 'Total Alerts',
-            'value' => $counters->total_alerts,
+            'label' => 'Active Alerts',
+            'value' => $counters->active_alerts,
             'icon' => 'mdi mdi-bell-outline',
-            'url' => route('index-weekly-alerts'),
+            'url' => route('index-weekly-alerts', ['status' => 1]),
             'items' => [
-                'Enable' => $counters->active_alerts,
-                'Disabled' => $counters->inactive_alerts,
+                'W' => $counters->active_alerts_week,
+                'M' => $counters->active_alerts_month,
+                'Q' => $counters->active_alerts_quarter,
+                'Y' => $counters->active_alerts_year,
             ],
         ],
         [
@@ -72,7 +74,7 @@
         }
 
         .alert-stat-card.light {
-            background: #f4f6fb;
+            background: #e9e9e9;
             color: #1f2937;
         }
 
@@ -201,7 +203,7 @@
             color: rgba(255, 255, 255, .82);
             font-size: 11px;
             font-weight: 600;
-            text-decoration: underline;
+            text-decoration: underline!important;
             white-space: nowrap;
         }
 
@@ -442,6 +444,9 @@
     </div>
 
     <div class="row g-3 mb-3">
+        <div class="col-sm-12 m-0">
+            <h5>Trends</h5>
+        </div>
         <div class="col-md-6 col-xl-3">
             <div class="card alert-analytics-card alert-chart-box">
                 <div class="card-body">

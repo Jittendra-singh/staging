@@ -7982,3 +7982,34 @@ textarea, select, .dropdown-toggle.btn, .ck.ck-editor {
 .alert-innter-ul ul li{
     margin-top:10px;
 }
+
+/* action dropdwon overlapping issue fox css */
+.custom-action-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.custom-action-dropdown.show {
+    z-index: 1060;
+}
+
+.custom-action-menu {
+    min-width: 150px;
+    padding: 8px 0;
+    z-index: 1060;
+    transform: none;
+}
+
+.custom-action-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.custom-action-menu .dropdown-item i {
+    width: 14px;
+    text-align: center;
+}

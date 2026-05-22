@@ -272,9 +272,15 @@ class DashboardController extends Controller
             'seo_details' => (object) ['title' => 'Weekly Alert Analytics'],
             'pageName' => 'Weekly Alert Analytics',
             'counters' => (object) [
-                'total_alerts' => (clone $baseQuery)->count(),
+                /* 'total_alerts' => (clone $baseQuery)->count(),
                 'active_alerts' => (clone $baseQuery)->where('status', 1)->count(),
-                'inactive_alerts' => (clone $baseQuery)->where('status', 0)->count(),
+                'inactive_alerts' => (clone $baseQuery)->where('status', 0)->count(), */
+                'active_alerts' => (clone $baseQuery)->where('status', 1)->count(),
+                'active_alerts_week' => (clone $baseQuery)->where('status', 1)->whereDate('created_at', '>=', $weekStart)->count(),
+                'active_alerts_month' => (clone $baseQuery)->where('status', 1)->whereDate('created_at', '>=', $monthStart)->count(),
+                'active_alerts_quarter' => (clone $baseQuery)->where('status', 1)->whereDate('created_at', '>=', $quarterStart)->count(),
+                'active_alerts_year' => (clone $baseQuery)->where('status', 1)->whereDate('created_at', '>=', $yearStart)->count(),
+
 
                 'disabled_alerts' => (clone $baseQuery)->where('status', 0)->count(),
                 'disabled_week' => (clone $baseQuery)->where('status', 0)->whereDate('updated_at', '>=', $weekStart)->count(),

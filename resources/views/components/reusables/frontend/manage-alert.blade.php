@@ -59,7 +59,7 @@
 					</div>
 					<div class="modal-footer">
 						<button type="button" class="primary-btn w-fit" data-bs-target="#aboutModal" data-bs-toggle="modal" data-bs-dismiss="modal">Cancel</button>
-						<button type="submit" class="primary-btn w-fit">Update</button>
+						<button type="submit" class="primary-btn w-fit">Create</button>
 					</div>
 				</form>
 			</div>

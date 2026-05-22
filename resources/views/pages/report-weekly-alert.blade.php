@@ -217,8 +217,12 @@
                                             url="{{ route('toggle-weekly-alert-status', ['placeholder' => $data->encrypted_id]) }}"
                                         />
                                     @else
-                                        <div class="form-check form-switch form-switch-md mb-1" dir="ltr">
+                                        <!-- <div class="form-check form-switch form-switch-md mb-1" dir="ltr">
                                             <input class="form-check-input" type="checkbox" disabled>
+                                        </div> -->
+                                        <div class="square-switch">
+                                            <input class="statusswitch" type="checkbox" switch="none" />
+                                            <label style="opacity: 0.6;" data-on-label="Enable" data-off-label="Disabled"></label>
                                         </div>
                                     @endif
 

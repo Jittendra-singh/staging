@@ -49,7 +49,7 @@
 																	<th scope="col">Alert Name</th>
 																	<th scope="col">Alert Zipcode</th>
 																	<th scope="col">Created From</th>
-																	<th scope="col">Date Created</th>
+																	<th scope="col">Created At</th>
 																	<th scope="col">Status</th>
                                                                     <th></th>
 																</tr>
@@ -94,9 +94,11 @@
 																	</td>
 
                                                                     <td>
-                                                                        <div class="dropdown position-absolute translate-middle" >
-                                                                            <button class="option-btn" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-                                                                            <div class="dropdown-menu dropdown-menu-right">
+                                                                        <div class="dropdown custom-action-dropdown">
+																			<button class="option-btn" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+																				<i class="fa-solid fa-ellipsis-vertical"></i>
+																			</button>
+																			<div class="dropdown-menu dropdown-menu-end custom-action-menu">
                                                                                 <a class="dropdown-item" href="{{route('view-events', ['sort_by_date' => 1,'location' => $data->zipcode,'latitude' => $data->location_lat,'longitude' => $data->location_long,'distance' => '15','unit' =>'mi'])}}">
 																					<i class="fa-solid fa-eye"></i> View Event
 																				</a>
@@ -107,7 +109,7 @@
 																				@endif
 																				@if(!($data->status == 0 && $data->status_updated_by_role == 2))
                                                                                 <a class="dropdown-item" href="{{route('front-disable-email-alerts', ['id' => $data->id])}}">
-																					<i class="fa-solid fa-ban"></i> {{$data->status ? 'Disable trigger' : 'Enable trigger'}}
+																					<i class="fa-solid fa-ban"></i> {{$data->status ? 'Disable Alert' : 'Enable Alert'}}
 																				</a>
 																				@endif
                                                                                 <a class="dropdown-item delete-record" data-url="{{route('front-delete-alerts', ['id' => $data->id])}}">
