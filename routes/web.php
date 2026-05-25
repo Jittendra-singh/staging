@@ -201,6 +201,10 @@ Route::controller(\App\Http\Controllers\FrontAuthController::class)->group(funct
     //Route::get('api/auth-status' , 'checkAuthStatus')->name('front-check-auto-status');
 
     Route::middleware(['guest:front'])->group(function () {
+        Route::post('login-google' , 'handleLoginGoogle')->name('front-login-google');
+        Route::post('login-magic-link', 'handleLoginMagicLink')->name('front-login-magic-link');
+        Route::get('login-magic-link/{id}/{timestamp}', 'loginUsingMagicLink')->name('front-login-magic-link-login');
+        
         Route::get('login' , 'login')->name('front-login');
         Route::post('login' , 'handleLogin')->name('front-login-post');
         Route::get('register' , 'register')->name('front-register');

@@ -281,6 +281,110 @@ class FrontAuthController extends Controller
         }
     }
 
+    public function handleLoginMagicLink(Request $request)
+    {
+        $request->validate([
+            'first_name'    => 'required|max:255',
+            'last_name'     => 'required|max:255',
+            'email_address' => ['required', 'email', new \App\Rules\StrictEmail()],
+        ]);
+
+        $volunteer = Volunteer::where('email_address', $request->email_address)->first();
+
+        if (isset($volunteer->id)) {
+            if ($volunteer->status != 1) {
+                $this->setFlashSession(false, 'You don\'t have permission to login. Please contact admin.');
+                return redirect()->route('front-login');
+            }
+        } else {
+            $volunteer = new Volunteer();
+            $volunteer->first_name = $request->first_name;
+            $volunteer->last_name = $request->last_name;
+            $volunteer->email_address = $request->email_address;
+            $volunteer->password = Hash::make(Str::random(32));
+            $volunteer->is_organiser = 0;
+            $volunteer->is_newsletter = 0;
+            $volunteer->status = 1;
+
+            // Keep these defaults if your volunteers table still has non-null columns.
+            $volunteer->phone = '';
+            $volunteer->address_line_1 = '';
+            $volunteer->address_line_2 = '';
+            $volunteer->city_id = 0;
+            $volunteer->pincode = '';
+
+            $res = $volunteer->save();
+
+            if (!$res) {
+                $this->setFlashSession(false, 'There was an error while creating your account. Please try again.');
+                return redirect()->back()->withInput();
+            }
+
+            $volunteer->refresh();
+        }
+
+        $magicLoginLink = $this->mailUrl('front-login-magic-link-login', [
+            'id'        => encrypt($volunteer->id),
+            'timestamp' => encrypt(now()->timestamp),
+        ]);
+
+        $to_arr = [
+            [
+                "to" => [
+                    ["email" => trim($volunteer->email_address)]
+                ],
+                "dynamic_template_data" => [
+                    "volunteer_name"    => $volunteer->first_name . ' ' . $volunteer->last_name,
+                    "magic_login_link"  => $magicLoginLink,
+                    "expiry_minutes"    => 5,
+                ],
+            ]
+        ];
+
+        $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-516a440954754876b8c9c87da108c7c0");
+
+        $this->setFlashSession(true, 'We\'ve sent a magic login link to your email address. The link will expire in 5 minutes.');
+        return redirect()->route('front-login');
+    }
+
+    public function loginUsingMagicLink($id, $timestamp)
+    {
+        try {
+            $volunteerId = decrypt($id);
+            $tokenCreatedAt = \Carbon\Carbon::createFromTimestamp(decrypt($timestamp));
+        } catch (\Exception $e) {
+            $this->setFlashSession(false, 'Invalid magic login link.');
+            return redirect()->route('front-login');
+        }
+
+        if (now()->greaterThan($tokenCreatedAt->copy()->addMinutes(5))) {
+            $this->setFlashSession(false, 'Your magic login link has expired. Please request a new one.');
+            return redirect()->route('front-login');
+        }
+
+        $user = Volunteer::where('id', $volunteerId)->first();
+
+        if (!isset($user->id)) {
+            $this->setFlashSession(false, 'No account found with the provided email address.');
+            return redirect()->route('front-login');
+        }
+
+        if ($user->status != 1) {
+            $this->setFlashSession(false, 'You don\'t have permission to login. Please contact admin.');
+            return redirect()->route('front-login');
+        }
+
+        if (empty($user->email_verified_at)) {
+            $user->email_verified_at = now();
+            $user->save();
+        }
+
+        \Auth::guard('front')->login($user);
+
+        return redirect()->intended(route('front-dashboard'));
+    }
+
+
     public function importdata(){
         echo '<pre>';
         //$filePath = public_path('assets/csv/events.csv');
