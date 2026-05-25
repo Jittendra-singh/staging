@@ -114,7 +114,7 @@
 
                                 <div class="col-lg-12 col-md-12">
                                     <div class="form-group mt-4">
-                                        <label class="form-label">Email Id*</label>
+                                        <label class="form-label">Email*</label>
                                         <input class="form-control h_50" type="email" name="email_address" placeholder="Enter your email" required>
                                     </div>
                                 </div>
