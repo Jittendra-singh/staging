@@ -51,11 +51,6 @@
                                             <i class="fa-brands fa-google social-icon"></i>
                                             <span>Login with Google</span>
                                         </a>
-
-                                        <form id="googleLoginForm" action="{{ route('front-login-google') }}" method="POST" style="display:none;">
-                                            @csrf
-                                            <input type="hidden" name="credential" id="googleCredential">
-                                        </form>
                                         <a href="javascript:void(0);" class="social-login-btn magic-login-btn" data-bs-toggle="modal" data-bs-target="#magicLinkLoginModal">
                                             <i class="far fa-envelope social-icon"></i>
                                             <span>Login with Magic Link</span>
@@ -174,6 +169,7 @@
             googleLoginForm.submit();
         }
     </script>
+
 
 @endpush
 @push('style')
