@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Password;
-
 use App\Models\Volunteer;
 use App\Models\PasswordReset;
 use App\Models\CityStateZip;
@@ -383,6 +383,86 @@ class FrontAuthController extends Controller
 
         return redirect()->intended(route('front-dashboard'));
     }
+
+    public function handleLoginGoogle(Request $request)
+    {
+        $request->validate([
+            'credential' => 'required',
+        ]);
+
+        $googleResponse = Http::get('https://oauth2.googleapis.com/tokeninfo', [
+            'id_token' => $request->credential,
+        ]);
+
+        if (!$googleResponse->ok()) {
+            $this->setFlashSession(false, 'Google login failed. Please try again.');
+            return redirect()->route('front-login');
+        }
+
+        $googleUser = $googleResponse->json();
+
+        if (
+            empty($googleUser['email']) ||
+            empty($googleUser['aud']) ||
+            $googleUser['aud'] !== config('services.google.client_id') ||
+            (isset($googleUser['email_verified']) && $googleUser['email_verified'] != 'true')
+        ) {
+            $this->setFlashSession(false, 'Google login verification failed. Please try again.');
+            return redirect()->route('front-login');
+        }
+
+        $volunteer = Volunteer::where('email_address', $googleUser['email'])->first();
+
+        if (isset($volunteer->id)) {
+            if ($volunteer->status != 1) {
+                $this->setFlashSession(false, 'You don\'t have permission to login. Please contact admin.');
+                return redirect()->route('front-login');
+            }
+
+            if (empty($volunteer->email_verified_at)) {
+                $volunteer->email_verified_at = now();
+                $volunteer->save();
+            }
+        } else {
+            $firstName = $googleUser['given_name'] ?? '';
+            $lastName = $googleUser['family_name'] ?? '';
+
+            if (empty($firstName) && !empty($googleUser['name'])) {
+                $nameParts = explode(' ', trim($googleUser['name']), 2);
+                $firstName = $nameParts[0] ?? '';
+                $lastName = $nameParts[1] ?? '';
+            }
+
+            $volunteer = new Volunteer();
+            $volunteer->first_name = $firstName ?: 'Google';
+            $volunteer->last_name = $lastName ?: 'User';
+            $volunteer->email_address = $googleUser['email'];
+            $volunteer->password = Hash::make(Str::random(32));
+            $volunteer->email_verified_at = now();
+            $volunteer->is_organiser = 0;
+            $volunteer->is_newsletter = 0;
+            $volunteer->status = 1;
+
+            // Keep these defaults if your volunteers table still has non-null columns.
+            $volunteer->phone = '';
+            $volunteer->address_line_1 = '';
+            $volunteer->address_line_2 = '';
+            $volunteer->city_id = 0;
+            $volunteer->pincode = '';
+
+            $res = $volunteer->save();
+
+            if (!$res) {
+                $this->setFlashSession(false, 'There was an error while creating your account. Please try again.');
+                return redirect()->route('front-login');
+            }
+        }
+
+        \Auth::guard('front')->login($volunteer);
+
+        return redirect()->intended(route('front-dashboard'));
+    }
+
 
 
     public function importdata(){

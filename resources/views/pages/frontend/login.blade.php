@@ -47,10 +47,15 @@
                                     </div>
 
                                     <div class="social-login-options">
-                                        <!-- <a href="{{ route('front-login-google') }}" class="social-login-btn google-login-btn">
+                                        <a href="javascript:void(0);" class="social-login-btn google-login-btn" id="googleLoginBtn">
                                             <i class="fa-brands fa-google social-icon"></i>
                                             <span>Login with Google</span>
-                                        </a> -->
+                                        </a>
+
+                                        <form id="googleLoginForm" action="{{ route('front-login-google') }}" method="POST" style="display:none;">
+                                            @csrf
+                                            <input type="hidden" name="credential" id="googleCredential">
+                                        </form>
                                         <a href="javascript:void(0);" class="social-login-btn magic-login-btn" data-bs-toggle="modal" data-bs-target="#magicLinkLoginModal">
                                             <i class="far fa-envelope social-icon"></i>
                                             <span>Login with Magic Link</span>
@@ -135,6 +140,24 @@
 @push('script')
     <script src="{{asset('js/plugins/jquery-validation/jquery.validate.min.js')}}"></script>
     <script src="{{asset('assets/js/validation.js')}}"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        window.onload = function () {
+            google.accounts.id.initialize({
+                client_id: "{{ config('services.google.client_id') }}",
+                callback: handleGoogleCredentialResponse
+            });
+
+            document.getElementById('googleLoginBtn').addEventListener('click', function () {
+                google.accounts.id.prompt();
+            });
+        };
+
+        function handleGoogleCredentialResponse(response) {
+            document.getElementById('googleCredential').value = response.credential;
+            document.getElementById('googleLoginForm').submit();
+        }
+    </script>
 @endpush
 @push('style')
 <style>
