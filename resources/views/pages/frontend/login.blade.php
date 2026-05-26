@@ -81,6 +81,10 @@
                                     </div> -->
                                     {{-- @dd(request()->session()) --}}
                                 </form>
+                                <form id="googleLoginForm" action="{{ route('front-login-google') }}" method="POST" style="display:none;">
+                                    @csrf
+                                    <input type="hidden" name="credential" id="googleCredential">
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -142,22 +146,35 @@
     <script src="{{asset('assets/js/validation.js')}}"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
-        window.onload = function () {
+        window.addEventListener('load', function () {
             google.accounts.id.initialize({
                 client_id: "{{ config('services.google.client_id') }}",
                 callback: handleGoogleCredentialResponse
             });
 
-            document.getElementById('googleLoginBtn').addEventListener('click', function () {
-                google.accounts.id.prompt();
-            });
-        };
+            var googleLoginBtn = document.getElementById('googleLoginBtn');
+
+            if (googleLoginBtn) {
+                googleLoginBtn.addEventListener('click', function () {
+                    google.accounts.id.prompt();
+                });
+            }
+        });
 
         function handleGoogleCredentialResponse(response) {
-            document.getElementById('googleCredential').value = response.credential;
-            document.getElementById('googleLoginForm').submit();
+            var googleCredential = document.getElementById('googleCredential');
+            var googleLoginForm = document.getElementById('googleLoginForm');
+
+            if (!googleCredential || !googleLoginForm) {
+                console.error('Google login form or credential input is missing.');
+                return;
+            }
+
+            googleCredential.value = response.credential;
+            googleLoginForm.submit();
         }
     </script>
+
 @endpush
 @push('style')
 <style>
