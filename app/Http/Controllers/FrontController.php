@@ -32,6 +32,7 @@ use App\Models\EventTicketNotification;
 use App\Models\EventFinalizeEmailLog;
 use App\Models\EventRescheduleLog;
 use App\Models\TicketResendWaiverLog;
+use App\Models\ReleaseNote;
 class FrontController extends Controller
 {
     public function viewEvents(){
@@ -202,6 +203,31 @@ class FrontController extends Controller
         $data['seo_details'] = (object)['title' => 'Dashboard'];
         return view('pages.frontend.dashboard', $data);
     }
+    public function releaseNotes()
+    {
+        $releaseNotes = ReleaseNote::where('status', 1)
+            ->where(function ($q) {
+                if (request()->search) {
+                    $q->where('title', 'like', '%' . request()->search . '%')
+                        ->orWhere('version', 'like', '%' . request()->search . '%')
+                        ->orWhere('description', 'like', '%' . request()->search . '%');
+                }
+            })
+            ->orderByDesc('release_date')
+            ->orderByDesc('published_at')
+            ->paginate(10)
+            ->withQueryString();
+
+        auth()->guard('front')->user()->update([
+            'release_note_last_seen_at' => now(),
+        ]);
+
+        return view('pages.frontend.release_notes', [
+            'releaseNotes' => $releaseNotes,
+            'seo_details' => (object)['title' => 'Release Notes'],
+        ]);
+    }
+
     public function cleanupAttending(){
         //$attending_events = auth()->guard('front')->user()->attendingEvents()
         $attending_events = auth()->guard('front')->user()->attendingEventsWithoutActive()

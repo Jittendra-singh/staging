@@ -15,6 +15,25 @@ View::composer('*', function ($view) {
     $settings = \App\Models\Setting::first();
     $view->with('settings', $settings);
 });
+View::composer(['layouts.frontend', 'pages.frontend.dashboard'], function ($view) {
+    $hasNewReleaseNotes = false;
+
+    if (auth()->guard('front')->check()) {
+        $volunteer = auth()->guard('front')->user();
+
+        $latestPublishedAt = \App\Models\ReleaseNote::where('status', 1)
+            ->whereNotNull('published_at')
+            ->max('published_at');
+
+        $hasNewReleaseNotes = $latestPublishedAt && (
+            empty($volunteer->release_note_last_seen_at)
+            || \Carbon\Carbon::parse($latestPublishedAt)->gt(\Carbon\Carbon::parse($volunteer->release_note_last_seen_at))
+        );
+    }
+
+    $view->with('hasNewReleaseNotes', $hasNewReleaseNotes);
+});
+
 Route::get('home', function () {return redirect()->route('view-events');})->name('home');
 Route::get('/', function () {return redirect()->route('view-events');});
 /**
@@ -104,6 +123,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::get('dashboard', 'dashboard')->name('front-dashboard');
         Route::get('cleanup-attending', 'cleanupAttending')->name('front-cleanup-attending');
         Route::post('get-organizer-options' , 'getOrganizerOptions' )->name('front-get-organizer-options');
+        Route::get('release-notes', 'releaseNotes')->name('front-release-notes');
 
         Route::get('embedded-widget', 'embeddedWidget')->name('front-embedded-widget');
         Route::get('manage-widget/{id?}', 'manageWidget')->name('front-manage-widget');
@@ -300,6 +320,14 @@ Route::prefix(config('app.admin_prefix'))->group(function () {
             Route::post('view-widget-detail/{id}', 'viewWidgetDetail')->name('view-widget-detail');
             Route::get('change-status-widget/{id}' , 'changeStatusWidget')->name('change-status-widget');
             Route::delete('/widget/{placeholder}', 'deleteWidget')->name('delete-widget');
+        });
+        Route::controller(\App\Http\Controllers\ReleaseNoteController::class)->group(function () {
+            Route::get('/release-notes', 'index')->name('index-release-notes');
+            Route::get('/manage-release-notes/{placeholder?}', 'showForm')->name('show-release-note');
+            Route::post('/manage-release-notes', 'manage')->name('create-release-note');
+            Route::put('/manage-release-notes/{placeholder}', 'manage')->name('update-release-note');
+            Route::get('/toggle-release-note-status/{placeholder}', 'toggleStatus')->name('toggle-release-note-status');
+            Route::delete('/release-notes/{placeholder}', 'delete')->name('delete-release-note');
         });
         Route::controller(\App\Http\Controllers\EventController::class)->group(function () {
             Route::get('/events', 'index')->name('index-events');

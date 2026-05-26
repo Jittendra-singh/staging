@@ -686,6 +686,17 @@ $is_session = session()->get('checkout_event');
                             <span class="menu--label">Widget Report</span>
                         </a>
                     </li>
+                    <!-- <li class="menu--item">
+                        <a href="{{ route('front-release-notes') }}" class="menu--link {{ url()->current() == route('front-release-notes') ? 'active' : '' }}" title="Release Notes"
+                            data-bs-toggle="tooltip" data-bs-placement="right">
+                            <i class="fa-solid fa-bullhorn menu--icon"></i>
+                            <span class="menu--label">Release Notes
+                                @if(!empty($hasNewReleaseNotes))
+                                    <span class="badge bg-danger ms-2">New</span>
+                                @endif
+                            </span>
+                        </a>
+                    </li> -->
                 </ul>
             </div>
         </div>

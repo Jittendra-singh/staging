@@ -7,6 +7,66 @@
     .profile-card{
         margin-top: 117px;
     }
+
+    .release-note-alert-card {
+        border: 1px solid #b8b5ff;
+        border-radius: 12px;
+        transition: all .2s ease;
+    }
+    .release-note-alert-card:hover {
+        box-shadow: 0 10px 28px rgba(88, 91, 255, .12);
+    }
+.dashboard-whats-new-card {
+    border: 1px solid #b9b4ff;
+    border-radius: 12px;
+    background: #fff;
+    padding: 20px 20px;
+    min-height: 96px;
+    color: inherit;
+    box-shadow: 0 8px 24px rgba(40, 44, 63, .04);
+    transition: all .2s ease;
+}
+
+.dashboard-whats-new-card:hover {
+    color: inherit;
+    border-color: #8278ff;
+    box-shadow: 0 12px 30px rgba(99, 91, 255, .12);
+}
+
+.dashboard-whats-new-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: #eef1ff;
+    color: #635bff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex: 0 0 56px;
+}
+
+.dashboard-new-badge {
+    background: #ff2f3d;
+    color: #fff;
+    border-radius: 7px;
+    padding: 5px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.dashboard-whats-new-arrow {
+    font-size: 26px;
+    color: #111827;
+}
+
+@media (max-width: 991.98px) {
+    .dashboard-whats-new-card {
+        margin-top: 20px;
+    }
+}
+
 </style>
 @endpush
 @section('content')
@@ -177,11 +237,35 @@
                 <div class="row">
                     <div class="col-lg-12 col-md-12 col-sm-12">
                         <section class="welcome-section">
-                            <h1 class="welcome-title">Welcome, {{$user->name}}</h1>
-                            @php
-                                $breadcrumbs = []
-                            @endphp     
-                            <x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs"/>
+                            <div class="row align-items-start g-4">
+                                <div class="col-12 col-lg-8">
+                                    <h1 class="welcome-title">Welcome, {{ $user->name }}</h1>
+                                    @php
+                                        $breadcrumbs = [];
+                                    @endphp
+                                    <x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs" />
+                                </div>
+
+                                <!-- <div class="col-12 col-lg-4">
+                                    <a href="{{ route('front-release-notes') }}" class="dashboard-whats-new-card d-flex align-items-center justify-content-between text-decoration-none">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <span>
+                                                <span class="d-flex align-items-center gap-3 mb-2">
+                                                    <span class="fw-bold fs-5 text-dark">What's New?</span>
+                                                    @if(!empty($hasNewReleaseNotes))
+                                                    <span class="dashboard-new-badge">New Updates</span>
+                                                    @endif
+                                                </span>
+                                                <span class="text-muted fs-6">View the latest updates and features</span>
+                                            </span>
+                                        </div>
+
+                                        <span class="dashboard-whats-new-arrow">
+                                            <i class="fa-solid fa-angle-right"></i>
+                                        </span>
+                                    </a>
+                                </div> -->
+                            </div>
                         </section>
                         <section class="section">
 
