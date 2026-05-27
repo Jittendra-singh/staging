@@ -148,6 +148,12 @@
             padding-left: 32px;
         }
     }
+    /* if no data in $releaseNotes */
+    @if($releaseNotes->isEmpty())
+    .release-timeline:before {
+        display: none;
+    }
+    @endif
 </style>
 @endpush
 
