@@ -246,7 +246,7 @@
                                     <x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs" />
                                 </div>
 
-                                <!-- <div class="col-12 col-lg-4">
+                                <div class="col-12 col-lg-4">
                                     <a href="{{ route('front-release-notes') }}" class="dashboard-whats-new-card d-flex align-items-center justify-content-between text-decoration-none">
                                         <div class="d-flex align-items-center gap-3">
                                             <span>
@@ -264,7 +264,7 @@
                                             <i class="fa-solid fa-angle-right"></i>
                                         </span>
                                     </a>
-                                </div> -->
+                                </div>
                             </div>
                         </section>
                         <section class="section">

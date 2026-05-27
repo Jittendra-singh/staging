@@ -686,7 +686,7 @@ $is_session = session()->get('checkout_event');
                             <span class="menu--label">Widget Report</span>
                         </a>
                     </li>
-                    <!-- <li class="menu--item">
+                    <li class="menu--item">
                         <a href="{{ route('front-release-notes') }}" class="menu--link {{ url()->current() == route('front-release-notes') ? 'active' : '' }}" title="Release Notes"
                             data-bs-toggle="tooltip" data-bs-placement="right">
                             <i class="fa-solid fa-bullhorn menu--icon"></i>
@@ -696,7 +696,7 @@ $is_session = session()->get('checkout_event');
                                 @endif
                             </span>
                         </a>
-                    </li> -->
+                    </li>
                 </ul>
             </div>
         </div>
