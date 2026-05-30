@@ -390,10 +390,26 @@
 														<p>Check-in</p>
 														<div class="form-group">
 															<div class="d-flex align-items-start">
-																@if(empty($registration->waiver_filled_at) || $registration->rsvp_confirmation!=1)
+																@if($registration->rsvp_confirmation!=1)
 																<label class="btn-switch m-0 me-3">
 																	<input type="checkbox" disabled {{ $registration->checkin == 1 ? 'checked' : '' }} class="ticket_checkin_toggle">
-																	<span class="checkbox-slider" url="" onclick="redirectWithMessage(this)" message="{{$registration->rsvp_confirmation!=1?'You can\'t check-in before RSVP confirmation.':'You can\'t check-in before waiver signing.'}}"></span>
+																	<span class="checkbox-slider" url="" onclick="redirectWithMessage(this)" message="{{'You can\'t check-in before RSVP confirmation.'}}"></span>
+																</label>
+																@elseif(empty($registration->waiver_filled_at))
+																<!-- <label class="btn-switch m-0 me-3">
+																	<input type="checkbox" disabled {{ $registration->checkin == 1 ? 'checked' : '' }} class="ticket_checkin_toggle">
+																	<span class="checkbox-slider" url="" onclick="redirectWithMessage(this)" message="{{'You can\'t check-in before waiver signing.'}}"></span>
+																</label> -->
+																<label class="btn-switch m-0 me-3">
+																	<input type="checkbox" disabled {{ $registration->checkin == 1 ? 'checked' : '' }} class="ticket_checkin_toggle">
+																	<span
+																		class="checkbox-slider btn-manual-waiver-checkin"
+																		data-route="{{ route('front-sign-waiver-mark-checking-manually', ['id' => $registration->encrypted_id]) }}"
+																		data-volunteer-name="{{ $volunteer->name }}"
+																		data-event-name="{{ $event->event_name }}"
+																		data-bs-toggle="modal"
+																		data-bs-target="#manualWaiverCheckinModal">
+																	</span>
 																</label>
 																@else 
 																<label class="btn-switch m-0 me-3">
@@ -687,7 +703,73 @@
 		</div>
 	</div>
 </div>
+<div class="modal fade" id="manualWaiverCheckinModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <form method="POST" id="manualWaiverCheckinForm" enctype="multipart/form-data">
+            @csrf
 
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-primary">Verify Paper Waiver & Check-In</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+					<div class="model-content main-form pt-4">
+						<div class="manual-waiver-attendee-box mb-4">
+							<div class="manual-waiver-avatar">
+								<i class="fa-solid fa-user-check"></i>
+							</div>
+							<div>
+								<h6 class="manual-waiver-attendee-name mb-1" id="manual_waiver_volunteer_name">Volunteer</h6>
+								<p class="manual-waiver-event-name mb-0" id="manual_waiver_event_name">Event</p>
+							</div>
+						</div>
+
+						<div class="form-group mb-3">
+							<label class="manual-waiver-label">Upload Signed Waiver Document</label>
+
+							<label class="manual-waiver-upload-box" for="waiver_signed_external_document">
+								<span class="manual-waiver-upload-icon">
+									<i class="fa-solid fa-cloud-arrow-up"></i>
+								</span>
+								<span class="manual-waiver-upload-content">
+									<strong id="manual_waiver_file_text">Choose file to upload</strong>
+									<small>Supported formts: PDF, JPG, PNG. Maximum file size: 5 MMB</small>
+								</span>
+								<span class="manual-waiver-upload-btn">Browse</span>
+							</label>
+
+							<input
+								type="file"
+								name="waiver_signed_external_document"
+								id="waiver_signed_external_document"
+								class="d-none"
+								accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+						</div>
+
+						<div class="manual-waiver-confirm-box">
+							<div class="form-check mb-2">
+								<input class="form-check-input" type="checkbox" name="mark_as_signed" value="1" id="mark_as_signed" required>
+								<label class="form-check-label fw-semibold m-0 ms-2" for="mark_as_signed">
+									Mark As Signed
+								</label>
+							</div>
+							<p class="mb-0">
+								I confirm that a signed paper waiver has been collected from this volunteer.
+							</p>
+						</div>
+					</div>
+				</div>
+
+                <div class="modal-footer">
+                    <button type="button" class="secondary-btn w-fit" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="primary-btn w-fit btn-submit-manual-waiver-checkin">Submit</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 	@push('script')
         <script src="{{ asset('assets/libs/@ckeditor/ckeditor5-build-classic/build/ckeditor.js') }}"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -737,9 +819,155 @@
 				$(this).text('Sending...').attr('disabled', true);
 				$('#sendAttendeeEmailForm').submit();
 			});
+
+			$('.btn-manual-waiver-checkin').click(function () {
+				$('#manualWaiverCheckinForm').attr('action', $(this).data('route'));
+				$('#manualWaiverCheckinForm')[0].reset();
+
+				$('#manual_waiver_volunteer_name').text($(this).data('volunteer-name') || 'Volunteer');
+				$('#manual_waiver_event_name').text($(this).data('event-name') || 'Event');
+				$('#manual_waiver_file_text').text('Choose file to upload');
+
+				$('.btn-submit-manual-waiver-checkin').text('Submit').attr('disabled', false);
+			});
+
+			$('#waiver_signed_external_document').change(function () {
+				const fileName = this.files && this.files.length ? this.files[0].name : 'Choose file to upload';
+				$('#manual_waiver_file_text').text(fileName);
+			});
 		</script>
 	@endpush
 	@style
+	<style>
+		.manual-waiver-attendee-box {
+			display: flex;
+			align-items: center;
+			gap: 14px;
+			padding: 14px 16px;
+			border: 1px solid #e5eaf1;
+			border-radius: 8px;
+			background: #f8fafc;
+		}
+
+		.manual-waiver-avatar {
+			width: 44px;
+			height: 44px;
+			border-radius: 50%;
+			background: #e6f1fb;
+			color: var(--bs-primary);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			flex: 0 0 auto;
+			font-size: 18px;
+		}
+
+		.manual-waiver-attendee-name {
+			font-size: 16px;
+			font-weight: 700;
+			color: var(--bs-body-color);
+		}
+
+		.manual-waiver-event-name {
+			color: #6c757d;
+			font-size: 14px;
+		}
+
+		.manual-waiver-label {
+			font-weight: 600;
+			color: var(--bs-body-color);
+			margin-bottom: 8px;
+		}
+
+		.manual-waiver-upload-box {
+			display: flex;
+			align-items: center;
+			gap: 14px;
+			width: 100%;
+			padding: 16px;
+			border: 1.5px dashed #b8c4d4;
+			border-radius: 8px;
+			background: #fff;
+			cursor: pointer;
+			transition: .15s ease;
+		}
+
+		.manual-waiver-upload-box:hover {
+			border-color: var(--bs-primary);
+			background: #f8fbff;
+		}
+
+		.manual-waiver-upload-icon {
+			width: 42px;
+			height: 42px;
+			border-radius: 8px;
+			background: #eef6ff;
+			color: var(--bs-primary);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			flex: 0 0 auto;
+			font-size: 18px;
+		}
+
+		.manual-waiver-upload-content {
+			display: flex;
+			flex-direction: column;
+			min-width: 0;
+			flex: 1;
+		}
+
+		.manual-waiver-upload-content strong {
+			color: var(--bs-body-color);
+			font-weight: 700;
+			overflow-wrap: anywhere;
+		}
+
+		.manual-waiver-upload-content small {
+			color: #6c757d;
+			margin-top: 2px;
+		}
+
+		.manual-waiver-upload-btn {
+			padding: 8px 14px;
+			border-radius: 6px;
+			background: #eef2f7;
+			color: #27364a;
+			font-weight: 700;
+			font-size: 13px;
+			flex: 0 0 auto;
+		}
+
+		.manual-waiver-confirm-box {
+			padding: 14px 16px;
+			border: 1px solid #dce8f7;
+			border-radius: 8px;
+			background: #f6fbff;
+		}
+
+		.manual-waiver-confirm-box p {
+			color: #6c757d;
+			font-size: 13px;
+			line-height: 1.5;
+		}
+
+		.manual-waiver-confirm-box .form-check-input:checked {
+			background-color: var(--bs-primary) !important;
+			border-color: var(--bs-primary) !important;
+			outline: var(--bs-primary) !important;
+			box-shadow: none !important;
+		}
+
+		@media (max-width: 575px) {
+			.manual-waiver-upload-box {
+				align-items: flex-start;
+			}
+
+			.manual-waiver-upload-btn {
+				display: none;
+			}
+		}
+	</style>
 	<style>
 		.contact-list .bottom .icon-box{
 			width: 20%!important;

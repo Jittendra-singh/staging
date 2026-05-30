@@ -278,6 +278,146 @@ class FrontController extends Controller
             'seo_details' => (object)['title' => 'Cleanups I\'m Hosting'],
         ]);
     }
+    public function cleanupOngoing()
+    {
+        $user = auth()->guard('front')->user();
+
+        if ($user->is_organiser == 0) {
+            $this->setFlashSession(false, 'Please organizer atleast 1 event to view this page.');
+            return redirect()->route('front-dashboard');
+        }
+
+        $hosting_events = Event::with('cohostRecords')
+            ->withCount([
+                'tickets as volunteer_count' => function ($q) {
+                    $q->active();
+                },
+                'tickets as checked_in_count' => function ($q) {
+                    $q->active()->where('checkin', 1);
+                },
+            ])
+            ->present()
+            ->where('status', 'published')
+            ->whereNull('cancelled_at')
+            ->where(function ($q) {
+                $q->whereNull('is_completed')
+                    ->orWhere('is_completed', '!=', 1);
+            })
+            ->where(function ($q) use ($user) {
+                $q->where('creator_id', $user->id)
+                    ->orWhereHas('cohosts', function ($subQ) use ($user) {
+                        $subQ->where('volunteers.id', $user->id)
+                            ->where('event_cohost.request_status', 'approved');
+                    });
+            })
+            ->orderBy('start_datetime', 'asc')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('pages.frontend.cleanup-ongoing', [
+            'hosting_events' => $hosting_events,
+            'seo_details' => (object)['title' => 'Ongoing Cleanups'],
+        ]);
+    }
+    public function volunteerCheckin($id)
+    {
+        $authUser = auth()->guard('front')->user();
+
+        $event = Event::with('creator')->findOrFail(decrypt($id));
+
+        $cohostEventIds = $authUser->cohostingEvents()->pluck('events.id');
+        $hostingEventIds = $authUser->events()->pluck('events.id');
+        $allowedEventIds = $cohostEventIds->merge($hostingEventIds);
+
+        if (!$allowedEventIds->contains($event->id)) {
+            $this->setFlashSession(false, 'Unauthorized action.');
+            return redirect()->route('front-cleanup-ongoing');
+        }
+
+        $registrations = EventOrderTicket::with(['volunteer', 'ticket'])
+            ->where('event_id', $event->id)
+            ->where('rsvp_confirmation', 1)
+            ->where(function ($q) {
+                if (request()->filled('search')) {
+                    $search = request()->search;
+                    $q->whereHas('volunteer', function ($subQ) use ($search) {
+                        $subQ->where('first_name', 'LIKE', "%{$search}%")
+                            ->orWhere('last_name', 'LIKE', "%{$search}%")
+                            ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$search}%"])
+                            ->orWhere('email_address', 'LIKE', "%{$search}%")
+                            ->orWhere('phone', 'LIKE', "%{$search}%");
+                    });
+                }
+
+                if (request()->status == 'signed') {
+                    $q->whereNotNull('waiver_filled_at');
+                } elseif (request()->status == 'unsigned') {
+                    $q->whereNull('waiver_filled_at');
+                } elseif (request()->status == 'checked_in') {
+                    $q->where('checkin', 1);
+                } elseif (request()->status == 'not_checked_in') {
+                    $q->where(function ($subQ) {
+                        $subQ->whereNull('checkin')->orWhere('checkin', 0);
+                    });
+                } elseif (request()->status == 'checked_in_signed') {
+                    $q->where('checkin', 1)->whereNotNull('waiver_filled_at');
+                }
+            })
+            ->latest()
+            ->paginate(25)
+            ->withQueryString();
+
+        return view('pages.frontend.volunteer-check-in', [
+            'event' => $event,
+            'event_id' => $id,
+            'registrations' => $registrations,
+            'seo_details' => (object)['title' => 'Volunteer Check-in'],
+        ]);
+    }
+
+    public function volunteerSignAndCheckin($id)
+    {
+        request()->validate([
+            'signature' => 'required|string',
+        ], [
+            'signature.required' => 'Please provide volunteer signature.',
+        ]);
+
+        try {
+            $orderTicket = EventOrderTicket::with(['event', 'volunteer'])->findOrFail(decrypt($id));
+            $authUser = auth()->guard('front')->user();
+
+            $cohostEventIds = $authUser->cohostingEvents()->pluck('events.id');
+            $hostingEventIds = $authUser->events()->pluck('events.id');
+            $allowedEventIds = $cohostEventIds->merge($hostingEventIds);
+
+            if (!$allowedEventIds->contains($orderTicket->event_id)) {
+                $this->setFlashSession(false, 'Unauthorized action.');
+                return redirect()->back();
+            }
+
+            if ($orderTicket->rsvp_confirmation != 1) {
+                $this->setFlashSession(false, 'You can not check-in before RSVP confirmation.');
+                return redirect()->back();
+            }
+
+            if (empty($orderTicket->waiver_filled_at)) {
+                $orderTicket->waiver_filled_at = now();
+                $orderTicket->signature = request()->signature;
+                $orderTicket->save();
+            }
+
+            return $this->ticketMarkCheckin($id, true);
+        } catch (\Exception $e) {
+            $this->setFlashSession(false, 'Issues occured while signing waiver and marking check-in.');
+            return redirect()->back();
+        }
+    }
+
+    public function volunteerMarkCheckin($id)
+    {
+        return $this->ticketMarkCheckin($id, true);
+    }
     public function cleanupHostingDelete($id){
         $event = Event::where('creator_id', auth()->guard('front')->user()->id)->where("id", $id)->firstOrFail();
         if($event->orders->count())
@@ -2212,6 +2352,7 @@ class FrontController extends Controller
                     $this->sendEmail($volunteer->email_address, $sub, $emailData, "community-service-form");
                     $orderTicket->community_form_status = 'approved'; */
                     $orderTicket->checkin = 1;
+                    $orderTicket->checkin_dt = date('Y-m-d H:i:s');
                     if($event->is_completed==1){
                         $orderTicket->community_form_status = 'approved';
                         //$orderTicket->is_late_checkin = 1;
@@ -2278,6 +2419,69 @@ class FrontController extends Controller
             } else {
                 return $this->generateJsonResponse(false, "Issues occured while updating the status.");
             }
+        }
+    }
+    public function signWaiverMarkCheckingManually($id)
+    {
+        request()->validate([
+            'mark_as_signed' => 'required|accepted',
+            'waiver_signed_external_document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+        ], [
+            'mark_as_signed.required' => 'Please confirm Mark As Signed.',
+            'mark_as_signed.accepted' => 'Please confirm Mark As Signed.',
+            'waiver_signed_external_document.mimes' => 'Only PDF, JPG, PNG, DOC, and DOCX files are allowed.',
+            'waiver_signed_external_document.max' => 'The document must not be greater than 5MB.',
+        ]);
+
+        try {
+            $orderTicket = EventOrderTicket::findOrFail(decrypt($id));
+            $authUser = auth()->guard('front')->user();
+
+            $cohostEventIds = $authUser->cohostingEvents()->pluck('events.id');
+            $hostingEventIds = $authUser->events()->pluck('events.id');
+            $allowedEventIds = $cohostEventIds->merge($hostingEventIds);
+
+            if (!$allowedEventIds->contains($orderTicket->event_id)) {
+                $this->setFlashSession(false, 'Unauthorized action.');
+                return redirect()->back();
+            }
+
+            if ($orderTicket->rsvp_confirmation != 1) {
+                $this->setFlashSession(false, 'You can not check-in before RSVP confirmation.');
+                return redirect()->back();
+            }
+
+            if ($orderTicket->checkin == 1) {
+                $this->setFlashSession(false, 'This attendee is already checked-in.');
+                return redirect()->back();
+            }
+
+            if (!empty($orderTicket->waiver_filled_at)) {
+                $this->setFlashSession(false, 'Waiver is already signed for this attendee.');
+                return redirect()->back();
+            }
+
+            if ($orderTicket->event && $orderTicket->event->is_completed == 1) {
+                $this->setFlashSession(false, 'You cannot check-in an attendee for a completed event.');
+                return redirect()->back();
+            }
+
+            $orderTicket->waiver_filled_at = now();
+            $orderTicket->signature = null;
+            $orderTicket->is_manual_checkin = 1;
+
+            if (request()->hasFile('waiver_signed_external_document')) {
+                $document = $this->moveFiles(request()->file('waiver_signed_external_document'), 'events/manual_waivers');
+                //$orderTicket->waiver_signed_external_document = json_encode($document);
+                $orderTicket->waiver_signed_external_document = $document['path'];
+            }
+
+            $orderTicket->save();
+
+            return $this->ticketMarkCheckin($id, true);
+        } catch (\Exception $e) {
+            $this->setFlashSession(false, 'Issues occured while marking waiver signed and check-in.');
+            return redirect()->back();
         }
     }
     public function showCommunityServicePdf($ticket){
@@ -2599,6 +2803,7 @@ class FrontController extends Controller
             $orderTicket->certificate_approve_reject_by     = ($callFromBackend)?auth()->user()->id:$authUser->id;
             $orderTicket->certificate_approve_reject_by_role = $role;
             $orderTicket->checkin = 1;
+            $orderTicket->checkin_dt = date('Y-m-d H:i:s');
             $orderTicket->save();
             $event = $orderTicket->event;
             $volunteer = $orderTicket->volunteer;
@@ -3590,6 +3795,7 @@ class FrontController extends Controller
                 }
                 $value->update([
                     'checkin' => 1,
+                    'checkin_dt' => date('Y-m-d H:i:s')
                 ]);
                 /* $email = $value->volunteer->email_address;
                 $name = $value->volunteer->first_name.' '.$value->volunteer->last_name;

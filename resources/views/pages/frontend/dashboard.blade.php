@@ -49,9 +49,9 @@
 .dashboard-new-badge {
     background: #ff2f3d;
     color: #fff;
-    border-radius: 7px;
-    padding: 5px 10px;
-    font-size: 13px;
+    border-radius: 4px;
+    padding: 4px 7px;
+    font-size: 9px;
     font-weight: 700;
     line-height: 1;
 }
@@ -66,7 +66,17 @@
         margin-top: 20px;
     }
 }
-
+.dashboard-link-card1{
+    background: #0EA5E9;
+    border: 1px solid #0EA5E9!important;
+}
+.dashboard-link-card2{
+    background: #0284C7;
+    border: 1px solid #0284C7!important;
+}
+.dashboard-link-card1 .text-white, .dashboard-link-card2 .text-white{
+    color:white!important;
+}
 </style>
 @endpush
 @section('content')
@@ -238,7 +248,7 @@
                     <div class="col-lg-12 col-md-12 col-sm-12">
                         <section class="welcome-section">
                             <div class="row align-items-start g-4">
-                                <div class="col-12 col-lg-8">
+                                <div class="col-12 col-lg-6">
                                     <h1 class="welcome-title">Welcome, {{ $user->name }}</h1>
                                     @php
                                         $breadcrumbs = [];
@@ -246,22 +256,38 @@
                                     <x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs" />
                                 </div>
 
-                                <div class="col-12 col-lg-4">
-                                    <a href="{{ route('front-release-notes') }}" class="dashboard-whats-new-card d-flex align-items-center justify-content-between text-decoration-none">
+                                <div class="col-12 col-lg-3">
+                                    <a href="{{ route('front-cleanup-ongoing') }}" class="dashboard-link-card1 dashboard-whats-new-card d-flex align-items-center justify-content-between text-decoration-none">
                                         <div class="d-flex align-items-center gap-3">
                                             <span>
                                                 <span class="d-flex align-items-center gap-3 mb-2">
-                                                    <span class="fw-bold fs-5 text-dark">What's New?</span>
-                                                    @if(!empty($hasNewReleaseNotes))
-                                                    <span class="dashboard-new-badge">New Updates</span>
-                                                    @endif
+                                                    <span class="fw-bold fs-5 text-white">Start Check-in</span>
                                                 </span>
-                                                <span class="text-muted fs-6">View the latest updates and features</span>
+                                                <span class="text-muted fs-6 text-white">Manage attendee check-ins</span>
                                             </span>
                                         </div>
 
                                         <span class="dashboard-whats-new-arrow">
-                                            <i class="fa-solid fa-angle-right"></i>
+                                            <i class="fa-solid fa-angle-right text-white"></i>
+                                        </span>
+                                    </a>
+                                </div>
+                                <div class="col-12 col-lg-3">
+                                    <a href="{{ route('front-release-notes') }}" class="dashboard-link-card2 dashboard-whats-new-card d-flex align-items-center justify-content-between text-decoration-none">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <span>
+                                                <span class="d-flex align-items-center gap-3 mb-2">
+                                                    <span class="fw-bold fs-5 text-white">What's New?</span>
+                                                    @if(!empty($hasNewReleaseNotes))
+                                                    <span class="dashboard-new-badge">New Updates</span>
+                                                    @endif
+                                                </span>
+                                                <span class="text-muted fs-6 text-white">View latest updates</span>
+                                            </span>
+                                        </div>
+
+                                        <span class="dashboard-whats-new-arrow">
+                                            <i class="fa-solid fa-angle-right text-white"></i>
                                         </span>
                                     </a>
                                 </div>
