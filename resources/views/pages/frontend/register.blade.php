@@ -6,18 +6,211 @@
 @push('style')
 <link rel="stylesheet" href="{{ asset('js/plugins/select2/css/select2.min.css') }} ">
 <style>
-    .select2-container--default .select2-selection--single {
-        background: #f9f9f9 !important;
-        border-color: #dee2e6;
+    .registration {
+        max-width: 560px;
+        margin: 0 auto;
     }
 
-    .select2-container .select2-selection--single,
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 50px;
+    .registration.py-5 {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+
+    .register-panel-form {
+        width: 100%;
+    }
+
+    .register-panel-heading {
+        margin-bottom: 18px;
+    }
+
+    .register-panel-heading h1 {
+        margin: 0 0 14px;
+        color: #1f2933;
+        font-size: 15px;
+        font-weight: 600;
+        line-height: 1.3;
+    }
+
+    .register-panel-heading p {
+        max-width: 480px;
+        margin: 0;
+        color: #344054;
+        font-size: 13px;
+        line-height: 1.55;
+    }
+
+    .register-benefits-list {
+        display: grid;
+        gap: 14px;
+        margin: 22px 0 28px !important;
+        padding-left: 0 !important;
+        list-style: none !important;
+    }
+
+    .register-benefits-list li {
+        position: relative;
+        padding-left: 26px;
+        color: #344054 !important;
+        font-size: 13px;
+        line-height: 1.45;
+    }
+
+    .register-benefits-list li::before {
+        content: "\f00c";
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        position: absolute;
+        top: 1px;
+        left: 0;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        color: #fff;
+        font-size: 8px;
+        line-height: 15px;
+        text-align: center;
+    }
+
+    .register-form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 22px;
+    }
+
+    .register-form-group {
+        margin-top: 22px;
+    }
+
+    .register-panel-form .form-label {
+        margin-bottom: 8px;
+        color: #1f2933;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .register-panel-form .form-control {
+        height: 48px;
+        border: 1px solid #edf2f7;
+        border-radius: 3px;
+        background-color: #f4f8fb;
+        color: #1f2933;
+        font-size: 13px;
+        font-weight: 400;
+        padding: 10px 14px;
+        box-shadow: none;
+    }
+
+    .register-panel-form .form-control:focus {
+        border-color: var(--linear-gradient-2);
+        background-color: #fff;
+        box-shadow: 0 0 0 3px rgba(0, 145, 255, 0.12);
+    }
+
+    .register-panel-form .pass-show-eye {
+        top: 4px;
+        right: 4px;
+        color: #667085;
+    }
+
+    .register-panel-form .pass-show-eye:hover {
+        color: var(--linear-gradient-2);
+    }
+
+    .register-password-feedback {
+        margin-top: 8px;
+        color: #dc3545;
+        font-size: 12px;
+    }
+
+    .register-options-block {
+        display: grid;
+        gap: 12px;
+        margin-top: 28px;
+    }
+
+    .register-checkbox-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 0;
+        color: #344054;
+        font-size: 13px;
+        line-height: 1.4;
+        cursor: pointer;
+    }
+
+    .register-checkbox-label input {
+        width: 16px;
+        height: 16px;
+        margin: 0;
+        accent-color: var(--linear-gradient-2);
+    }
+
+    .register-submit-btn {
+        width: fit-content;
+        min-width: 245px;
+        height: 48px;
+        max-height: none;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0;
+    }
+
+    .register-login-text {
+        margin-top: 20px;
+        color: #344054;
+        font-size: 13px;
+        font-weight: 400;
+    }
+
+    .register-login-text a {
+        color: var(--linear-gradient-2);
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .register-login-text a:hover {
+        color: var(--secondary-color) !important;
+        text-decoration: underline;
+    }
+
+    .select2-container--default .select2-selection--single {
+        height: 48px;
+        border: 1px solid #edf2f7;
+        border-radius: 3px;
+        background: #f4f8fb !important;
     }
 
     .select2-container--default .select2-selection--single .select2-selection__rendered {
-        line-height: 50px;
+        line-height: 48px;
+        color: #1f2933;
+        font-size: 13px;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 48px;
+    }
+
+    @media (max-width: 575px) {
+        .registration {
+            max-width: 100%;
+        }
+
+        .register-form-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .register-submit-btn {
+            width: 100%;
+            min-width: 0;
+        }
+    }
+    .app-form-content{
+        padding: 130px 0;
     }
 </style>
 @endpush
@@ -37,107 +230,77 @@
                     <div class="row justify-content-center">
                         <div class="col-xl-7 col-lg-10 col-md-7">
                             <div class="registration py-5">
-                                <form method="POST" action="{{ route('front-register-post') }}" class="registerValidateform">
+                                <form method="POST" action="{{ route('front-register-post') }}" class="registerValidateform register-panel-form">
                                     @csrf
-                                    <h1>Register To Events</h1>
-                                    <h6 class="mt-0">Once you create your account and confirm your email address, <span
-                                            class="">you will be able to:</span></h6>
-                                    <ul>
+
+                                    <div class="register-panel-heading">
+                                        <h1>Register To Events</h1>
+                                        <p>Once you create your account and confirm your email address, you will be able to:</p>
+                                    </div>
+
+                                    <ul class="register-benefits-list">
                                         <li>Setup weekly alerts of upcoming cleanups near you</li>
-                                        <li>
-                                            Manage cleanup events you are attending or organizing via your dashboard
-                                        </li>
-                                        <li>
-                                            Post Cleanups and Recruit Volunteers
-                                        </li>
+                                        <li>Manage cleanup events you are attending or organizing via your dashboard</li>
+                                        <li>Post Cleanups and Recruit Volunteers</li>
                                     </ul>
-                                    <div class="d-flex align-items-center gap-2 mt-5">
-                                        <div class="form-group w-100">
+
+                                    <x-reusables.frontend.alert />
+
+                                    <div class="register-form-grid">
+                                        <div class="form-group">
                                             <label class="form-label">First Name*</label>
                                             <input class="form-control h_50" name="first_name" type="text" placeholder="Enter your first name" required />
                                         </div>
-                                        <div class="form-group w-100">
+
+                                        <div class="form-group">
                                             <label class="form-label">Last Name*</label>
                                             <input class="form-control h_50" name="last_name" type="text" placeholder="Enter your last name" required />
                                         </div>
                                     </div>
-                                    <div class="d-flex align-items-center gap-2 mt-4">
-                                        <div class="form-group w-100">
-                                            <label class="form-label">Email*</label>
-                                            <input class="form-control h_50" name="email_address" type="email" placeholder="Enter your email" required />
-                                        </div>
-                                        <div class="form-group w-100">
-                                            <label class="form-label">Password*</label>
-                                            <input class="form-control h_50" name="password" type="password" placeholder="Enter your password" minlength="4" required />
-                                        </div>
-                                    </div>
-                                    <div id="passwordFeedback" style="font-size:14px;color:red;"></div>
-                                    <!-- <div class="form-group mt-4">
-                                        <label class="form-label">Are You Associated with An Organization that Plans to Host
-                                            a Cleanup?</label>
-                                        <div class="d-flex gap-3">
-                                            <div>
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <input class="organization_association" id="is_org_1" name="organization_association" type="radio" value="1" required />
-                                                    <label class="form-label m-0 p-0" for="is_org_1">Yes</label>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div class="d-flex align-items-center gap-2">
-                                                <input class="organization_association_deselect" id="is_org_0" name="organization_association" type="radio" value="0" required />
-                                                <label class="form-label m-0 p-0" for="is_org_0">No</label>
-                                            </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="form-group mt-4 organization_association_name d-none">
-                                        <label class="form-label">Organization Name</label>
-                                        <input class="form-control h_50" name="organization_association_name" type="text" 
-                                            placeholder="Enter your organization name"
-                                            value="">
+
+                                    <div class="form-group register-form-group">
+                                        <label class="form-label">Email*</label>
+                                        <input class="form-control h_50" name="email_address" type="email" placeholder="Enter your email" required />
                                     </div>
 
-                                    <div class="form-group mt-4">
-                                        <label class="form-label">Receive Our Quarterly Newsletter</label>
-                                        <div class="d-flex gap-3">
-                                            <div>
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <input class="" name="newsletter" id="newsletter" type="radio" value="1" required />
-                                                    <label class="form-label m-0 p-0" for="newsletter">Yes</label>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <input class="" name="newsletter" id="newsletter-2" type="radio" value="0" required />
-                                                    <label class="form-label m-0 p-0" for="newsletter-2">No</label>
-                                                </div>
-                                            </div>
+                                    <div class="form-group register-form-group">
+                                        <label class="form-label">Password*</label>
+                                        <div class="loc-group position-relative">
+                                            <input class="form-control h_50" name="password" type="password" placeholder="Enter your password" minlength="4" required />
+                                            <span class="pass-show-eye"><i class="fas fa-eye-slash"></i></span>
                                         </div>
-                                    </div> -->
-                                    <div class="coupon-code-block mt-4">
-                                        <div class="form-group mb-3">
-                                            <label for="is_newsletter" class="mb-0">
-                                                <input value="1" name="is_newsletter" type="checkbox" id="is_newsletter" class="me-2" /> Receive Our Quarterly Newsletter
+                                    </div>
+
+                                    <div id="passwordFeedback" class="register-password-feedback"></div>
+
+                                    <div class="register-options-block">
+                                        <div class="form-group">
+                                            <label for="is_newsletter" class="register-checkbox-label">
+                                                <input value="1" name="is_newsletter" type="checkbox" id="is_newsletter" />
+                                                <span>Receive Our Quarterly Newsletter</span>
                                             </label>
                                         </div>
-                                        <div class="form-group mb-2">
-                                            <label for="weekly_alerts" class="mb-0">
-                                                <input value="1" name="weekly_alerts" type="checkbox" id="weekly_alerts" class="me-2" /> Receive Our Weekly Alerts
+
+                                        <div class="form-group">
+                                            <label for="weekly_alerts" class="register-checkbox-label">
+                                                <input value="1" name="weekly_alerts" type="checkbox" id="weekly_alerts" />
+                                                <span>Receive Our Weekly Alerts</span>
                                             </label>
                                         </div>
-                                        <div class="col-lg-6 register_pincode_div" style="display:none;">
+
+                                        <div class="register_pincode_div" style="display:none;">
                                             <div class="form-group mt-2">
                                                 <label class="form-label">Zip/Post Code*</label>
-                                                <select datatype="pincode" class="form-select select2ajax city_state_zip" id="pincode" name="register_pincode">
-                                                </select>
+                                                <select datatype="pincode" class="form-select select2ajax city_state_zip" id="pincode" name="register_pincode"></select>
                                             </div>
                                         </div>
                                     </div>
-                                    <x-reusables.frontend.alert />
-                                    <button class="primary-btn w-fit mt-4" type="submit">Create My Account</button>
-                                    <div class="mt-3">
-                                        <p class="text-start">Already have an account? <a
-                                                href="{{ route('front-login') }}">Login</a></p>
+
+                                    <button class="primary-btn register-submit-btn mt-4" type="submit">Create My Account</button>
+
+                                    <div class="register-login-text">
+                                        Already have an account?
+                                        <a href="{{ route('front-login') }}">Login</a>
                                     </div>
                                 </form>
                             </div>

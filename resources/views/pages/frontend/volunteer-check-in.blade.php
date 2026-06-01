@@ -5,7 +5,7 @@
     <div class="dashboard-body">
         <div class="container-fluid">
             <div class="row">
-                <div class="col-md-12">
+                <!-- <div class="col-md-12">
                     <div class="d-main-title">
                         <h3><i class="fa-solid fa-user-check me-3 mb-3"></i>Volunteer Check-in</h3>
                         <p class="mb-2">Check-in volunteers for this cleanup event</p>
@@ -18,6 +18,24 @@
                         @endphp
                         <x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs"/>
                     </div>
+                </div> -->
+                <div class="col-md-12 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="d-main-title">
+                        <h3><i class="fa-solid fa-user-check me-3 mb-3"></i>Volunteer Check-in</h3>
+                        <p class="mb-2">{{ $event->event_name }} | {{ $event->startTimeAndEndTime }}</p>
+
+                        @php
+                            $breadcrumbs = [
+                                ['name' => 'Ongoing Cleanups', 'url' => route('front-cleanup-ongoing')],
+                                ['name' => 'Volunteer Check-in', 'url' => route('front-volunteer-check-in', ['id' => $event_id])],
+                            ];
+                        @endphp
+                        <x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs"/>
+                    </div>
+
+                    <a href="{{ route('front-volunteer-check-in-export', ['id' => $event_id]) }}" class="primary-btn w-fit">
+                        <i class="fa-solid fa-file-pdf me-2"></i>Export Attendees
+                    </a>
                 </div>
 
                 <div class="col-md-12">

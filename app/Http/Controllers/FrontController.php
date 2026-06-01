@@ -374,6 +374,42 @@ class FrontController extends Controller
             'seo_details' => (object)['title' => 'Volunteer Check-in'],
         ]);
     }
+    public function exportVolunteerCheckinPdf($id)
+    {
+        $authUser = auth()->guard('front')->user();
+
+        $event = Event::with('creator')->findOrFail(decrypt($id));
+
+        $cohostEventIds = $authUser->cohostingEvents()->pluck('events.id');
+        $hostingEventIds = $authUser->events()->pluck('events.id');
+        $allowedEventIds = $cohostEventIds->merge($hostingEventIds);
+
+        if (!$allowedEventIds->contains($event->id)) {
+            $this->setFlashSession(false, 'Unauthorized action.');
+            return redirect()->route('front-cleanup-ongoing');
+        }
+
+        $registrations = EventOrderTicket::with(['volunteer', 'ticket'])
+            ->where('event_id', $event->id)
+            ->where('rsvp_confirmation', 1)
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $html = view('pages.frontend.volunteer-check-in-pdf', [
+            'event' => $event,
+            'registrations' => $registrations,
+        ])->render();
+
+        $pdf = \PDF::setOptions([
+            'isHtml5ParserEnabled' => true,
+            'isRemoteEnabled' => true,
+            'defaultFont' => 'sans-serif',
+        ])->loadHTML($html)->setPaper('a4', 'landscape');
+
+        $filename = 'volunteer_check_in_' . $event->id . '_' . time() . '.pdf';
+
+        return $pdf->download($filename);
+    }
 
     public function volunteerSignAndCheckin($id)
     {

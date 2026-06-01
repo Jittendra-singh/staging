@@ -157,6 +157,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::get('volunteer-check-in/{id}', 'volunteerCheckin')->name('front-volunteer-check-in');
         Route::post('volunteer-check-in/sign-and-check-in/{id}', 'volunteerSignAndCheckin')->name('front-volunteer-sign-and-check-in');
         Route::post('volunteer-check-in/mark-check-in/{id}', 'volunteerMarkCheckin')->name('front-volunteer-mark-check-in');
+        Route::get('volunteer-check-in/export/{id}', 'exportVolunteerCheckinPdf')->name('front-volunteer-check-in-export');
 
         Route::get('cleanup-hosting/{type?}', 'cleanupHosting')->name('front-cleanup-hosting');
         Route::delete('cleanup-hosting/{id}', 'cleanupHostingDelete')->name('front-cleanup-hosting-delete');
