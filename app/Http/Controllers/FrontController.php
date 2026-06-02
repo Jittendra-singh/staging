@@ -3788,7 +3788,7 @@ class FrontController extends Controller
         if($event->is_completed==1){
             return $this->generateJsonResponse(false, 'You cannot check-in an attendee for a completed event.');
         }
-        $tickets = $event->tickets()->where('rsvp_confirmation', 1)->whereNotNull('waiver_filled_at')->get();
+        $tickets = $event->tickets()->where('rsvp_confirmation', 1)->whereNotNull('waiver_filled_at')->where('checkin',0)->get();
         if($tickets->count() == 0){
             return $this->generateJsonResponse(false, 'No volunteers found to mark as checked-in.');
         }
@@ -3867,7 +3867,7 @@ class FrontController extends Controller
                     $this->sendSendgridTemplateEmailWithoutLog($value,"d-3badeebd9cfe40458f55935dd25aa41a");
                 }
             } */
-            return $this->generateJsonResponse(true, 'All volunteers has been marked as check-in successfully.');
+            return $this->generateJsonResponse(true, $tickets->count() . ' volunteers have been marked as check-in successfully.');
         }
     }
     public function sendWaiverBulkEmail($id){
