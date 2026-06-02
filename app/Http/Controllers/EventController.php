@@ -205,6 +205,8 @@ class EventController extends Controller
             'is_private' => 'nullable|boolean',
             'is_online' => 'nullable|boolean',
             'is_featured' => 'nullable|boolean',
+            'is_send_reminder_email' => 'nullable|boolean',
+            'reminder_custom_note' => 'nullable|string',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:1000',
             'meta_focus_keyword' => 'nullable|string|max:255',
@@ -361,6 +363,8 @@ class EventController extends Controller
         $obj->show_remaining_tickets    = $request->show_remaining_tickets ? 1 : 0;
         $obj->sell_tickets_individually = $request->sell_tickets_individually ? 1 : 0;
         $obj->allow_community_service_form = $request->allow_community_service_form ? 1 : 0;
+        $obj->is_send_reminder_email    = $request->has('is_send_reminder_email') ? 1 : 0;
+        $obj->reminder_custom_note      = $request->reminder_custom_note ?? null;
         $obj->site_publish_date         = $request->site_publish_date ?? null;
         $obj->site_depublish_date       = $request->site_depublish_date ?? null;
         $obj->ticket_sell_start_time    = $request->ticket_sell_start_time ?? null;

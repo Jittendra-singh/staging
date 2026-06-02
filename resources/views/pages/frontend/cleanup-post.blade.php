@@ -910,7 +910,26 @@ if(isset($form_data->id)){
                                                                             <textarea name="meeting_spot_details" rows="5" class="form-control h_50 ckeditor" placeholder="">{{ old('meeting_spot_details', $form_data->meeting_spot_details ?? '') }}</textarea>
                                                                         </div>
                                                                     </div>
-                                                                    
+                                                                    <div class="col-md-12">
+                                                                        <div class="form-group mt-2">
+                                                                            <label class="form-label fs-6 d-flex align-items-center gap-2">
+                                                                                <input type="checkbox"
+                                                                                    name="is_send_reminder_email"
+                                                                                    value="1"
+                                                                                    id="is_send_reminder_email"
+                                                                                    @checked(old('is_send_reminder_email', $form_data->is_send_reminder_email ?? 1))>
+                                                                                Send Reminder Email to Volunteers
+                                                                            </label>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div class="col-md-12 reminder-custom-note-wrapper"
+                                                                        style="{{ old('is_send_reminder_email', $form_data->is_send_reminder_email ?? 1) ? '' : 'display:none;' }}">
+                                                                        <div class="form-group mt-2">
+                                                                            <label class="form-label fs-6">Custom Note</label>
+                                                                            <textarea name="reminder_custom_note" rows="4" class="form-control">{{ old('reminder_custom_note', $form_data->reminder_custom_note ?? '') }}</textarea>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -2036,6 +2055,9 @@ $(document).ready(function () {
         $('#current-preview').attr('src', base64Data);
         $('#save-btn').prop('disabled', false);
         $('#cropper-modal').modal('hide');
+    });
+    $(document).on('change', '#is_send_reminder_email', function () {
+        $('.reminder-custom-note-wrapper').toggle($(this).is(':checked'));
     });
 });
     </script>

@@ -71,6 +71,38 @@
             font-size: 12px;
             color: #74788d;
         }
+
+        .creator-role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: .2px;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+
+        .creator-role-badge i {
+            font-size: 13px;
+            line-height: 1;
+        }
+
+        .creator-role-badge.organizer {
+            color: #3949ab;
+            background: rgba(88, 101, 217, .12);
+            border-color: rgba(88, 101, 217, .24);
+        }
+
+        .creator-role-badge.volunteer {
+            color: #198754;
+            background: rgba(25, 135, 84, .12);
+            border-color: rgba(25, 135, 84, .24);
+        }
     </style>
 @endsection
 
@@ -174,11 +206,10 @@
                                 </td>
                                 <!-- <td>{{ $data->email_address }}</td> -->
                                 <td>
-                                    @if($data->is_organiser == 1)
-                                        <span class="text-primary">Organizer</span>
-                                    @else
-                                        <span class="text-success">Volunteer</span>
-                                    @endif
+                                    <span class="creator-role-badge {{ $data->is_organiser ? 'organizer' : 'volunteer' }}">
+                                        <i class="mdi {{ $data->is_organiser ? 'mdi-shield-account-outline' : 'mdi-account-heart-outline' }}"></i>
+                                        {{ $data->is_organiser ? 'Organizer' : 'Volunteer' }}
+                                    </span>
                                 </td>
                                 <td>
                                     <span class="badge bg-primary">{{ number_format($data->alerts_count) }}</span>

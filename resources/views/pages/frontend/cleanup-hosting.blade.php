@@ -241,11 +241,14 @@ a[disabled]{
                                                     	<h6 class="coupon-status">
                                                     		<span data-bs-toggle="tooltip" data-bs-original-title="This event has been marked as inactive by admin." class="badge custom-badge-danger 1">Not Active</span>
                                                     	</h6>
-                                                    @elseif(empty($event->cancelled_at))
-                                                    <div class="card-event-dt">
-                                                        <button {{ $event->is_completed==1?'disabled':'' }} class="btn btn-sm btn-default border-default show-alert-run-url" message="You want to send the waiver email to all attendees" url="{{route('send-waiver-bulk-email', ['id' => $event->encrypted_id])}}"><i class="fa fa-envelope me-2"></i>Send Wavier To All</button>
-                                                        <button {{ $event->is_completed==1?'disabled':'' }} class="btn btn-sm btn-default ms-2 border-default show-alert-run-url" message="You want to mark all attendees as checked-in" url="{{route('mark-bulk-checkin-with-email', ['id' => $event->encrypted_id])}}"><i class="fa fa-check-square me-2"></i>Check-in All</button>
-                                                    </div>
+                                                    @else
+                                                        <div class="card-event-dt">
+                                                            @if(empty($event->cancelled_at))
+                                                            <button {{ $event->is_completed==1?'disabled':'' }} class="btn btn-sm btn-default border-default show-alert-run-url" message="You want to send the waiver email to all attendees" url="{{route('send-waiver-bulk-email', ['id' => $event->encrypted_id])}}"><i class="fa fa-envelope me-2"></i>Send Wavier To All</button>
+                                                            <button {{ $event->is_completed==1?'disabled':'' }} class="btn btn-sm btn-default ms-2 border-default show-alert-run-url" message="You want to mark all attendees as checked-in" url="{{route('mark-bulk-checkin-with-email', ['id' => $event->encrypted_id])}}"><i class="fa fa-check-square me-2"></i>Check-in All</button>
+                                                            @endif
+                                                            <button {{ $event->is_completed==1?'disabled':'' }} class="btn btn-sm btn-default ms-2 border-default send-event-attendees-email" data-route="{{ route('front-send-custom-email-event-attendees', ['id' => $event->encrypted_id]) }}" data-bs-toggle="modal" data-bs-target="#sendEventAttendeesEmailModal"><i class="fa fa-paper-plane me-2"></i>Send Email</button>
+                                                        </div>
                                                     @endif
                                                 </div>
                                             </div>
@@ -289,13 +292,13 @@ a[disabled]{
                                                         <i class="fa-solid fa-ban me-3"></i>Cancel Event
                                                     </a>
                                                     @endif
-                                                    <a href="javascript:void(0);"
+                                                    <!-- <a href="javascript:void(0);"
                                                     class="dropdown-item send-event-attendees-email"
                                                     data-route="{{ route('front-send-custom-email-event-attendees', ['id' => $event->encrypted_id]) }}"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#sendEventAttendeesEmailModal">
                                                         <i class="fa-solid fa-envelope me-3"></i>Send Email
-                                                    </a>
+                                                    </a> -->
                                                     @if(auth()->guard('front')->user()->id==$event->creator_id)
                                                     <a class="dropdown-item delete-record" data-url="{{route('front-cleanup-hosting-delete', ['id'=> $event->id])}}">
                                                         <i class="fa-solid fa-trash-can me-3"></i>Delete

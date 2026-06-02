@@ -31,6 +31,8 @@
     $venue = old('venue', $formData->venue ?? '');
     $meeting_spot_details = old('meeting_spot_details', $formData->meeting_spot_details ?? '');
     $parking_info_details = old('parking_info_details', $formData->parking_info_details ?? '');
+    $is_send_reminder_email = old('is_send_reminder_email', $formData->is_send_reminder_email ?? 1);
+    $reminder_custom_note = old('reminder_custom_note', $formData->reminder_custom_note ?? '');
     $latitude = old('latitude', $formData->latitude ?? '');
     $longitude = old('longitude', $formData->longitude ?? '');
     $is_private = old('is_private', $formData->is_private ?? false);
@@ -338,6 +340,9 @@ $(document).ready(function () {
         $('#current-preview').attr('src', base64Data);
         $('#save-btn').prop('disabled', false);
         $('#cropper-modal').modal('hide');
+    });
+    $(document).on('change', '#is_send_reminder_email', function () {
+        $('.reminder-custom-note-wrapper').toggle($(this).is(':checked'));
     });
 });
 
@@ -710,6 +715,30 @@ $(document).ready(function () {
                                 <label for="parking_info_details" class="form-label">Parking Info Details</label>
                                 <textarea type="text" class="form-control ckeditor-classic" id="parking_info_details"
                                     name="parking_info_details">{{ $parking_info_details }}</textarea>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                        type="checkbox"
+                                        value="1"
+                                        id="is_send_reminder_email"
+                                        name="is_send_reminder_email"
+                                        {{ $is_send_reminder_email ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="is_send_reminder_email">
+                                        Send Reminder Email to Volunteers
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-12 reminder-custom-note-wrapper mt-3"
+                                style="{{ $is_send_reminder_email ? '' : 'display:none;' }}">
+                                <label for="reminder_custom_note" class="form-label">Custom Note</label>
+                                <textarea class="form-control"
+                                        id="reminder_custom_note"
+                                        name="reminder_custom_note"
+                                        rows="4">{{ $reminder_custom_note }}</textarea>
                             </div>
                         </div>
                     </div>

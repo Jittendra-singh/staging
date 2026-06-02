@@ -64,6 +64,38 @@
             border-bottom: 1px dotted #6c757d;
             cursor: help;
         }
+
+        .creator-role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: .2px;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+
+        .creator-role-badge i {
+            font-size: 13px;
+            line-height: 1;
+        }
+
+        .creator-role-badge.organizer {
+            color: #3949ab;
+            background: rgba(88, 101, 217, .12);
+            border-color: rgba(88, 101, 217, .24);
+        }
+
+        .creator-role-badge.volunteer {
+            color: #198754;
+            background: rgba(25, 135, 84, .12);
+            border-color: rgba(25, 135, 84, .24);
+        }
     </style>
 @endsection
 
@@ -77,7 +109,7 @@
         <div class="col-12">
             <x-reusables.frontend.alert />
 
-            <div class="row g-3 mb-3">
+            <div class="row g-3 mb-3" style="display: none;">
                 @foreach($counterCards as $card)
                     <div class="col-sm-6 col-xl-3">
                         <div class="card alert-counter-card">
@@ -109,7 +141,7 @@
 
                             <div class="col-md-4 col-xl-2">
                                 <label for="user_id" class="form-label">Search By User</label>
-                                <select class="form-control select2ajax" datatype="all_volunteers" id="user_id" name="user_id">
+                                <select class="form-control select2ajax" datatype="all_volunteers" id="user_id" name="user_id" data-placeholder="Enter User Name">
                                     @if(request('user_id') && $selected_user)
                                         <option value="{{ request('user_id') }}" selected>
                                             {{ $selected_user->first_name.' '.$selected_user->last_name.' ('.$selected_user->email_address.')' }}
@@ -120,8 +152,8 @@
 
                             <div class="col-md-4 col-xl-2">
                                 <label for="user_type" class="form-label">User Type</label>
-                                <select class="form-control select2" id="user_type" name="user_type">
-                                    <option value="">All</option>
+                                <select class="form-control select2" id="user_type" name="user_type" >
+                                    <option value="">All Users</option>
                                     <option value="volunteer" @selected(request('user_type') == 'volunteer')>Volunteer</option>
                                     <option value="organizer" @selected(request('user_type') == 'organizer')>Organizer</option>
                                 </select>
@@ -186,13 +218,14 @@
                                     @endif
                                     @if($creator)
                                         <br>
-                                        <small class="{{ $creator->is_organiser ? 'text-primary' : 'text-success' }}">
+                                        <span class="creator-role-badge {{ $creator->is_organiser ? 'organizer' : 'volunteer' }}">
+                                            <i class="mdi {{ $creator->is_organiser ? 'mdi-shield-account-outline' : 'mdi-account-heart-outline' }}"></i>
                                             {{ $creator->is_organiser ? 'Organizer' : 'Volunteer' }}
-                                        </small>
+                                        </span>
                                     @endif
                                 </td>
                                 <td>
-                                    {{ $data->created_at ? date(config('app.dateTimeFormat'), strtotime($data->created_at)) : '' }}
+                                    {{ $data->createdDateTime }}
                                 </td>
                                 <td>
                                     @php

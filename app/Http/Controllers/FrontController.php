@@ -913,6 +913,8 @@ class FrontController extends Controller
                 'bring_tools.*'     => 'exists:tools,id',
                 'provided_tools'    => 'nullable|array',
                 'provided_tools.*'  => 'exists:tools,id',
+                'is_send_reminder_email' => 'nullable|boolean',
+                'reminder_custom_note' => 'nullable|string',
             ]);
 
             try {
@@ -954,7 +956,8 @@ class FrontController extends Controller
                 $event->video_url = $validated['video_url'] ?? null;
                 $event->event_reoccurance = $validated['event_reoccurance'] ?? null;
                 $event->meeting_spot_details = $validated['meeting_spot_details'] ?? null;
-                $event->parking_info_details = $validated['parking_info_details'] ?? null;
+                $event->parking_info_details = $validated['parking_info_details'] ?? null;$event->is_send_reminder_email = $request->has('is_send_reminder_email') ? 1 : 0;
+                $event->reminder_custom_note = $validated['reminder_custom_note'] ?? null;
 
                 // Save event
                 $event->save();
@@ -5183,5 +5186,87 @@ class FrontController extends Controller
             } */
             echo 'Email sent to all volunteers.';
         }
+    }
+    public function cronEventReminderForVolunteers()
+    {
+        set_time_limit(0);
+        ini_set('max_execution_time', 0);
+
+        $templateId = 'd-d9575886bc2d4f89bf0d333128e09f85';
+
+        $events = Event::with([
+            'creator:id,first_name,last_name,email_address',
+            'bringTools:id,name',
+        ])
+        ->where('is_send_reminder_email', 1)
+        ->whereNull('deleted_at')
+        ->whereNull('cancelled_at')
+        ->where('is_active', 1)
+        ->where('status', 'published')
+        ->whereDate('start_datetime', now()->addDays(2)->toDateString())
+        ->get();
+
+        $to_arr = [];
+
+        foreach ($events as $event) {
+            $tickets = $event->tickets()
+                ->with('volunteer:id,first_name,last_name,email_address')
+                ->where('rsvp_confirmation', 1)
+                ->get();
+
+            $whatToBring = $event->bringTools->pluck('name')->implode(', ');
+            $organizerNote = trim(strip_tags($event->reminder_custom_note ?? ''));
+
+            foreach ($tickets as $ticket) {
+                if (!$ticket->volunteer) {
+                    continue;
+                }
+
+                $isUnder18 = $ticket->is_under_18 == 1;
+
+                $email = $isUnder18
+                    ? trim($ticket->waiver_handler_email ?? '')
+                    : trim($ticket->volunteer->email_address ?? '');
+
+                if (empty($email)) {
+                    continue;
+                }
+
+                $to_arr[] = [
+                    'to' => [
+                        ['email' => $email],
+                    ],
+                    'dynamic_template_data' => [
+                        //'subject' => 'Reminder: '.$event->event_name.' is coming up soon',
+                        'is_under_18' => $isUnder18 ? true : false,
+                        'show_organizer_notes' => !empty($organizerNote) ? true : false,
+
+                        'waiver_handler_name' => $ticket->waiver_handler_name,
+                        'volunteer_name' => trim($ticket->volunteer->first_name.' '.$ticket->volunteer->last_name),
+                        'event_name' => $event->event_name,
+                        'event_date' => $event->startTimeAndEndTime,
+                        'event_location' => $event->fullAddress,
+                        'meeting_point' => $event->meeting_spot_details ?: '-',
+                        'parking_information' => $event->parking_info_details ?: '-',
+                        'what_to_bring' => $whatToBring ?: '-',
+                        'organizer_notes' => $organizerNote,
+
+                        'ical_event_link' => $this->mailUrl('front-registration-calendar', ['slug' => $event->slug]),
+                        'cancel_registration_link' => $this->mailUrl('cancel-rsvp-get', [
+                            'ticket' => encrypt($ticket->id),
+                            'type' => 1,
+                        ]),
+                    ],
+                ];
+            }
+        }
+
+        foreach (array_chunk($to_arr, 300) as $chunk) {
+            $this->sendSendgridTemplateEmailWithoutLog($chunk, $templateId);
+        }
+
+        return response()->json($this->generateResponse(true, 'Event reminder cron executed successfully.', [
+            'email_count' => count($to_arr),
+        ]));
     }
 }
