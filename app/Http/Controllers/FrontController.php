@@ -3867,7 +3867,7 @@ class FrontController extends Controller
                     $this->sendSendgridTemplateEmailWithoutLog($value,"d-3badeebd9cfe40458f55935dd25aa41a");
                 }
             } */
-            return $this->generateJsonResponse(true, $tickets->count() . ' volunteers have been marked as check-in successfully.');
+            return $this->generateJsonResponse(true, $tickets->count().' ' . ' volunteer(s) have been successfully checked-in.');
         }
     }
     public function sendWaiverBulkEmail($id){
