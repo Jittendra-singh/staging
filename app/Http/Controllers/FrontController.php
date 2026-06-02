@@ -3790,7 +3790,7 @@ class FrontController extends Controller
         }
         $tickets = $event->tickets()->where('rsvp_confirmation', 1)->whereNotNull('waiver_filled_at')->where('checkin',0)->get();
         if($tickets->count() == 0){
-            return $this->generateJsonResponse(false, 'No volunteers found to mark as checked-in.');
+            return $this->generateJsonResponse(false, 'No waiver-signed volunteers found to mark as checked-in.');
         }
         if($tickets->isNotEmpty()){
             $to_arr = [];
