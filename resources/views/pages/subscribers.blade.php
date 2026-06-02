@@ -143,7 +143,7 @@
                         <div class="row g-3 align-items-end">
                             <div class="col-md-4">
                                 <label for="user_id" class="form-label">Search By User</label>
-                                <select class="form-control select2ajax" datatype="all_volunteers" id="user_id" name="user_id">
+                                <select class="form-control select2ajax" datatype="all_volunteers" id="user_id" name="user_id" data-placeholder="Enter User Name">
                                     @if(request('user_id') && $selected_user)
                                         <option value="{{ request('user_id') }}" selected>
                                             {{ $selected_user->first_name.' '.$selected_user->last_name.' ('.$selected_user->email_address.')' }}
@@ -164,9 +164,9 @@
                             <div class="col-md-4">
                                 <label for="status" class="form-label">Status</label>
                                 <select class="form-control select2" id="status" name="status">
-                                    <option value="">All</option>
-                                    <option value="1" @selected(request('status') === '1')>Active</option>
-                                    <option value="0" @selected(request('status') === '0')>Inactive</option>
+                                    <option value="">All Users</option>
+                                    <option value="1" @selected(request('status') === '1')>Active Users</option>
+                                    <option value="0" @selected(request('status') === '0')>Inactive Users</option>
                                 </select>
                             </div>
 
