@@ -101,7 +101,7 @@
         }
 
         .detail-label {
-            font-size: 7px;
+            font-size: 10px;
             font-weight: bold;
             color: #999999;
             letter-spacing: 1.5px;
@@ -111,14 +111,14 @@
         }
 
         .detail-value {
-            font-size: 11.5px;
+            font-size: 13px;
             font-weight: bold;
             color: #1a1a1a;
             margin-bottom: 10px;
         }
 
         .detail-value-green {
-            font-size: 11.5px;
+            font-size: 13px;
             font-weight: bold;
             color: #2e7d5e;
         }
@@ -146,7 +146,7 @@
         /* Waiver terms wrapper — for dynamic content from DB */
         .waiver-terms-wrap {
             font-family: Georgia, 'Times New Roman', serif;
-            font-size: 11px;
+            font-size: 16px;
             color: #444444;
             line-height: 1.75;
         }
@@ -228,7 +228,7 @@
         }
 
         .sig-label {
-            font-size: 7px;
+            font-size: 10px;
             font-weight: bold;
             color: #999999;
             letter-spacing: 1.5px;
@@ -306,7 +306,7 @@
 
         .sig-disclosure {
             margin-top: 12px;
-            font-size: 7.5px;
+            font-size: 9px;
             color: #aaaaaa;
             line-height: 1.65;
         }

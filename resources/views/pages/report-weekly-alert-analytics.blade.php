@@ -345,6 +345,131 @@
             var mapWidth = $map.width();
             var mapHeight = $map.height();
             var padding = 8;
+            var placedLabels = [];
+
+            $map.find('.state-count-label').remove();
+
+            var labels = stateLabels.slice().sort(function(a, b) {
+                return b.count - a.count;
+            });
+
+            function overlaps(rect, placed) {
+                return placed.some(function(item) {
+                    return !(
+                        rect.right < item.left ||
+                        rect.left > item.right ||
+                        rect.bottom < item.top ||
+                        rect.top > item.bottom
+                    );
+                });
+            }
+
+            function insideMap(rect) {
+                return (
+                    rect.left >= padding &&
+                    rect.top >= padding &&
+                    rect.right <= (mapWidth - padding) &&
+                    rect.bottom <= (mapHeight - padding)
+                );
+            }
+
+            labels.forEach(function(item) {
+                if (!item.lat || !item.lng) {
+                    return;
+                }
+
+                var point = mapObject.latLngToPoint(item.lat, item.lng);
+
+                if (!point) {
+                    return;
+                }
+                if (item.count<=10) {
+                    return;
+                }
+
+                if (
+                    point.x < padding ||
+                    point.y < padding ||
+                    point.x > (mapWidth - padding) ||
+                    point.y > (mapHeight - padding)
+                ) {
+                    return;
+                }
+
+                var $label = $('<div class="state-count-label"></div>')
+                    .text(item.name + ': ' + item.count)
+                    .css({
+                        visibility: 'hidden',
+                        left: '0px',
+                        top: '0px'
+                    })
+                    .appendTo($map);
+
+                var labelWidth = $label.outerWidth();
+                var labelHeight = $label.outerHeight();
+
+                var positions = [
+                    { x: 0, y: 0 },
+                    { x: 0, y: -24 },
+                    { x: 0, y: 24 },
+                    { x: 58, y: 0 },
+                    { x: -58, y: 0 },
+                    { x: 58, y: -24 },
+                    { x: -58, y: -24 },
+                    { x: 58, y: 24 },
+                    { x: -58, y: 24 },
+                    { x: 0, y: -44 },
+                    { x: 0, y: 44 },
+                    { x: 86, y: 0 },
+                    { x: -86, y: 0 }
+                ];
+
+                var selectedPosition = null;
+
+                positions.some(function(pos) {
+                    var left = point.x + pos.x;
+                    var top = point.y + pos.y;
+
+                    var rect = {
+                        left: left - (labelWidth / 2),
+                        top: top - (labelHeight / 2),
+                        right: left + (labelWidth / 2),
+                        bottom: top + (labelHeight / 2)
+                    };
+
+                    if (insideMap(rect) && !overlaps(rect, placedLabels)) {
+                        selectedPosition = {
+                            left: left,
+                            top: top,
+                            rect: rect
+                        };
+
+                        return true;
+                    }
+
+                    return false;
+                });
+
+                if (!selectedPosition) {
+                    $label.remove();
+                    return;
+                }
+
+                placedLabels.push(selectedPosition.rect);
+
+                $label.css({
+                    visibility: 'visible',
+                    left: selectedPosition.left + 'px',
+                    top: selectedPosition.top + 'px'
+                });
+            });
+        }
+        /* function renderStateLabels() {
+            var $map = $('#weekly-alert-map');
+            var mapObject = $map.vectorMap('get', 'mapObject');
+            var mapWidth = $map.width();
+            var mapHeight = $map.height();
+            var padding = 8;
 
             $map.find('.state-count-label').remove();
 
@@ -386,7 +511,7 @@
                     top: top + 'px'
                 });
             });
-        }
+        } */
 
 
         window.setTimeout(renderStateLabels, 300);
