@@ -931,7 +931,7 @@
 			$(window).on('resize', setManualWaiverUploadMode);
 		</script>
 	@endpush
-	@style
+	@push('style')
 	<style>
 		.manual-waiver-attendee-box {
 			display: flex;
@@ -1296,5 +1296,5 @@
     border: 1px solid #d7e2ef;
 }
 	</style>
-	@endstyle
+	@endpush
 @endsection
