@@ -116,7 +116,7 @@
                         </button>
                     </div>
 
-                    <div class="modal-body">
+                    <!-- <div class="modal-body">
                         <div class="model-content main-form">
                             <div class="row">
                                 <div class="col-lg-6 col-md-6">
@@ -133,6 +133,18 @@
                                     </div>
                                 </div>
 
+                                <div class="col-lg-12 col-md-12">
+                                    <div class="form-group mt-4">
+                                        <label class="form-label">Email*</label>
+                                        <input class="form-control h_50" type="email" name="email_address" placeholder="Enter your email" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div> -->
+                    <div class="modal-body">
+                        <div class="model-content main-form">
+                            <div class="row">
                                 <div class="col-lg-12 col-md-12">
                                     <div class="form-group mt-4">
                                         <label class="form-label">Email*</label>

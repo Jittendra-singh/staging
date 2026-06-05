@@ -2468,7 +2468,7 @@ class FrontController extends Controller
         ], [
             'mark_as_signed.required' => 'Please confirm Mark As Signed.',
             'mark_as_signed.accepted' => 'Please confirm Mark As Signed.',
-            'waiver_signed_external_document.mimes' => 'Only PDF, JPG, PNG, DOC, and DOCX files are allowed.',
+            'waiver_signed_external_document.mimes' => 'Only PDF, JPG, and PNG files are allowed.',
             'waiver_signed_external_document.max' => 'The document must not be greater than 5MB.',
         ]);
 

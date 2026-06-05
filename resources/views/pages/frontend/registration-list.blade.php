@@ -729,23 +729,39 @@
 						<div class="form-group mb-3">
 							<label class="manual-waiver-label">Upload Signed Waiver Document</label>
 
-							<label class="manual-waiver-upload-box" for="waiver_signed_external_document">
+							<div class="manual-waiver-mobile-actions" style="display:none;">
+								<button type="button" class="manual-waiver-action-btn" id="manual_waiver_capture_btn">
+									<i class="fa-solid fa-camera"></i>
+									Capture Image
+								</button>
+
+								<button type="button" class="manual-waiver-action-btn" id="manual_waiver_gallery_btn">
+									<i class="fa-solid fa-image"></i>
+									Choose Image
+								</button>
+							</div>
+
+							<label class="manual-waiver-upload-box" id="manual_waiver_desktop_upload_box" for="waiver_signed_external_document">
 								<span class="manual-waiver-upload-icon">
 									<i class="fa-solid fa-cloud-arrow-up"></i>
 								</span>
 								<span class="manual-waiver-upload-content">
 									<strong id="manual_waiver_file_text">Choose file to upload</strong>
-									<small>Supported formts: PDF, JPG, PNG. Maximum file size: 5 MMB</small>
+									<small>Supported formats: PDF, JPG, PNG. Maximum file size: 5 MB</small>
 								</span>
 								<span class="manual-waiver-upload-btn">Browse</span>
 							</label>
+
+							<div class="manual-waiver-preview" id="manual_waiver_preview" style="display:none;">
+								<img id="manual_waiver_preview_image" src="" alt="Selected waiver image">
+							</div>
 
 							<input
 								type="file"
 								name="waiver_signed_external_document"
 								id="waiver_signed_external_document"
 								class="d-none"
-								accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+								accept=".pdf,.jpg,.jpeg,.png">
 						</div>
 
 						<div class="manual-waiver-confirm-box">
@@ -820,7 +836,7 @@
 				$('#sendAttendeeEmailForm').submit();
 			});
 
-			$('.btn-manual-waiver-checkin').click(function () {
+			/*$('.btn-manual-waiver-checkin').click(function () {
 				$('#manualWaiverCheckinForm').attr('action', $(this).data('route'));
 				$('#manualWaiverCheckinForm')[0].reset();
 
@@ -834,7 +850,85 @@
 			$('#waiver_signed_external_document').change(function () {
 				const fileName = this.files && this.files.length ? this.files[0].name : 'Choose file to upload';
 				$('#manual_waiver_file_text').text(fileName);
+			});*/
+			function isMobileWaiverDevice() {
+				return window.matchMedia('(max-width: 767px)').matches
+					|| /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+			}
+
+			function setManualWaiverUploadMode() {
+				if (isMobileWaiverDevice()) {
+					$('.manual-waiver-mobile-actions').show();
+					$('#manual_waiver_desktop_upload_box').hide();
+				} else {
+					$('.manual-waiver-mobile-actions').hide();
+					$('#manual_waiver_desktop_upload_box').show();
+
+					$('#waiver_signed_external_document')
+						.attr('accept', '.pdf,.jpg,.jpeg,.png')
+						.removeAttr('capture');
+				}
+			}
+
+			function resetManualWaiverPreview() {
+				$('#manual_waiver_preview').hide();
+				$('#manual_waiver_preview_image').attr('src', '');
+			}
+
+			$('.btn-manual-waiver-checkin').click(function () {
+				$('#manualWaiverCheckinForm').attr('action', $(this).data('route'));
+				$('#manualWaiverCheckinForm')[0].reset();
+
+				$('#manual_waiver_volunteer_name').text($(this).data('volunteer-name') || 'Volunteer');
+				$('#manual_waiver_event_name').text($(this).data('event-name') || 'Event');
+				$('#manual_waiver_file_text').text('Choose file to upload');
+
+				resetManualWaiverPreview();
+				setManualWaiverUploadMode();
+
+				$('.btn-submit-manual-waiver-checkin').text('Submit').attr('disabled', false);
 			});
+
+			$('#manual_waiver_capture_btn').click(function () {
+				$('#waiver_signed_external_document')
+					.attr('accept', 'image/*')
+					.attr('capture', 'environment')
+					.trigger('click');
+			});
+
+			$('#manual_waiver_gallery_btn').click(function () {
+				$('#waiver_signed_external_document')
+					.attr('accept', 'image/*')
+					.removeAttr('capture')
+					.trigger('click');
+			});
+
+			$('#waiver_signed_external_document').change(function () {
+				const file = this.files && this.files.length ? this.files[0] : null;
+
+				if (!file) {
+					$('#manual_waiver_file_text').text('Choose file to upload');
+					resetManualWaiverPreview();
+					return;
+				}
+
+				$('#manual_waiver_file_text').text(file.name);
+
+				if (file.type && file.type.startsWith('image/')) {
+					const reader = new FileReader();
+
+					reader.onload = function (e) {
+						$('#manual_waiver_preview_image').attr('src', e.target.result);
+						$('#manual_waiver_preview').show();
+					};
+
+					reader.readAsDataURL(file);
+				} else {
+					resetManualWaiverPreview();
+				}
+			});
+
+			$(window).on('resize', setManualWaiverUploadMode);
 		</script>
 	@endpush
 	@style
@@ -1164,6 +1258,43 @@
 	font-size: 12px;
 }
 
+
+
+.manual-waiver-mobile-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.manual-waiver-action-btn {
+    border: 1px solid #d7e2ef;
+    background: #fff;
+    color: var(--bs-body-color);
+    border-radius: 8px;
+    padding: 12px 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.manual-waiver-action-btn i {
+    color: var(--bs-primary);
+}
+
+.manual-waiver-preview {
+    margin-top: 12px;
+}
+
+.manual-waiver-preview img {
+    width: 88px;
+    height: 88px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #d7e2ef;
+}
 	</style>
 	@endstyle
 @endsection

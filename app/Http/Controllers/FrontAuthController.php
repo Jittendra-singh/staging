@@ -284,6 +284,49 @@ class FrontAuthController extends Controller
     public function handleLoginMagicLink(Request $request)
     {
         $request->validate([
+            'email_address' => ['required', 'email', new \App\Rules\StrictEmail()],
+        ]);
+
+        $volunteer = Volunteer::where('email_address', $request->email_address)->first();
+
+        if (!isset($volunteer->id)) {
+            $this->setFlashSession(false, 'No account found with this email address. Please register first.');
+            return redirect()->route('front-register')->withInput([
+                'email_address' => $request->email_address,
+            ]);
+        }
+
+        if ($volunteer->status != 1) {
+            $this->setFlashSession(false, 'You don\'t have permission to login. Please contact admin.');
+            return redirect()->route('front-login');
+        }
+
+        $magicLoginLink = $this->mailUrl('front-login-magic-link-login', [
+            'id'        => encrypt($volunteer->id),
+            'timestamp' => encrypt(now()->timestamp),
+        ]);
+
+        $to_arr = [
+            [
+                "to" => [
+                    ["email" => trim($volunteer->email_address)]
+                ],
+                "dynamic_template_data" => [
+                    "volunteer_name"   => $volunteer->first_name . ' ' . $volunteer->last_name,
+                    "magic_login_link" => $magicLoginLink,
+                    "expiry_minutes"   => 5,
+                ],
+            ]
+        ];
+
+        $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-516a440954754876b8c9c87da108c7c0");
+
+        $this->setFlashSession(true, 'We\'ve sent a magic login link to your email address. The link will expire in 5 minutes.');
+        return redirect()->route('front-login');
+    }
+    public function handleLoginMagicLinkOLD(Request $request)
+    {
+        $request->validate([
             'first_name'    => 'required|max:255',
             'last_name'     => 'required|max:255',
             'email_address' => ['required', 'email', new \App\Rules\StrictEmail()],
