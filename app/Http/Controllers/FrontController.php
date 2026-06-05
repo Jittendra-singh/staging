@@ -2394,7 +2394,7 @@ class FrontController extends Controller
                     $orderTicket->checkin_dt = date('Y-m-d H:i:s');
                     if($event->is_completed==1){
                         $orderTicket->community_form_status = 'approved';
-                        //$orderTicket->is_late_checkin = 1;
+                        $orderTicket->is_late_checkin = 1;
                     }
                     $orderTicket->save();
                     if($event->is_completed==1){
@@ -2500,10 +2500,10 @@ class FrontController extends Controller
                 return redirect()->back();
             }
 
-            if ($orderTicket->event && $orderTicket->event->is_completed == 1) {
+            /* if ($orderTicket->event && $orderTicket->event->is_completed == 1) {
                 $this->setFlashSession(false, 'You cannot check-in an attendee for a completed event.');
                 return redirect()->back();
-            }
+            } */
 
             $orderTicket->waiver_filled_at = now();
             $orderTicket->signature = null;
