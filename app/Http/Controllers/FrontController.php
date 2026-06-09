@@ -36,7 +36,7 @@ use App\Models\ReleaseNote;
 class FrontController extends Controller
 {
     public function viewEvents(){
-        $events = Event::listactive()->where('is_private',0)->paginate(21)->withQueryString();
+        $events = Event::with('category')->listactive()->where('is_private',0)->paginate(21)->withQueryString();
         //echo '<pre>';print_r($events->toArray());die();
         //$events_clone = clone collect($events->items());
 
@@ -77,7 +77,7 @@ class FrontController extends Controller
         if (!request()->filled('search')) {
             request()->merge(['search' => 'ICC2025']);
         }
-        $events = Event::listactive()->where('is_private',0)->paginate(21)->withQueryString();
+        $events = Event::with('category')->listactive()->where('is_private',0)->paginate(21)->withQueryString();
         //$events_clone = clone collect($events->items());
         $mapEvents = Event::listactive()
         ->where('is_private', 0)
@@ -141,7 +141,7 @@ class FrontController extends Controller
     }
     public function viewEventPage($slug){
         //$event = Event::where('slug', $slug)->detailactive()->first();
-        $event = Event::with('creator')->where('slug', $slug)->first();
+        $event = Event::with(['creator', 'category'])->where('slug', $slug)->first();
         if(!isset($event->id)){
             abort(404, 'Event not found.');
         }
@@ -231,6 +231,7 @@ class FrontController extends Controller
     public function cleanupAttending(){
         //$attending_events = auth()->guard('front')->user()->attendingEvents()
         $attending_events = auth()->guard('front')->user()->attendingEventsWithoutActive()
+                                ->with('category')
                                 ->where(function($q){
                                     if(request()->search){
                                         $q->where("event_name","LIKE", "%".request()->search."%");
@@ -267,7 +268,7 @@ class FrontController extends Controller
         $hostingEventCount = auth()->guard('front')->user()->events()->active()->count();
 
         //$hosting_events = $hosting_events_builder->orderBy('start_datetime','desc')->active()->paginate(20)->withQueryString();
-        $hosting_events = $hosting_events_builder->orderBy('start_datetime','desc')->paginate(20)->withQueryString();
+        $hosting_events = $hosting_events_builder->with('category')->orderBy('start_datetime','desc')->paginate(20)->withQueryString();
         //echo $hostingEventCount;
         //print_r($hosting_events->toArray());
         //die();
@@ -3021,6 +3022,7 @@ class FrontController extends Controller
         $data['widget'] = $widget;
         $data['categories'] = EventCategory::all();
         $data['organizers'] = Volunteer::where('is_organiser', 1)->get();
+        $data['event_tags'] = \App\Models\Tag::orderBy('name')->get();
         $data['seo_details'] = (object)['title' => 'Manage Embedded Widget'];
         return view('pages.frontend.manage-embedded-widget', $data); 
     }
@@ -3064,6 +3066,13 @@ class FrontController extends Controller
             'longitude'      => 'required',
             'distance'       => 'required',
             'type'           => 'required',
+            'ftr_tag_ids'          => 'nullable|array',
+            'ftr_tag_ids.*'        => 'exists:tags,id',
+            'ftr_event_title'      => 'nullable|string|max:255',
+            'ftr_event_start_dt'   => 'nullable|date',
+            'ftr_event_end_dt'     => 'nullable|date',
+            'custom_widget_header' => 'nullable|string|max:255',
+            'event_per_page'       => 'nullable|integer|min:1|max:100',
         ]);
         if(!empty($id)){
             $widget = VolunteerWidget::where('id', decrypt($id))->first();
@@ -3080,12 +3089,31 @@ class FrontController extends Controller
         $widget->location_lat = $validated['latitude'];
         $widget->location_long = $validated['longitude'];
         $widget->website = request()->website;
-        if(request()->has('organizer_id') && !empty(request()->organizer_id)){
+
+        $widget->org_ids = request()->filled('organizer_id')
+            ? implode(',', request()->organizer_id)
+            : null;
+
+        $widget->cat_ids = request()->filled('category_id')
+            ? implode(',', request()->category_id)
+            : null;
+
+        $widget->ftr_tag_ids = request()->filled('ftr_tag_ids')
+            ? implode(',', request()->ftr_tag_ids)
+            : null;
+
+        $widget->ftr_event_title = request()->ftr_event_title;
+        $widget->ftr_event_start_dt = request()->ftr_event_start_dt;
+        $widget->ftr_event_end_dt = request()->ftr_event_end_dt;
+        $widget->custom_widget_header = request()->custom_widget_header;
+        $widget->event_per_page = request()->event_per_page;
+
+        /* if(request()->has('organizer_id') && !empty(request()->organizer_id)){
             $widget->org_ids = implode(',', request()->organizer_id);
         }
         if(request()->has('category_id') && !empty(request()->category_id)){
             $widget->cat_ids = implode(',', request()->category_id);
-        }
+        } */
         $widget->save();
 
         $this->setFlashSession(true, 'Embedded widget created successfully. You can copy the embed code from the “View Code & Details” button.');
@@ -3209,7 +3237,29 @@ class FrontController extends Controller
             $request = request();
             $request->merge($pData);
             if($widget->type==1){
-                $events = Event::listactive()->where('is_private',0)->paginate(3)->withQueryString();
+                //$events = Event::with('category')->listactive()->where('is_private',0)->paginate(3)->withQueryString();
+                $eventPerPage = !empty($widget->event_per_page) ? (int) $widget->event_per_page : 3;
+
+                $events = Event::with('category')
+                    ->listactive()
+                    ->where('is_private', 0)
+                    ->when(!empty($widget->ftr_tag_ids), function ($query) use ($widget) {
+                        $tagIds = array_filter(explode(',', $widget->ftr_tag_ids));
+                        $query->whereHas('tags', function ($tagQuery) use ($tagIds) {
+                            $tagQuery->whereIn('tags.id', $tagIds);
+                        });
+                    })
+                    ->when(!empty($widget->ftr_event_title), function ($query) use ($widget) {
+                        $query->where('event_name', 'like', '%' . $widget->ftr_event_title . '%');
+                    })
+                    ->when(!empty($widget->ftr_event_start_dt), function ($query) use ($widget) {
+                        $query->whereDate('events.start_datetime', '>=', $widget->ftr_event_start_dt);
+                    })
+                    ->when(!empty($widget->ftr_event_end_dt), function ($query) use ($widget) {
+                        $query->whereDate('events.end_datetime', '<=', $widget->ftr_event_end_dt);
+                    })
+                    ->paginate($eventPerPage)
+                    ->withQueryString();
             } else {
                 $mapEvents = Event::listactive()
                 ->where('is_private', 0)
@@ -3355,17 +3405,17 @@ class FrontController extends Controller
                             'description' => $organiser->orgranisation_short_description,                
                         ];
         //$past_events = Event::where('creator_id', $organiser->id)->past()->get();
-        $past_events = Event::where('creator_id', $organiser->id)->where('end_datetime', '<', now())
+        $past_events = Event::with('category')->where('creator_id', $organiser->id)->where('end_datetime', '<', now())
             ->orderBy('start_datetime', 'desc') 
             ->orderBy('end_datetime', 'desc')
             ->orderBy('site_publish_date', 'asc')
             ->orderBy('id', 'asc')->paginate(20, ['*'], 'past_page')->withQueryString()->appends(['tab' => 'past_event']);
-        $present_events = Event::where('creator_id', $organiser->id)->present()
+        $present_events = Event::with('category')->where('creator_id', $organiser->id)->present()
             ->orderBy('start_datetime', 'asc') 
             ->orderBy('end_datetime', 'asc')
             ->orderBy('site_publish_date', 'desc')
             ->orderBy('id', 'desc')->paginate(20, ['*'], 'ongoing_page')->withQueryString()->appends(['tab' => 'ongoing_event']);
-        $future_events = Event::where('creator_id', $organiser->id)->future()
+        $future_events = Event::with('category')->where('creator_id', $organiser->id)->future()
             ->orderBy('start_datetime', 'asc') 
             ->orderBy('end_datetime', 'asc')
             ->orderBy('site_publish_date', 'desc')
@@ -4896,7 +4946,7 @@ class FrontController extends Controller
                         'latitude' => $alert->location_lat,
                         'longitude' => $alert->location_long,
                     ]);
-                    $events = Event::listactive()->where('is_private',0)->limit(10)->get();
+                    $events = Event::with('category')->listactive()->where('is_private',0)->limit(10)->get();
                     if($events->count()>0){
                         $locations_helper[$alert->zipcode] = $events->count();
                         $locations[$alert->zipcode]['event_count'] = $events->count();

@@ -1,5 +1,6 @@
 @extends('layouts.frontend')
 @push('style')
+<x-reusables.advanceformcss />
 <style>
 #showWidgetDetail .modal-dialog{
     width: 1000px!important;
@@ -29,7 +30,141 @@
                     </div>
                 </div>
                 <x-reusables.frontend.alert />
-                <form action="{{route('front-save-widget', isset($widget->id)?encrypt($widget->id): null)}}" method="post" class="main-card mt-4 p-4 shadow-sm bg-white rounded" id="createWidgetForm">
+                <form action="{{route('front-save-widget', isset($widget->id)?encrypt($widget->id): null)}}" method="post" id="createWidgetForm">
+                    @csrf
+
+                    @php
+                        $selectedTagIds = collect(explode(',', $widget->ftr_tag_ids ?? ''))->filter()->map(fn($id) => (int) $id)->toArray();
+                        $selectedOrgIds = collect(explode(',', $widget->org_ids ?? ''))->filter()->map(fn($id) => (int) $id)->toArray();
+                        $selectedCatIds = collect(explode(',', $widget->cat_ids ?? ''))->filter()->map(fn($id) => (int) $id)->toArray();
+                    @endphp
+
+                    <div class="main-card mt-4 p-4 shadow-sm bg-white rounded">
+                        <div class="bp-title">
+                            <h4 class="p-0 pb-3">Widget Content & Filters</h4>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mt-3">
+                                <label for="title" class="form-label">Widget Title *</label>
+                                <input type="text" id="title" class="text form-control h_40" name="title" placeholder="Enter title" value="{{ old('title', $widget->title ?? '') }}" required>
+                                <small>This title will not be displayed in the widget iframe.</small>
+                            </div>
+
+                            <div class="col-md-4 mt-3">
+                                <label for="location" class="form-label">Location *</label>
+                                <input type="text" id="autocomplete" class="text form-control h_40" name="location" placeholder="Search and choose location" value="{{ old('location', $widget->location ?? '') }}" required>
+                                <input type="hidden" id="latitude" name="latitude" value="{{ old('latitude', $widget->location_lat ?? '') }}">
+                                <input type="hidden" id="longitude" name="longitude" value="{{ old('longitude', $widget->location_long ?? '') }}">
+                                <div id="results"></div>
+                            </div>
+
+                            <div class="col-md-4 mt-3">
+                                <label for="distance" class="form-label">Distance (Miles) *</label>
+                                <select class="form-select form-control h_40" id="distance" name="distance" required>
+                                    <option value="">Within</option>
+                                    @foreach([5,10,25,50,100] as $mile)
+                                        <option value="{{ $mile }}" @selected(old('distance', $widget->distance ?? '') == $mile)>{{ $mile }} miles</option>
+                                    @endforeach
+                                </select>
+                                <input type="hidden" name="unit" value="mi">
+                            </div>
+
+                            <div class="col-md-4 mt-3">
+                                <label for="organizer_id" class="form-label">Organizer</label>
+                                <select class="selectpicker1" name="organizer_id[]" title="Search and Select Organizer" data-selected-text-format="count > 1" data-size="5" multiple data-live-search="true">
+                                    @foreach ($organizers as $organizer)
+                                        @if(in_array($organizer->id, $selectedOrgIds))
+                                            <option value="{{ $organizer->id }}" selected>{{ $organizer->first_name.' '.$organizer->last_name.' ('.$organizer->email_address.')' }}</option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-4 mt-3">
+                                <label for="categories" class="form-label">Categories</label>
+                                <select class="selectpicker" name="category_id[]" title="Choose Categories" data-selected-text-format="count > 1" data-size="5" multiple data-live-search="true">
+                                    @foreach ($categories as $category)
+                                        <option value="{{ $category->id }}" @selected(in_array($category->id, old('category_id', $selectedCatIds)))>{{ $category->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-4 mt-3">
+                                <label for="ftr_tag_ids" class="form-label">Event Tags Filter</label>
+                                <select class="form-control select2" id="ftr_tag_ids" name="ftr_tag_ids[]" multiple title="Search or select tags" data-live-search="true">
+                                    @foreach ($event_tags as $tag)
+                                        <option value="{{ $tag->id }}" @selected(in_array($tag->id, old('ftr_tag_ids', $selectedTagIds)))>{{ $tag->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-4 mt-3">
+                                <label for="ftr_event_title" class="form-label">Event Title Filter</label>
+                                <input type="text" id="ftr_event_title" class="form-control h_40" name="ftr_event_title" placeholder="Filter by event name" value="{{ old('ftr_event_title', $widget->ftr_event_title ?? '') }}">
+                            </div>
+
+                            <div class="col-md-4 mt-3">
+                                <label for="ftr_event_start_dt" class="form-label">Event Start Date Filter</label>
+                                <input type="date" id="ftr_event_start_dt" class="form-control h_40" name="ftr_event_start_dt" value="{{ old('ftr_event_start_dt', $widget->ftr_event_start_dt ?? '') }}">
+                            </div>
+
+                            <div class="col-md-4 mt-3">
+                                <label for="ftr_event_end_dt" class="form-label">Event End Date Filter</label>
+                                <input type="date" id="ftr_event_end_dt" class="form-control h_40" name="ftr_event_end_dt" value="{{ old('ftr_event_end_dt', $widget->ftr_event_end_dt ?? '') }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="main-card mt-4 p-4 shadow-sm bg-white rounded">
+                        <div class="bp-title">
+                            <h4 class="p-0 pb-3">Display & Embed Settings</h4>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mt-3">
+                                <label for="website" class="form-label">What is the URL you are putting this widget on?</label>
+                                <input type="url" id="website" class="text form-control h_40 urlmask" name="website" placeholder="Enter embed location" value="{{ old('website', $widget->website ?? '') }}">
+                            </div>
+
+                            <div class="col-md-4 mt-3">
+                                <label for="custom_widget_header" class="form-label">Custom Widget Header</label>
+                                <input type="text" id="custom_widget_header" class="form-control h_40" name="custom_widget_header" placeholder="e.g. Featured Events" value="{{ old('custom_widget_header', $widget->custom_widget_header ?? '') }}">
+                            </div>
+
+                            <div class="col-md-4 mt-3">
+                                <label for="event_per_page" class="form-label">Events Per Page Setting</label>
+                                <select class="form-select form-control h_40" id="event_per_page" name="event_per_page">
+                                    @foreach([3,6,9,10,12,15,20,25] as $perPage)
+                                        <option value="{{ $perPage }}" @selected(old('event_per_page', $widget->event_per_page ?? 3) == $perPage)>{{ $perPage }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-12 mt-3">
+                                <label class="form-label fs-6">How would you like the Widget to Display?</label>
+                                <div class="d-flex gap-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" value="1" id="type" name="type" @checked(old('type', $widget->type ?? 1) == 1)>
+                                        <label class="form-check-label" for="type">List View</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" value="2" id="type2" name="type" @checked(old('type', $widget->type ?? 1) == 2)>
+                                        <label class="form-check-label" for="type2">Map View</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex mt-4 justify-content-start">
+                        <button type="submit" class="primary-btn w-fit">
+                            {{isset($widget->id) ? 'Update' : 'Create'}} Widget Embed Code
+                        </button>
+                        <a href="{{route('front-embedded-widget')}}" class="primary-btn w-fit ms-2">Close</a>
+                    </div>
+                </form>
+                <!-- <form action="{{route('front-save-widget', isset($widget->id)?encrypt($widget->id): null)}}" method="post" class="main-card mt-4 p-4 shadow-sm bg-white rounded" id="createWidgetForm">
                     @csrf
                     <div class="row"> 
                         <div class="col-md-4">
@@ -116,7 +251,7 @@
                             Close
                         </a>
                     </div>
-                </form>
+                </form> -->
             </div>
         </div>
     </div>
@@ -147,7 +282,7 @@
  let ajaxTimer = null; // ✅ declare first
 
 $(document).ready(function () {
-
+    $('.select2').select2();
     $('.selectpicker1').selectpicker();
 
     $(document).on('input', '.bs-searchbox input', function () {

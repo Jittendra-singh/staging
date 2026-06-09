@@ -100,6 +100,7 @@ class GlobalTypeController extends Controller
     {
         request()->validate([
             'name' => 'required',
+            'cropped_image' => 'nullable|string',
         ]);
         $global = $this->modelClass::where("slug" , $slug)->first();
         $model = new $global->class_name();
@@ -112,6 +113,27 @@ class GlobalTypeController extends Controller
         }
         $obj->name    = request()->name;
         $obj->slug    = str()->slug(request()->name , '-');
+        if ($global->slug == 'categories' && request()->filled('cropped_image')) {
+            $base64 = preg_replace('/^data:image\/\w+;base64,/', '', request()->input('cropped_image'));
+            $imageData = base64_decode($base64);
+
+            $originalName = 'category_banner.jpg';
+            $fileName = str_replace(' ', '', date('dmyhis') . $originalName);
+            $destinationPath = 'event_categories/banners';
+            $publicPath = public_path($destinationPath);
+
+            if (!file_exists($publicPath)) {
+                mkdir($publicPath, 0755, true);
+            }
+
+            file_put_contents($publicPath . '/' . $fileName, $imageData);
+
+            $obj->default_banner_img = json_encode([
+                'path'          => "$destinationPath/" . $fileName,
+                'original_name' => $originalName,
+                'extension'     => 'jpg',
+            ]);
+        }
         // $obj->status  = request()->status ? 1 : 0;
         if($global->slug == 'tags'){
             //$obj->type  = request()->type ?? 'event';

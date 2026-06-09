@@ -201,7 +201,7 @@ class Event extends Model
             get : fn($value) => json_decode($value ? : null ) , 
         );
     }
-    public function formattedBanner(){
+    /* public function formattedBanner(){
         if (!$this->banner_image) {
             $path = 'assets_front/images/event-imgs/big-2.jpg';
         }else{
@@ -209,6 +209,22 @@ class Event extends Model
         }
         
         return asset($path);
+    } */
+    public function formattedBanner()
+    {
+        if ($this->banner_image && !empty($this->banner_image->path)) {
+            return asset($this->banner_image->path);
+        }
+
+        if (
+            $this->category &&
+            $this->category->default_banner_img &&
+            !empty($this->category->default_banner_img->path)
+        ) {
+            return asset($this->category->default_banner_img->path);
+        }
+
+        return asset('assets_front/images/event-imgs/big-2.jpg');
     }
     public function flyerImage() : Attribute{ 
         return Attribute::make(

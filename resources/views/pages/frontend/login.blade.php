@@ -77,7 +77,7 @@
                                         <a href="{{ route('front-register') }}">Register</a>
                                     </div>
 
-                                    <div class="login-migration-notice">
+                                    <!-- <div class="login-migration-notice">
                                         <div class="notice-icon">
                                             <i class="fas fa-info"></i>
                                         </div>
@@ -91,7 +91,7 @@
                                                 Reset password now <i class="fas fa-arrow-right"></i>
                                             </a>
                                         </div>
-                                    </div>
+                                    </div> -->
                                 </form>
                                 <form id="googleLoginForm" action="{{ route('front-login-google') }}" method="POST" style="display:none;">
                                     @csrf

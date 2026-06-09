@@ -4,7 +4,9 @@
     /*$tableHead = $global->slug == 'tags' 
                     ? ['Name', 'Type',  'Created Date' , 'Status', 'Action']
                     : ['Name', 'Created Date' , 'Status', 'Action'];*/
-    $tableHead = ['Name', 'Created Date' , 'Status', 'Action'];
+    $tableHead = $global->slug == 'categories'
+    ? ['Name', 'Image', 'Created Date' , 'Status', 'Action']
+    : ['Name', 'Created Date' , 'Status', 'Action'];
 @endphp
 @extends('layouts.backend_new', ['pageName' => $pageName, 'parentPageName' => $pageName])
 @section('css')
@@ -27,6 +29,19 @@
                         @forelse ($listingData as $data)
                             <tr>
                                 <td>{{ $data->name }}</td>
+                                @if($global->slug == 'categories')
+                                    <td>
+                                        @if($data->default_banner_img)
+                                            <a href="{{ $data->formattedDefaultBannerImg() }}" target="_blank">
+                                                <img src="{{ $data->formattedDefaultBannerImg() }}"
+                                                    alt="{{ $data->name }}"
+                                                    style="width:80px;height:52px;object-fit:cover;border-radius:4px;">
+                                            </a>
+                                        @else
+                                            <span>N/A</span>
+                                        @endif
+                                    </td>
+                                @endif
                                 @if($global->slug == 'tags')
                                     <!-- <td>{{ ucfirst($data->type ? : 'event') }}</td> -->
                                 @endif

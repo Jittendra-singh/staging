@@ -74,7 +74,7 @@
                     @if(isset($location_array) && !empty($location_array))
                     <div class="row">
                         <div class="col-lg-12 text-left mb-2">
-                            <h2>Upcoming Cleanups</h2>
+                            <h2>{{ $widget->custom_widget_header ?: 'Upcoming Cleanups' }}</h2>
                         </div>
                         <div class="col-12 mt-2">
                             <div id="map" style="height:35rem;border-radius: 20px;overflow: hidden;"></div>
