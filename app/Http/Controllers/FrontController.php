@@ -3094,12 +3094,12 @@ class FrontController extends Controller
     public function saveWidget($id=null){
         $request = request();
         $validated = $request->validate([
-            'title'          => 'required',
-            'location'       => 'required',
-            'latitude'       => 'required',
-            'longitude'      => 'required',
-            'distance'       => 'required',
-            'type'           => 'required',
+            'title'                => 'required',
+            'location'             => 'nullable|string|max:255',
+            'latitude'             => 'nullable',
+            'longitude'            => 'nullable',
+            'distance'             => 'nullable',
+            'type'                 => 'required',
             'ftr_tag_ids'          => 'nullable|array',
             'ftr_tag_ids.*'        => 'exists:tags,id',
             'ftr_event_title'      => 'nullable|string|max:255',
@@ -3203,14 +3203,6 @@ class FrontController extends Controller
                             <div class="col-md-9 registration-full-name">'.$widget->title.'</div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-md-3 fw-semibold text-muted">Location :</div>
-                            <div class="col-md-9 registration-email-address">'.$widget->location.'</div>
-                        </div>
-                        <div class="row mb-2">
-                            <div class="col-md-3 fw-semibold text-muted">Distance :</div>
-                            <div class="col-md-9 registration-phone-number">'.$widget->distance.' Miles</div>
-                        </div>
-                        <div class="row mb-2">
                             <div class="col-md-3 fw-semibold text-muted">How would you like the Widget to Display? :</div>
                             <div class="col-md-9 registration-event-name">'.($widget->type==1?'List View':'Map View').'</div>
                         </div>
@@ -3264,10 +3256,12 @@ class FrontController extends Controller
             if(!empty($widget->cat_ids)){
                 $pData['event_category_id'] = explode(',', $widget->cat_ids);
             }
-            $pData['location'] = $widget->location;
-            $pData['distance'] = $widget->distance;
-            $pData['latitude'] = $widget->location_lat;
-            $pData['longitude'] = $widget->location_long;
+            if (!empty($widget->location) && !empty($widget->distance) && !empty($widget->location_lat) && !empty($widget->location_long)) {
+                $pData['location'] = $widget->location;
+                $pData['distance'] = $widget->distance;
+                $pData['latitude'] = $widget->location_lat;
+                $pData['longitude'] = $widget->location_long;
+            }
             $request = request();
             $request->merge($pData);
             if($widget->type==1){

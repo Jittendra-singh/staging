@@ -61,7 +61,7 @@
                                                         <td>{{$data->wid_number}}</td>								
                                                         <td>{{$data->title}}</td>	
                                                         <td>{{$data->type==1?'List View':'Map View'}}</td>	
-                                                        <td>{{$data->location}}</td>	
+                                                        <td>{{$data->location??'N/A'}}</td>	
                                                         <td>{{$data->created_at}}</td>
                                                         <td>
                                                             @if($data->is_active)

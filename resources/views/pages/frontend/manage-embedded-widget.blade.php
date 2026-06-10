@@ -52,16 +52,16 @@
                             </div>
 
                             <div class="col-md-4 mt-3">
-                                <label for="location" class="form-label">Location *</label>
-                                <input type="text" id="autocomplete" class="text form-control h_40" name="location" placeholder="Search and choose location" value="{{ old('location', $widget->location ?? '') }}" required>
+                                <label for="location" class="form-label">Location</label>
+                                <input type="text" id="autocomplete" class="text form-control h_40" name="location" placeholder="Search and choose location" value="{{ old('location', $widget->location ?? '') }}">
                                 <input type="hidden" id="latitude" name="latitude" value="{{ old('latitude', $widget->location_lat ?? '') }}">
                                 <input type="hidden" id="longitude" name="longitude" value="{{ old('longitude', $widget->location_long ?? '') }}">
                                 <div id="results"></div>
                             </div>
 
                             <div class="col-md-4 mt-3">
-                                <label for="distance" class="form-label">Distance (Miles) *</label>
-                                <select class="form-select form-control h_40" id="distance" name="distance" required>
+                                <label for="distance" class="form-label">Distance (Miles)</label>
+                                <select class="form-select form-control h_40" id="distance" name="distance">
                                     <option value="">Within</option>
                                     @foreach([5,10,25,50,100] as $mile)
                                         <option value="{{ $mile }}" @selected(old('distance', $widget->distance ?? '') == $mile)>{{ $mile }} miles</option>
