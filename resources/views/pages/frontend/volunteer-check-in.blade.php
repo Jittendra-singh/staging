@@ -126,9 +126,18 @@
                                                     <button type="button" class="btn btn-sm btn-outline-secondary clear-volunteer-signature" data-pad="#{{ $signatureId }}" data-input="#{{ $signatureInputId }}">
                                                         Clear
                                                     </button>
-                                                    <button type="submit" class="primary-btn w-fit btn-sign-checkin">
+                                                    <!-- <button type="submit" class="primary-btn w-fit btn-sign-checkin">
                                                         <i class="fa-solid fa-signature me-2"></i>Sign & Check-in
-                                                    </button>
+                                                    </button> -->
+                                                    <div class="d-flex gap-2 flex-wrap">
+                                                        <button type="button" class="btn btn-outline-primary btn-show-waiver-qr" data-url="{{ route('front-volunteer-waiver-qr', ['id' => $registration->encrypted_id]) }}">
+                                                            <i class="fa-solid fa-qrcode me-2"></i>Show QR Code
+                                                        </button>
+
+                                                        <button type="submit" class="primary-btn w-fit btn-sign-checkin">
+                                                            <i class="fa-solid fa-signature me-2"></i>Sign & Check-in
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </form>
                                         @elseif($isSigned && !$isCheckedIn)
@@ -182,6 +191,22 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="waiverQrModal" tabindex="-1" aria-labelledby="waiverQrModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="waiverQrModalLabel">Waiver QR Code</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center waiver-qr-modal-body">
+                <div id="waiverQrLoader" class="py-4">Generating QR code...</div>
+                <div id="waiverQrContent" class="d-none">
+                    <div id="waiverQrImage" class="waiver-qr-image py-4"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('script')
@@ -215,12 +240,60 @@
 
         $(this).find('.btn-sign-checkin').text('Submitting...').attr('disabled', true);
     });
+    $('.btn-show-waiver-qr').click(function () {
+        const url = $(this).data('url');
+
+        $('#waiverQrLoader').removeClass('d-none').text('Generating QR code...');
+        $('#waiverQrContent').addClass('d-none');
+        $('#waiverQrImage').html('');
+
+        const modal = new bootstrap.Modal(document.getElementById('waiverQrModal'));
+        modal.show();
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}'
+            },
+            success: function (response) {
+                if (response.status && response.data) {
+                    $('#waiverQrImage').html(response.data.qr_html);
+                    $('#waiverQrLoader').addClass('d-none');
+                    $('#waiverQrContent').removeClass('d-none');
+                } else {
+                    $('#waiverQrLoader').text(response.message || 'Unable to generate QR code.');
+                }
+            },
+            error: function () {
+                $('#waiverQrLoader').text('Unable to generate QR code.');
+            }
+        });
+    });
 </script>
 @endpush
 
 @push('style')
 <link rel="stylesheet" href="{{ asset('assets_front/css/filter-css.css') }} ">
 <style>
+.waiver-qr-modal-body {
+    padding-top: 28px;
+    padding-bottom: 28px;
+}
+
+.waiver-qr-image {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.waiver-qr-image svg {
+    max-width: 280px;
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
     .volunteer-checkin-card {
         overflow: hidden;
     }

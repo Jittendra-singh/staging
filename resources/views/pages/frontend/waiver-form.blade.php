@@ -23,6 +23,9 @@
                         </div>
                         <form id="waiver-form-id" method="POST" action="{{ route('submit-waiver-form', ['ticket' => encrypt($ticket->id)]) }}">
                             @csrf
+                            @if(request()->filled('qr_checkin'))
+                                <input type="hidden" name="qr_checkin" value="{{ request()->qr_checkin }}">
+                            @endif
                             <div class="mb-3">
                                 <label for="event_name" class="form-label">Event Name</label>
                                 <div>{{ $eventName ?? '' }}</div>

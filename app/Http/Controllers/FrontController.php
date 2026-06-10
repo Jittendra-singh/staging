@@ -33,6 +33,7 @@ use App\Models\EventFinalizeEmailLog;
 use App\Models\EventRescheduleLog;
 use App\Models\TicketResendWaiverLog;
 use App\Models\ReleaseNote;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 class FrontController extends Controller
 {
     public function viewEvents(){
@@ -448,6 +449,39 @@ class FrontController extends Controller
         } catch (\Exception $e) {
             $this->setFlashSession(false, 'Issues occured while signing waiver and marking check-in.');
             return redirect()->back();
+        }
+    }
+    public function volunteerWaiverQr($id)
+    {
+        try {
+            $orderTicket = EventOrderTicket::with(['event', 'volunteer'])->findOrFail(decrypt($id));
+            $authUser = auth()->guard('front')->user();
+
+            $cohostEventIds = $authUser->cohostingEvents()->pluck('events.id');
+            $hostingEventIds = $authUser->events()->pluck('events.id');
+            $allowedEventIds = $cohostEventIds->merge($hostingEventIds);
+
+            if (!$allowedEventIds->contains($orderTicket->event_id)) {
+                return response()->json($this->generateResponse(false, 'Unauthorized action.'), 403);
+            }
+
+            $qrCheckinToken = encrypt('volunteer_checkin_qr:'.$orderTicket->id);
+
+            $waiverUrl = route('view-waiver-form', [
+                'ticket' => encrypt($orderTicket->id),
+                'qr_checkin' => $qrCheckinToken,
+            ]);
+
+            $qrHtml = QrCode::size(280)
+                ->margin(2)
+                ->generate($waiverUrl);
+
+            return response()->json($this->generateResponse(true, 'QR code generated successfully.', [
+                'qr_html' => (string) $qrHtml,
+                'waiver_url' => $waiverUrl,
+            ]));
+        } catch (\Exception $e) {
+            return response()->json($this->generateResponse(false, 'Unable to generate QR code.'), 500);
         }
     }
 

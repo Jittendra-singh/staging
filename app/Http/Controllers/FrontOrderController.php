@@ -825,7 +825,18 @@ class FrontOrderController extends Controller
             throw new CustomException("This waiver is already filled and signed. if you have any doubt, please contact organizer.", 408);
             
         $orderTicket->update(['waiver_filled_at' => now(), 'signature' => $request->signature]);
+        if ($request->filled('qr_checkin')) {
+            try {
+                $qrCheckinValue = decrypt($request->qr_checkin);
 
+                if ($qrCheckinValue === 'volunteer_checkin_qr:'.$orderTicket->id && $orderTicket->checkin != 1) {
+                    $frontController = new FrontController();
+                    $frontController->ticketMarkCheckin(encrypt($orderTicket->id), true);
+                }
+            } catch (\Exception $e) {
+                // Invalid QR check-in token. Waiver submission still remains valid.
+            }
+        }
         // send mail
         $this->sendRSVPandWaiverMail($orderTicket);
         $this->setFlashSession(true, "Waiver form has been successfully submitted and signed.");

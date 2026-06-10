@@ -140,7 +140,7 @@
                     <div class="col-xl-12 col-lg-12 col-md-12">
                         @if(count($events))
                         <div class="col-lg-4 text-left mb-4">
-                            <h2>Upcoming Cleanups</h2>
+                            <h2>{{ $widget->custom_widget_header ?: 'Upcoming Cleanups' }}</h2>
                         </div>
                         <div class="">
                             <div class="featured-controls">
