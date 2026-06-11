@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 use DB;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
@@ -847,6 +848,105 @@ class FrontController extends Controller
 
         session()->flashInput($event->toArray());
         return redirect()->route('front-post-a-event');
+    }
+    public function recurringEventSetup($event)
+    {
+        $validated = request()->validate([
+            'recurring_duration' => 'required|in:weekly,monthly',
+            'recurring_numbers' => 'required|integer|min:1|max:52',
+        ]);
+
+        return redirect()->route('front-recurring-event', [
+            'event' => $event,
+            'duration' => $validated['recurring_duration'],
+            'numbers' => $validated['recurring_numbers'],
+        ]);
+    }
+
+    public function recurringEvent($event)
+    {
+        $event = Event::with('eventTickets')
+            ->where('creator_id', auth()->guard('front')->user()->id)
+            ->findOrFail(decrypt($event));
+
+        $duration = request('duration');
+        $numbers = (int) request('numbers');
+
+        abort_unless(in_array($duration, ['weekly', 'monthly']) && $numbers > 0, 404);
+
+        return view('pages.frontend.recurring-event', [
+            'event' => $event,
+            'duration' => $duration,
+            'numbers' => min($numbers, 52),
+            'intervalDays' => $duration === 'weekly' ? 7 : 30,
+            'seo_details' => (object)['title' => 'Recurring Event: '.$event->event_name],
+        ]);
+    }
+
+    public function storeRecurringEvent($event)
+    {
+        $parentEvent = Event::with(['eventTickets', 'tags', 'volunteertags', 'bringTools', 'providedTools'])
+            ->where('creator_id', auth()->guard('front')->user()->id)
+            ->findOrFail(decrypt($event));
+
+        $validated = request()->validate([
+            'recurrences' => 'required|array|min:1|max:52',
+            'recurrences.*.start_datetime' => 'required|date',
+            'recurrences.*.end_datetime' => 'required|date|after:recurrences.*.start_datetime',
+            'recurrences.*.site_publish_date' => 'required|date',
+            'recurrences.*.site_depublish_date' => 'required|date|after_or_equal:recurrences.*.site_publish_date',
+            'recurrences.*.tickets' => 'nullable|array',
+            'recurrences.*.tickets.*.sell_start_time' => 'required|date',
+            'recurrences.*.tickets.*.sell_end_time' => 'required|date|after_or_equal:recurrences.*.tickets.*.sell_start_time',
+        ]);
+
+        DB::transaction(function () use ($parentEvent, $validated) {
+            $now = now();
+
+            foreach ($validated['recurrences'] as $index => $recurrence) {
+                $newEvent = $parentEvent->replicate();
+                $newEvent->event_name = $parentEvent->event_name;
+                $newEvent->slug = $this->generateSlug(Event::class, 'slug', $parentEvent->slug ?: $parentEvent->event_name, 0);
+                $newEvent->creator_id = auth()->guard('front')->user()->id;
+                $newEvent->status = 'draft';
+                $newEvent->cancelled_at = null;
+                $newEvent->is_completed = 0;
+                $newEvent->waste_collected = null;
+                $newEvent->area_cleaned = null;
+                $newEvent->volunteer_hours = null;
+                $newEvent->post_event_notes = null;
+                $newEvent->click_views = 0;
+                $newEvent->wp_id = null;
+                $newEvent->wp_meta = null;
+                $newEvent->start_datetime = Carbon::parse($recurrence['start_datetime']);
+                $newEvent->end_datetime = Carbon::parse($recurrence['end_datetime']);
+                $newEvent->site_publish_date = Carbon::parse($recurrence['site_publish_date'])->format('Y-m-d');
+                $newEvent->site_depublish_date = Carbon::parse($recurrence['site_depublish_date'])->format('Y-m-d');
+                $newEvent->created_at = $now;
+                $newEvent->updated_at = $now;
+                $newEvent->save();
+
+                foreach ($parentEvent->eventTickets as $ticketIndex => $ticket) {
+                    $newTicket = $ticket->replicate();
+                    $newTicket->event_id = $newEvent->id;
+                    $newTicket->sell_start_time = Carbon::parse($recurrence['tickets'][$ticketIndex]['sell_start_time'])->format('Y-m-d');
+                    $newTicket->sell_end_time = Carbon::parse($recurrence['tickets'][$ticketIndex]['sell_end_time'])->format('Y-m-d');
+                    $newTicket->wp_id = null;
+                    $newTicket->wp_meta = null;
+                    $newTicket->created_at = $now;
+                    $newTicket->updated_at = $now;
+                    $newTicket->save();
+                }
+
+                $newEvent->tags()->attach($parentEvent->tags()->pluck('tags.id')->toArray());
+                $newEvent->volunteertags()->attach($parentEvent->volunteertags()->pluck('tags.id')->toArray());
+                $newEvent->bringTools()->attach($parentEvent->bringTools()->pluck('tools.id')->mapWithKeys(fn ($id) => [$id => ['should_bring' => 1]])->toArray());
+                $newEvent->providedTools()->attach($parentEvent->providedTools()->pluck('tools.id')->mapWithKeys(fn ($id) => [$id => ['should_bring' => 0]])->toArray());
+            }
+        });
+
+        $this->setFlashSession(true, 'Recurring events created successfully.');
+        return redirect()->route('front-cleanup-hosting', ['type' => 'organizer']);
     }
     public function saveCleanUpBasicDetails(){
         $request = request();

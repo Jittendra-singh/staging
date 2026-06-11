@@ -161,6 +161,10 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::get('volunteer-check-in/export/{id}', 'exportVolunteerCheckinPdf')->name('front-volunteer-check-in-export');
         Route::post('volunteer-check-in/waiver-qr/{id}', 'volunteerWaiverQr')->name('front-volunteer-waiver-qr');
 
+        Route::post('recurring-event/setup/{event}', 'recurringEventSetup')->name('front-recurring-event-setup');
+        Route::get('recurring-event/{event}', 'recurringEvent')->name('front-recurring-event');
+        Route::post('recurring-event/{event}', 'storeRecurringEvent')->name('front-recurring-event-store');
+
         Route::get('cleanup-hosting/{type?}', 'cleanupHosting')->name('front-cleanup-hosting');
         Route::delete('cleanup-hosting/{id}', 'cleanupHostingDelete')->name('front-cleanup-hosting-delete');
         Route::post('send-rsvp-emails/{slug}' , 'sendRsvpEmails')->name('front-send-rsvp-emails');

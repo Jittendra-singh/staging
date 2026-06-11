@@ -278,6 +278,13 @@ a[disabled]{
                                                     <a href="{{route('front-duplicate-an-event', ['slug' => $event->slug])}}" class="dropdown-item">
                                                         <i class="fa-solid fa-clone me-3"></i>Duplicate Event
                                                     </a>
+                                                    @if(!empty($event->start_datetime) && \Carbon\Carbon::parse($event->start_datetime)->gt(now()))
+                                                        <a href="javascript:void(0);" class="dropdown-item recurring-event-btn"
+                                                        data-action="{{ route('front-recurring-event-setup', ['event' => $event->encrypted_id]) }}"
+                                                        data-bs-toggle="modal" data-bs-target="#recurringEventModal">
+                                                            <i class="fa-solid fa-repeat me-3"></i>Recurring Events
+                                                        </a>
+                                                    @endif
                                                     @endif
                                                     @if($event->is_completed!=1)
                                                     <!-- <a message="You want to send the waiver email to all attendees" href="javascript:void(0);" url="{{route('send-waiver-bulk-email', ['id' => $event->encrypted_id])}}" class="dropdown-item show-alert-run-url">
@@ -462,6 +469,44 @@ a[disabled]{
         </form>
     </div>
 </div>
+<div class="modal fade" id="recurringEventModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="POST" id="recurringEventForm">
+            @csrf
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-primary">Create Recurring Events</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body main-form p-4">
+                    <div class="form-group mb-3">
+                        <label>Recurring Pattern*</label>
+                        <div class="d-flex align-items-center gap-4 mt-2">
+                            <label class="d-inline-flex align-items-center gap-2 mb-0">
+                                <input type="radio" name="recurring_duration" value="weekly" checked required>
+                                <span>Weekly</span>
+                            </label>
+
+                            <label class="d-inline-flex align-items-center gap-2 mb-0">
+                                <input type="radio" name="recurring_duration" value="monthly" required>
+                                <span>Monthly</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label>Number of Occurrences*</label>
+                        <input type="number" name="recurring_numbers" class="form-control" min="1" max="52" required>
+                        <small>Example: 6 weeks/months sequence will be generated.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="primary-btn w-fit">Generate Preview</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 @push('script')
     <script src="{{ asset('assets/libs/@ckeditor/ckeditor5-build-classic/build/ckeditor.js') }}"></script>
     <script>
@@ -474,6 +519,9 @@ a[disabled]{
             e.preventDefault();
             $(this).text('Sending...').attr('disabled', true);
             $('#sendEventAttendeesEmailForm').submit();
+        });
+        $('.recurring-event-btn').click(function () {
+            $('#recurringEventForm').attr('action', $(this).data('action'))[0].reset();
         });
     </script>
 @endpush
