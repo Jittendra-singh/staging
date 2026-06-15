@@ -1948,8 +1948,24 @@ class FrontController extends Controller
                 </div>';
             }
         } else {
-            $message = '<div class="text-left fw-bold mb-4 text-center">There are no registered or checked-in attendees for this event.</div>
+            /* $message = '<div class="text-left fw-bold mb-4 text-center">There are no registered or checked-in attendees for this event.</div>
             <div class="alert-innter-ul p-4">
+                <div class="text-left mb-2">
+                You can still proceed to submit the wrap-up. Once submitted:
+                </div>
+                <ul class="text-left ps-4">
+                    <li>Your cleanup impact will be recorded and contribute to overall community impact.</li>
+                    <li>No certificates will be generated.</li>
+                    <li>No emails will be sent.</li>
+                </ul>
+            </div>'; */
+            $message = '
+            <div class="alert-innter-ul p-4">
+                <div class="text-left mb-2">Currently, this event has:</div>
+                <ul class="text-left ps-4">
+                    <li>Registered Users: 0</li>
+                    <li>Checked-In Users: 0</li>
+                </ul>
                 <div class="text-left mb-2">
                 You can still proceed to submit the wrap-up. Once submitted:
                 </div>
