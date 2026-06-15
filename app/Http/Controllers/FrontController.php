@@ -3408,8 +3408,25 @@ class FrontController extends Controller
                     ->paginate($eventPerPage)
                     ->withQueryString();
             } else {
-                $mapEvents = Event::listactive()
+                $mapEvents = Event::with('category')
+                ->listactive()
                 ->where('is_private', 0)
+                ->when(!empty($widget->ftr_tag_ids), function ($query) use ($widget) {
+                    $tagIds = array_filter(explode(',', $widget->ftr_tag_ids));
+
+                    $query->whereHas('tags', function ($tagQuery) use ($tagIds) {
+                        $tagQuery->whereIn('tags.id', $tagIds);
+                    });
+                })
+                ->when(!empty($widget->ftr_event_title), function ($query) use ($widget) {
+                    $query->where('event_name', 'like', '%' . $widget->ftr_event_title . '%');
+                })
+                ->when(!empty($widget->ftr_event_start_dt), function ($query) use ($widget) {
+                    $query->whereDate('events.start_datetime', '>=', $widget->ftr_event_start_dt);
+                })
+                ->when(!empty($widget->ftr_event_end_dt), function ($query) use ($widget) {
+                    $query->whereDate('events.end_datetime', '<=', $widget->ftr_event_end_dt);
+                })
                 ->get();
                 $location_array = $mapEvents->map(function ($event) use ($widget) {
                     if (!$event->latitude || !$event->longitude) 
