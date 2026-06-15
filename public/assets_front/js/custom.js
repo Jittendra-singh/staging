@@ -1226,21 +1226,20 @@ $(document).ready(function () {
 
 			const { status, data, message } = await response.json();
 			const { event_instance, redirect_href, section_html } = data || {};
+			var redirect_href_ = redirect_href;
 
 			if (status) {
 				$("html, body").animate({ scrollTop: 0 }, "slow");
 
 				$('.event_instance').val(event_instance || '')
 
-				var redirect_href_ = redirect_href;
 				if (redirect_href_) {
 					if (redirect_href_.includes('events.volunteercleanup.org')) {
 						const urlObj = new URL(redirect_href_);
 						const pathAndQuery = urlObj.pathname + urlObj.search + urlObj.hash;
 						redirect_href_ = frontbase + pathAndQuery;
-					} else {
-						window.location.href = redirect_href_;
 					}
+					window.location.href = redirect_href_;
 				}
 
 				if (section_html) {
