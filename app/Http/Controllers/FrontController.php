@@ -1961,14 +1961,14 @@ class FrontController extends Controller
             </div>'; */
             $message = '
             <div class="alert-innter-ul p-4">
-                <div class="text-left mb-2">Currently, this event has:</div>
+                <b class="text-left mb-2">Currently, this event has:</b>
                 <ul class="text-left ps-4">
                     <li>Registered Users: 0</li>
                     <li>Checked-In Users: 0</li>
                 </ul>
-                <div class="text-left mb-2">
+                <b class="text-left mb-2 mt-3 d-block">
                 You can still proceed to submit the wrap-up. Once submitted:
-                </div>
+                </b>
                 <ul class="text-left ps-4">
                     <li>Your cleanup impact will be recorded and contribute to overall community impact.</li>
                     <li>No certificates will be generated.</li>
