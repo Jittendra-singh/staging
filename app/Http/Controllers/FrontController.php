@@ -1714,7 +1714,7 @@ class FrontController extends Controller
         return $this->generateJsonResponse(true, 'Cleanup report data saved successfully.', [
             'event_instance' => encrypt($event->id),
             'event' => $event , 
-            'redirect_href' => route('front-cleanup-hosting', ['type' => 'organizer']) , 
+            'redirect_href' => $this->mailUrl('front-cleanup-hosting', ['type' => 'organizer']) , 
         ]);
     }
     public function removeEventAfterImage($index, $id){
