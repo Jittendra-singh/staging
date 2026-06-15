@@ -1225,7 +1225,8 @@ $(document).ready(function () {
 			}
 
 			const { status, data, message } = await response.json();
-			const { event_instance, redirect_href, section_html } = data || {};
+			const { event_instance, section_html } = data || {};
+			let redirect_href = data?.redirect_href;
 
 			if (status) {
 				$("html, body").animate({ scrollTop: 0 }, "slow");
