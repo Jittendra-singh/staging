@@ -1967,12 +1967,12 @@ class FrontController extends Controller
                     <li>Checked-In Users: 0</li>
                 </ul>
                 <b class="text-left mb-2 mt-3 d-block">
-                You can still proceed to submit the wrap-up. Once submitted:
+                You can still proceed with submitting the wrap-up report. Once submitted:
                 </b>
                 <ul class="text-left ps-4">
                     <li>Your cleanup impact will be recorded and contribute to overall community impact.</li>
-                    <li>No certificates will be generated.</li>
-                    <li>No emails will be sent.</li>
+                    <li>No community service certificates will be generated.</li>
+                    <li>No attendee emails will be sent.</li>
                 </ul>
             </div>';
         }
