@@ -1715,6 +1715,9 @@ class FrontController extends Controller
             'event_instance' => encrypt($event->id),
             'event' => $event , 
             'redirect_href' => $this->mailUrl('front-cleanup-hosting', ['type' => 'organizer']) , 
+            'redirect_href' => $this->mailUrl('front-cleanup-hosting', [
+                'type' => 'organizer',
+            ]),
         ]);
     }
     public function removeEventAfterImage($index, $id){

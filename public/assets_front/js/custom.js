@@ -1233,7 +1233,13 @@ $(document).ready(function () {
 				$('.event_instance').val(event_instance || '')
 
 				if (redirect_href) {
-					window.location.href = redirect_href;
+					if (redirect_href.includes('events.volunteercleanup.org')) {
+						const urlObj = new URL(redirect_href);
+						const pathAndQuery = urlObj.pathname + urlObj.search + urlObj.hash;
+						redirect_href = frontbase + pathAndQuery;
+					} else {
+						window.location.href = redirect_href;
+					}
 				}
 
 				if (section_html) {
