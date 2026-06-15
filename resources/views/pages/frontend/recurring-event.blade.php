@@ -192,13 +192,17 @@
                                                     // New logic for past / ongoing parent events.
                                                     $sellStart = \Carbon\Carbon::today()->addDays($days);
 
+                                                    $parentTicketSellStart = \Carbon\Carbon::parse($ticket->sell_start_time);
                                                     $parentTicketSellEnd = \Carbon\Carbon::parse($ticket->sell_end_time);
 
                                                     if ($parentTicketSellEnd->isSameDay($parentEnd)) {
+                                                        // If parent ticket sell end date is same as parent event end date,
+                                                        // recurring ticket sell end date should be same as recurring event end date.
                                                         $sellEnd = $end->copy();
                                                     } else {
-                                                        $ticketSellEndOffsetSeconds = $parentStart->diffInSeconds($parentTicketSellEnd, false);
-                                                        $sellEnd = $start->copy()->addSeconds($ticketSellEndOffsetSeconds);
+                                                        // Otherwise maintain the same difference between parent ticket sell start and sell end.
+                                                        $ticketSellDurationDays = $parentTicketSellStart->diffInDays($parentTicketSellEnd);
+                                                        $sellEnd = $sellStart->copy()->addDays($ticketSellDurationDays);
                                                     }
                                                 }
                                             @endphp
