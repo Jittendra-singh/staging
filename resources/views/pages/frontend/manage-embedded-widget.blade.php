@@ -320,6 +320,73 @@ $(document).ready(function () {
 
         }, 300);
     });
+
+
+    $('#createWidgetForm').on('submit', function (e) {
+        let hasError = false;
+
+        const $form = $(this);
+        const $title = $form.find('[name="title"]');
+        const $location = $form.find('[name="location"]');
+        const $latitude = $form.find('[name="latitude"]');
+        const $longitude = $form.find('[name="longitude"]');
+        const $distance = $form.find('[name="distance"]');
+
+        $form.find('.client-validation-error').remove();
+        $form.find('.is-invalid, .form-control-danger').removeClass('is-invalid form-control-danger');
+
+        function showError($field, message) {
+            hasError = true;
+
+            $field.addClass('is-invalid form-control-danger');
+
+            if ($field.closest('.bootstrap-select').length) {
+                $field.closest('.bootstrap-select').after('<div class="invalid-feedback d-block client-validation-error">' + message + '</div>');
+            } else {
+                $field.after('<div class="invalid-feedback d-block client-validation-error">' + message + '</div>');
+            }
+        }
+
+        if ($.trim($title.val()) === '') {
+            showError($title, 'Please enter widget title.');
+        }
+
+        if (
+            $.trim($location.val()) !== '' &&
+            $.trim($latitude.val()) !== '' &&
+            $.trim($longitude.val()) !== '' &&
+            $.trim($distance.val()) === ''
+        ) {
+            showError($distance, 'Please select distance when location is selected.');
+        }
+
+        if (
+            $.trim($distance.val()) !== '' &&
+            (
+                $.trim($location.val()) === '' ||
+                $.trim($latitude.val()) === '' ||
+                $.trim($longitude.val()) === ''
+            )
+        ) {
+            showError($location, 'Please select location when distance is selected.');
+        }
+
+        if (hasError) {
+            e.preventDefault();
+
+            const $firstError = $form.find('.is-invalid').first();
+
+            if ($firstError.length) {
+                $('html, body').animate({
+                    scrollTop: $firstError.offset().top - 120
+                }, 300);
+
+                $firstError.focus();
+            }
+
+            return false;
+        }
+    });
 });
 </script>
 

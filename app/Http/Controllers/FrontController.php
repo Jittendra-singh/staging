@@ -3227,6 +3227,17 @@ class FrontController extends Controller
             'custom_widget_header' => 'nullable|string|max:255',
             'event_per_page'       => 'nullable|integer|min:1|max:100',
         ]);
+        if ( $request->filled('location') && $request->filled('latitude') && $request->filled('longitude') && !$request->filled('distance') ) {
+            return redirect()->back()
+                ->withErrors(['distance' => 'Please select distance when location is selected.'])
+                ->withInput();
+        }
+
+        if ( $request->filled('distance') && ( !$request->filled('location') || !$request->filled('latitude') || !$request->filled('longitude') )) {
+            return redirect()->back()
+                ->withErrors(['location' => 'Please select location when distance is selected.'])
+                ->withInput();
+        }
         if(!empty($id)){
             $widget = VolunteerWidget::where('id', decrypt($id))->first();
             if(!isset($widget->id)){
@@ -3380,6 +3391,7 @@ class FrontController extends Controller
                 $pData['distance'] = $widget->distance;
                 $pData['latitude'] = $widget->location_lat;
                 $pData['longitude'] = $widget->location_long;
+                $pData['unit'] = 'mi';
             }
             $request = request();
             $request->merge($pData);
