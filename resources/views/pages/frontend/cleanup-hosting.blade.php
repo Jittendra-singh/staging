@@ -39,7 +39,7 @@ a[disabled]{
                         <div class="main-card mt-5">
                             <div class="dashboard-wrap-content p-4">
                                 <div class="d-md-flex flex-wrap align-items-center">
-                                    <div class="dashboard-date-wrap col-sm-7 rs">
+                                    <div class="dashboard-date-wrap col-sm-6 rs">
                                         <div class="btn-group" role="group">
                                             <a href="{{ route('front-cleanup-hosting', ['type' => 'organizer']) }}"
                                                 class="btn btn-outline-primary px-3 py-2 {{ request()->segment(2)!='cohost'?'active text-white':'' }} ">
@@ -61,7 +61,7 @@ a[disabled]{
                                             @endif
                                         </h5> -->
                                     </div>
-                                    <div class="rs mt_r4 col-sm-5 ps-3 text-end">
+                                    <div class="rs mt_r4 col-sm-6 ps-3 text-end">
                                         <div class="btn-group" role="group">
                                             <a href="javascript:void(0);" onclick="showHostingEvent('upcoming',this)"
                                                 class="btn btn-outline-primary px-3 py-2 active text-white">
@@ -73,7 +73,7 @@ a[disabled]{
                                             </a>
                                             <a href="javascript:void(0);" onclick="showHostingEvent('ended',this)"
                                                 class="btn btn-outline-primary px-3 py-2">
-                                                Past 
+                                                Completed 
                                             </a>
                                             <a href="javascript:void(0);" onclick="showHostingEvent('action_required',this)"
                                                 class="btn btn-outline-primary px-3 py-2">
@@ -279,12 +279,12 @@ a[disabled]{
                                                         <i class="fa-solid fa-clone me-3"></i>Duplicate Event
                                                     </a>
                                                     @if(!empty($event->start_datetime) && \Carbon\Carbon::parse($event->start_datetime)->gt(now()))
-                                                        <a href="javascript:void(0);" class="dropdown-item recurring-event-btn"
-                                                        data-action="{{ route('front-recurring-event-setup', ['event' => $event->encrypted_id]) }}"
-                                                        data-bs-toggle="modal" data-bs-target="#recurringEventModal">
-                                                            <i class="fa-solid fa-repeat me-3"></i>Recurring Events
-                                                        </a>
                                                     @endif
+                                                    <a href="javascript:void(0);" class="dropdown-item recurring-event-btn"
+                                                    data-action="{{ route('front-recurring-event-setup', ['event' => $event->encrypted_id]) }}"
+                                                    data-bs-toggle="modal" data-bs-target="#recurringEventModal">
+                                                        <i class="fa-solid fa-repeat me-3"></i>Recurring Events
+                                                    </a>
                                                     @endif
                                                     @if($event->is_completed!=1)
                                                     <!-- <a message="You want to send the waiver email to all attendees" href="javascript:void(0);" url="{{route('send-waiver-bulk-email', ['id' => $event->encrypted_id])}}" class="dropdown-item show-alert-run-url">

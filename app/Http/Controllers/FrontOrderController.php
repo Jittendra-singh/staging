@@ -615,6 +615,25 @@ class FrontOrderController extends Controller
                 $subject = "New Registration for your event : ".$event->event_name;
                 $this->sendEmail($event->creator->email_address, $subject, $emailData, "email-to-org-for-register");
 
+                // send same organizer registration email to approved co-hosts
+                $activeCohosts = $event->cohostRecords()->where('request_status', 'approved')->with('volunteer')->get();
+
+                foreach ($activeCohosts as $cohost) {
+                    if (
+                        isset($cohost->volunteer) &&
+                        !empty(trim($cohost->volunteer->email_address)) &&
+                        trim($cohost->volunteer->email_address) != trim($event->creator->email_address)
+                    ) {
+                        $cohostEmailData = $emailData;
+                        $cohostEmailData['org_name'] = $cohost->volunteer->first_name.' '.$cohost->volunteer->last_name;
+                        $cohostEmailData['org_email'] = $cohost->volunteer->email_address;
+                        $cohostEmailData['org_phone'] = $cohost->volunteer->phone;
+                        $cohostEmailData['cleanup_hosting_link'] = $this->mailUrl('front-cleanup-hosting', ['type' => 'cohost']);
+
+                        $this->sendEmail($cohost->volunteer->email_address, $subject, $cohostEmailData, "email-to-org-for-register");
+                    }
+                }
+
                 // send email to who purchase the tickets
                 $purchaseByEmailData = [
                     'event_name'=>$event->event_name,

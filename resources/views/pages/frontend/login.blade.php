@@ -106,7 +106,7 @@
     </div>
     <div class="modal fade" id="magicLinkLoginModal" tabindex="-1" aria-labelledby="magicLinkLoginModalLabel" aria-modal="true" role="dialog">
         <div class="modal-dialog modal-lg">
-            <form action="{{ route('front-login-magic-link') }}" method="POST" class="validateform">
+            <form id="magicLinkLoginForm" action="{{ route('front-login-magic-link') }}" method="POST" novalidate>
                 @csrf
                 <div class="modal-content">
                     <div class="modal-header">
@@ -157,7 +157,7 @@
 
                     <div class="modal-footer">
                         <button type="button" class="primary-btn w-fit" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="primary-btn w-fit">Get Magic Link</button>
+                        <button type="submit" form="magicLinkLoginForm" class="primary-btn w-fit">Get Magic Link</button>
                     </div>
                 </div>
             </form>
@@ -198,7 +198,32 @@
             googleLoginForm.submit();
         }
     </script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var magicLinkForm = document.getElementById('magicLinkLoginForm');
 
+        if (!magicLinkForm) {
+            return;
+        }
+
+        magicLinkForm.addEventListener('submit', function (event) {
+            var emailInput = magicLinkForm.querySelector('[name="email_address"]');
+
+            if (!emailInput || !emailInput.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                magicLinkForm.classList.add('was-validated');
+
+                if (emailInput) {
+                    emailInput.focus();
+                }
+
+                return false;
+            }
+        });
+    });
+</script>
 
 @endpush
 @push('style')

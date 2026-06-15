@@ -60,12 +60,35 @@
 
                 @for($i = 1; $i <= $numbers; $i++)
                     @php
-                        $days = $intervalDays * $i;
+                        $parentStart = \Carbon\Carbon::parse($event->start_datetime);
+                        $parentEnd = \Carbon\Carbon::parse($event->end_datetime);
+                        $isUpcomingEvent = $parentStart->gt(now());
 
-                        $start = \Carbon\Carbon::parse($event->start_datetime)->addDays($days);
-                        $end = \Carbon\Carbon::parse($event->end_datetime)->addDays($days);
-                        $publish = \Carbon\Carbon::parse($event->site_publish_date)->addDays($days);
-                        $expiry = \Carbon\Carbon::parse($event->site_depublish_date)->addDays($days);
+                        if ($isUpcomingEvent) {
+                            // Existing logic for upcoming events: do not change behavior.
+                            $days = $intervalDays * $i;
+
+                            $start = \Carbon\Carbon::parse($event->start_datetime)->addDays($days);
+                            $end = \Carbon\Carbon::parse($event->end_datetime)->addDays($days);
+                            $publish = \Carbon\Carbon::parse($event->site_publish_date)->addDays($days);
+                            $expiry = \Carbon\Carbon::parse($event->site_depublish_date)->addDays($days);
+                        } else {
+                            // New logic for past / ongoing events.
+                            $days = $intervalDays * ($i - 1);
+                            $today = \Carbon\Carbon::today();
+
+                            $parentDurationSeconds = $parentStart->diffInSeconds($parentEnd);
+
+                            $start = $today->copy()
+                                ->addDays(7)
+                                ->addDays($days)
+                                ->setTime($parentStart->hour, $parentStart->minute, $parentStart->second);
+
+                            $end = $start->copy()->addSeconds($parentDurationSeconds);
+
+                            $publish = $today->copy()->addDays($days);
+                            $expiry = $end->copy();
+                        }
                     @endphp
 
                     <div class="main-card p-4 mt-4 recurring-event-box">
@@ -161,8 +184,23 @@
                                     <tbody>
                                         @foreach($event->eventTickets as $ticketIndex => $ticket)
                                             @php
-                                                $sellStart = \Carbon\Carbon::parse($ticket->sell_start_time)->addDays($days);
-                                                $sellEnd = \Carbon\Carbon::parse($ticket->sell_end_time)->addDays($days);
+                                                if ($isUpcomingEvent) {
+                                                    // Existing logic for upcoming events.
+                                                    $sellStart = \Carbon\Carbon::parse($ticket->sell_start_time)->addDays($days);
+                                                    $sellEnd = \Carbon\Carbon::parse($ticket->sell_end_time)->addDays($days);
+                                                } else {
+                                                    // New logic for past / ongoing parent events.
+                                                    $sellStart = \Carbon\Carbon::today()->addDays($days);
+
+                                                    $parentTicketSellEnd = \Carbon\Carbon::parse($ticket->sell_end_time);
+
+                                                    if ($parentTicketSellEnd->isSameDay($parentEnd)) {
+                                                        $sellEnd = $end->copy();
+                                                    } else {
+                                                        $ticketSellEndOffsetSeconds = $parentStart->diffInSeconds($parentTicketSellEnd, false);
+                                                        $sellEnd = $start->copy()->addSeconds($ticketSellEndOffsetSeconds);
+                                                    }
+                                                }
                                             @endphp
 
                                             <tr>
