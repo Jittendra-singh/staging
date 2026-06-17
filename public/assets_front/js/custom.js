@@ -852,8 +852,8 @@ $(document).ready(function () {
 					//maxDate:jQuery('#end_datetime').val()?jQuery('#end_datetime').val():false
 				})
 			},
-			onChangeDateTime: function (ct) {
-				if ($('#end_datetime').val() != '') {
+			onChangeDateTime: function (ct, $input) {
+				/* if ($('#end_datetime').val() != '') {
 					var startDate = new Date(ct);
 					var endDate = new Date($('#end_datetime').val());
 					var diffTime = Math.abs(endDate - startDate);
@@ -863,6 +863,11 @@ $(document).ready(function () {
 					} else {
 						$('#longerThanOneWeekText').hide();
 					}
+				} */
+				var startDateTimeValue = $input.val();
+				if (startDateTimeValue != '') {
+					$('#end_datetime').val(startDateTimeValue).trigger('change');
+					$('#longerThanOneWeekText').hide();
 				}
 			}
 			/* onChangeDateTime: function (ct) {

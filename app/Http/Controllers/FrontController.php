@@ -2231,9 +2231,14 @@ class FrontController extends Controller
         return view('pages.frontend.order-details', ['order' => $order, 'seo_details' => (object)['title' => 'Order Details']]);
     }
     public function exportRegistration(){
+        $fileName = 'Registrations.csv';
+        if (request()->event) {
+            $event = Event::findOrFail(request()->event);
+            $fileName = $event->event_name.' Registrations.csv';
+        }
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Exports\RegistrationExport, 
-            'registrations.csv', 
+            $fileName, 
             \Maatwebsite\Excel\Excel::CSV 
         );
     }
@@ -3214,7 +3219,7 @@ class FrontController extends Controller
         $request = request();
         $validated = $request->validate([
             'title'                => 'required',
-            'location'             => 'nullable|string|max:255',
+            'website'              => 'required|url|max:255',
             'latitude'             => 'nullable',
             'longitude'            => 'nullable',
             'distance'             => 'nullable',
@@ -3252,7 +3257,7 @@ class FrontController extends Controller
         $widget->fill($validated);
         $widget->location_lat = $validated['latitude'];
         $widget->location_long = $validated['longitude'];
-        $widget->website = request()->website;
+        $widget->website = $validated['website'];
 
         $widget->org_ids = request()->filled('organizer_id')
             ? implode(',', request()->organizer_id)
@@ -3321,6 +3326,18 @@ class FrontController extends Controller
                 }
             }
         }
+        $tag_html = '-';
+        if (!empty($widget->ftr_tag_ids)) {
+            $tag_ids = explode(',', $widget->ftr_tag_ids);
+            $tag_html = \App\Models\Tag::whereIn('id', $tag_ids)->pluck('name')->implode(', ');
+        }
+
+        $cat_html = !empty($cat_html) ? $cat_html : '-';
+        $org_html = !empty($org_html) ? $org_html : '-';
+
+        $website_html = !empty($widget->website)
+            ? '<a href="'.e($widget->website).'" target="_blank" rel="noopener noreferrer">'.e($widget->website).'</a>'
+            : '-';
         $html = '
         <div class="model-content main-form">
             <div class="container-fluid">
@@ -3328,29 +3345,66 @@ class FrontController extends Controller
                     <div class="col-12">
                         <h5 class=" mb-3">Widget Information:</h5>
                         <hr class="mt-0 mb-3">
+                    </div>
+                    <div class="col-6">
                         <div class="row mb-2">
-                            <div class="col-md-3 fw-semibold text-muted">Title :</div>
-                            <div class="col-md-9 registration-full-name">'.$widget->title.'</div>
+                            <div class="col-md-5 fw-semibold text-muted">Widget Title :</div>
+                            <div class="col-md-7 registration-full-name">'.e($widget->title).'</div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-md-3 fw-semibold text-muted">How would you like the Widget to Display? :</div>
-                            <div class="col-md-9 registration-event-name">'.($widget->type==1?'List View':'Map View').'</div>
+                            <div class="col-md-5 fw-semibold text-muted">Location :</div>
+                            <div class="col-md-7 registration-email-address">'.(!empty($widget->location) ? e($widget->location) : '-').'</div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-md-3 fw-semibold text-muted">Embed Location :</div>
-                            <div class="col-md-9 registration-event-name">'.(!empty($widget->website)?$widget->website:'-').'</div>
+                            <div class="col-md-5 fw-semibold text-muted">Distance :</div>
+                            <div class="col-md-7 registration-phone-number">'.(!empty($widget->distance) ? e($widget->distance).' Miles' : '-').'</div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-md-3 fw-semibold text-muted">Status :</div>
-                            <div class="col-md-9 registration-event-name">'.($widget->is_active==1?'Active':'Inactive').'</div>
+                            <div class="col-md-5 fw-semibold text-muted">Organizers :</div>
+                            <div class="col-md-7 registration-event-name">'.$org_html.'</div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-md-3 fw-semibold text-muted">Categories :</div>
-                            <div class="col-md-9 registration-event-name">'.$cat_html.'</div>
+                            <div class="col-md-5 fw-semibold text-muted">Categories :</div>
+                            <div class="col-md-7 registration-event-name">'.$cat_html.'</div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-md-3 fw-semibold text-muted">Organizers :</div>
-                            <div class="col-md-9 registration-event-name">'.$org_html.'</div>
+                            <div class="col-md-5 fw-semibold text-muted">Event Tags Filter :</div>
+                            <div class="col-md-7 registration-event-name">'.$tag_html.'</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-5 fw-semibold text-muted">Event Title Filter :</div>
+                            <div class="col-md-7 registration-event-name">'.(!empty($widget->ftr_event_title) ? e($widget->ftr_event_title) : '-').'</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-6">
+                        <div class="row mb-2">
+                            <div class="col-md-5 fw-semibold text-muted">Event Start Date Filter :</div>
+                            <div class="col-md-7 registration-event-name">'.(!empty($widget->ftr_event_start_dt) ? e($widget->ftr_event_start_dt) : '-').'</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-5 fw-semibold text-muted">Event End Date Filter :</div>
+                            <div class="col-md-7 registration-event-name">'.(!empty($widget->ftr_event_end_dt) ? e($widget->ftr_event_end_dt) : '-').'</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-5 fw-semibold text-muted">What is the URL you are putting this widget on?  :</div>
+                            <div class="col-md-7 registration-event-name">'.$website_html.'</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-5 fw-semibold text-muted">Custom Widget Header :</div>
+                            <div class="col-md-7 registration-event-name">'.(!empty($widget->custom_widget_header) ? e($widget->custom_widget_header) : '-').'</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-5 fw-semibold text-muted">Events Per Page :</div>
+                            <div class="col-md-7 registration-event-name">'.(!empty($widget->event_per_page) ? e($widget->event_per_page) : '-').'</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-5 fw-semibold text-muted">Display Style :</div>
+                            <div class="col-md-7 registration-event-name">'.($widget->type==1?'List View':'Map View').'</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-5 fw-semibold text-muted">Status :</div>
+                            <div class="col-md-7 registration-event-name">'.($widget->is_active==1?'Active':'Inactive').'</div>
                         </div>
                     </div>
                 </div>

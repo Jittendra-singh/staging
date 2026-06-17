@@ -162,7 +162,7 @@
     .organizer-stat-value{
         font-size: 2rem;
         line-height: 1;
-        font-weight: 800;
+        font-weight: 500;
         letter-spacing: -0.04em;
         color: #27d3b7;
         margin: 0;
@@ -170,7 +170,7 @@
 
     .organizer-stat-value small{
         font-size: 0.55em;
-        font-weight: 800;
+        font-weight: 500;
     }
 
     .organizer-stat-label{
@@ -370,7 +370,7 @@
         color:white !important;
     }
     #upcoming-events-tab-btn,#past-events-tab-btn{
-        color:var(--bs-btn-color) !important;
+        color:var(--linear-gradient-2) !important
     }
 </style>
 @endpush

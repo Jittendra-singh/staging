@@ -231,6 +231,24 @@ $(document).ready(function () {
                               //maxDate:jQuery('#end_datetime').val()?jQuery('#end_datetime').val():false
                         })
                   },
+			onChangeDateTime: function (ct, $input) {
+				/* if ($('#end_datetime').val() != '') {
+					var startDate = new Date(ct);
+					var endDate = new Date($('#end_datetime').val());
+					var diffTime = Math.abs(endDate - startDate);
+					var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+					if (diffDays >= 7) {
+						$('#longerThanOneWeekText').show();
+					} else {
+						$('#longerThanOneWeekText').hide();
+					}
+				} */
+				var startDateTimeValue = $input.val();
+				if (startDateTimeValue != '') {
+					$('#end_datetime').val(startDateTimeValue).trigger('change');
+					$('#longerThanOneWeekText').hide();
+				}
+			}
                   /* onChangeDateTime:function( ct ){
                         if(ct){
                               var dateEnd2 = new Date(ct);

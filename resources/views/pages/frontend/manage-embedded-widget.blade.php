@@ -123,9 +123,22 @@
 
                         <div class="row">
                             <div class="col-md-4 mt-3">
-                                <label for="website" class="form-label">What is the URL you are putting this widget on?</label>
-                                <input type="url" id="website" class="text form-control h_40 urlmask" name="website" placeholder="Enter embed location" value="{{ old('website', $widget->website ?? '') }}">
+
+                                <label for="website" class="form-label">What is the URL you are putting this widget on? *</label>
+                                <input
+                                    type="url"
+                                    id="website"
+                                    class="text form-control h_40 urlmask @error('website') is-invalid @enderror"
+                                    name="website"
+                                    placeholder="Enter embed location"
+                                    value="{{ old('website', $widget->website ?? '') }}"
+                                    required
+                                >
+                                @error('website')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
                             </div>
+                            
 
                             <div class="col-md-4 mt-3">
                                 <label for="custom_widget_header" class="form-label">Custom Widget Header</label>
