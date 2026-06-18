@@ -16,6 +16,8 @@ use App\Models\City;
 use App\Models\ReferrerWithdrawal;
 use Illuminate\Support\Facades\DB;
 use App\Models\VolunteerAlert;
+use App\Models\EventCategory;
+use App\Models\Tag;
 use Illuminate\Support\Carbon;
 class DashboardController extends Controller
 {
@@ -340,5 +342,182 @@ class DashboardController extends Controller
         return redirect()->route('index-weekly-alerts');
     }
 
+    public function campaignAnalytics()
+    {
+        Gate::authorize('view', 'campaign-analytics');
 
+        $defaultCampaignTagId = 1; // TODO: set your default campaign tag id here
+
+        $selectedTagId = request()->filled('tag_id') ? request()->tag_id : $defaultCampaignTagId;
+        $selected_organizer = request()->organizer_id ? Volunteer::find(request()->organizer_id) : null;
+
+        $baseEventQuery = Event::with(['creator', 'category'])
+            ->whereHas('tags', function ($q) use ($selectedTagId) {
+                $q->where('tags.id', $selectedTagId);
+            })
+            ->when(request()->category_id, function ($q) {
+                $q->where('event_category_id', request()->category_id);
+            })
+            ->when(request()->organizer_id, function ($q) {
+                $q->where('creator_id', request()->organizer_id);
+            })
+            ->when(request()->start_date && request()->end_date, function ($q) {
+                $q->whereDate('start_datetime', '>=', request()->start_date)
+                ->whereDate('start_datetime', '<=', request()->end_date);
+            });
+
+        $events = (clone $baseEventQuery)->orderBy('start_datetime')->get();
+        $eventIds = $events->pluck('id');
+
+        $confirmedTicketsQuery = EventOrderTicket::whereIn('event_id', $eventIds)
+            ->where('rsvp_confirmation', 1);
+
+        $totalRegistrations = (clone $confirmedTicketsQuery)->count();
+        $totalCheckins = (clone $confirmedTicketsQuery)->where('checkin', 1)->count();
+
+        $totalDebrisRemoved = $events->sum(function ($event) {
+            return (float) preg_replace('/[^0-9.]/', '', $event->waste_collected ?? 0);
+        });
+
+        $attendanceRate = $totalRegistrations > 0
+            ? round(($totalCheckins / $totalRegistrations) * 100)
+            : 0;
+
+        if ($attendanceRate >= 80) {
+            $attendanceStatus = 'High Engagement';
+        } elseif ($attendanceRate >= 60) {
+            $attendanceStatus = 'Moderate Engagement';
+        } else {
+            $attendanceStatus = 'Needs Attention';
+        }
+
+        $registrationMonths = (clone $confirmedTicketsQuery)
+            ->selectRaw('YEAR(created_at) as year, MONTH(created_at) as month, COUNT(*) as total')
+            ->groupByRaw('YEAR(created_at), MONTH(created_at)')
+            ->orderByRaw('YEAR(created_at) DESC, MONTH(created_at) DESC')
+            ->get();
+
+        $registrationTrendMonths = [];
+
+        foreach ($registrationMonths as $registrationMonth) {
+            $monthStart = Carbon::create($registrationMonth->year, $registrationMonth->month, 1)->startOfDay();
+            $monthEnd = $monthStart->copy()->endOfMonth()->endOfDay();
+
+            $buckets = [
+                [$monthStart->copy()->day(1)->startOfDay(), $monthStart->copy()->day(7)->endOfDay()],
+                [$monthStart->copy()->day(8)->startOfDay(), $monthStart->copy()->day(14)->endOfDay()],
+                [$monthStart->copy()->day(15)->startOfDay(), $monthStart->copy()->day(21)->endOfDay()],
+                [$monthStart->copy()->day(22)->startOfDay(), $monthEnd],
+            ];
+
+            $labels = [];
+            $data = [];
+
+            foreach ($buckets as [$bucketStart, $bucketEnd]) {
+                if ($bucketEnd->gt($monthEnd)) {
+                    $bucketEnd = $monthEnd->copy();
+                }
+
+                $labels[] = $bucketStart->format('M j') . ' - ' . $bucketEnd->format('j');
+                $data[] = (clone $confirmedTicketsQuery)
+                    ->whereBetween('created_at', [$bucketStart, $bucketEnd])
+                    ->count();
+            }
+
+            $monthKey = $monthStart->format('Y-m');
+
+            $registrationTrendMonths[$monthKey] = [
+                'label' => $monthStart->format('F Y'),
+                'total' => (int) $registrationMonth->total,
+                'labels' => $labels,
+                'data' => $data,
+            ];
+        }
+
+        $defaultTrendMonth = array_key_first($registrationTrendMonths);
+
+        if (!$defaultTrendMonth) {
+            $emptyMonth = Carbon::now()->startOfMonth();
+
+            $defaultTrendMonth = $emptyMonth->format('Y-m');
+            $registrationTrendMonths[$defaultTrendMonth] = [
+                'label' => $emptyMonth->format('F Y'),
+                'total' => 0,
+                'labels' => [
+                    $emptyMonth->copy()->day(1)->format('M j') . ' - 7',
+                    $emptyMonth->copy()->day(8)->format('M j') . ' - 14',
+                    $emptyMonth->copy()->day(15)->format('M j') . ' - 21',
+                    $emptyMonth->copy()->day(22)->format('M j') . ' - ' . $emptyMonth->copy()->endOfMonth()->format('j'),
+                ],
+                'data' => [0, 0, 0, 0],
+            ];
+        }
+
+        $topEventOrganizers = $events
+            ->filter(function ($event) {
+                return !empty($event->creator_id);
+            })
+            ->groupBy('creator_id')
+            ->map(function ($organizerEvents) {
+                $organizer = $organizerEvents->first()->creator;
+
+                return (object) [
+                    'organizer' => $organizer,
+                    'total_events' => $organizerEvents->count(),
+                    'debris_removed' => $organizerEvents->sum(function ($event) {
+                        return (float) preg_replace('/[^0-9.]/', '', $event->waste_collected ?? 0);
+                    }),
+                ];
+            })
+            ->sortByDesc('total_events')
+            ->take(5)
+            ->values();
+
+        $topRegistrationOrganizers = EventOrderTicket::query()
+            ->join('events', 'events.id', '=', 'event_order_tickets.event_id')
+            ->leftJoin('volunteers', 'volunteers.id', '=', 'events.creator_id')
+            ->whereIn('event_order_tickets.event_id', $eventIds)
+            ->where('event_order_tickets.rsvp_confirmation', 1)
+            ->whereNotNull('events.creator_id')
+            ->select(
+                'events.creator_id',
+                'volunteers.first_name',
+                'volunteers.last_name',
+                'volunteers.email_address',
+                DB::raw('COUNT(event_order_tickets.id) as total_registrations'),
+                DB::raw('SUM(CASE WHEN event_order_tickets.checkin = 1 THEN 1 ELSE 0 END) as total_checkins')
+            )
+            ->groupBy('events.creator_id', 'volunteers.first_name', 'volunteers.last_name', 'volunteers.email_address')
+            ->orderByDesc('total_registrations')
+            ->take(5)
+            ->get()
+            ->map(function ($item) {
+                $item->conversion_rate = $item->total_registrations > 0
+                    ? round(($item->total_checkins / $item->total_registrations) * 100)
+                    : 0;
+
+                return $item;
+            });
+
+        return view('pages.report-campaign-analytics', [
+            'seo_details' => (object) ['title' => 'Campaign Analytics'],
+            'pageName' => 'Campaign Analytics',
+            'tags' => Tag::orderBy('name')->get(),
+            'categories' => EventCategory::orderBy('name')->get(),
+            'selectedTagId' => $selectedTagId,
+            'selected_organizer' => $selected_organizer,
+            'counters' => (object) [
+                'total_events' => $events->count(),
+                'total_registrations' => $totalRegistrations,
+                'total_checkins' => $totalCheckins,
+                'total_debris_removed' => $totalDebrisRemoved,
+                'attendance_rate' => $attendanceRate,
+                'attendance_status' => $attendanceStatus,
+            ],
+            'registrationTrendMonths' => $registrationTrendMonths,
+            'defaultTrendMonth' => $defaultTrendMonth,
+            'topEventOrganizers' => $topEventOrganizers,
+            'topRegistrationOrganizers' => $topRegistrationOrganizers,
+        ]);
+    }
 }
