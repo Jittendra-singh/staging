@@ -419,7 +419,7 @@ if(isset($form_data->id)){
                                                                         data-selected-text-format="count > 4" data-size="5"
                                                                         title="Select category" data-live-search="true" required>
                                                                         @foreach ($categories as $category)
-                                                                            <option value="{{ $category->id }}"
+                                                                            <option value="{{ $category->id }}"  data-default-banner="{{ $category->formattedDefaultBannerImg() }}"
                                                                                 @selected(old('event_category_id', $form_data->event_category_id ?? 0) == $category->id)>
                                                                                 {{ $category->name }}</option>
                                                                         @endforeach
@@ -750,23 +750,33 @@ if(isset($form_data->id)){
     </div>
 </div>
                                                                                     </div>
-                                                                                    @php 
-                                                                                    $banner_image = isset($form_data) ? $form_data->formattedBanner() : asset('assets_front/images/event-imgs/big-2.jpg');
-                                                                                    if(!isset($form_data)){
-                                                                                        $bimage = old('banner_image', $form_data->banner_image ?? '');
-                                                                                        if(!$bimage){
-                                                                                            $path = 'assets_front/images/event-imgs/big-2.jpg';
-                                                                                        }else{
-                                                                                            $path = $bimage->path;
-                                                                                        }              
-                                                                                        $banner_image =  asset($path);
-                                                                                    }
-                                                                                    @endphp 
-                                                                                    <img id="current-preview" src="{{ $banner_image }}" class="image-preview"
-                                                                                        alt="">
-                                                                                    @if(isset($bimage) && !empty($bimage))
-                                                                                    <input type="hidden" name="banner_image_data" value="{{json_encode($bimage)}}">
-                                                                                    @endif 
+                                                    @php 
+                                                    /* $banner_image = isset($form_data) ? $form_data->formattedBanner() : asset('assets_front/images/event-imgs/big-2.jpg');
+                                                    if(!isset($form_data)){
+                                                        $bimage = old('banner_image', $form_data->banner_image ?? '');
+                                                        if(!$bimage){
+                                                            $path = 'assets_front/images/event-imgs/big-2.jpg';
+                                                        }else{
+                                                            $path = $bimage->path;
+                                                        }              
+                                                        $banner_image =  asset($path);
+                                                    } */
+                                                    $fallbackBannerImage = asset('assets_front/images/event-imgs/big-2.jpg');
+                                                    $selectedCategoryId = old('event_category_id', $form_data->event_category_id ?? null);
+                                                    $selectedCategory = $selectedCategoryId ? $categories->firstWhere('id', (int) $selectedCategoryId) : null;
+
+                                                    if (isset($form_data)) {
+                                                        $banner_image = $form_data->formattedBanner();
+                                                        $hasCustomBannerImage = !empty($form_data->banner_image);
+                                                    } else {
+                                                        $banner_image = $selectedCategory ? $selectedCategory->formattedDefaultBannerImg() : $fallbackBannerImage;
+                                                        $hasCustomBannerImage = false;
+                                                    }
+                                                    @endphp 
+                                                    <img id="current-preview" src="{{ $banner_image }}" class="image-preview" data-fallback-banner="{{ $fallbackBannerImage }}" data-has-custom-banner="{{ $hasCustomBannerImage ? 1 : 0 }}" alt="">
+                                                    @if(isset($bimage) && !empty($bimage))
+                                                    <input type="hidden" name="banner_image_data" value="{{json_encode($bimage)}}">
+                                                    @endif 
                                                                                 </div>
                                                                                 <p class="mt-1">Recommended file size: 5 MB. Landscape: 1000 × 660 px or Portrait: 660 × 1000 px</p>
                                                                             </div>
@@ -2053,12 +2063,32 @@ $(document).ready(function () {
         const base64Data = canvas.toDataURL('image/jpeg', 0.85);
         $('#cropped_image').val(base64Data);
         $('#current-preview').attr('src', base64Data);
+        $('#current-preview').data('has-custom-banner', 1);
         $('#save-btn').prop('disabled', false);
         $('#cropper-modal').modal('hide');
     });
     $(document).on('change', '#is_send_reminder_email', function () {
         $('.reminder-custom-note-wrapper').toggle($(this).is(':checked'));
     });
+});
+
+$(document).ready(function () {
+    function updateDefaultBannerPreview() {
+        const $preview = $('#current-preview');
+
+        if ($preview.data('has-custom-banner') == 1 || $('#cropped_image').val() != '') {
+            return;
+        }
+
+        const selectedBanner = $('select[name="event_category_id"] option:selected').data('default-banner');
+        const fallbackBanner = $preview.data('fallback-banner');
+
+        $preview.attr('src', selectedBanner || fallbackBanner);
+    }
+
+    $('select[name="event_category_id"]').on('change changed.bs.select', updateDefaultBannerPreview);
+    updateDefaultBannerPreview();
+
 });
     </script>
 @endpush
