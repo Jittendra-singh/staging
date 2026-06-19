@@ -520,4 +520,110 @@ class DashboardController extends Controller
             'topRegistrationOrganizers' => $topRegistrationOrganizers,
         ]);
     }
+    public function campaignMetricsDetail()
+    {
+        Gate::authorize('view', 'campaign-analytics');
+
+        $defaultCampaignTagId = 1; // TODO: set your default campaign tag id here
+
+        $selectedTagId = request()->filled('tag_id') ? request()->tag_id : $defaultCampaignTagId;
+        $selected_organizer = request()->organizer_id ? Volunteer::find(request()->organizer_id) : null;
+
+        $baseEventQuery = Event::with(['creator', 'category', 'eventTickets'])
+            ->withCount([
+                'tickets as sold_active_tickets_count' => function ($q) {
+                    $q->where('event_order_tickets.rsvp_confirmation', 1);
+                },
+                'tickets as checked_in_tickets_count' => function ($q) {
+                    $q->where('event_order_tickets.rsvp_confirmation', 1)
+                    ->where('event_order_tickets.checkin', 1);
+                },
+            ])
+            ->withSum('eventTickets as total_tickets_count', 'available_quantity')
+            ->whereHas('tags', function ($q) use ($selectedTagId) {
+                $q->where('tags.id', $selectedTagId);
+            })
+            ->when(request()->category_id, function ($q) {
+                $q->where('event_category_id', request()->category_id);
+            })
+            ->when(request()->organizer_id, function ($q) {
+                $q->where('creator_id', request()->organizer_id);
+            })
+            ->when(request()->start_date && request()->end_date, function ($q) {
+                $q->whereDate('start_datetime', '>=', request()->start_date)
+                ->whereDate('start_datetime', '<=', request()->end_date);
+            })
+            ->when(request()->search, function ($q) {
+                $search = request()->search;
+
+                $q->where(function ($query) use ($search) {
+                    $query->where('event_name', 'like', "%{$search}%")
+                        ->orWhere('venue', 'like', "%{$search}%")
+                        ->orWhere('pincode', 'like', "%{$search}%")
+                        ->orWhereHas('creator', function ($creatorQuery) use ($search) {
+                            $creatorQuery->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere('email_address', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->orderBy('start_datetime', 'desc');
+
+        if (request()->export == 'csv') {
+            $events = (clone $baseEventQuery)->get();
+
+            return response()->streamDownload(function () use ($events) {
+                $handle = fopen('php://output', 'w');
+
+                fputcsv($handle, [
+                    'Event Name',
+                    'Date',
+                    'Organizer',
+                    'Tickets Sold',
+                    'Total Tickets',
+                    'Checked-in Volunteers',
+                    'Attendance %',
+                    'Debris (lbs)',
+                    'Location',
+                    'Event URL',
+                ]);
+
+                foreach ($events as $event) {
+                    $totalTickets = (int) ($event->total_tickets_count ?? 0);
+                    $soldTickets = (int) ($event->sold_active_tickets_count ?? 0);
+                    $checkedInTickets = (int) ($event->checked_in_tickets_count ?? 0);
+                    $attendanceRate = $soldTickets > 0 ? round(($checkedInTickets / $soldTickets) * 100) : 0;
+
+                    fputcsv($handle, [
+                        $event->event_name,
+                        $event->start_datetime ? $event->start_datetime->format(config('app.dateFormat', 'M d, Y')) : '',
+                        trim(@$event->creator->first_name . ' ' . @$event->creator->last_name),
+                        $soldTickets,
+                        $totalTickets,
+                        $checkedInTickets,
+                        $attendanceRate . '%',
+                        $event->waste_collected,
+                        $event->venue,
+                        $event->slug ? route('view-event-details', ['slug' => $event->slug]) : '',
+                    ]);
+                }
+
+                fclose($handle);
+            }, 'campaign-metrics-detail.csv', [
+                'Content-Type' => 'text/csv',
+            ]);
+        }
+
+        $listingData = (clone $baseEventQuery)->paginate(50)->withQueryString();
+
+        return view('pages.report-campaign-metrics-detail', [
+            'seo_details' => (object) ['title' => 'Campaign Metrics Detail'],
+            'pageName' => 'Campaign Metrics Detail',
+            'tags' => Tag::orderBy('name')->get(),
+            'categories' => EventCategory::orderBy('name')->get(),
+            'selectedTagId' => $selectedTagId,
+            'selected_organizer' => $selected_organizer,
+            'listingData' => $listingData,
+        ]);
+    }
 }

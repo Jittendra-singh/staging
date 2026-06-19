@@ -546,7 +546,7 @@
                         </div>
 
                         <div class="campaign-stat-footer">
-                            <a href="javascript:void(0);" class="campaign-detail-link">Details</a>
+                            <a target="_blank" href="{{ route('index-campaign-metrics-detail', request()->query()) }}" class="campaign-detail-link">Details</a>
                         </div>
                     </div>
                 </div>

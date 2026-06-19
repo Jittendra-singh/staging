@@ -297,6 +297,7 @@ Route::prefix(config('app.admin_prefix'))->group(function () {
             Route::get('/toggle-weekly-alert-status/{placeholder}', 'toggleWeeklyAlertStatus')->name('toggle-weekly-alert-status');
             
             Route::get('/campaign-analytics', 'campaignAnalytics')->name('index-campaign-analytics');
+            Route::get('/campaign-metrics-detail', 'campaignMetricsDetail')->name('index-campaign-metrics-detail');
         });
         Route::controller(\App\Http\Controllers\ContactController::class)->group(function () {
             Route::get('/other-inquiry', 'index')->name('other-inquiry');
