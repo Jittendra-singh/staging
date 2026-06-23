@@ -26,12 +26,12 @@ if(isset($form_data->id)){
 <link rel="stylesheet" href="{{ asset('js/plugins/select2/css/select2.min.css') }} ">
 <link rel="stylesheet" href="{{ asset('assets_front/vendor/cropperjs/cropper.min.css') }} ">
 <style>
-    .default-event-thumb{
+    /* .default-event-thumb{
         height: 400px!important;
     }
     .default-event-thumb img{
             object-fit: contain!important;
-    }
+    } */
     .permission_selector [type="checkbox"]{
             border-color: black;
     }
@@ -268,33 +268,162 @@ if(isset($form_data->id)){
         color:#9e560d;
     }
 
-
-.event-image-upload-btn input[type="file"]{
+.event-image-upload-btn input[type="file"] {
     display: none;
 }
 
-.event-image-upload-btn label{
-    min-height: 48px;
+.event-banner-upload-card {
+    width: 100%;
+}
+
+.event-banner-upload-header {
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 10px 16px;
-    border: 1px solid #ced4da;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.event-banner-upload-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #1f2933;
+}
+
+.event-banner-mode-tabs {
+    display: inline-flex;
+    padding: 3px;
+    border-radius: 8px;
+    background: #f5f6f8;
+    gap: 2px;
+}
+
+.event-banner-mode-tab {
+    min-width: 145px;
+    min-height: 34px;
+    padding: 7px 16px;
+    border: 0;
     border-radius: 6px;
-    background: #fff;
-    color: #212529;
-    font-weight: 600;
-    text-align: center;
+    background: transparent;
+    color: #697282;
+    font-size: 13px;
+    font-weight: 700;
     cursor: pointer;
     transition: all .2s ease;
 }
 
-.event-image-upload-btn label:hover{
-    border-color: var(--bs-primary);
-    color: var(--bs-primary);
-    background: #f8fbff;
+.event-banner-mode-tab.active {
+    background: #fff;
+    color: #1f2933;
+    box-shadow: 0 1px 4px rgba(16, 24, 40, .12);
 }
 
+.event-banner-preview-box {
+    position: relative;
+    width: 100%;
+    padding: 12px;
+    border: 2px dashed #d9dee3;
+    border-radius: 14px;
+    background: #fff;
+}
+
+.event-banner-preview-box .image-preview {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 640px;
+    object-fit: contain !important;
+    border-radius: 10px;
+}
+
+.event-banner-image-actions {
+    position: absolute;
+    top: 22px;
+    right: 22px;
+    display: flex;
+    gap: 8px;
+    z-index: 2;
+}
+
+.event-banner-icon-btn {
+    width: 34px;
+    height: 34px;
+    border: 1px solid #edf0f3;
+    border-radius: 50%;
+    background: #fff;
+    color: var(--bs-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(16, 24, 40, .12);
+    transition: all .2s ease;
+}
+
+.event-banner-icon-btn:hover {
+    background: #f8fbff;
+    border-color: var(--bs-primary);
+}
+
+.event-banner-icon-btn.remove-banner-image {
+    color: #dc3545;
+}
+
+.event-banner-help {
+    margin-top: 14px;
+    padding: 13px 16px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    border: 1px solid #f7df9e;
+    border-radius: 10px;
+    background: #fff9e8;
+    color: #9a6017;
+    font-size: 13px;
+    line-height: 1.45;
+    font-weight: 600;
+}
+
+.event-banner-help i {
+    margin-top: 2px;
+    color: #f2a51a;
+}
+
+@media (max-width: 767.98px) {
+    .event-banner-upload-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .event-banner-mode-tabs {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .event-banner-mode-tab {
+        min-width: 0;
+        width: 100%;
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+
+    .event-banner-preview-box {
+        padding: 8px;
+        border-radius: 12px;
+    }
+
+    .event-banner-preview-box .image-preview {
+        max-height: none;
+    }
+
+    .event-banner-image-actions {
+        top: 14px;
+        right: 14px;
+    }
+}
 </style>
 @endpush
 @section('content')
@@ -724,61 +853,75 @@ if(isset($form_data->id)){
                                                                     <div class="row g-2">
                                                                         <div class="col-md-12">
                                                                             <div class="content-holder">
-                                                                                <label class="form-label fs-6">Event Banner
-                                                                                    and Thumbnail Image</label>
-                                                                                <div class="default-event-thumb image-container">
-                                                                                    <div class="default-event-thumb-btn">
-                                                                                        <!-- <div class="thumb-change-btn">
-                                                                                            <input accept="image/*" type="file" class="change-image-preview" id="banner_image" name="banner_image">
-                                                                                            <label for="banner_image">Change Image</label>
-                                                                                        </div> -->
-<input type="hidden" name="cropped_image" id="cropped_image">
+                                                                                <div class="event-banner-upload-card">
+    <div class="event-banner-upload-header">
+        <label class="event-banner-upload-title">Event Banner and Thumbnail Image</label>
 
-<div class="row g-2 mb-2 col-sm-5 offset-sm-7">
-    <div class="col-sm-6">
-        <div class="thumb-change-btn w-100 event-image-upload-btn">
-            <input accept="image/*" type="file" class="change-image-preview" id="image-input" name="banner_image">
-            <label id="upload-btn" for="image-input" class="w-100 mb-0">Landscape Image</label>
+        <div class="event-banner-mode-tabs" role="tablist" aria-label="Event image type">
+            @php
+                $bannerImageOrientation = old('banner_image_orientation', $form_data->banner_image_orientation ?? 'landscape');
+            @endphp
+            <button type="button" class="event-banner-mode-tab {{ $bannerImageOrientation === 'landscape' ? 'active' : '' }}" data-banner-mode="landscape">
+                Landscape Image
+            </button>
+
+            <button type="button" class="event-banner-mode-tab {{ $bannerImageOrientation === 'portrait' ? 'active' : '' }}" data-banner-mode="portrait">
+                Portrait Image
+            </button>
         </div>
     </div>
 
-    <div class="col-sm-6">
-        <div class="thumb-change-btn w-100 event-image-upload-btn">
-            <input accept="image/*" type="file" class="change-image-preview" id="portrait-image-input" name="banner_image">
-            <label id="portrait-upload-btn" for="portrait-image-input" class="w-100 mb-0">Portrait Image</label>
-        </div>
+    <input type="hidden" name="cropped_image" id="cropped_image">
+    <input type="hidden" name="remove_banner_image" id="remove_banner_image" value="0">
+    <input type="hidden" name="banner_image_orientation" id="banner_image_orientation" value="{{ old('banner_image_orientation', $form_data->banner_image_orientation ?? 'landscape') }}">
+
+    <div class="event-image-upload-btn">
+        <input accept="image/*" type="file" class="change-image-preview" id="image-input" name="banner_image">
+        <input accept="image/*" type="file" class="change-image-preview" id="portrait-image-input" name="banner_image">
     </div>
+
+    @php
+        $fallbackBannerImage = asset('assets_front/images/event-imgs/big-2.jpg');
+        $selectedCategoryId = old('event_category_id', $form_data->event_category_id ?? null);
+        $selectedCategory = $selectedCategoryId ? $categories->firstWhere('id', (int) $selectedCategoryId) : null;
+
+        if (isset($form_data)) {
+            $banner_image = $form_data->formattedBanner();
+            $hasCustomBannerImage = !empty($form_data->banner_image);
+        } else {
+            $banner_image = $selectedCategory ? $selectedCategory->formattedDefaultBannerImg() : $fallbackBannerImage;
+            $hasCustomBannerImage = false;
+        }
+    @endphp
+
+    <div class="event-banner-preview-box">
+        <div class="event-banner-image-actions">
+            <button type="button" class="event-banner-icon-btn upload-banner-image" title="Upload image">
+                <i class="fa-solid fa-arrow-up-from-bracket"></i>
+            </button>
+
+            <button type="button" class="event-banner-icon-btn remove-banner-image {{ $hasCustomBannerImage ? '' : 'd-none' }}" title="Remove image">
+                <i class="fa-solid fa-trash-can"></i>
+            </button>
+        </div>
+
+        <img id="current-preview"
+             src="{{ $banner_image }}"
+             class="image-preview"
+             data-fallback-banner="{{ $fallbackBannerImage }}"
+             data-has-custom-banner="{{ $hasCustomBannerImage ? 1 : 0 }}"
+             alt="">
+    </div>
+
+    <div class="event-banner-help">
+        <i class="fa-solid fa-circle-info"></i>
+        <span>Tip: Photos with people participating in previous cleanups tend to get 40% more sign-ups! Avoid using stock images if you have real event photos.</span>
+    </div>
+
+    <p class="mt-2 mb-0 text-muted">
+        Recommended file size: 5 MB. Landscape: 1000 &times; 660 px or Portrait: 660 &times; 1000 px
+    </p>
 </div>
-                                                                                    </div>
-                                                    @php 
-                                                    /* $banner_image = isset($form_data) ? $form_data->formattedBanner() : asset('assets_front/images/event-imgs/big-2.jpg');
-                                                    if(!isset($form_data)){
-                                                        $bimage = old('banner_image', $form_data->banner_image ?? '');
-                                                        if(!$bimage){
-                                                            $path = 'assets_front/images/event-imgs/big-2.jpg';
-                                                        }else{
-                                                            $path = $bimage->path;
-                                                        }              
-                                                        $banner_image =  asset($path);
-                                                    } */
-                                                    $fallbackBannerImage = asset('assets_front/images/event-imgs/big-2.jpg');
-                                                    $selectedCategoryId = old('event_category_id', $form_data->event_category_id ?? null);
-                                                    $selectedCategory = $selectedCategoryId ? $categories->firstWhere('id', (int) $selectedCategoryId) : null;
-
-                                                    if (isset($form_data)) {
-                                                        $banner_image = $form_data->formattedBanner();
-                                                        $hasCustomBannerImage = !empty($form_data->banner_image);
-                                                    } else {
-                                                        $banner_image = $selectedCategory ? $selectedCategory->formattedDefaultBannerImg() : $fallbackBannerImage;
-                                                        $hasCustomBannerImage = false;
-                                                    }
-                                                    @endphp 
-                                                    <img id="current-preview" src="{{ $banner_image }}" class="image-preview" data-fallback-banner="{{ $fallbackBannerImage }}" data-has-custom-banner="{{ $hasCustomBannerImage ? 1 : 0 }}" alt="">
-                                                    @if(isset($bimage) && !empty($bimage))
-                                                    <input type="hidden" name="banner_image_data" value="{{json_encode($bimage)}}">
-                                                    @endif 
-                                                                                </div>
-                                                                                <p class="mt-1">Recommended file size: 5 MB. Landscape: 1000 × 660 px or Portrait: 660 × 1000 px</p>
                                                                             </div>
                                                                         </div>
                                                                         <input type="hidden" name="flyer_image">
@@ -937,7 +1080,7 @@ if(isset($form_data->id)){
                                                                         style="{{ old('is_send_reminder_email', $form_data->is_send_reminder_email ?? 1) ? '' : 'display:none;' }}">
                                                                         <div class="form-group mt-2">
                                                                             <label class="form-label fs-6">Custom Note</label>
-                                                                            <textarea name="reminder_custom_note" rows="4" class="form-control">{{ old('reminder_custom_note', $form_data->reminder_custom_note ?? '') }}</textarea>
+                                                                            <textarea name="reminder_custom_note" rows="4" class="form-control ckeditor">{{ old('reminder_custom_note', $form_data->reminder_custom_note ?? '') }}</textarea>
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -1973,8 +2116,20 @@ $(document).ready(function () {
     let cropperAspectRatio = 1000 / 660;
     let cropperWidth = 1000;
     let cropperHeight = 660;
+    let activeBannerMode = 'landscape';
+
+    function refreshBannerActionState() {
+        const hasCustomBanner = $('#current-preview').data('has-custom-banner') == 1;
+        $('.remove-banner-image').toggleClass('d-none', !hasCustomBanner);
+    }
 
     function setCropperMode(mode) {
+        $('#banner_image_orientation').val(mode);
+        activeBannerMode = mode;
+
+        $('.event-banner-mode-tab').removeClass('active');
+        $('.event-banner-mode-tab[data-banner-mode="' + mode + '"]').addClass('active');
+
         if (mode === 'portrait') {
             cropperAspectRatio = 660 / 1000;
             cropperWidth = 660;
@@ -1999,6 +2154,48 @@ $(document).ready(function () {
         reader.readAsDataURL(file);
     }
 
+    function updateDefaultBannerPreview() {
+        const $preview = $('#current-preview');
+
+        if ($preview.data('has-custom-banner') == 1 || $('#cropped_image').val() != '') {
+            return;
+        }
+
+        const selectedBanner = $('select[name="event_category_id"] option:selected').data('default-banner');
+        const fallbackBanner = $preview.data('fallback-banner');
+
+        $preview.attr('src', selectedBanner || fallbackBanner);
+    }
+
+    $(document).on('click', '.event-banner-mode-tab', function () {
+        setCropperMode($(this).data('banner-mode'));
+    });
+
+    $(document).on('click', '.upload-banner-image', function () {
+        if (activeBannerMode === 'portrait') {
+            $('#portrait-image-input').trigger('click');
+        } else {
+            $('#image-input').trigger('click');
+        }
+    });
+
+    $(document).on('click', '.remove-banner-image', function () {
+        const $preview = $('#current-preview');
+        const selectedBanner = $('select[name="event_category_id"] option:selected').data('default-banner');
+        const fallbackBanner = $preview.data('fallback-banner');
+
+        $('#cropped_image').val('');
+        $('#remove_banner_image').val('1');
+        $('#image-input').val('');
+        $('#portrait-image-input').val('');
+
+        $preview.attr('src', selectedBanner || fallbackBanner);
+        $preview.data('has-custom-banner', 0);
+
+        refreshBannerActionState();
+        setCropperMode('landscape');
+    });
+
     $('#image-input').on('click', function () {
         setCropperMode('landscape');
     });
@@ -2009,14 +2206,12 @@ $(document).ready(function () {
 
     $('#image-input').on('change', function (e) {
         setCropperMode('landscape');
-        const file = e.target.files[0];
-        openCropperWithFile(file);
+        openCropperWithFile(e.target.files[0]);
     });
 
     $('#portrait-image-input').on('change', function (e) {
         setCropperMode('portrait');
-        const file = e.target.files[0];
-        openCropperWithFile(file);
+        openCropperWithFile(e.target.files[0]);
     });
 
     $('#cropper-modal').on('shown.bs.modal', function () {
@@ -2061,34 +2256,28 @@ $(document).ready(function () {
         });
 
         const base64Data = canvas.toDataURL('image/jpeg', 0.85);
+
         $('#cropped_image').val(base64Data);
+        $('#remove_banner_image').val('0');
         $('#current-preview').attr('src', base64Data);
         $('#current-preview').data('has-custom-banner', 1);
+
+        refreshBannerActionState();
+
         $('#save-btn').prop('disabled', false);
         $('#cropper-modal').modal('hide');
     });
+
+    $('select[name="event_category_id"]').on('change changed.bs.select', updateDefaultBannerPreview);
+
     $(document).on('change', '#is_send_reminder_email', function () {
         $('.reminder-custom-note-wrapper').toggle($(this).is(':checked'));
     });
-});
 
-$(document).ready(function () {
-    function updateDefaultBannerPreview() {
-        const $preview = $('#current-preview');
-
-        if ($preview.data('has-custom-banner') == 1 || $('#cropped_image').val() != '') {
-            return;
-        }
-
-        const selectedBanner = $('select[name="event_category_id"] option:selected').data('default-banner');
-        const fallbackBanner = $preview.data('fallback-banner');
-
-        $preview.attr('src', selectedBanner || fallbackBanner);
-    }
-
-    $('select[name="event_category_id"]').on('change changed.bs.select', updateDefaultBannerPreview);
+    setCropperMode($('#banner_image_orientation').val() || 'landscape');
     updateDefaultBannerPreview();
-
+    refreshBannerActionState();
 });
+
     </script>
 @endpush

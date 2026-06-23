@@ -1036,6 +1036,7 @@ class FrontController extends Controller
                 'event_reoccurance' => 'nullable|string|max:50',
                 'cropped_image'     => 'nullable|string',
                 'banner_image'      => 'nullable|image|mimes:jpeg,png,jpg,gif',
+                'banner_image_orientation' => 'nullable|in:landscape,portrait',
                 'flyer_image'       => 'nullable|image|mimes:jpeg,png,jpg,gif',
                 'volunteer_tags'    => 'nullable|array',
                 'volunteer_tags.*'  => 'exists:tags,id',
@@ -1050,11 +1051,18 @@ class FrontController extends Controller
                 'provided_tools.*'  => 'exists:tools,id',
                 'is_send_reminder_email' => 'nullable|boolean',
                 'reminder_custom_note' => 'nullable|string',
+                'remove_banner_image' => 'nullable|in:0,1',
             ]);
 
             try {
                 $event = \App\Models\Event::findOrFail(decrypt($validated['event_id']));
-                
+
+                if ($request->input('remove_banner_image') == '1') {
+                    $event->banner_image = null;
+                    $event->banner_image_orientation = 'landscape';
+                } else {
+                    $event->banner_image_orientation = $request->input('banner_image_orientation', $event->banner_image_orientation ?? 'landscape');
+                }
                 // Handle file uploads
                 if ($request->hasFile('banner_image')) {
                     $uploadedBanner = $this->uploadFiles('banner_image', 'events/banners');
@@ -1083,6 +1091,7 @@ class FrontController extends Controller
                         'original_name' => $originalName,
                         'extension'     => 'jpg',
                     ]);
+                    $event->banner_image_orientation = $request->input('banner_image_orientation', 'landscape');
                 }else{
                     unset($validated['cropped_image']);
                 }

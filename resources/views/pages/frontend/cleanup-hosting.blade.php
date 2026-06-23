@@ -230,7 +230,11 @@ a[disabled]{
                                                     <img src="{{ $event->formattedBanner() }}" alt="{{ $event->event_name }}">
                                                 </div>
                                                 <div class="card-event-dt">
-                                                    <h5 class="m-0">{{ $event->event_name }}</h5>
+                                                     @if($event->isDetailActive() && !empty($event->slug))
+                                                        <a href="{{route('view-event-details', ['slug' => $event->slug])}}" target="_BLANK"><h5 class="m-0">{{ $event->event_name }}</h5></a>
+                                                    @else 
+                                                        <h5 class="m-0">{{ $event->event_name }}</h5>
+                                                    @endif
                                                     <p class="mb-2">{{ $event->fullAddress }}</p>
                                                     @if(!empty($event->cancelled_at))
                                                     <h6 class="coupon-status">
@@ -272,7 +276,7 @@ a[disabled]{
 
                                                     <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step3'])}}" class="dropdown-item"> <i class="fa-solid fa-user-plus me-3"></i>Manage Co-Host</a>
                                                     <a target="_blank" href="{{route('front-registration-list', ['event' => $event->id])}}" class="dropdown-item">
-                                                    <i class="fa-solid fa-eye me-3"></i>Manage Check-ins</a>
+                                                    <i class="fa-solid fa-eye me-3"></i>Manage Registrations / Check-ins</a>
                                                     <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step5'])}}" class="dropdown-item"> <i class="fa-solid fa-bar-chart me-3"></i>Event Cleanup Report</a>
                                                     @if(!empty($event->slug))
                                                     <a href="{{route('front-duplicate-an-event', ['slug' => $event->slug])}}" class="dropdown-item">
