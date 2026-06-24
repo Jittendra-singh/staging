@@ -269,8 +269,13 @@ class FrontController extends Controller
         $cohostEventCount = auth()->guard('front')->user()->cohostingEvents()->active()->count();
         $hostingEventCount = auth()->guard('front')->user()->events()->active()->count();
 
+        $startDateSort = request('start_date_sort', 'desc');
+        if (!in_array($startDateSort, ['asc', 'desc'])) {
+            $startDateSort = 'desc';
+        }
+
         //$hosting_events = $hosting_events_builder->orderBy('start_datetime','desc')->active()->paginate(20)->withQueryString();
-        $hosting_events = $hosting_events_builder->with('category')->orderBy('start_datetime','desc')->paginate(20)->withQueryString();
+        $hosting_events = $hosting_events_builder->with('category')->orderBy('start_datetime',$startDateSort)->paginate(20)->withQueryString();
         //echo $hostingEventCount;
         //print_r($hosting_events->toArray());
         //die();
@@ -3229,6 +3234,7 @@ class FrontController extends Controller
         $validated = $request->validate([
             'title'                => 'required',
             'website'              => 'required|url|max:255',
+            'location'             => 'nullable',
             'latitude'             => 'nullable',
             'longitude'            => 'nullable',
             'distance'             => 'nullable',

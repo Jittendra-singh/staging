@@ -908,12 +908,23 @@ $(document).ready(function () {
 				$('#site_depublish_date').val(formattedDate);
 
 				// get #start_datetime value and if it's not empty then compare #end_datetime with #start_datetime and check that if date have more than one week difference, if yes then show #longerThanOneWeekText div and if no then hide it 
-				if ($('#start_datetime').val() != '') {
+				/* if ($('#start_datetime').val() != '') {
 					var startDate = new Date($('#start_datetime').val());
 					var endDate = new Date(ct);
 					var diffTime = Math.abs(endDate - startDate);
 					var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 					if (diffDays >= 7) {
+						$('#longerThanOneWeekText').show();
+					} else {
+						$('#longerThanOneWeekText').hide();
+					}
+				} */
+				if ($('#start_datetime').val() != '') {
+					var startDate = new Date($('#start_datetime').val());
+					var endDate = new Date(ct);
+					var diffTime = Math.abs(endDate - startDate);
+					var diffHours = diffTime / (1000 * 60 * 60);
+					if (diffHours > 8) {
 						$('#longerThanOneWeekText').show();
 					} else {
 						$('#longerThanOneWeekText').hide();
@@ -1916,7 +1927,18 @@ $(document).ready(function () {
 		}
 	})
 	if ($('.event-row-upcoming')) {
-		showHostingEvent('upcoming');
+		$('[hosting-event-val]').on('click', function () {
+			let tab = $(this).attr('hosting-event-val');
+
+			let url = new URL(window.location.href);
+			url.searchParams.set('tabs', tab);
+
+			window.history.replaceState({}, '', url);
+    		$('#tabsInput').val(tab);
+		});
+
+		var val = $('[hosting-event-val].active').attr('hosting-event-val');
+		showHostingEvent(val);
 	}
 	$('.select-all-ticket-checkbox').change(function () {
 		if ($(this).prop('checked')) {

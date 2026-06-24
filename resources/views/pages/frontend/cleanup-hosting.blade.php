@@ -21,7 +21,7 @@ a[disabled]{
         <div class="dashboard-body">
             <div class="container-fluid">
                 <div class="row">
-                    <div class="col-md-12">
+                    <div class="col-md-9">
                         <div class="d-main-title">
                             <h3><i class="fa-solid fa-clock-rotate-left me-3 mb-3"></i>Cleanups I'm Hosting</h3>
                              @php
@@ -33,6 +33,24 @@ a[disabled]{
 								]
 							@endphp     
 							<x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs"/>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="row mt-2">
+                            <div class="col-sm-12">
+                                <form method="get">
+                                <input type="hidden" name="tabs" id="tabsInput" value="{{ request('tabs') }}">
+                                <div class="d-flex align-items-center">
+                                    <label class="form-label fs-6 me-2 mb-0">Sort By Start Date:</label>
+                                    <div class="loc-group position-relative flex-grow-1">
+                                        <select onchange="this.form.submit()" class="selectpicker" name="start_date_sort" title="Sort By">
+                                            <option value="desc" {{ request('start_date_sort', 'desc') == 'desc' ? 'selected' : '' }} >Newest First</option>
+                                            <option value="asc" {{ request('start_date_sort') == 'asc' ? 'selected' : '' }}>Oldest First</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-12">
@@ -63,20 +81,20 @@ a[disabled]{
                                     </div>
                                     <div class="rs mt_r4 col-sm-6 ps-3 text-end">
                                         <div class="btn-group" role="group">
-                                            <a href="javascript:void(0);" onclick="showHostingEvent('upcoming',this)"
-                                                class="btn btn-outline-primary px-3 py-2 active text-white">
+                                            <a href="javascript:void(0);" onclick="showHostingEvent('upcoming',this)" hosting-event-val="upcoming"
+                                                class="btn btn-outline-primary px-3 py-2 {{ request('tabs', 'upcoming') == 'upcoming' ? 'active text-white' : '' }}">
                                                 Upcoming 
                                             </a>
-                                            <a href="javascript:void(0);" onclick="showHostingEvent('ongoing',this)"
-                                                class="btn btn-outline-primary px-3 py-2">
+                                            <a href="javascript:void(0);" onclick="showHostingEvent('ongoing',this)" hosting-event-val="ongoing"
+                                                class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'ongoing' ? 'active text-white' : '' }}">
                                                 In-Progress 
                                             </a>
-                                            <a href="javascript:void(0);" onclick="showHostingEvent('ended',this)"
-                                                class="btn btn-outline-primary px-3 py-2">
+                                            <a href="javascript:void(0);" onclick="showHostingEvent('ended',this)" hosting-event-val="ended"
+                                                class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'ended' ? 'active text-white' : '' }}">
                                                 Completed 
                                             </a>
-                                            <a href="javascript:void(0);" onclick="showHostingEvent('action_required',this)"
-                                                class="btn btn-outline-primary px-3 py-2">
+                                            <a href="javascript:void(0);" onclick="showHostingEvent('action_required',this)" hosting-event-val="action_required"
+                                                class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'action_required' ? 'active text-white' : '' }}">
                                                 Action Required
                                             </a>
                                         </div>

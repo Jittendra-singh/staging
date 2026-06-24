@@ -609,7 +609,8 @@ if(isset($form_data->id)){
                                                                         }
                                                                     }
                                                                     @endphp 
-                                                                    <p class="text-secondary m-0" id="longerThanOneWeekText" style="{{$longerThanOneWeek?'':'display: none'}};">NOTE: This cleanup is longer than one week. If this is a recurring event, we recommend creating individual cleanups using the clone feature to keep attendance and reporting accurate.</p>
+                                                                    <!-- <p class="text-secondary m-0" id="longerThanOneWeekText" style="{{$longerThanOneWeek?'':'display: none'}};">NOTE: This cleanup is longer than one week. If this is a recurring event, we recommend creating individual cleanups using the clone feature to keep attendance and reporting accurate.</p> -->
+                                                                    <p class="text-secondary m-0" id="longerThanOneWeekText" style="{{$longerThanOneWeek?'':'display: none'}};">NOTE: This cleanup is longer than 8 hours. If this is a recurring event, we recommend creating individual cleanups using the clone feature to keep attendance and reporting accurate.</p>
                                                                     <div class="col-md-6">
                                                                         <label class="form-label  fs-6">Start Date Time.*</label>
                                                                         <div class="loc-group position-relative">
@@ -1774,7 +1775,17 @@ if(isset($form_data->id)){
                                     <a style="display: none;" href="{{ route('front-cleanup-hosting','organizer') }}" class="primary-btn w-fit close-post-cleanup-btn" type="button">Save as Draft</a>
                                     <a style="display: none;" href="javascript:void(0);" url2="{{ route('front-cleanup-hosting','organizer') }}" url="{{route('update-event-publish-status')}}" class="primary-btn w-fit close-post-cleanup-btn save_publish_event" type="button">Publish Event</a>
                                     @else 
-                                    <a style="display: none;" href="{{ route('front-cleanup-hosting','organizer') }}" class="primary-btn w-fit close-post-cleanup-btn" type="button">Close</a>
+                                    <!-- <a style="display: none;" href="{{ route('front-cleanup-hosting','organizer') }}" class="primary-btn w-fit close-post-cleanup-btn" type="button">Close</a> -->
+                                    @php
+                                        $previousUrl = url()->previous();
+                                        $fallbackUrl = route('front-cleanup-hosting', 'organizer');
+
+                                        $closeUrl = str_contains($previousUrl, '/cleanup-hosting/organizer')
+                                            ? $previousUrl
+                                            : $fallbackUrl;
+                                    @endphp
+
+                                    <a style="display: none;" href="{{ $closeUrl }}" class="primary-btn w-fit close-post-cleanup-btn" type="button">Close</a>
                                     @endif
                                     {{-- <button data-direction="finish" class="primary-btn w-fit">Create</button> --}}
                                 </div>

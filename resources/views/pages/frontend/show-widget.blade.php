@@ -172,7 +172,7 @@
                                 <img src="{{ asset('assets_front/images/event_not_found.png') }}" alt="No event found">
                             </div>
                         </div>
-                        <p class="h3">Widget Not Found</p>
+                        <p class="h3">The widget is currently unavailable</p>
                         <small>Powered by <a href="https://volunteercleanup.org" target="_blank">VolunteerCleanup.org</a></small>
                     </div>
                 </div>
