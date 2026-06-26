@@ -177,15 +177,18 @@
 															<!-- <a href="javascript:void(0)" icaldata='{!! htmlspecialchars($icalStrData, ENT_QUOTES, 'UTF-8') !!}' icaltitle="{{$event->event_name}}" onclick="downloadICS(this);" class="dropdown-item">
 																<i class="fa-solid fa-calendar me-3"></i>Add to Calendar
 															</a> -->								
-															<a href="javascript:void(0)" class="dropdown-item download-ticket"
+															<!-- <a href="javascript:void(0)" class="dropdown-item download-ticket"
 																data-event='@json($data_event)' data-volunteer='@json($data_volunteer)' 
 																data-ticket='@json($data_ticket)' data-registration='@json($data_registration)' 
 																data-order='@json($data_order)'  data-creator='@json($data_creator)'
 															>
 																<i class="fa-solid fa-download me-3"></i>Download Ticket
-															</a>	
+															</a> -->	
+															<a class="dropdown-item" href="{{ route('view-ticket-pdf', ['ticket' => encrypt($registration->id)]) }}">
+																<i class="fa-solid fa-download me-3"></i>Download Ticket
+															</a>
 															@if(!empty($registration->waiver_filled_at))
-															<a class="dropdown-item download-ticket" href="{{ route('view-waiver-pdf', ['ticket' => encrypt($registration->id)]) }}" target="_blank">
+															<a class="dropdown-item" href="{{ route('view-waiver-pdf', ['ticket' => encrypt($registration->id)]) }}" target="_blank">
 																<i class="fa-solid fa-download me-3"></i>Download Waiver PDF
 															</a>
 															@endif

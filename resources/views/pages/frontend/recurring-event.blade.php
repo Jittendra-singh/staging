@@ -19,6 +19,30 @@
     .recurring-ticket-table .form-control {
         min-width: 170px;
     }
+
+
+.recurring-event-header {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    text-align: left;
+}
+
+.recurring-event-header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.recurring-event-toggle-icon {
+    transition: transform 0.2s ease;
+}
+
+.recurring-event-header[aria-expanded="true"] .recurring-event-toggle-icon {
+    transform: rotate(180deg);
+}
 </style>
 @endpush
 
@@ -92,157 +116,169 @@
                     @endphp
 
                     <div class="main-card p-4 mt-4 recurring-event-box">
-                        <div class="bp-title">
-                            <h4 class="px-0">
-                                <i class="fa-solid fa-calendar-days step_icon me-3"></i>
-                                Event #{{ $i }}
-                            </h4>
-                        </div>
+                        <button
+                            type="button"
+                            class="recurring-event-header"
+                            aria-expanded="{{ $i === 1 ? 'true' : 'false' }}"
+                        >
+                            <div class="bp-title mb-0">
+                                <div class="recurring-event-header-inner">
+                                    <h4 class="px-0 mb-0">
+                                        <i class="fa-solid fa-calendar-days step_icon me-3"></i>
+                                        Event #{{ $i }}
+                                    </h4>
 
-                        <div class="row g-4 main-form">
-                            <div class="col-md-6">
-                                <label class="form-label fs-6">Start Date Time*</label>
-                                <div class="loc-group position-relative">
-                                    <input
-                                        autocomplete="off"
-                                        name="recurrences[{{ $i }}][start_datetime]"
-                                        class="form-control h_50 recurring-datetime-picker recurring-date-input recurring-start-datetime"
-                                        value="{{ $start->format('Y-m-d, H:i') }}"
-                                        required
-                                    >
-                                    <span class="absolute-icon"><i class="fa-solid fa-calendar-days"></i></span>
+                                    <i class="fa-solid fa-chevron-down recurring-event-toggle-icon"></i>
                                 </div>
-                                <small class="date-helper-text"></small>
+                            </div>
+                        </button>
+
+                        <div class="recurring-event-content" style="{{ $i === 1 ? '' : 'display: none;' }}">
+                            <div class="row g-4 main-form">
+                                <div class="col-md-6">
+                                    <label class="form-label fs-6">Start Date Time*</label>
+                                    <div class="loc-group position-relative">
+                                        <input
+                                            autocomplete="off"
+                                            name="recurrences[{{ $i }}][start_datetime]"
+                                            class="form-control h_50 recurring-datetime-picker recurring-date-input recurring-start-datetime"
+                                            value="{{ $start->format('Y-m-d, H:i') }}"
+                                            required
+                                        >
+                                        <span class="absolute-icon"><i class="fa-solid fa-calendar-days"></i></span>
+                                    </div>
+                                    <small class="date-helper-text"></small>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fs-6">End Date Time*</label>
+                                    <div class="loc-group position-relative">
+                                        <input
+                                            autocomplete="off"
+                                            name="recurrences[{{ $i }}][end_datetime]"
+                                            class="form-control h_50 recurring-datetime-picker recurring-date-input recurring-end-datetime"
+                                            value="{{ $end->format('Y-m-d, H:i') }}"
+                                            required
+                                        >
+                                        <span class="absolute-icon"><i class="fa-solid fa-calendar-days"></i></span>
+                                    </div>
+                                    <small class="date-helper-text"></small>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fs-6">Event Page Publish Date*</label>
+                                    <div class="loc-group position-relative">
+                                        <input
+                                            autocomplete="off"
+                                            name="recurrences[{{ $i }}][site_publish_date]"
+                                            class="form-control h_50 recurring-date-picker recurring-date-input recurring-publish-date"
+                                            value="{{ $publish->format('Y-m-d') }}"
+                                            required
+                                        >
+                                        <span class="absolute-icon"><i class="fa-solid fa-calendar-days"></i></span>
+                                    </div>
+                                    <small class="date-helper-text"></small>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fs-6">Event Page Expiry Date*</label>
+                                    <div class="loc-group position-relative">
+                                        <input
+                                            autocomplete="off"
+                                            name="recurrences[{{ $i }}][site_depublish_date]"
+                                            class="form-control h_50 recurring-date-picker recurring-date-input recurring-expiry-date"
+                                            value="{{ $expiry->format('Y-m-d') }}"
+                                            required
+                                        >
+                                        <span class="absolute-icon"><i class="fa-solid fa-calendar-days"></i></span>
+                                    </div>
+                                    <small class="date-helper-text"></small>
+                                </div>
                             </div>
 
-                            <div class="col-md-6">
-                                <label class="form-label fs-6">End Date Time*</label>
-                                <div class="loc-group position-relative">
-                                    <input
-                                        autocomplete="off"
-                                        name="recurrences[{{ $i }}][end_datetime]"
-                                        class="form-control h_50 recurring-datetime-picker recurring-date-input recurring-end-datetime"
-                                        value="{{ $end->format('Y-m-d, H:i') }}"
-                                        required
-                                    >
-                                    <span class="absolute-icon"><i class="fa-solid fa-calendar-days"></i></span>
-                                </div>
-                                <small class="date-helper-text"></small>
+                            <div class="bp-title mt-4">
+                                <h4 class="px-0 mb-0">
+                                    <i class="fa-solid fa-ticket step_icon me-3"></i>
+                                    Tickets
+                                </h4>
                             </div>
 
-                            <div class="col-md-6">
-                                <label class="form-label fs-6">Event Page Publish Date*</label>
-                                <div class="loc-group position-relative">
-                                    <input
-                                        autocomplete="off"
-                                        name="recurrences[{{ $i }}][site_publish_date]"
-                                        class="form-control h_50 recurring-date-picker recurring-date-input recurring-publish-date"
-                                        value="{{ $publish->format('Y-m-d') }}"
-                                        required
-                                    >
-                                    <span class="absolute-icon"><i class="fa-solid fa-calendar-days"></i></span>
-                                </div>
-                                <small class="date-helper-text"></small>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label fs-6">Event Page Expiry Date*</label>
-                                <div class="loc-group position-relative">
-                                    <input
-                                        autocomplete="off"
-                                        name="recurrences[{{ $i }}][site_depublish_date]"
-                                        class="form-control h_50 recurring-date-picker recurring-date-input recurring-expiry-date"
-                                        value="{{ $expiry->format('Y-m-d') }}"
-                                        required
-                                    >
-                                    <span class="absolute-icon"><i class="fa-solid fa-calendar-days"></i></span>
-                                </div>
-                                <small class="date-helper-text"></small>
-                            </div>
-                        </div>
-
-                        <div class="bp-title mt-4">
-                            <h4 class="px-0 mb-0">
-                                <i class="fa-solid fa-ticket step_icon me-3"></i>
-                                Tickets
-                            </h4>
-                        </div>
-
-                        @if($event->eventTickets->count() > 0)
-                            <div class="table-responsive mt-3">
-                                <table class="table recurring-ticket-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Ticket Name</th>
-                                            <th>Type</th>
-                                            <th>Price</th>
-                                            <th>Total Tickets</th>
-                                            <th>Sell Start Date</th>
-                                            <th>Sell End Date</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($event->eventTickets as $ticketIndex => $ticket)
-                                            @php
-                                                if ($isUpcomingEvent) {
-                                                    // Existing logic for upcoming events.
-                                                    $sellStart = \Carbon\Carbon::parse($ticket->sell_start_time)->addDays($days);
-                                                    $sellEnd = \Carbon\Carbon::parse($ticket->sell_end_time)->addDays($days);
-                                                } else {
-                                                    // New logic for past / ongoing parent events.
-                                                    $sellStart = \Carbon\Carbon::today()->addDays($days);
-
-                                                    $parentTicketSellStart = \Carbon\Carbon::parse($ticket->sell_start_time);
-                                                    $parentTicketSellEnd = \Carbon\Carbon::parse($ticket->sell_end_time);
-
-                                                    if ($parentTicketSellEnd->isSameDay($parentEnd)) {
-                                                        // If parent ticket sell end date is same as parent event end date,
-                                                        // recurring ticket sell end date should be same as recurring event end date.
-                                                        $sellEnd = $end->copy();
-                                                    } else {
-                                                        // Otherwise maintain the same difference between parent ticket sell start and sell end.
-                                                        $ticketSellDurationDays = $parentTicketSellStart->diffInDays($parentTicketSellEnd);
-                                                        $sellEnd = $sellStart->copy()->addDays($ticketSellDurationDays);
-                                                    }
-                                                }
-                                            @endphp
-
+                            @if($event->eventTickets->count() > 0)
+                                <div class="table-responsive mt-3">
+                                    <table class="table recurring-ticket-table">
+                                        <thead>
                                             <tr>
-                                                <td>{{ $ticket->ticket_name }}</td>
-                                                <td>{{ ucfirst($ticket->ticket_type) }}</td>
-                                                <td>{{ config('app.currency') . formatAmt($ticket->ticket_price) }}</td>
-                                                <td>{{ $ticket->available_quantity }}</td>
-                                                <td>
-                                                    <input
-                                                        autocomplete="off"
-                                                        name="recurrences[{{ $i }}][tickets][{{ $ticketIndex }}][sell_start_time]"
-                                                        class="form-control h_50 recurring-date-picker recurring-date-input recurring-ticket-sell-start"
-                                                        value="{{ $sellStart->format('Y-m-d') }}"
-                                                        required
-                                                    >
-                                                    <small class="date-helper-text"></small>
-                                                </td>
-                                                <td>
-                                                    <input
-                                                        autocomplete="off"
-                                                        name="recurrences[{{ $i }}][tickets][{{ $ticketIndex }}][sell_end_time]"
-                                                        class="form-control h_50 recurring-date-picker recurring-date-input recurring-ticket-sell-end"
-                                                        value="{{ $sellEnd->format('Y-m-d') }}"
-                                                        required
-                                                    >
-                                                    <small class="date-helper-text"></small>
-                                                </td>
+                                                <th>Ticket Name</th>
+                                                <th>Type</th>
+                                                <th>Price</th>
+                                                <th>Total Tickets</th>
+                                                <th>Sell Start Date</th>
+                                                <th>Sell End Date</th>
                                             </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        @else
-                            <div class="text-center py-4 mt-3 border rounded">
-                                <h6 class="mb-1">Tickets not found</h6>
-                                <p class="text-muted small mb-0">This parent event does not have any ticket types.</p>
-                            </div>
-                        @endif
+                                        </thead>
+                                        <tbody>
+                                            @foreach($event->eventTickets as $ticketIndex => $ticket)
+                                                @php
+                                                    if ($isUpcomingEvent) {
+                                                        // Existing logic for upcoming events.
+                                                        $sellStart = \Carbon\Carbon::parse($ticket->sell_start_time)->addDays($days);
+                                                        $sellEnd = \Carbon\Carbon::parse($ticket->sell_end_time)->addDays($days);
+                                                    } else {
+                                                        // New logic for past / ongoing parent events.
+                                                        $sellStart = \Carbon\Carbon::today()->addDays($days);
+
+                                                        $parentTicketSellStart = \Carbon\Carbon::parse($ticket->sell_start_time);
+                                                        $parentTicketSellEnd = \Carbon\Carbon::parse($ticket->sell_end_time);
+
+                                                        if ($parentTicketSellEnd->isSameDay($parentEnd)) {
+                                                            // If parent ticket sell end date is same as parent event end date,
+                                                            // recurring ticket sell end date should be same as recurring event end date.
+                                                            $sellEnd = $end->copy();
+                                                        } else {
+                                                            // Otherwise maintain the same difference between parent ticket sell start and sell end.
+                                                            $ticketSellDurationDays = $parentTicketSellStart->diffInDays($parentTicketSellEnd);
+                                                            $sellEnd = $sellStart->copy()->addDays($ticketSellDurationDays);
+                                                        }
+                                                    }
+                                                @endphp
+
+                                                <tr>
+                                                    <td>{{ $ticket->ticket_name }}</td>
+                                                    <td>{{ ucfirst($ticket->ticket_type) }}</td>
+                                                    <td>{{ config('app.currency') . formatAmt($ticket->ticket_price) }}</td>
+                                                    <td>{{ $ticket->available_quantity }}</td>
+                                                    <td>
+                                                        <input
+                                                            autocomplete="off"
+                                                            name="recurrences[{{ $i }}][tickets][{{ $ticketIndex }}][sell_start_time]"
+                                                            class="form-control h_50 recurring-date-picker recurring-date-input recurring-ticket-sell-start"
+                                                            value="{{ $sellStart->format('Y-m-d') }}"
+                                                            required
+                                                        >
+                                                        <small class="date-helper-text"></small>
+                                                    </td>
+                                                    <td>
+                                                        <input
+                                                            autocomplete="off"
+                                                            name="recurrences[{{ $i }}][tickets][{{ $ticketIndex }}][sell_end_time]"
+                                                            class="form-control h_50 recurring-date-picker recurring-date-input recurring-ticket-sell-end"
+                                                            value="{{ $sellEnd->format('Y-m-d') }}"
+                                                            required
+                                                        >
+                                                        <small class="date-helper-text"></small>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="text-center py-4 mt-3 border rounded">
+                                    <h6 class="mb-1">Tickets not found</h6>
+                                    <p class="text-muted small mb-0">This parent event does not have any ticket types.</p>
+                                </div>
+                            @endif
+                        </div>
                     </div>
                 @endfor
                 <div class="main-card p-4 mt-4">
@@ -525,6 +561,15 @@
 
     $(document).on('keyup change blur', '.recurring-date-input', function () {
         updateReadableDate(this);
+    });
+
+    $(document).on('click', '.recurring-event-header', function () {
+        var $header = $(this);
+        var $content = $header.closest('.recurring-event-box').find('.recurring-event-content').first();
+        var isExpanded = $header.attr('aria-expanded') === 'true';
+
+        $header.attr('aria-expanded', isExpanded ? 'false' : 'true');
+        $content.stop(true, true).slideToggle(200);
     });
 </script>
 @endpush

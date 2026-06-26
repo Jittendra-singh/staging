@@ -744,6 +744,47 @@ class FrontOrderController extends Controller
             'signature_required' => $ticket->is_under_18 ? true : false,
         ]);
     } */
+    public function viewTicketPdf($ticket){
+        $ticket = EventOrderTicket::with('volunteer')->findOrFail(decrypt($ticket));
+        $event  = $ticket->event;
+        $volunteerName = $ticket->volunteer->first_name.' '.$ticket->volunteer->last_name;
+
+        $data = [
+            'event'              => $event,
+            'ticket'             => $ticket,
+            'order'              => $ticket->eventOrder,
+            'volunteerName'      => $volunteerName,
+            'eventName'          => $event->event_name,
+            'eventDate'          => $event->startTimeAndEndTime,
+            'eventVenue'         => $event->fullAddress,
+        ];
+
+        try {
+            $html = view('pages.frontend.ticket-pdf-view', $data)->render();
+
+            $pdf = \PDF::setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled'      => true,
+                'defaultFont'          => 'serif',
+                'dpi'                  => 150,
+                'defaultPaperSize'     => 'a4',
+            ])->loadHTML($html);
+
+            $filename = 'ticket_' . $ticket->id . '_' . time() . '.pdf';
+
+            //return $pdf->stream($filename);
+            return $pdf->download($filename);
+
+        } catch(\Exception $e) {
+            \Log::error('Ticket PDF generation failed', [
+                'ticket_id' => $ticket->id,
+                'error'     => $e->getMessage(),
+                'line'      => $e->getLine(),
+                'file'      => $e->getFile(),
+            ]);
+            return back()->with('error', 'Unable to generate ticket PDF. Please try again.');
+        }
+    }
     public function viewWaiverPdf($ticket){
         $ticket = EventOrderTicket::with('volunteer')->findOrFail(decrypt($ticket));
         if(empty($ticket->waiver_filled_at) || empty($ticket->signature)){

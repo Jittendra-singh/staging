@@ -864,10 +864,28 @@ $(document).ready(function () {
 						$('#longerThanOneWeekText').hide();
 					}
 				} */
-				var startDateTimeValue = $input.val();
+				/* var startDateTimeValue = $input.val();
 				if (startDateTimeValue != '') {
 					$('#end_datetime').val(startDateTimeValue).trigger('change');
 					$('#longerThanOneWeekText').hide();
+				} */
+				var startDateTimeValue = $input.val();
+				if (startDateTimeValue != '') {
+						// clone ct so we don't mutate the picker's internal date
+						var endDateTime = new Date(ct.getTime());
+						endDateTime.setHours(endDateTime.getHours() + 2);
+
+						// format back to 'Y-m-d, H:i'
+						var year = endDateTime.getFullYear();
+						var month = (endDateTime.getMonth() + 1).toString().padStart(2, '0');
+						var day = endDateTime.getDate().toString().padStart(2, '0');
+						var hours = endDateTime.getHours().toString().padStart(2, '0');
+						var minutes = endDateTime.getMinutes().toString().padStart(2, '0');
+
+						var formattedEndDateTime = year + '-' + month + '-' + day + ', ' + hours + ':' + minutes;
+
+						$('#end_datetime').val(formattedEndDateTime).trigger('change');
+						$('#longerThanOneWeekText').hide();
 				}
 			}
 			/* onChangeDateTime: function (ct) {
@@ -928,6 +946,13 @@ $(document).ready(function () {
 						$('#longerThanOneWeekText').show();
 					} else {
 						$('#longerThanOneWeekText').hide();
+					}
+
+					// show error if start/end are the same OR start is after/equal to end
+					if (startDate.getTime() == endDate.getTime() || startDate.getTime() >= endDate.getTime()) {
+						$('#error_start_end_time_same').show();
+					} else {
+						$('#error_start_end_time_same').hide();
 					}
 				}
 			}

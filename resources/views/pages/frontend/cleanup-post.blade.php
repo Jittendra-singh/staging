@@ -612,15 +612,14 @@ if(isset($form_data->id)){
                                                                     <!-- <p class="text-secondary m-0" id="longerThanOneWeekText" style="{{$longerThanOneWeek?'':'display: none'}};">NOTE: This cleanup is longer than one week. If this is a recurring event, we recommend creating individual cleanups using the clone feature to keep attendance and reporting accurate.</p> -->
                                                                     <p class="text-secondary m-0" id="longerThanOneWeekText" style="{{$longerThanOneWeek?'':'display: none'}};">NOTE: This cleanup is longer than 8 hours. If this is a recurring event, we recommend creating individual cleanups using the clone feature to keep attendance and reporting accurate.</p>
                                                                     <div class="col-md-6">
-                                                                        <label class="form-label  fs-6">Start Date Time.*</label>
+                                                                        <label class="form-label  fs-6">Start Date Time*</label>
                                                                         <div class="loc-group position-relative">
                                                                             <input autocomplete="off" class="form-control h_50 datepicker-here-pp" id="start_datetime" data-language="en" name="start_datetime" type="text" placeholder="YYYY/MM/DD" value="{{ !empty($sDate)?date('Y-m-d, H:i',strtotime($sDate)):'' }}" required />
                                                                             <span class="absolute-icon"><i class="fa-solid fa-calendar-days"></i></span>
                                                                         </div>
                                                                     </div>
                                                                     <div class="col-md-6">
-                                                                        <label class="form-label fs-6">End Date
-                                                                            Time.*</label>
+                                                                        <label class="form-label fs-6">End Date Time*</label>
                                                                         <div class="loc-group position-relative">
                                                                             <input autocomplete="off" name="end_datetime"
                                                                                 class="form-control h_50 datepicker-here-pp" id="end_datetime" data-language="en" type="text"
@@ -629,6 +628,7 @@ if(isset($form_data->id)){
                                                                             <span class="absolute-icon"><i
                                                                                     class="fa-solid fa-calendar-days"></i></span>
                                                                         </div>
+                                                                        <small style="display:none;" id="error_start_end_time_same" class="text-danger">End Time must be later than the Start Time.</small>
                                                                     </div>
                                                                 </div>
                                                                 <div class="form-group mt-4">

@@ -75,6 +75,7 @@ Route::controller(\App\Http\Controllers\FrontOrderController::class)->group(func
     Route::post('cancel-refund-paid-ticket-attendee/{ticket}/{type}' , 'cancelRefundPaidTicketAttendee')->name('cancel-refund-paid-ticket-attendee');
     Route::get('rsvp-cancelled-page/{event}', 'rsvpCancelledPage')->name('rsvp-cancelled-page');
     Route::get('view-waiver-pdf/{ticket}' , 'viewWaiverPdf')->name('view-waiver-pdf');
+    Route::get('view-ticket-pdf/{ticket}' , 'viewTicketPdf')->name('view-ticket-pdf');
     
     Route::get('cancel-registration-front/{ticket}', 'cancelRegistrationFront')->name('cancel-registration-front');
     Route::get('confirm-cancel-registration-front/{ticket}/{type}', 'confirmCancelRegistrationFront')->name('confirm-cancel-registration-front');
