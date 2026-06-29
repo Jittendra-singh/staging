@@ -311,6 +311,7 @@ $(document).ready(function () {
                   scrollMonth: false,
                   scrollInput: false,
                   format: 'Y-m-d',
+			minDate: 0,
                   timepicker: false,
                   onShow: function (ct) {
                         this.setOptions({

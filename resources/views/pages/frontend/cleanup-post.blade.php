@@ -1110,9 +1110,14 @@ if(isset($form_data->id)){
                                                         </h4>
                                                         <button type="button" onclick="openTicketTypePopup(this);" url="{{ route('manage-ticket-type-html') }}" class="primary-btn w-auto" >Add Ticket Type</button>
                                                     </div>
+                                                    <div class="alert alert-info" role="alert">
+                                                        <i class="fa-solid fa-circle-info me-1"></i>
+                                                        Please review your Ticket Settings first. They control the volunteer registration and checkout experience. <a class="ms-2 review-ticket-settings-link" href="javascript:void(0);">Review Tickets Settings</a>
+                                                    </div>
                                                     @if(!(!empty(auth()->guard('front')->user()->stripe_email) && !empty(auth()->guard('front')->user()->stripe_account_id)))
                                                     <div class="alert alert-warning" role="alert">
-                                                        Connect your Stripe account to display paid tickets on the front end. <a target="_blank" href="{{ route('front-stripe-connect') }}">Connect Now</a>
+                                                        <i class="fa-solid fa-circle-info me-1"></i>
+                                                        Connect your Stripe account to display paid tickets on the front end. <a class="ms-2" target="_blank" href="{{ route('front-stripe-connect') }}">Connect Now</a>
                                                     </div>
                                                     @endif
 
@@ -1161,7 +1166,7 @@ if(isset($form_data->id)){
                                                     </div>
 
                                                 </div>
-                                                <div class="main-card p-4 mt-4">
+                                                <div class="main-card p-4 mt-4" id="ticket_settings_section">
                                                     <div
                                                         class="bp-title d-flex align-items-center justify-content-between">
                                                         <h4 class="px-0 mb-0">
@@ -2289,6 +2294,60 @@ $(document).ready(function () {
     updateDefaultBannerPreview();
     refreshBannerActionState();
 });
+
+$(document).ready(function () {
+    $(document).on('click', '.review-ticket-settings-link', function (e) {
+        e.preventDefault();
+
+        var $target = $('#ticket_settings_section');
+        if (!$target.length) return;
+
+        // Make sure we're actually on tab_step2 (Tickets & Waiver Settings tab)
+        // since the stepper likely hides inactive tabs
+        if (!$target.closest('.step-tab-panel').hasClass('active')) {
+            $('.step-steps a[href="#tab_step2"]').trigger('click');
+            // small delay to let the tab switch/render before scrolling
+            setTimeout(function () {
+                $('html, body').animate({
+                    scrollTop: $target.offset().top - 100
+                }, 400);
+            }, 200);
+        } else {
+            $('html, body').animate({
+                scrollTop: $target.offset().top - 100
+            }, 400);
+        }
+    });
+    
+    // Live check while typing in either field
+    $(document).on('input', '#manage-ticket-popup-body input[name="max_qty_allowed_per_order"], #manage-ticket-popup-body input[name="available_quantity"]', function () {
+        validateMaxQtyPerOrder();
+    });
+});
+// Validate max_qty_allowed_per_order against available_quantity
+function validateMaxQtyPerOrder() {
+    var $available = $('#manage-ticket-popup-body input[name="available_quantity"]');
+    var $maxQty = $('#manage-ticket-popup-body input[name="max_qty_allowed_per_order"]');
+
+    if (!$available.length || !$maxQty.length) return true;
+
+    var availableVal = parseInt($available.val(), 10);
+    var maxQtyVal = parseInt($maxQty.val(), 10);
+
+    // remove any existing error first
+    $maxQty.closest('.col-sm-6').find('.max-qty-error').remove();
+    $maxQty.removeClass('is-invalid');
+
+    if (!isNaN(maxQtyVal) && !isNaN(availableVal) && maxQtyVal > availableVal) {
+        $maxQty.addClass('is-invalid');
+        $maxQty.closest('.col-sm-6').append(
+            '<small class="text-danger max-qty-error">Max Tickets Per Order should never exceed Total Tickets (' + availableVal + ').</small>'
+        );
+        return false;
+    }
+
+    return true;
+}
 
     </script>
 @endpush

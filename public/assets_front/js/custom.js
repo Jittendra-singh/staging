@@ -961,6 +961,7 @@ $(document).ready(function () {
 			scrollMonth: false,
 			scrollInput: false,
 			format: 'Y-m-d',
+			minDate: 0,
 			timepicker: false,
 			onShow: function (ct) {
 				this.setOptions({
@@ -3213,6 +3214,15 @@ function openTicketTypePopup(control) {
 	});
 }
 function submitTicketTypeForm() {
+	// Validate max_qty_allowed_per_order against available_quantity
+	var availableVal = parseInt($(document).find('form#ticketTypeForm input[name="available_quantity"]').val(), 10);
+	var maxQtyVal = parseInt($(document).find('form#ticketTypeForm input[name="max_qty_allowed_per_order"]').val(), 10);
+
+	if (!isNaN(maxQtyVal) && !isNaN(availableVal) && maxQtyVal > availableVal) {
+		showError('Max Tickets Per Order cannot exceed Total Tickets (' + availableVal + ').', 'error');
+		return false;
+	}
+	
 	//var url = $(document).find('form#ticketTypeForm').attr('action');
 	var url = $('#save_ticket_type_url').val();
 	var formData = $(document).find('form#ticketTypeForm').serialize();

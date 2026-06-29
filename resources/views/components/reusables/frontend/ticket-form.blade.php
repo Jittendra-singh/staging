@@ -81,7 +81,7 @@
                                     <input type="number" step="1" oninput="this.value = this.value.replace(/[^0-9]/g, '')" name="ticket[{{$counter}}][available_quantity]" value="{{@$ticket->available_quantity}}" class="form-control form-ele mt-1" min="0" required>
                                 </div>
                                 <div class="col-sm-2 mt-3">
-                                    <label for="max_qty_allowed_per_order">Max Tickets Per Order</label>
+                                    <label for="max_qty_allowed_per_order">Max Tickets Per Order*</label>
                                     <input type="number" name="ticket[{{$counter}}][max_qty_allowed_per_order]" value="{{@$ticket->max_qty_allowed_per_order}}" class="form-control form-ele mt-1" min="1" required>
                                 </div>
                                 <div class="col-sm-2 mt-3">

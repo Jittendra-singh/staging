@@ -499,7 +499,7 @@
 
             if ($input.hasClass('recurring-publish-date')) {
                 this.setOptions({
-                    minDate: false,
+                    minDate: 0,
                     maxDate: getDateOnlyValue($box.find('.recurring-start-datetime').val()) || false
                 });
             }
