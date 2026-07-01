@@ -1685,6 +1685,7 @@ class FrontController extends Controller
             //'team_name'          => 'required|string',
             'volunteer_hours'    => 'required|numeric|min:0',
             'post_event_notes'   => 'required|string',
+            'volunteer_registered_from_other_sites' => 'nullable|numeric|min:0',
         ]);
 
         try {
@@ -1694,6 +1695,7 @@ class FrontController extends Controller
             //$event->team_name = $validated['team_name'];
             $event->volunteer_hours = ceil($validated['volunteer_hours']);
             $event->post_event_notes = $validated['post_event_notes'];
+            $event->volunteer_registered_from_other_sites = $validated['volunteer_registered_from_other_sites'] ?? 0;
             if (request()->hasFile('after_event_images')) {
                 $files = request()->file('after_event_images');
                 // Wrap in array if single file, so loop works for both cases
@@ -2009,6 +2011,7 @@ class FrontController extends Controller
         $event->is_completed = 1;
         $event->wrapup_email_sent_by = auth()->guard('front')->user()->id;
         $event->save();
+        $registered_tickets = $event->tickets()->where('rsvp_confirmation', 1)->get();
         $tickets = $event->tickets()->where('checkin', 1)->whereNotNull('waiver_filled_at')->get();
         $cohostText = '';
         $activeCohostsIds = $event->cohostRecords->where('request_status', 'approved')->pluck('volunteer_id');
@@ -2056,6 +2059,8 @@ class FrontController extends Controller
                             "event_location" => $event->fullAddress,
                             "organizer_name" => $event->creator->first_name.' '.$event->creator->last_name,
                             "total_volunteers" => $tickets->count(),
+                            "total_registered_volunteers" => $registered_tickets->count(),
+                            "volunteer_registered_from_other_sites" => $event->volunteer_registered_from_other_sites,
                             "waste_collected" => $event->waste_collected,
                             "area_cleaned" => $event->area_cleaned,
                             "service_hours" => $event->volunteer_hours ?? 'N/A',
@@ -3355,83 +3360,117 @@ class FrontController extends Controller
             : '-';
         $html = '
         <div class="model-content main-form">
-            <div class="container-fluid">
-                <div class="row mt-4 mb-4">
-                    <div class="col-12">
-                        <h5 class=" mb-3">Widget Information:</h5>
-                        <hr class="mt-0 mb-3">
-                    </div>
-                    <div class="col-6">
-                        <div class="row mb-2">
-                            <div class="col-md-5 fw-semibold text-muted">Widget Title :</div>
-                            <div class="col-md-7 registration-full-name">'.e($widget->title).'</div>
-                        </div>
-                        <div class="row mb-2">
-                            <div class="col-md-5 fw-semibold text-muted">Location :</div>
-                            <div class="col-md-7 registration-email-address">'.(!empty($widget->location) ? e($widget->location) : '-').'</div>
-                        </div>
-                        <div class="row mb-2">
-                            <div class="col-md-5 fw-semibold text-muted">Distance :</div>
-                            <div class="col-md-7 registration-phone-number">'.(!empty($widget->distance) ? e($widget->distance).' Miles' : '-').'</div>
-                        </div>
-                        <div class="row mb-2">
-                            <div class="col-md-5 fw-semibold text-muted">Organizers :</div>
-                            <div class="col-md-7 registration-event-name">'.$org_html.'</div>
-                        </div>
-                        <div class="row mb-2">
-                            <div class="col-md-5 fw-semibold text-muted">Categories :</div>
-                            <div class="col-md-7 registration-event-name">'.$cat_html.'</div>
-                        </div>
-                        <div class="row mb-2">
-                            <div class="col-md-5 fw-semibold text-muted">Event Tags Filter :</div>
-                            <div class="col-md-7 registration-event-name">'.$tag_html.'</div>
-                        </div>
-                        <div class="row mb-2">
-                            <div class="col-md-5 fw-semibold text-muted">Event Title Filter :</div>
-                            <div class="col-md-7 registration-event-name">'.(!empty($widget->ftr_event_title) ? e($widget->ftr_event_title) : '-').'</div>
+
+            <div class="widget-detail-section">
+                <h5 class="widget-detail-title">Widget Code</h5>
+                <small class="widget-code-help">Copy below code and paste it where you want to show widget.</small>
+                <pre class="widget-code-block"><code id="widgetCode">&lt;iframe style="width:100%; height:80vh; min-height:650px; border:0; display:block;" loading="lazy" src="'.(route('front-show-widget', ['id' => encrypt($widget->id)])).'"&gt;&lt;/iframe&gt;</code></pre>
+            </div>
+            <div class="widget-detail-section">
+                <h5 class="widget-detail-title">Widget Information</h5>
+
+                <div class="row widget-detail-grid">
+                    <div class="col-lg-6">
+                        <div class="widget-detail-item">
+                            <span class="widget-detail-label">Widget Title</span>
+                            <div class="widget-detail-value">'.e($widget->title).'</div>
                         </div>
                     </div>
-                    
-                    <div class="col-6">
-                        <div class="row mb-2">
-                            <div class="col-md-5 fw-semibold text-muted">Event Start Date Filter :</div>
-                            <div class="col-md-7 registration-event-name">'.(!empty($widget->ftr_event_start_dt) ? e($widget->ftr_event_start_dt) : '-').'</div>
+
+                    <div class="col-lg-6">
+                        <div class="widget-detail-item">
+                            <span class="widget-detail-label">Website URL</span>
+                            <div class="widget-detail-value">'.$website_html.'</div>
                         </div>
-                        <div class="row mb-2">
-                            <div class="col-md-5 fw-semibold text-muted">Event End Date Filter :</div>
-                            <div class="col-md-7 registration-event-name">'.(!empty($widget->ftr_event_end_dt) ? e($widget->ftr_event_end_dt) : '-').'</div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="widget-detail-item">
+                            <span class="widget-detail-label">Location</span>
+                            <div class="widget-detail-value">'.(!empty($widget->location) ? e($widget->location) : '-').'</div>
                         </div>
-                        <div class="row mb-2">
-                            <div class="col-md-5 fw-semibold text-muted">What is the URL you are putting this widget on?  :</div>
-                            <div class="col-md-7 registration-event-name">'.$website_html.'</div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="widget-detail-item">
+                            <span class="widget-detail-label">Distance</span>
+                            <div class="widget-detail-value">'.(!empty($widget->distance) ? e($widget->distance).' Miles' : '-').'</div>
                         </div>
-                        <div class="row mb-2">
-                            <div class="col-md-5 fw-semibold text-muted">Custom Widget Header :</div>
-                            <div class="col-md-7 registration-event-name">'.(!empty($widget->custom_widget_header) ? e($widget->custom_widget_header) : '-').'</div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="widget-detail-item">
+                            <span class="widget-detail-label">Display Style</span>
+                            <div class="widget-detail-value">'.($widget->type==1?'List View':'Map View').'</div>
                         </div>
-                        <div class="row mb-2">
-                            <div class="col-md-5 fw-semibold text-muted">Events Per Page :</div>
-                            <div class="col-md-7 registration-event-name">'.(!empty($widget->event_per_page) ? e($widget->event_per_page) : '-').'</div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="widget-detail-item">
+                            <span class="widget-detail-label">Status</span>
+                            <div class="widget-detail-value '.($widget->is_active==1?'widget-status-active':'widget-status-inactive').'">'.($widget->is_active==1?'Active':'Inactive').'</div>
                         </div>
-                        <div class="row mb-2">
-                            <div class="col-md-5 fw-semibold text-muted">Display Style :</div>
-                            <div class="col-md-7 registration-event-name">'.($widget->type==1?'List View':'Map View').'</div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="widget-detail-item">
+                            <span class="widget-detail-label">Custom Widget Header</span>
+                            <div class="widget-detail-value">'.(!empty($widget->custom_widget_header) ? e($widget->custom_widget_header) : '-').'</div>
                         </div>
-                        <div class="row mb-2">
-                            <div class="col-md-5 fw-semibold text-muted">Status :</div>
-                            <div class="col-md-7 registration-event-name">'.($widget->is_active==1?'Active':'Inactive').'</div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="widget-detail-item">
+                            <span class="widget-detail-label">Events Per Page</span>
+                            <div class="widget-detail-value">'.(!empty($widget->event_per_page) ? e($widget->event_per_page) : '-').'</div>
                         </div>
                     </div>
                 </div>
-                <div class="row mt-4 mb-4">
-                    <div class="col-12">
-                        <h5>Widget Code:</h5>
-                        <small class=" mb-3">Copy below code and paste it where you want to show widget.</small>
-                        <hr class="mt-0 mb-3">
-                        <div class="row mb-2">
-                            <code id="widgetCode">
-                                &lt;iframe style="width:100%; height:80vh; min-height:650px; border:0; display:block;" loading="lazy" src="'.(route('front-show-widget', ['id' => encrypt($widget->id)])).'">&lt;/iframe>
-                            </code>
+            </div>
+
+            <div class="widget-detail-section">
+                <h5 class="widget-detail-title">Filters</h5>
+
+                <div class="row widget-detail-grid">
+                    <div class="col-lg-6">
+                        <div class="widget-detail-item">
+                            <span class="widget-detail-label">Organizers</span>
+                            <div class="widget-detail-value">'.$org_html.'</div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="widget-detail-item">
+                            <span class="widget-detail-label">Categories</span>
+                            <div class="widget-detail-value">'.$cat_html.'</div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="widget-detail-item">
+                            <span class="widget-detail-label">Event Tags Filter</span>
+                            <div class="widget-detail-value">'.$tag_html.'</div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="widget-detail-item">
+                            <span class="widget-detail-label">Event Title Filter</span>
+                            <div class="widget-detail-value">'.(!empty($widget->ftr_event_title) ? e($widget->ftr_event_title) : '-').'</div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="widget-detail-item">
+                            <span class="widget-detail-label">Event Start Date Filter</span>
+                            <div class="widget-detail-value">'.(!empty($widget->ftr_event_start_dt) ? e($widget->ftr_event_start_dt) : '-').'</div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="widget-detail-item">
+                            <span class="widget-detail-label">Event End Date Filter</span>
+                            <div class="widget-detail-value">'.(!empty($widget->ftr_event_end_dt) ? e($widget->ftr_event_end_dt) : '-').'</div>
                         </div>
                     </div>
                 </div>

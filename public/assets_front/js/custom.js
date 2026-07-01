@@ -886,6 +886,15 @@ $(document).ready(function () {
 
 						$('#end_datetime').val(formattedEndDateTime).trigger('change');
 						$('#longerThanOneWeekText').hide();
+
+						// site_depublish_date = end_datetime's date + 1 day (date only)
+						var depublishDate = new Date(endDateTime.getTime());
+						depublishDate.setDate(depublishDate.getDate() + 1);
+						var depublishYear = depublishDate.getFullYear();
+						var depublishMonth = (depublishDate.getMonth() + 1).toString().padStart(2, '0');
+						var depublishDay = depublishDate.getDate().toString().padStart(2, '0');
+						var formattedDepublishDate = depublishYear + '-' + depublishMonth + '-' + depublishDay;
+						$('#site_depublish_date').val(formattedDepublishDate).trigger('change');
 				}
 			}
 			/* onChangeDateTime: function (ct) {

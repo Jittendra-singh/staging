@@ -2,6 +2,7 @@
     $outPages = true;
 
     $checkedInVolunteerCount = $event->tickets()->active()->where('checkin', 1)->count();
+    $registeredVolunteerCount = $event->tickets()->active()->where('rsvp_confirmation', 1)->count();
     $hasNarrative = !empty(trim($event->post_event_notes ?? ''));
 
     $images = [];
@@ -400,18 +401,6 @@
 
                                 <div class="cleanup-stat-card">
                                     <div class="cleanup-stat-icon">
-                                        <i class="fa-solid fa-user"></i>
-                                    </div>
-                                    <div>
-                                        <p class="cleanup-stat-label">Volunteers</p>
-                                        <h4 class="cleanup-stat-value {{ $checkedInVolunteerCount ? '' : 'is-muted' }}">
-                                            {{ $checkedInVolunteerCount ? $checkedInVolunteerCount : '--' }}
-                                        </h4>
-                                    </div>
-                                </div>
-
-                                <div class="cleanup-stat-card">
-                                    <div class="cleanup-stat-icon">
                                         <i class="fa-solid fa-flag"></i>
                                     </div>
                                     <div>
@@ -419,6 +408,44 @@
                                         <h4 class="cleanup-stat-value">{{ $volunteerHours }}</h4>
                                     </div>
                                 </div>
+
+                                <div class="cleanup-stat-card">
+                                    <div class="cleanup-stat-icon">
+                                        <i class="fa-solid fa-user"></i>
+                                    </div>
+                                    <div>
+                                        <p class="cleanup-stat-label">Registered Volunteers</p>
+                                        <h4 class="cleanup-stat-value {{ $registeredVolunteerCount ? '' : 'is-muted' }}">
+                                            {{ $registeredVolunteerCount ? $registeredVolunteerCount : '--' }}
+                                        </h4>
+                                    </div>
+                                </div>
+
+                                <div class="cleanup-stat-card">
+                                    <div class="cleanup-stat-icon">
+                                        <i class="fa-solid fa-user"></i>
+                                    </div>
+                                    <div>
+                                        <p class="cleanup-stat-label">Attended Volunteers</p>
+                                        <h4 class="cleanup-stat-value {{ $checkedInVolunteerCount ? '' : 'is-muted' }}">
+                                            {{ $checkedInVolunteerCount ? $checkedInVolunteerCount : '--' }}
+                                        </h4>
+                                    </div>
+                                </div>
+
+                                @if(!empty($event->volunteer_registered_from_other_sites))
+                                <div class="cleanup-stat-card">
+                                    <div class="cleanup-stat-icon">
+                                        <i class="fa-solid fa-user"></i>
+                                    </div>
+                                    <div>
+                                        <p class="cleanup-stat-label">Volunteers From Other Platforms</p>
+                                        <h4 class="cleanup-stat-value {{ $event->volunteer_registered_from_other_sites ? '' : 'is-muted' }}">
+                                            {{ $event->volunteer_registered_from_other_sites ? $event->volunteer_registered_from_other_sites : '--' }}
+                                        </h4>
+                                    </div>
+                                </div>
+                                @endif
                             </div>
                         </div>
 

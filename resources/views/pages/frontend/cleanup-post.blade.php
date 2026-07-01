@@ -14,9 +14,13 @@ if(isset($form_data->id) && $form_data->status=='published'){
     $is_event_unpublish = false;
 }
 $notCheckedInAttendeesCount = 0;
+$totalRegisteredAttendeesCount = 0;
 if(isset($form_data->id)){
     $notCheckedInAttendeesCount = $form_data->tickets()
         ->where('checkin', 0)
+        ->where('rsvp_confirmation', 1)
+        ->count();
+    $totalRegisteredAttendeesCount = $form_data->tickets()
         ->where('rsvp_confirmation', 1)
         ->count();
 }
@@ -1103,16 +1107,16 @@ if(isset($form_data->id)){
                                                 value="{{ $form_data->encrypted_id ?? 0 }}">
                                             <div class="tab-from-content">
                                                 <div class="main-card p-4 mt-4">
+                                                    <div class="alert alert-info" role="alert">
+                                                        <i class="fa-solid fa-circle-info me-1"></i>
+                                                        Please review your Ticket Settings first. They control the volunteer registration and checkout experience. <a class="ms-2 review-ticket-settings-link" href="javascript:void(0);">Review Tickets Settings</a>
+                                                    </div>
                                                     <div
                                                         class="bp-title mb-4 d-flex align-items-center justify-content-between">
                                                         <h4 class="px-0 mb-0">
                                                             <i class="fa-solid fa-ticket step_icon me-3"></i>Ticket Types
                                                         </h4>
                                                         <button type="button" onclick="openTicketTypePopup(this);" url="{{ route('manage-ticket-type-html') }}" class="primary-btn w-auto" >Add Ticket Type</button>
-                                                    </div>
-                                                    <div class="alert alert-info" role="alert">
-                                                        <i class="fa-solid fa-circle-info me-1"></i>
-                                                        Please review your Ticket Settings first. They control the volunteer registration and checkout experience. <a class="ms-2 review-ticket-settings-link" href="javascript:void(0);">Review Tickets Settings</a>
                                                     </div>
                                                     @if(!(!empty(auth()->guard('front')->user()->stripe_email) && !empty(auth()->guard('front')->user()->stripe_account_id)))
                                                     <div class="alert alert-warning" role="alert">
@@ -1612,11 +1616,9 @@ if(isset($form_data->id)){
                                             <div class="tab-from-content">
                                                 <div class="main-card mt-4">
                                                     <div class="bp-title">
-                                                        <h4><i class="fa-solid fa-gear step_icon me-3"></i>After Event Actions
+                                                        <h4><i class="fa-solid fa-gear step_icon me-3"></i>Volunteer Statistics
                                                         @if(isset($form_data->encrypted_id))
                                                         @if($form_data->is_completed!=1)
-                                                        <!-- <button type="button" ajaxurl="{{route('send-thankyou-request-email-front')}}" event_id="{{ $form_data->encrypted_id ?? 0 }}" class="primary-btn w-fit float-end send-thankyou-request-email-btn">Send Thank-You & Request Email</button> -->
-                                                        <!-- <button type="button" ajaxurl="{{route('send-wrapup-email',$form_data->encrypted_id ?? 0)}}" event_id="{{ $form_data->encrypted_id ?? 0 }}" class="primary-btn w-fit float-end send-thankyou-request-email-btn" data-bs-toggle="tooltip" data-bs-original-title="Send Wrap-Up Email to All Attendees & Complete Cleanup">Finalize & Send Wrap-up Email</button> -->
                                                         @else
                                                             @if(isset($form_data->wrapup_email_sender) && isset($form_data->wrapup_email_sender->id))
                                                             @php
@@ -1637,7 +1639,43 @@ if(isset($form_data->id)){
                                                     </div>
                                                     <div class="p-4 bp-form main-form">
                                                         <div class="row">
-                                                            <div class="col-sm-6">
+                                                            <div class="col-sm-4">
+                                                                <div class="form-group">
+                                                                    <label class="form-label fs-6">Registered Volunteers</label>
+                                                                    <div class="input-group">
+                                                                        <input disabled autocomplete="off"  id="registered_volunteers" type="number" class="form-control decimalonly h_50" placeholder="" name="registered_volunteers" value="{{$totalRegisteredAttendeesCount}}">
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-sm-4">
+                                                                <div class="form-group">
+                                                                    <label class="form-label fs-6">Registered From Other Sites</label>
+                                                                    <div class="input-group">
+                                                                        <input autocomplete="off"  id="volunteer_registered_from_other_sites" type="number" class="form-control decimalonly h_50" placeholder="" name="volunteer_registered_from_other_sites" value="{{ old('volunteer_registered_from_other_sites', $form_data->volunteer_registered_from_other_sites ?? '') }}">
+                                                                    </div>
+                                                                    <small>Include volunteers who signed up via external platforms.</small>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-sm-4">
+                                                                <div class="form-group">
+                                                                    <label class="form-label fs-6">Total Volunteers</label>
+                                                                    <div class="input-group">
+                                                                        <input disabled autocomplete="off"  id="total_volunteers" type="number" class="form-control decimalonly h_50" placeholder="" name="total_volunteers" value="0">
+                                                                    </div>
+                                                                    <small>Auto-calculated. Registered + Other Sites.</small>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="main-card mt-4">
+                                                    <div class="bp-title">
+                                                        <h4><i class="fa-solid fa-gear step_icon me-3"></i>Cleanup Impact
+                                                        </h4>
+                                                    </div>
+                                                    <div class="p-4 bp-form main-form">
+                                                        <div class="row">
+                                                            <div class="col-sm-4">
                                                                 <div class="form-group">
                                                                     <label class="form-label fs-6">Waste Collected*</label>
                                                                     <!-- <input id="waste_collected" class="form-control h_50" type="text" value="{{ old('waste_collected', $form_data->waste_collected ?? '') }}" name="waste_collected" placeholder="" value="" required> -->
@@ -1645,9 +1683,10 @@ if(isset($form_data->id)){
                                                                         <input autocomplete="off" step="0.01" min="0.01" id="waste_collected" type="number" class="form-control decimalonly h_50" placeholder="" name="waste_collected" required value="{{ old('waste_collected', $form_data->waste_collected ?? '') }}">
                                                                         <div class="input-group-text">Pound (lb)</div>
                                                                     </div>
+                                                                    <small>Include recyclables and landfill waste.</small>
                                                                 </div>
                                                             </div>
-                                                            <div class="col-sm-6">
+                                                            <div class="col-sm-4">
                                                                 <div class="form-group">
                                                                     <label class="form-label fs-6">Area Cleaned*</label>
                                                                     <!-- <input id="area_cleaned" class="form-control h_50" type="text" value="{{ old('area_cleaned', $form_data->area_cleaned ?? '') }}" name="area_cleaned" placeholder="" value="" required> -->
@@ -1655,31 +1694,36 @@ if(isset($form_data->id)){
                                                                         <input autocomplete="off" step="0.01" min="0.01" id="area_cleaned" type="number" class="form-control decimalonly h_50" placeholder="" name="area_cleaned" required value="{{ old('area_cleaned', $form_data->area_cleaned ?? '') }}">
                                                                         <div class="input-group-text">Yards</div>
                                                                     </div>
+                                                                    <small>Estimated size of the cleanup site.</small>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                        <div class="row mt-3">
-                                                            <!-- <div class="col-sm-6">
-                                                                <div class="form-group">
-                                                                    <label class="form-label fs-6">Team Name*</label>
-                                                                    <input id="team_name" class="form-control h_50" type="text" value="{{ old('team_name', $form_data->team_name ?? '') }}" name="team_name" placeholder="" required>
-                                                                </div>
-                                                            </div> -->
-                                                            <div class="col-sm-6">
+                                                            <div class="col-sm-4">
                                                                 <div class="form-group">
                                                                     <label class="form-label fs-6">Total Volunteer Hours*</label>
                                                                     <input id="volunteer_hours" class="form-control h_50" type="number" step="0.01" min="0" value="{{ old('volunteer_hours', $form_data->volunteer_hours ?? '') }}" name="volunteer_hours" placeholder="" required>
                                                                 </div>
+                                                                <small>Sum of hours contributed by all participants.</small>
                                                             </div>
-                                                            <div class="col-sm-6">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="main-card mt-4">
+                                                    <div class="bp-title">
+                                                        <h4><i class="fa-solid fa-gear step_icon me-3"></i>Reporting Details
+                                                        </h4>
+                                                    </div>
+                                                    <div class="p-4 bp-form main-form">
+                                                        <div class="row">
+                                                            <div class="col-sm-12">
                                                                 <div class="form-group">
                                                                     <label class="form-label fs-6">Post Event Comments*</label>
-                                                                    <input id="post_event_notes" class="form-control h_50" type="text" value="{{ old('post_event_notes', $form_data->post_event_notes ?? '') }}" name="post_event_notes" placeholder="" required>
+                                                                    <!-- <input id="post_event_notes" class="form-control h_50" type="text" value="{{ old('post_event_notes', $form_data->post_event_notes ?? '') }}" name="post_event_notes" placeholder="" required> -->
+                                                                    <textarea id="post_event_notes" class="form-control pt-2" rows="4" type="text" name="post_event_notes" required>{{ old('post_event_notes', $form_data->post_event_notes ?? '') }}</textarea>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                         <div class="row mt-3">
-                                                            <div class="col-sm-6">
+                                                            <div class="col-sm-12">
                                                                 <div class="form-group">
                                                                     @if(isset($form_data) && isset($form_data->id) && isset($form_data->after_event_images) && !empty($form_data->after_event_images))
                                                                         @php 
@@ -2348,6 +2392,30 @@ function validateMaxQtyPerOrder() {
 
     return true;
 }
+$(document).ready(function () {
+    function calculateTotalVolunteers() {
+        var registeredVolunteers = parseInt($('#registered_volunteers').val(), 10);
+        var fromOtherSites = parseInt($('#volunteer_registered_from_other_sites').val(), 10);
 
+        // Treat blank / invalid / negative values as 0
+        if (isNaN(registeredVolunteers) || registeredVolunteers < 0) {
+            registeredVolunteers = 0;
+        }
+        if (isNaN(fromOtherSites) || fromOtherSites < 0) {
+            fromOtherSites = 0;
+        }
+
+        var total = registeredVolunteers + fromOtherSites;
+        $('#total_volunteers').val(total);
+    }
+
+    // Recalculate whenever the "from other sites" field changes
+    $(document).on('input change', '#volunteer_registered_from_other_sites', function () {
+        calculateTotalVolunteers();
+    });
+
+    // Run once on page load to set the initial total
+    calculateTotalVolunteers();
+});
     </script>
 @endpush

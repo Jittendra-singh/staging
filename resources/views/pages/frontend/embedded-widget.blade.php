@@ -1,9 +1,110 @@
 @extends('layouts.frontend')
 @push('style')
 <style>
-#showWidgetDetail .modal-dialog{
-    width: 1000px!important;
-    max-width: unset!important;
+#showWidgetDetail .modal-dialog {
+    width: min(1040px, calc(100vw - 32px)) !important;
+    max-width: 1040px !important;
+}
+
+#showWidgetDetail .modal-content {
+    border: 0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+#showWidgetDetail .modal-body {
+    max-height: calc(100vh - 190px);
+    overflow-y: auto;
+    padding: 24px 0px !important;
+    /* background: #f8fafc; */
+}
+
+.widget-detail-section {
+    background: #fff;
+    border: 1px solid #e9edf2;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 18px;
+}
+
+.widget-detail-section:last-child {
+    margin-bottom: 0;
+}
+
+.widget-detail-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #172033;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eef1f5;
+}
+
+.widget-detail-grid {
+    row-gap: 14px;
+}
+
+.widget-detail-item {
+    min-height: 100%;
+    padding: 12px 14px;
+    background: #fbfcfe;
+    border: 1px solid #eef1f5;
+    border-radius: 6px;
+}
+
+.widget-detail-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #697586;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+
+.widget-detail-value {
+    color: #1f2937;
+    font-size: 14px;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+.widget-status-active {
+    color: #198754;
+    font-weight: 700;
+}
+
+.widget-status-inactive {
+    color: #dc3545;
+    font-weight: 700;
+}
+
+.widget-code-help {
+    display: block;
+    color: #697586;
+    margin-bottom: 12px;
+}
+
+.widget-code-block {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 16px;
+    background: #111827;
+    color: #e5e7eb;
+    border-radius: 8px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.6;
+}
+
+@media (max-width: 767px) {
+    #showWidgetDetail .modal-body {
+        padding: 16px;
+    }
+
+    .widget-detail-section {
+        padding: 16px;
+    }
 }
 </style>
 @endpush
