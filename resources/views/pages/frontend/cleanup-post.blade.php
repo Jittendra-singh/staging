@@ -1379,6 +1379,9 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                                                 This setting cannot be changed because volunteers are already registered.
                                                                             </small>
                                                                         @endif
+
+                                                                        <!-- <button class="primary-btn w-fit trigger-go-to-next float-end mt-3" type="button">Save Ticket Settings</button> -->
+
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -2227,7 +2230,11 @@ $(document).ready(function () {
 		$('#image-input').trigger('click');
 	});
 }); */
+
 $(document).ready(function () {
+    $('.trigger-go-to-next').on('click', function () {
+        $('.go-to-next').trigger('click');
+    });
     let cropperInstance = null;
     let cropperAspectRatio = 1000 / 660;
     let cropperWidth = 1000;

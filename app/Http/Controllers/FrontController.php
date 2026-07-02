@@ -1151,6 +1151,13 @@ class FrontController extends Controller
             return $this->generateJsonResponse(false, 'Ticket sell end date must be lower than or equal to event start date.');
         }
 
+        if($event->participation_type==1){
+            $hasSavedTickets = $event->eventTickets()->exists();
+            if (!$hasSavedTickets) {
+                return $this->generateJsonResponse(false, 'Please add at least one ticket type to the event, as you have selected VolunteerCleanup\'s Integrated Ticket System.');
+            }
+        }
+
         $obj     = $event;
         $validated = $request->validate([
             'event_id'                    => 'required',
@@ -2177,6 +2184,12 @@ class FrontController extends Controller
                 $tickets = $event->tickets()->where('rsvp_confirmation', 1)->get();
                 if($tickets->count() > 0){
                     return $this->generateJsonResponse(false, 'An event cannot be unpublished once an attendee has registered.',$this->mailUrl('view-event-details', ['slug' => $event->slug]));
+                }
+            }
+            if($event->participation_type==1){
+                $hasSavedTickets = $event->eventTickets()->exists();
+                if (!$hasSavedTickets) {
+                    return $this->generateJsonResponse(false, 'Please add at least one ticket type before publishing the event, as you have selected VolunteerCleanup\'s Integrated Ticket System. <br/><a href="'.$this->mailUrl('front-post-a-event', ['id' => encrypt($event->id),'open_tab' => 'step2']).'">Add Ticket Types</a>');
                 }
             }
             $event->status = $validated['status'];

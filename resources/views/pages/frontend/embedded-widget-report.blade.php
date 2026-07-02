@@ -18,6 +18,7 @@
                     <div class="col-md-12 d-flex justify-content-between">
                         <div class="d-main-title">
                             <h3><i class="fa-solid fa-calendar-days me-3 mb-3"></i>Embedded Widget Report</h3>
+							<p class="mb-2">Track your cleanup widget's performance and see how users interact with it across different platforms.</p>
                             @php
                                 $breadcrumbs = [ 
                                     [

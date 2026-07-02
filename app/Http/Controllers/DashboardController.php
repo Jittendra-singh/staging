@@ -581,6 +581,7 @@ class DashboardController extends Controller
                     'Organizer',
                     'Tickets Sold',
                     'Total Tickets',
+                    'Remaining Tickets',
                     'Checked-in Volunteers',
                     'Attendance %',
                     'Debris (lbs)',
@@ -592,6 +593,7 @@ class DashboardController extends Controller
                     $totalTickets = (int) ($event->total_tickets_count ?? 0);
                     $soldTickets = (int) ($event->sold_active_tickets_count ?? 0);
                     $checkedInTickets = (int) ($event->checked_in_tickets_count ?? 0);
+                    $remainingTickets = max($totalTickets - $soldTickets, 0);
                     $attendanceRate = $soldTickets > 0 ? round(($checkedInTickets / $soldTickets) * 100) : 0;
 
                     fputcsv($handle, [
@@ -600,6 +602,7 @@ class DashboardController extends Controller
                         trim(@$event->creator->first_name . ' ' . @$event->creator->last_name),
                         $soldTickets,
                         $totalTickets,
+                        $remainingTickets,
                         $checkedInTickets,
                         $attendanceRate . '%',
                         $event->waste_collected,
