@@ -1240,15 +1240,21 @@ class FrontController extends Controller
                 throw new \Exception("Please add tickets to event.");
             } */
 
-
+            $hasRegisteredVolunteers = $event->exists && EventOrderTicket::where('event_id', $event->id)
+                    ->where('rsvp_confirmation', 1)
+                    ->exists();
             $event->ticket_sell_start_time = $validated['ticket_sell_start_time'] ?? null;
             $event->ticket_sell_end_time = $validated['ticket_sell_end_time'] ?? null;
             $event->ticket_questions = $validated['ticket_questions'] ?? null; 
             $event->show_ticket_description = $request->has('show_ticket_description') ? 1 : 0;
             $event->show_remaining_tickets = $request->has('show_remaining_tickets') ? 1 : 0;
             $event->allow_donations = $request->has('allow_donations') ? 1 : 0;
-            $event->allow_refund = $request->has('allow_refund') ? 1 : 0;
-            $event->charge_bear_by = $request->charge_bear_by ?? 0; 
+            /* $event->allow_refund = $request->has('allow_refund') ? 1 : 0;
+            $event->charge_bear_by = $request->charge_bear_by ?? 0;  */
+            if (!$hasRegisteredVolunteers) {
+                $event->allow_refund = $request->has('allow_refund') ? 1 : 0;
+                $event->charge_bear_by = $request->charge_bear_by ?? 0;
+            }
             $event->sell_tickets_individually = $request->has('sell_tickets_individually') ? 1 : 0;
             /**************************************************************************
             * tickets system with constrait of changing number of ticket after orders *

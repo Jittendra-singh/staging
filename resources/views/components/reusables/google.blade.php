@@ -32,7 +32,7 @@
                         //position: { lat: location.lat, lng: location.lng },
                         position: new google.maps.LatLng(location.lat, location.lng),
                         map: map,
-                        title: location.title,
+                        //title: location.title,
                     });
                     // Attach content to marker click event using closure
                     google.maps.event.addListener(marker, 'click', (function(marker, i) {

@@ -24,6 +24,7 @@ if(isset($form_data->id)){
         ->where('rsvp_confirmation', 1)
         ->count();
 }
+$lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
 @endphp 
 @push('style')
 <link rel="stylesheet" href="{{ asset('assets/libs/datetimepicker/jquery.datetimepicker.min.css') }} ">
@@ -427,6 +428,33 @@ if(isset($form_data->id)){
         top: 14px;
         right: 14px;
     }
+}
+
+/* this for refund and fees disable */
+.locked-refund-fee-control {
+    opacity: .65;
+}
+
+.locked-refund-fee-control .btn-switch,
+.locked-refund-fee-control .fee-option {
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.locked-refund-fee-control input {
+    pointer-events: none;
+}
+
+.locked-refund-fee-control .fee-card {
+    background: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+.locked-refund-fee-note {
+    display: block;
+    margin-top: 6px;
+    color: #6c757d;
+    font-size: 12px;
 }
 </style>
 @endpush
@@ -1261,7 +1289,7 @@ if(isset($form_data->id)){
                                                                             </div>
                                                                         </div>
                                                                     </div>
-                                                                    <div class="setting-item col-sm-6 mt-4">
+                                                                    <!-- <div class="setting-item col-sm-6 mt-4">
                                                                         <div class="d-flex align-items-start">
                                                                             <label class="btn-switch m-0 me-3">
                                                                                 <input type="checkbox" value="1" id="allow_refund" name="allow_refund" {{ old('allow_refund', $form_data->allow_refund ?? false) ? 'checked' : '' }}>
@@ -1272,13 +1300,36 @@ if(isset($form_data->id)){
                                                                                 <small class="fs-14 d-block m-0">Set if users can request refunds via dashboard</small>
                                                                             </div>
                                                                         </div>
+                                                                    </div> -->
+                                                                    <div class="setting-item col-sm-6 mt-4 {{ $lockRefundAndFees ? 'locked-refund-fee-control' : '' }}">
+                                                                        <div class="d-flex align-items-start">
+                                                                            <label class="btn-switch m-0 me-3">
+                                                                                <input type="checkbox"
+                                                                                    value="1"
+                                                                                    id="allow_refund"
+                                                                                    name="allow_refund"
+                                                                                    {{ old('allow_refund', $form_data->allow_refund ?? false) ? 'checked' : '' }}
+                                                                                    {{ $lockRefundAndFees ? 'aria-disabled=true tabindex=-1' : '' }}>
+                                                                                <span class="checkbox-slider"></span>
+                                                                            </label>
+                                                                            <div class="d-flex flex-column">
+                                                                                <label class="color-black fw-bold mb-1">Allow paid tickets refund</label>
+                                                                                <small class="fs-14 d-block m-0">Set if users can request refunds via dashboard</small>
+
+                                                                                @if($lockRefundAndFees)
+                                                                                    <small class="locked-refund-fee-note">
+                                                                                        This setting cannot be changed because volunteers are already registered.
+                                                                                    </small>
+                                                                                @endif
+                                                                            </div>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                             <div class="ticket-section">
                                                                 <label class="form-label fs-16 mt-3">FEES & PROCESSING</label>
                                                                 <div class="content-holder row  ">
-                                                                    <div class="setting-item col-sm-12 mt-4">
+                                                                    <div class="setting-item col-sm-12 mt-4 {{ $lockRefundAndFees ? 'locked-refund-fee-control' : '' }}">
                                                                         <div class="d-flex align-items-start">
                                                                             <div class="d-flex flex-column">
                                                                                 <label class="color-black fw-bold mb-3">Who will bear the Stripe processing charges and platform fees for paid tickets?</label>
@@ -1323,6 +1374,11 @@ if(isset($form_data->id)){
                                                                                 </div>
                                                                             </div>
                                                                         </div>
+                                                                        @if($lockRefundAndFees)
+                                                                            <small class="locked-refund-fee-note mb-2">
+                                                                                This setting cannot be changed because volunteers are already registered.
+                                                                            </small>
+                                                                        @endif
                                                                     </div>
                                                                 </div>
                                                             </div>
