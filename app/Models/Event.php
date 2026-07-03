@@ -5,9 +5,13 @@ use Illuminate\Database\Eloquent\Model;
 //use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Traits\HelperTrait;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use App\Traits\HasTranslations;
 class Event extends Model
 {
-    use HasFactory, HelperTrait;  //SoftDeletes
+    use HasFactory, HelperTrait, HasTranslations;  //SoftDeletes
+
+    protected $translatable = ['event_name', 'description', 'venue', 'meeting_spot_details', 'parking_info_details'];
+
     protected $guarded = ['id'];
     protected $table = 'events';
     protected $casts = [
@@ -47,7 +51,7 @@ class Event extends Model
         return $content;
     }
     public function fullAddress():Attribute{
-        $add_array = [$this->venue , $this->pincode, $this->country?->country_name];
+        $add_array = [$this->translated_venue , $this->pincode, $this->country?->country_name];
         return Attribute::make(
             get: fn () => implode(', ', array_filter($add_array, fn($v) => !empty($v))),
         );
@@ -342,4 +346,3 @@ class Event extends Model
         );
     }
 }
-

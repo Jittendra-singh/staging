@@ -3,9 +3,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Traits\HelperTrait;
+use App\Traits\HasTranslations;
 class Tag extends Model
 {
-    use HasFactory, HelperTrait;
+    use HasFactory, HelperTrait, HasTranslations;
+
+    protected $translatable = ['name'];
+
     protected $guarded = ['id'];
     protected $table = 'tags';
 

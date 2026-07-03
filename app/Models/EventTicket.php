@@ -5,11 +5,15 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Traits\HelperTrait;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use App\Models\Setting;
+use App\Traits\HasTranslations;
 
 
 class EventTicket extends Model
 {
-    use HasFactory, HelperTrait;
+    use HasFactory, HelperTrait, HasTranslations;
+
+    protected $translatable = ['ticket_name', 'ticket_description'];
+
     protected $guarded = ['id'];
 
     public function soldTickets(){

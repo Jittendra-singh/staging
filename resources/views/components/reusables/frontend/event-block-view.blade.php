@@ -13,23 +13,23 @@
                 </div>
                 <div class="event-content">
                     <div class="d-flex align-items-center justify-content-between">
-                        <a href="{{ route('view-event-details', ['slug' => $event->slug]) }}" title="{{$event->event_name}}" class="event-title">
-                            {{$event->event_name}}
+                        <a href="{{ route('view-event-details', ['slug' => $event->slug]) }}" title="{{$event->translated_event_name}}" class="event-title">
+                            {{$event->translated_event_name}}
                         </a>
                         @if(strtotime($event->start_datetime) > strtotime(date('Y-m-d H:i:s')))
-                        <span class="badge upcoming">Upcoming</span>
+                        <span class="badge upcoming">{{ __('messages.status_upcoming') }}</span>
                         @elseif(strtotime($event->start_datetime) <= strtotime(date('Y-m-d H:i:s')) && strtotime($event->end_datetime) >= strtotime(date('Y-m-d H:i:s')))
                         <!-- <span class="badge ongoing">Ongoing</span> -->
-                        <span class="badge ongoing">In-Progress</span>
+                        <span class="badge ongoing">{{ __('messages.status_in_progress') }}</span>
                         @else
-                        <span class="badge ended">Ended</span>
+                        <span class="badge ended">{{ __('messages.status_ended') }}</span>
                         @endif
                     </div>
                     
                     @if(strtotime($event->start_datetime) > strtotime(date('Y-m-d H:i:s')))
-                    <div class="publish-date">From {{$event->eventStartDateTime }}</div>
+                    <div class="publish-date">{{ __('messages.from_label') }} {{$event->eventStartDateTime }}</div>
                     @else
-                    <div class="publish-date">Until {{$event->eventEndDateTime}}</div>
+                    <div class="publish-date">{{ __('messages.until_label') }} {{$event->eventEndDateTime}}</div>
                     @endif
                     @php
                     $totalTicketCount = 0;
@@ -61,7 +61,7 @@
                     }
                     @endphp
                     <div class=" mt-2 publish-date">{{$event->full_address}}</div>
-                    <div class="publish-date">Organizer: {{$event->creator->name}}</div>
+                    <div class="publish-date">{{ __('messages.organizer_label') }}: {{$event->creator->name}}</div>
                     <div class="d-flex align-items-center justify-content-between">
                         @if($totalTicketCount>0)
                         <!-- <span class="fw-bold">{{$event->tickets->count()}} / {{$totalTicketCount}} Volunteers
@@ -70,9 +70,9 @@
                             @endif 
                         </span> -->
                             @if($totalBookedTicket>0 && $totalTicketCount>0 && $totalBookedTicket>=$totalTicketCount)
-                            <span class="badge badge-danger bg-danger">Sold Out</span>
+                            <span class="badge badge-danger bg-danger">{{ __('messages.sold_out') }}</span>
                             @else 
-                            <span class="fw-bold">{{$totalTicketCount-$totalBookedTicket}} tickets remaining out of {{$totalTicketCount}}</span>
+                            <span class="fw-bold">{{ __('messages.tickets_remaining_note', ['remaining' => $totalTicketCount - $totalBookedTicket, 'total' => $totalTicketCount]) }}</span>
                             @endif 
                         @else
                         <span class="fw-bold"></span>
@@ -81,13 +81,13 @@
                             @if(!empty($event->ticket_sell_start_time) && $event->ticket_sell_start_time!='0000-00-00' && !empty($event->ticket_sell_end_time) && $event->ticket_sell_end_time!='0000-00-00')
                     
                                 @if(strtotime($event->ticket_sell_start_time)<=strtotime(date('Y-m-d')) && strtotime($event->ticket_sell_end_time)>=strtotime(date('Y-m-d')))
-                                <!-- Join -->Details
+                                <!-- Join -->{{ __('messages.details_btn') }}
                                 @else 
-                                <!-- View -->Details
+                                <!-- View -->{{ __('messages.details_btn') }}
                                 @endif 
                     
                             @else 
-                            <!-- View -->Details
+                            <!-- View -->{{ __('messages.details_btn') }}
                             @endif 
                         </a>
                     </div>

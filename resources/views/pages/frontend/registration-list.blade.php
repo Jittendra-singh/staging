@@ -6,16 +6,16 @@
 				<div class="row">
 					<div class="col-md-12 d-flex align-items-center justify-content-between">
 						<div class="d-main-title">
-							<h3><i class="fa-solid fa-calendar-days me-3 mb-3"></i>Event Registrations List</h3>
-							<p class="mb-2">Track volunteer registrations, attendance and participation across all events.</p>
-							@php						
+							<h3><i class="fa-solid fa-calendar-days me-3 mb-3"></i>{{ __('messages.front_event_registrations_list') }}</h3>
+							<p class="mb-2">{{ __('messages.front_registrations_desc') }}</p>
+							@php
 								$breadcrumbs = [
 										[
-											'name' => 'Event Registrations List', 
+											'name' => __('messages.front_event_registrations_list'),
 											'url' => route('front-registration-list')
 										],
 									]
-							@endphp     
+							@endphp
 							<x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs"/>
 						</div>
 						<button class="primary-btn w-fit download-csv" type="button" >
@@ -33,10 +33,10 @@
 								<form class="filter-form">
 									<div class="row g-3 mb-3">
 										<div class="col-md-6">
-											<label class="form-label filter-label">Search Event Name</label>
+											<label class="form-label filter-label">{{ __('messages.front_search_event_name') }}</label>
 											<div class="filter-input-wrap">
 												<i class="fa fa-search filter-icon"></i>
-												<select class="selectpicker filter-field" name="event" data-live-search="true" title="Find an event by name...">
+												<select class="selectpicker filter-field" name="event" data-live-search="true" title="{{ __('messages.front_find_event_by_name') }}">
                                                 @if(isset($events) && $events->isNotEmpty())
 													@foreach($events as $event)
 														<option value="{{ $event->id }}" @selected(request()->event == $event->id)
@@ -52,18 +52,18 @@
 											<label class="form-label filter-label">Volunteer Info</label>
 											<div class="filter-input-wrap">
 												<i class="fa fa-user filter-icon"></i>
-												<input class="form-control filter-field" value="{{ request()->search }}" name="search" type="text" placeholder="Name, Email, or Phone">
+												<input class="form-control filter-field" value="{{ request()->search }}" name="search" type="text" placeholder="{{ __('messages.front_name_email_phone') }}">
 											</div>
 										</div>
 									</div>
 									<div class="row g-3 align-items-end">
 										<div class="col-md-3">
-											<label class="form-label filter-label">Event Status</label>
-											<select class="selectpicker filter-field w-100" name="event_type" title="Status: All">
-												<option value="">Status: All</option>
-												<option value="1" @selected(request()->event_type == '1')>Upcoming</option>
-												<option value="3" @selected(request()->event_type == '3')>In-progress</option>
-												<option value="2" @selected(request()->event_type == '2')>Past</option>
+											<label class="form-label filter-label">{{ __('messages.front_event_status') }}</label>
+											<select class="selectpicker filter-field w-100" name="event_type" title="{{ __('messages.front_status_all') }}">
+												<option value="">{{ __('messages.front_status_all') }}</option>
+												<option value="1" @selected(request()->event_type == '1')>{{ __('messages.front_upcoming') }}</option>
+												<option value="3" @selected(request()->event_type == '3')>{{ __('messages.front_in_progress') }}</option>
+												<option value="2" @selected(request()->event_type == '2')>{{ __('messages.front_past') }}</option>
 											</select>
 										</div>
 										<div class="col-md-3">
@@ -83,9 +83,9 @@
 										</div>
 										<div class="col-md-3 d-flex gap-2">
 											<button class="btn btn-filter-search flex-grow-1" type="submit">
-												<i class="fa fa-search me-2"></i>Search
+												<i class="fa fa-search me-2"></i>{{ __('messages.front_search') }}
 											</button>
-											<a href="{{ url()->current() }}" class="btn btn-filter-reset" title="Reset Filters">
+											<a href="{{ url()->current() }}" class="btn btn-filter-reset" title="{{ __('messages.front_reset_filters') }}">
 												<i class="fa fa-rotate-left"></i>
 											</a>
 										</div>
@@ -98,7 +98,7 @@
 								<form class="filter-form">
 									<div class="row">
 										<div class="col-md-3">
-											<div class="form-group dropdown bootstrap-select dropdown"> 
+											<div class="form-group dropdown bootstrap-select dropdown">
 												<select class="selectpicker" name="event" data-live-search="true">
 													<option disabled selected>Select Event</option>
 													@foreach($events as $event)
@@ -107,7 +107,7 @@
 														</option>
 													@endforeach
 												</select>
-											</div> 
+											</div>
 										</div>
 										<div class="col-md-2">
 											<div class="form-group dropdown bootstrap-select dropdown">
@@ -158,7 +158,7 @@
 								</span>
 								<div>
 									<div class="fw-bold fs-3">{{$reports['registration']}}</div>
-									<div class="small text-muted">Total Registration</div>
+									<div class="small text-muted">{{ __('messages.front_total_registration') }}</div>
 								</div>
 							</div>
 							<div class="d-flex align-items-center bg-white rounded-3 px-3 py-3 flex-grow-1 border" style="min-width:160px;">
@@ -206,7 +206,7 @@
 									<div class="small text-muted">Free Tickets</div>
 								</div>
 							</div>
-							
+
 						</div>
 						<div class="event-list">
 							<div class="tab-content">
@@ -221,7 +221,7 @@
 											$data_event 		= $event ? $event->only('event_name', 'venue', 'start_datetime', 'end_datetime', 'waiver_form_type', 'ticket_questions') : collect([]);
 											$data_event['start_datetime'] = $event->startTimeAndEndTime;
 											$data_registration 	= $registration ? $registration->only('ticket_number', 'price', 'waiver_handler_email', 'waiver_filled_at', 'ticket_answer') : collect([]);
-											$data_order 		= $order ? $order->only('order_number','grand_total','total_tickets') : collect([]); 
+											$data_order 		= $order ? $order->only('order_number','grand_total','total_tickets') : collect([]);
 											$data_volunteer 	= $volunteer ? $volunteer->only('first_name','last_name','email_address','phone') : collect([]);
 											$data_ticket 		= $ticket ? $ticket->only('ticket_type','ticket_name','email_address','phone') : collect([]);
 											$data_creator 		= $order->creator ? $order->creator->only('first_name', 'last_name') : collect([]);
@@ -251,23 +251,23 @@
 															<small>{{$volunteer->email_address}}</small>
 															<p class="mt-1 mb-0">{{$event->event_name}}</p>
 															@if($registration->checkin!=1 && $registration->community_form_status=='requested')
-															<span class="badge custom-badge-warning mt-1">Certificate Requested</span>
-															@endif 
+															<span class="badge custom-badge-warning mt-1">{{ __('messages.front_certificate_requested') }}</span>
+															@endif
 														</div>
 													</div>
 													<div class="dropdown">
 														<button class="option-btn" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
 														<div class="dropdown-menu dropdown-menu-right">
 															<a href="javascript:void(0)" class="dropdown-item download-ticket"
-																data-event='@json($data_event)' data-volunteer='@json($data_volunteer)' 
-																data-ticket='@json($data_ticket)' data-registration='@json($data_registration)' 
+																data-event='@json($data_event)' data-volunteer='@json($data_volunteer)'
+																data-ticket='@json($data_ticket)' data-registration='@json($data_registration)'
 																data-order='@json($data_order)'  data-creator='@json($data_creator)'
 															>
 																<i class="fa-solid fa-download me-3"></i>Download Ticket
 															</a>
 															@if(!empty($registration->waiver_filled_at))
 															<a class="dropdown-item download-ticket" href="{{ route('view-waiver-pdf', ['ticket' => encrypt($registration->id)]) }}" target="_blank">
-																<i class="fa-solid fa-download me-3"></i>Download Waiver PDF
+																<i class="fa-solid fa-download me-3"></i>{{ __('messages.front_download_waiver_pdf') }}
 															</a>
 															@endif
 															@if($ticket->ticket_status)
@@ -276,21 +276,21 @@
 																</a>
 															@endif
 
-															<a class="dropdown-item registration-notes" 
+															<a class="dropdown-item registration-notes"
 																data-notes='@json($registration->notes)' data-ticket="{{$registration->id}}"
 																data-bs-toggle="modal" data-bs-target="#registrationNotes" >
-																<i class="fa-solid fa-note-sticky me-3" ></i> Notes
+																<i class="fa-solid fa-note-sticky me-3" ></i> {{ __('messages.front_notes') }}
 															</a>
 															<!-- <a href="{{ route('front-registration-calendar',['slug'=>$event->slug]) }}" class="dropdown-item">
 																<i class="fa-solid fa-envelope me-3"></i>Download iCal
 															</a> -->
-															<a class="dropdown-item" data-event='@json($event)' data-volunteer='@json($volunteer)' 
-															data-ticket='@json($ticket)' data-registration='@json($registration)' data-order='@json($order)'  
+															<a class="dropdown-item" data-event='@json($event)' data-volunteer='@json($volunteer)'
+															data-ticket='@json($ticket)' data-registration='@json($registration)' data-order='@json($order)'
 																data-bs-toggle="modal" data-bs-target="#registrationDetails">
-																<i class="fa-solid fa-info-circle me-3"></i>Details
+																<i class="fa-solid fa-info-circle me-3"></i>{{ __('messages.front_details') }}
 															</a>
 															<a ref="javascript:void(0);" class="dropdown-item send-attendee-email" data-route="{{ route('front-send-custom-email-attendee', ['id' => encrypt($registration->id)]) }}" data-bs-toggle="modal" data-bs-target="#sendAttendeeEmailModal">
-																<i class="fa-solid fa-envelope me-3"></i>Send Email
+																<i class="fa-solid fa-envelope me-3"></i>{{ __('messages.front_send_email') }}
 															</a>
 															<a href="javascript:void(0);"
 																class="dropdown-item btn-resend-waiver-logs-modal"
@@ -302,14 +302,14 @@
 															@if($registration->rsvp_confirmation==1 && $registration->checkin==0 && $event->is_completed!=1)
 																@if($registration->price>0)
 																	<a class="dropdown-item cancel-refund-ticket-organizer {{ auth()->guard('front')->user()->id }}" href="javascript:void(0);" price="{{ $registration->price }}" ticket_id="{{ encrypt($registration->id) }}"><i class="fa-solid fa-ban me-3"></i>
-																		Cancel Registration
+																		{{ __('messages.front_cancel_registration') }}
 																	</a>
 																@else
 																<a class="dropdown-item cancel-refund-ticket-attendee" href="javascript:void(0);" alert-title="If you proceed, this ticket will be cancelled and the attendee will no longer be marked as attending this event. This ticket has no amount associated with it, so no refund will be processed." url="{{route('cancel-refund-paid-ticket-attendee', ['ticket' => encrypt($registration->id),'type'=>2])}}"><i class="fa-solid fa-ban me-3"></i>
-																	Cancel Registration
-																</a>	
-																@endif		
-															@endif	
+																	{{ __('messages.front_cancel_registration') }}
+																</a>
+																@endif
+															@endif
 														</div>
 													</div>
 												</div>
@@ -326,8 +326,8 @@
 														<span class="icon">
 															<i class="fa-solid fa-calendar-days"></i>
 														</span>
-														<p>Ticket / Registration Date</p>
-														<h6 class="coupon-status">{{$ticket->ticket_name}} - {{$registration->price>0 ? '$'.$registration->price : 'Free'}} <br/>{{$registration->createdDateTime}}</h6>
+														<p>{{ __('messages.front_ticket_registration_date') }}</p>
+														<h6 class="coupon-status">{{$ticket->ticket_name}} - {{$registration->price>0 ? '$'.$registration->price : __('messages.front_free')}} <br/>{{$registration->createdDateTime}}</h6>
 													</div>
 													<!-- <div class="icon-box">
 														<span class="icon">
@@ -335,7 +335,7 @@
 														</span>
 														<p>Ticket</p>
 														<h6 class="coupon-status">{{$ticket->ticket_name}}/ {{$ticket->ticket_price ? '$'.$ticket->ticket_price : 'Free'}}</h6>
-													</div>	 -->											
+													</div>	 -->
 													<div class="icon-box">
 														<span class="icon">
 															<i class="fa-solid fa-quote-right"></i>
@@ -344,27 +344,27 @@
 														<h6 class="coupon-status">
 															@if($registration->rsvp_confirmation===0)
 															<span class="badge custom-badge-danger">
-																Cancelled
+																{{ __('messages.front_cancelled') }}
 																@if($registration->price>0)
 																	@if($registration->is_amt_donated==1)
-																	, Amount Donated
+																	, {{ __('messages.front_amount_donated') }}
 																	@elseif($registration->refund_status==1)
-																	, Pending Refund
+																	, {{ __('messages.front_pending_refund') }}
 																	@elseif($registration->refund_status==2)
-																	, Refund Processed
+																	, {{ __('messages.front_refund_processed') }}
 																	@elseif($registration->refund_status==3)
-																	, Refunded
+																	, {{ __('messages.front_refunded') }}
 																	@endif
 																@endif
 															</span>
 															@elseif($registration->rsvp_confirmation==1)
-															<span class="badge custom-badge-success">Active</span>
+															<span class="badge custom-badge-success">{{ __('messages.front_active') }}</span>
 															@else
 															<span class="badge custom-badge-pending">Pending</span>
-															@endif 
+															@endif
 														</h6>
-													</div>				
-													@if(!empty($event->waiver_form_type))							
+													</div>
+													@if(!empty($event->waiver_form_type))
 													<div class="icon-box">
 														<span class="icon">
 															<i class="fa-solid fa-quote-right"></i>
@@ -372,17 +372,17 @@
 														<p>Waiver</p>
 														<h6 class="coupon-status">
 															@if(!empty($registration->waiver_filled_at))
-															Signed at {{date(config('app.dateTimeFormat'),strtotime($registration->waiver_filled_at))}} <!-- <a href="{{ route('view-waiver-pdf', ['ticket' => encrypt($registration->id)]) }}" data-bs-toggle="tooltip" data-bs-original-title="Download Waiver PDF" target="_blank" class="ms-1"><span class="badge custom-badge-success"><i class="fa fa-download"></i></span></a> -->
+															{{ __('messages.front_signed_at', ['date' => date(config('app.dateTimeFormat'),strtotime($registration->waiver_filled_at))]) }} <!-- <a href="{{ route('view-waiver-pdf', ['ticket' => encrypt($registration->id)]) }}" data-bs-toggle="tooltip" data-bs-original-title="Download Waiver PDF" target="_blank" class="ms-1"><span class="badge custom-badge-success"><i class="fa fa-download"></i></span></a> -->
 															@else
-															<span class="badge custom-badge-danger">Unsigned</span> 
+															<span class="badge custom-badge-danger">{{ __('messages.front_unsigned') }}</span>
 															<a href="{{ route('view-waiver-form', ['ticket' => encrypt($registration->id)]) }}" data-bs-toggle="tooltip" data-bs-original-title="Waiver Page Link" target="_blank"><span class="badge custom-badge-warning"><i class="fa fa-external-link"></i></span></a><br/>
 															<!-- <button class="btn btn-sm btn-outline-primary mt-2 btn-resend-waiver border-radius-30" url="{{ route('resend-waiver', ['ticket' => encrypt($registration->id)]) }}">Resend</button> -->
-															<button class="btn btn-sm btn-outline-primary mt-2 border-radius-30 btn-resend-waiver-modal" defaultemail="{{ $registration->is_under_18==1?$registration->waiver_handler_email:$registration->volunteer->email_address }}" url="{{ route('resend-waiver', ['ticket' => encrypt($registration->id)]) }}" checkurl="{{ route('check-resend-waiver', ['ticket' => encrypt($registration->id)]) }}">Resend</button>
-															@endif 
+															<button class="btn btn-sm btn-outline-primary mt-2 border-radius-30 btn-resend-waiver-modal" defaultemail="{{ $registration->is_under_18==1?$registration->waiver_handler_email:$registration->volunteer->email_address }}" url="{{ route('resend-waiver', ['ticket' => encrypt($registration->id)]) }}" checkurl="{{ route('check-resend-waiver', ['ticket' => encrypt($registration->id)]) }}">{{ __('messages.front_resend') }}</button>
+															@endif
 														</h6>
-													</div>	
+													</div>
 													@endif
-													@if(strtotime(date('Y-m-d 00:00:0')) >= strtotime(date('Y-m-d',strtotime($event->start_datetime)).' 00:00:0'))		
+													@if(strtotime(date('Y-m-d 00:00:0')) >= strtotime(date('Y-m-d',strtotime($event->start_datetime)).' 00:00:0'))
 													<div class="icon-box">
 														<span class="icon">
 															<i class="fa-solid fa-check"></i>
@@ -411,7 +411,7 @@
 																		data-bs-target="#manualWaiverCheckinModal">
 																	</span>
 																</label>
-																@else 
+																@else
 																<label class="btn-switch m-0 me-3">
 																	<input type="checkbox" {{ $registration->checkin == 1 ? 'checked' : '' }} class="ticket_checkin_toggle" data-ticket-id="{{ $registration->encrypted_id }}" url="{{ route('ticket-mark-checkin',[$registration->encrypted_id]) }}">
 																	<span class="checkbox-slider" ></span>
@@ -419,15 +419,15 @@
 																@endif
 															</div>
 														</div>
-													</div>	
-													@endif						
+													</div>
+													@endif
 													<!-- <div class="icon-box">
 														<span class="icon">
 															<i class="fa-solid fa-quote-right"></i>
 														</span>
 														<p>Ticket Status</p>
 														<h6 class="coupon-status">{{ucfirst($registration->ticket_status)}}</h6>
-													</div>	 -->											
+													</div>	 -->
 												</div>
 											</div>
 										</div>
@@ -440,10 +440,10 @@
 															<div class="empty-icon-wrap mx-auto mb-3">
 																<i class="fa-regular fa-image fa-2x text-muted"></i>
 															</div>
-															<h5 class="fw-semibold mb-2">No registrations found</h5>
-															<p class="text-muted small mb-3">We couldn't find any registrations matching your<br>current filters. Try adjusting your search criteria.</p>
+															<h5 class="fw-semibold mb-2">{{ __('messages.front_no_registrations_found') }}</h5>
+															<p class="text-muted small mb-3">{{ __('messages.front_no_registrations_filter_desc') }}</p>
 															<a href="{{ url()->current() }}" class="btn btn-clear-filters">
-																<i class="fa fa-filter me-2"></i>Clear all filters
+																<i class="fa fa-filter me-2"></i>{{ __('messages.front_clear_all_filters') }}
 															</a>
 														</div>
 													@else
@@ -451,8 +451,8 @@
 															<div class="empty-icon-wrap mx-auto mb-3">
 																<i class="fa-regular fa-image fa-2x text-muted"></i>
 															</div>
-															<h5 class="fw-semibold mb-2">No registrations found</h5>
-															<p class="text-muted small mb-3">New registrations will appear here once volunteers sign up for your events.</p>
+															<h5 class="fw-semibold mb-2">{{ __('messages.front_no_registrations_found') }}</h5>
+															<p class="text-muted small mb-3">{{ __('messages.front_no_registrations_empty_desc') }}</p>
 														</div>
 													@endif
 												</div>
@@ -461,7 +461,7 @@
 										<!-- <div class="main-card mt-2">
 											<div class="contact-list">
 												<div class="card-top event-top p-4 align-items-center top d-md-flex flex-wrap justify-content-between">
-													<h4 class="text-center">New registrations will appear here once volunteers sign up for your events.</h4>
+													<h4 class="text-center">{{ __('messages.front_no_registrations_empty_desc') }}</h4>
 												</div>
 											</div>
 										</div> -->
@@ -477,8 +477,8 @@
 			</div>
 		</div>
 	</div>
-	
-    <x-reusables.frontend.registration-popups/> 
+
+    <x-reusables.frontend.registration-popups/>
 <div class="modal fade" id="sendAttendeeEmailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <form method="POST" id="sendAttendeeEmailForm">
@@ -820,7 +820,7 @@
 			});
 
 			$('.download-csv').click(function(event){
-				
+
 				event.preventDefault();
 				$('.filter-form').attr('action', '{{route("front-export-registration")}}')
 				$('.filter-form').submit();

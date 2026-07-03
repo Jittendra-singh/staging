@@ -7,15 +7,15 @@
 				<div class="row">
 					<div class="col-md-12">
 						<div class="d-main-title">
-							<h3><i class="fa-solid fa-calendar-days me-3 mb-3"></i>Cleanups I'm Attending</h3>
+							<h3><i class="fa-solid fa-calendar-days me-3 mb-3"></i>{{ __('messages.front_cleanups_attending') }}</h3>
 							@php
 								$breadcrumbs = [
 									[
-										'name' => 'Cleanups I\'m Attending', 
+										'name' => __('messages.front_cleanups_attending'),
 										'url' => route('front-cleanup-attending')
 									],
 								]
-							@endphp     
+							@endphp
 							<x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs"/>
 						</div>
 					</div>
@@ -25,31 +25,31 @@
 							<div class="card-body p-4">
 								<div class="filter-card-header mb-3">
 									<i class="fa fa-filter me-2"></i>
-									<span>Filters</span>
+									<span>{{ __('messages.front_filters') }}</span>
 								</div>
 								<form action="">
 									<div class="row g-3 align-items-end">
 										<div class="col-md-5">
-											<label class="form-label filter-label">Search Event</label>
+											<label class="form-label filter-label">{{ __('messages.front_search_event') }}</label>
 											<div class="filter-input-wrap">
 												<i class="fa fa-search filter-icon"></i>
-												<input class="form-control filter-field" type="text" value="{{ request()->search ?? '' }}" name="search" placeholder="Find an event you're attending">
+												<input class="form-control filter-field" type="text" value="{{ request()->search ?? '' }}" name="search" placeholder="{{ __('messages.front_find_attending_event') }}">
 											</div>
 										</div>
 										<div class="col-md-4">
-											<label class="form-label filter-label">Event Status</label>
-											<select class="selectpicker filter-field w-100" name="event_type" title="Status: All">
-												<option value="">Status: All</option>
-												<option value="1" @selected(request()->event_type == '1')>Upcoming</option>
-												<option value="3" @selected(request()->event_type == '3')>In-progress</option>
-												<option value="2" @selected(request()->event_type == '2')>Past</option>
+											<label class="form-label filter-label">{{ __('messages.front_event_status') }}</label>
+											<select class="selectpicker filter-field w-100" name="event_type" title="{{ __('messages.front_status_all') }}">
+												<option value="">{{ __('messages.front_status_all') }}</option>
+												<option value="1" @selected(request()->event_type == '1')>{{ __('messages.front_upcoming') }}</option>
+												<option value="3" @selected(request()->event_type == '3')>{{ __('messages.front_in_progress') }}</option>
+												<option value="2" @selected(request()->event_type == '2')>{{ __('messages.front_past') }}</option>
 											</select>
 										</div>
 										<div class="col-md-3 d-flex gap-2">
 											<button class="btn btn-filter-search flex-grow-1" type="submit">
-												<i class="fa fa-search me-2"></i>Search
+												<i class="fa fa-search me-2"></i>{{ __('messages.front_search') }}
 											</button>
-											<a href="{{ url()->current() }}" class="btn btn-filter-reset" title="Reset Filters">
+											<a href="{{ url()->current() }}" class="btn btn-filter-reset" title="{{ __('messages.front_reset_filters') }}">
 												<i class="fa fa-rotate-left"></i>
 											</a>
 										</div>
@@ -94,10 +94,10 @@
 								<div class="tab-pane fade show active" id="all-tab" role="tabpanel">
 									@forelse ($attending_events as $event)
 										@php
-											// check if 48hours time exeed 
+											// check if 48hours time exeed
 											$is_48hours_exeed = 0;
 											$event_start_date_time = $event->start_datetime;
-											$now = new DateTime(); 
+											$now = new DateTime();
 											$eventTime = new DateTime($event_start_date_time);
 											// Difference in seconds
 											$diffInSeconds = $eventTime->getTimestamp() - $now->getTimestamp();
@@ -106,14 +106,14 @@
 											// If event is within next 48 hours OR already started
 											if ($diffInSeconds <= $hours48) {
 												$is_48hours_exeed = 1;
-											}											
+											}
 
 											$icalStrData = getiCalData($event);
 											$registration = $event->pivot;
 											$ticket = $event->pivot->ticket;
-											$volunteer = $event->pivot->volunteer; 
+											$volunteer = $event->pivot->volunteer;
 											$order = $event->pivot->eventOrder;
-											
+
 											/**data sets*/
 											$data_event 		= $event ? $event->only('event_name', 'venue', 'start_datetime', 'end_datetime', 'waiver_form_type', 'ticket_questions') : collect([]);
 											$data_event['start_datetime'] = $event->startTimeAndEndTime;
@@ -121,7 +121,7 @@
 											if(isset($registration->waiver_filled_at)){
 												$data_registration['waiver_filled_at_formated'] = !empty($registration->waiver_filled_at)?$registration->waiver_filled_at->format(config('app.dateTimeFormat')):null;
 											}
-											$data_order 		= $order ? $order->only('order_number','grand_total','total_tickets') : collect([]); 
+											$data_order 		= $order ? $order->only('order_number','grand_total','total_tickets') : collect([]);
 											$data_volunteer 	= $volunteer ? $volunteer->only('first_name','last_name','email_address','phone') : collect([]);
 											$data_ticket 		= $ticket ? $ticket->only('ticket_type','ticket_name','email_address','phone') : collect([]);
 											$data_creator 		= $order->creator ? $order->creator->only('first_name', 'last_name') : collect([]);
@@ -148,106 +148,106 @@
 															@endif
 														</div>
 													</div>
-													
+
 													<div class="dropdown">
 														<button class="option-btn" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-														<div class="dropdown-menu dropdown-menu-right">	
+														<div class="dropdown-menu dropdown-menu-right">
 															<a href="{{route('view-event-details',['slug' => $event->slug])}}" class="dropdown-item" target="_BLANK">
-																<i class="fa-solid fa-eye me-3"></i>View Event Page  
-															</a>	
+																<i class="fa-solid fa-eye me-3"></i>{{ __('messages.front_view_event_page') }}
+															</a>
 															<a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#registrationDetails"
 																data-event='@json($data_event)' data-creator='@json($data_creator)'
 																data-ticket='@json($data_ticket)'
 																data-order='@json($data_order)' data-volunteer='@json($data_volunteer)'
 																data-registration='@json($data_registration)'  >
-																<i class="fa-solid fa-gear me-3"></i>Ticket Details
-															</a>				
-															@if(!empty($event->waiver_form_type) && !$registration->is_under_18 && $registration->rsvp_confirmation!==0 && $event->is_active==1)	
+																<i class="fa-solid fa-gear me-3"></i>{{ __('messages.front_ticket_details') }}
+															</a>
+															@if(!empty($event->waiver_form_type) && !$registration->is_under_18 && $registration->rsvp_confirmation!==0 && $event->is_active==1)
 															<a class="dropdown-item" target="_blank" href="{{route('view-waiver-form', ['ticket' => encrypt($registration->id)])}}"><i class="fa-solid fa-link me-3"></i>
 																@if(!empty($registration->waiver_filled_at))
-																View Waiver
+																{{ __('messages.front_view_waiver') }}
 																@else
-																Sign Waiver
-																@endif 
-															</a>	
-															@endif										
+																{{ __('messages.front_sign_waiver') }}
+																@endif
+															</a>
+															@endif
 															<a href="{{route('add-event-to-calendar',['id'=>encrypt($event->id)])}}" class="dropdown-item">
-																<i class="fa-solid fa-calendar me-3"></i>Add to Calendar
-															</a>										
+																<i class="fa-solid fa-calendar me-3"></i>{{ __('messages.front_add_to_calendar') }}
+															</a>
 															<!-- <a href="javascript:void(0)" icaldata='{!! htmlspecialchars($icalStrData, ENT_QUOTES, 'UTF-8') !!}' icaltitle="{{$event->event_name}}" onclick="downloadICS(this);" class="dropdown-item">
 																<i class="fa-solid fa-calendar me-3"></i>Add to Calendar
-															</a> -->								
+															</a> -->
 															<!-- <a href="javascript:void(0)" class="dropdown-item download-ticket"
-																data-event='@json($data_event)' data-volunteer='@json($data_volunteer)' 
-																data-ticket='@json($data_ticket)' data-registration='@json($data_registration)' 
+																data-event='@json($data_event)' data-volunteer='@json($data_volunteer)'
+																data-ticket='@json($data_ticket)' data-registration='@json($data_registration)'
 																data-order='@json($data_order)'  data-creator='@json($data_creator)'
 															>
-																<i class="fa-solid fa-download me-3"></i>Download Ticket
-															</a> -->	
+																<i class="fa-solid fa-download me-3"></i>{{ __('messages.front_download_ticket') }}
+															</a> -->
 															<a class="dropdown-item" href="{{ route('view-ticket-pdf', ['ticket' => encrypt($registration->id)]) }}">
 																<i class="fa-solid fa-download me-3"></i>Download Ticket
 															</a>
 															@if(!empty($registration->waiver_filled_at))
 															<a class="dropdown-item" href="{{ route('view-waiver-pdf', ['ticket' => encrypt($registration->id)]) }}" target="_blank">
-																<i class="fa-solid fa-download me-3"></i>Download Waiver PDF
+																<i class="fa-solid fa-download me-3"></i>{{ __('messages.front_download_waiver_pdf') }}
 															</a>
 															@endif
 															@if($event->is_completed==1)
 															<a target="_blank" href="{{route('cleanup-highlights',['event'=>encrypt($event->id)])}}" class="dropdown-item">
-																<i class="fa-solid fa-bar-chart me-3"></i>View Impact Report
-															</a>	
+																<i class="fa-solid fa-bar-chart me-3"></i>{{ __('messages.front_view_impact_report') }}
+															</a>
 															@endif
 															@if(strtotime($event->start_datetime) > time() && !$registration->is_under_18 && $registration->rsvp_confirmation==1 && $registration->checkin==0)
 																@if($ticket->ticket_type=='paid')
 																	@if($event->allow_refund==1)
 																		@if($order->creator_id == $registration->volunteer_id)
 																		<a class="dropdown-item cancel-refund-ticket {{ auth()->guard('front')->user()->id }}" href="javascript:void(0);" is_48hours_exeed="{{ $is_48hours_exeed }}" price="{{ $registration->price }}" ticket_type="{{ $ticket->ticket_type }}" allow_refund="{{ $event->allow_refund }}" ticket_id="{{ encrypt($registration->id) }}"><i class="fa-solid fa-ban me-3"></i>
-																			Cancel Registration
+																			{{ __('messages.front_cancel_registration') }}
 																		</a>
-																		@else 
+																		@else
 																			@if($is_48hours_exeed!=1)
 																				<a class="dropdown-item cancel-refund-ticket-attendee" href="javascript:void(0);" alert-title="If you cancel now, your registration will be cancelled and the ticket amount  will be automatically refunded to the buyer and You will no longer be marked as attending this event." url="{{route('cancel-refund-paid-ticket-attendee', ['ticket' => encrypt($registration->id),'type'=>1])}}"><i class="fa-solid fa-ban me-3"></i>
-																					Cancel Registration
-																				</a>	
-																			@else 
+																					{{ __('messages.front_cancel_registration') }}
+																				</a>
+																			@else
 																				<a class="dropdown-item cancel-refund-ticket-attendee" href="javascript:void(0);" alert-title="The refund window has passed. If you cancel now, your registration will be cancelled but no refund will be issued, and the amount will go to the organizer. You will no longer be marked as attending this event." url="{{route('cancel-refund-paid-ticket-attendee', ['ticket' => encrypt($registration->id),'type'=>2])}}"><i class="fa-solid fa-ban me-3"></i>
-																					Cancel Registration
-																				</a>	
-																			@endif 
-																		@endif 
-																	@else 
+																					{{ __('messages.front_cancel_registration') }}
+																				</a>
+																			@endif
+																		@endif
+																	@else
 																		<a class="dropdown-item cancel-refund-ticket-attendee" href="javascript:void(0);" alert-title="The refund is not allowed on this event so if you cancel the ticket, your registration will be cancelled but no refund will be issued, and the amount will go to the organizer. You will no longer be marked as attending this event." url="{{route('cancel-refund-paid-ticket-attendee', ['ticket' => encrypt($registration->id),'type'=>2])}}"><i class="fa-solid fa-ban me-3"></i>
-																			Cancel Registration
-																		</a>	
-																	@endif 
-																@else 
+																			{{ __('messages.front_cancel_registration') }}
+																		</a>
+																	@endif
+																@else
 																<a class="dropdown-item cancel-refund-ticket-attendee" href="javascript:void(0);" alert-title="If you cancel now, your registration will be cancelled and you will no longer be marked as attending this event." url="{{route('cancel-refund-paid-ticket-attendee', ['ticket' => encrypt($registration->id),'type'=>2])}}"><i class="fa-solid fa-ban me-3"></i>
-																	Cancel Registration
-																</a>	
+																	{{ __('messages.front_cancel_registration') }}
+																</a>
 																<!-- <a class="dropdown-item cancel-rsvp-action" href="javascript:void(0);" url="{{route('cancel-rsvp', ['ticket' => encrypt($registration->id)])}}"><i class="fa-solid fa-ban me-3"></i>
 																	Cancel Registration
 																</a>	 -->
-																@endif		
-															@endif			
+																@endif
+															@endif
 														</div>
 													</div>
 												</div>
 												<div class="bottom d-flex flex-wrap justify-content-between align-items-center p-4">
-													
-													<div class="icon-box"> 
-														<span class="icon">
-															<i class="fa-solid fa-calendar-days"></i>
-														</span>
-														<p>Event Time</p>
-														<h6 class="coupon-status">{{$event->startTimeAndEndTime}}</h6>
-													</div>		
+
 													<div class="icon-box">
 														<span class="icon">
 															<i class="fa-solid fa-calendar-days"></i>
 														</span>
-														<p>Registration Date</p>
+														<p>{{ __('messages.front_event_time') }}</p>
+														<h6 class="coupon-status">{{$event->startTimeAndEndTime}}</h6>
+													</div>
+													<div class="icon-box">
+														<span class="icon">
+															<i class="fa-solid fa-calendar-days"></i>
+														</span>
+														<p>{{ __('messages.front_registration_date') }}</p>
 														<h6 class="coupon-status">{{$event->pivot->createdDateTime}}</h6>
-													</div>										
+													</div>
 													<div class="icon-box">
 														<span class="icon">
 															<i class="fa-solid fa-quote-right"></i>
@@ -256,24 +256,24 @@
 														<h6 class="coupon-status">
 															@if($registration->rsvp_confirmation===0)
 															<span class="badge custom-badge-danger">
-																Cancelled
+																{{ __('messages.front_cancelled') }}
 																@if($registration->price>0)
 																	@if($registration->is_amt_donated==1)
-																	, Amount Donated
+																	, {{ __('messages.front_amount_donated') }}
 																	@elseif($registration->refund_status==1)
-																	, Pending Refund
+																	, {{ __('messages.front_pending_refund') }}
 																	@elseif($registration->refund_status==2)
-																	, Refund Processed
+																	, {{ __('messages.front_refund_processed') }}
 																	@elseif($registration->refund_status==3)
-																	, Refunded
+																	, {{ __('messages.front_refunded') }}
 																	@endif
 																@endif
 															</span>
 															@elseif($registration->rsvp_confirmation==1)
-															<span class="badge custom-badge-success">Active</span>
+															<span class="badge custom-badge-success">{{ __('messages.front_active') }}</span>
 															@else
-															<span class="badge custom-badge-pending">Pending</span>
-															@endif 
+															<span class="badge custom-badge-pending">{{ __('messages.front_pending') }}</span>
+															@endif
 														<!-- @if($registration->rsvp_confirmation===0)
 														Declined at {{date(config('app.dateTimeFormat'),strtotime($registration->rsvp_filled_at))}}
 														@elseif($registration->rsvp_confirmation==1)
@@ -283,19 +283,19 @@
 														@endif  -->
 														<!-- <a title="RSVP Confirmation Form" target="_blank" href="{{route('view-waiver-form', ['ticket' => encrypt($registration->id)])}}"><i class="fa-solid fa-link ms-1"></i></a> -->
 														</h6>
-													</div>				
-													@if(!empty($event->waiver_form_type))							
+													</div>
+													@if(!empty($event->waiver_form_type))
 													<div class="icon-box">
 														<span class="icon">
 															<i class="fa-solid fa-quote-right"></i>
 														</span>
-														<p>Waiver</p>
+														<p>{{ __('messages.front_waiver') }}</p>
 														<h6 class="coupon-status">
 															@if(!empty($registration->waiver_filled_at))
-															Signed at {{date(config('app.dateTimeFormat'),strtotime($registration->waiver_filled_at))}}
+															{{ __('messages.front_signed_at', ['date' => date(config('app.dateTimeFormat'),strtotime($registration->waiver_filled_at))]) }}
 															@else
-															<span class="badge custom-badge-danger">Unsigned</span>
-															@endif 
+															<span class="badge custom-badge-danger">{{ __('messages.front_unsigned') }}</span>
+															@endif
 														<!-- @if(!empty($registration->waiver_filled_at))
 														Signed at {{date(config('app.dateTimeFormat'),strtotime($registration->waiver_filled_at))}}
 														@else
@@ -303,45 +303,45 @@
 														@endif  -->
 														<!-- <a title="RSVP Confirmation Form" target="_blank" href="{{route('view-waiver-form', ['ticket' => encrypt($registration->id)])}}"><i class="fa-solid fa-link ms-1"></i></a> -->
 														</h6>
-													</div>	
-													@endif	
+													</div>
+													@endif
 													<div class="icon-box">
 														<span class="icon">
 															<i class="fa-solid fa-certificate"></i>
 														</span>
-														<p>Community Service Form</p>
+														<p>{{ __('messages.front_community_service_form') }}</p>
 														@if($registration->rsvp_confirmation==1 && $event->is_active==1)
 															@if($registration->checkin==1)
 																<!-- <a class="btn btn-sm" href="{{ $registration->community_form_pdf }}" download>Download PDF</a> -->
 																@if($registration->community_form_status=='approved')
-																<a class="btn btn-sm" href="{{ route('show-community-service-pdf', ['ticket' => encrypt($registration->id)]) }}" target="_blank">Download PDF</a>
+																<a class="btn btn-sm" href="{{ route('show-community-service-pdf', ['ticket' => encrypt($registration->id)]) }}" target="_blank">{{ __('messages.front_download_pdf') }}</a>
 																@else
 																<h6 class="coupon-status">
-																	<span class="badge custom-badge-warning">Checked-In, Certificate Pending</span>
+																	<span class="badge custom-badge-warning">{{ __('messages.front_checked_in_certificate_pending') }}</span>
 																</h6>
 																@endif
 															@elseif(strtotime(date('Y-m-d H:i:s')) < strtotime($event->eventStartDateTime))
 																<h6 class="coupon-status">
-																	<span class="badge custom-badge-danger">Awaiting</span>
+																	<span class="badge custom-badge-danger">{{ __('messages.front_awaiting') }}</span>
 																</h6>
 															@elseif($registration->checkin!=1 && $registration->community_form_status=='pending')
-																<button registration_id="{{ encrypt($registration->id) }}" is_event_completed={{ $event->is_completed }} class="btn btn-sm btn-warning send-community-form-request" url="{{ route('request-community-form',[encrypt($registration->id)]) }}">Request Now</button>
-															@elseif($registration->checkin!=1 && $registration->community_form_status=='requested') 
+																<button registration_id="{{ encrypt($registration->id) }}" is_event_completed={{ $event->is_completed }} class="btn btn-sm btn-warning send-community-form-request" url="{{ route('request-community-form',[encrypt($registration->id)]) }}">{{ __('messages.front_request_now') }}</button>
+															@elseif($registration->checkin!=1 && $registration->community_form_status=='requested')
 																<h6 class="coupon-status">
-																	<span class="badge custom-badge-warning">Requested</span>
+																	<span class="badge custom-badge-warning">{{ __('messages.front_requested') }}</span>
 																</h6>
 															@elseif($registration->checkin!=1 && $registration->community_form_status=='rejected')
 																<h6 class="coupon-status">
-																	<span class="badge custom-badge-danger">Rejected</span>
+																	<span class="badge custom-badge-danger">{{ __('messages.front_rejected') }}</span>
 																</h6>
-															@else 
+															@else
 																<h6 class="coupon-status">
-																	<span class="badge custom-badge-danger">Awaiting</span>
+																	<span class="badge custom-badge-danger">{{ __('messages.front_awaiting') }}</span>
 																</h6>
 															@endif
-														@else 
+														@else
 															<h6 class="coupon-status">
-																<span class="badge custom-badge-danger 1">Not Available</span>
+																<span class="badge custom-badge-danger 1">{{ __('messages.front_not_available') }}</span>
 															</h6>
 														@endif
 														<!-- <div class="form-group">
@@ -352,21 +352,21 @@
 																</label>
 															</div>
 														</div> -->
-													</div>	
+													</div>
 													<!-- <div class="icon-box ">
 														<span class="icon">
 															<i class="fa-solid fa-location-dot"></i>
 														</span>
 														<p>Ticket Status</p>
 														<h6 class="coupon-status">{{ucfirst($event->pivot->ticket_status)}}</h6>
-													</div> -->										
+													</div> -->
 													{{-- <div class="icon-box custom2-tabs p-0 d-flex justify-content-end">
 														<button class="primary-btn w-fit active" type="button">Unregister</button>
 													</div>												 --}}
 												</div>
-												@if(!empty($event->cancelled_at) && $registration->rsvp_confirmation==0 && $registration->price>0 && $registration->is_amt_donated==0 && $registration->refund_status==1) 
+												@if(!empty($event->cancelled_at) && $registration->rsvp_confirmation==0 && $registration->price>0 && $registration->is_amt_donated==0 && $registration->refund_status==1)
 												<div class="bottom d-flex flex-wrap justify-content-end align-items-center p-4">
-													<a data-bs-toggle="tooltip" data-bs-original-title="Convert your ticket into a donation. If no action is taken within 48 hours from the event cancellation time, your amount will be automatically refunded." class="primary-btn w-fit btn-convert-to-donation" href="javascript:void(0);" url="{{route('front-ticket-convert-to-donation', ['id' => $registration->encrypted_id])}}">Convert to Donation</a>
+													<a data-bs-toggle="tooltip" data-bs-original-title="Convert your ticket into a donation. If no action is taken within 48 hours from the event cancellation time, your amount will be automatically refunded." class="primary-btn w-fit btn-convert-to-donation" href="javascript:void(0);" url="{{route('front-ticket-convert-to-donation', ['id' => $registration->encrypted_id])}}">{{ __('messages.front_convert_to_donation') }}</a>
 												</div>
 												@endif
 											</div>
@@ -380,10 +380,10 @@
 															<div class="empty-icon-wrap mx-auto mb-3">
 																<i class="fa-regular fa-image fa-2x text-muted"></i>
 															</div>
-															<h5 class="fw-semibold mb-2">No event found</h5>
-															<p class="text-muted small mb-3">We couldn't find any event matching your<br>current filters. Try adjusting your search criteria.</p>
+															<h5 class="fw-semibold mb-2">{{ __('messages.front_no_event_found') }}</h5>
+															<p class="text-muted small mb-3">{{ __('messages.front_no_event_found_desc') }}</p>
 															<a href="{{ url()->current() }}" class="btn btn-clear-filters">
-																<i class="fa fa-filter me-2"></i>Clear all filters
+																<i class="fa fa-filter me-2"></i>{{ __('messages.front_clear_all_filters') }}
 															</a>
 														</div>
 													@else
@@ -391,10 +391,10 @@
 															<div class="empty-icon-wrap mx-auto mb-3">
 																<i class="fa-regular fa-image fa-2x text-muted"></i>
 															</div>
-															<h5 class="fw-semibold mb-2">You're not signed up for any cleanups yet.</h5>
-															<p class="text-muted small mb-3">Find a cleanup event near you and start making a difference today!</p>
+															<h5 class="fw-semibold mb-2">{{ __('messages.front_no_attending_cleanups_title') }}</h5>
+															<p class="text-muted small mb-3">{{ __('messages.front_no_attending_cleanups_desc') }}</p>
 															<a href="{{ route('view-events') }}" class="btn btn-clear-filters">
-																<i class="fa-solid fa-calendar-days me-2"></i>Start Browsing
+																<i class="fa-solid fa-calendar-days me-2"></i>{{ __('messages.front_start_browsing') }}
 															</a>
 														</div>
 													@endif
@@ -442,7 +442,7 @@
 	<div class="modal-dialog modal-medium-2 modal-dialog-centered modal-sm-height modal-lg">
 		<div class="modal-content modal-dialog-scrollable">
 			<div class="modal-header">
-				<h5 class="modal-title" id="cancelTicketPopupLabel">Cancel Ticket</h5>
+				<h5 class="modal-title" id="cancelTicketPopupLabel">{{ __('messages.front_cancel_ticket') }}</h5>
 				<button type="button" class="close-model-btn" data-bs-dismiss="modal" aria-label="Close"><i class="fa fa-times"></i></button>
 			</div>
 			<form class="validateform" action="{{route('cancel-refund-paid-ticket')}}" method="POST" enctype="multipart/form-data">
@@ -568,7 +568,7 @@
 			});
 
 			$('.download-csv').click(function(event){
-				
+
 				event.preventDefault();
 				$('.filter-form').attr('action', '{{route("front-export-registration")}}')
 				$('.filter-form').submit();

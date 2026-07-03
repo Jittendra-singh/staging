@@ -4,9 +4,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Traits\HelperTrait;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use App\Traits\HasTranslations;
 class EventCategory extends Model
 {
-    use HasFactory , HelperTrait;
+    use HasFactory , HelperTrait, HasTranslations;
+
+    protected $translatable = ['name'];
+
     protected $guarded = ['id'];
     protected $table = 'event_categories';
 

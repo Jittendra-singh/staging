@@ -23,15 +23,15 @@ a[disabled]{
                 <div class="row">
                     <div class="col-md-9">
                         <div class="d-main-title">
-                            <h3><i class="fa-solid fa-clock-rotate-left me-3 mb-3"></i>Cleanups I'm Hosting</h3>
+                            <h3><i class="fa-solid fa-clock-rotate-left me-3 mb-3"></i>{{ __('messages.front_cleanups_hosting') }}</h3>
                              @php
 								$breadcrumbs = [
 									[
-										'name' => 'Cleanups I\'m Hosting', 
+										'name' => __('messages.front_cleanups_hosting'),
 										'url' => route('front-cleanup-hosting', ['type' => 'organizer'])
 									],
 								]
-							@endphp     
+							@endphp
 							<x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs"/>
                         </div>
                     </div>
@@ -41,11 +41,11 @@ a[disabled]{
                                 <form method="get">
                                 <input type="hidden" name="tabs" id="tabsInput" value="{{ request('tabs') }}">
                                 <div class="d-flex align-items-center">
-                                    <label class="form-label fs-6 me-2 mb-0">Sort By Start Date:</label>
+                                    <label class="form-label fs-6 me-2 mb-0">{{ __('messages.front_sort_by_start_date') }}</label>
                                     <div class="loc-group position-relative flex-grow-1">
-                                        <select onchange="this.form.submit()" class="selectpicker" name="start_date_sort" title="Sort By">
-                                            <option value="desc" {{ request('start_date_sort', 'desc') == 'desc' ? 'selected' : '' }} >Newest First</option>
-                                            <option value="asc" {{ request('start_date_sort') == 'asc' ? 'selected' : '' }}>Oldest First</option>
+                                        <select onchange="this.form.submit()" class="selectpicker" name="start_date_sort" title="{{ __('messages.front_sort_by') }}">
+                                            <option value="desc" {{ request('start_date_sort', 'desc') == 'desc' ? 'selected' : '' }} >{{ __('messages.front_newest_first') }}</option>
+                                            <option value="asc" {{ request('start_date_sort') == 'asc' ? 'selected' : '' }}>{{ __('messages.front_oldest_first') }}</option>
                                         </select>
                                     </div>
                                 </div>
@@ -61,15 +61,15 @@ a[disabled]{
                                         <div class="btn-group" role="group">
                                             <a href="{{ route('front-cleanup-hosting', ['type' => 'organizer']) }}"
                                                 class="btn btn-outline-primary px-3 py-2 {{ request()->segment(2)!='cohost'?'active text-white':'' }} ">
-                                                Organizing Cleanups ({{ $hosting_event_count }})
+                                                {{ __('messages.front_organizing_cleanups_count', ['count' => $hosting_event_count]) }}
                                             </a>
                                             <a href="{{ route('front-cleanup-hosting', ['type' => 'cohost']) }}"
                                                 class="btn btn-outline-primary px-3 py-2 {{ request()->segment(2)=='cohost'?'active text-white':'' }}">
-                                                Co-Hosting Cleanups ({{ $cohost_event_count }})
+                                                {{ __('messages.front_cohosting_cleanups_count', ['count' => $cohost_event_count]) }}
                                             </a>
                                         </div>
                                         <!-- <h5 class="mb-0">
-                                            <a href="{{ route('front-cleanup-hosting', ['type' => 'organizer']) }}" {{ request()->segment(2)=='cohost'?'class=link-deactive':'' }}>Organizing Cleanups ({{ $hosting_event_count }})</a> / <a href="{{ route('front-cleanup-hosting', ['type' => 'cohost']) }}" {{ request()->segment(2)!='cohost'?'class=link-deactive':'' }}>Co-Hosting Cleanups ({{ $cohost_event_count }})</a> 
+                                            <a href="{{ route('front-cleanup-hosting', ['type' => 'organizer']) }}" {{ request()->segment(2)=='cohost'?'class=link-deactive':'' }}>Organizing Cleanups ({{ $hosting_event_count }})</a> / <a href="{{ route('front-cleanup-hosting', ['type' => 'cohost']) }}" {{ request()->segment(2)!='cohost'?'class=link-deactive':'' }}>Co-Hosting Cleanups ({{ $cohost_event_count }})</a>
                                         </h5> -->
                                         <!-- <h5 class="mb-0">
                                             @if (request()->segment(2) == 'cohost')
@@ -83,19 +83,19 @@ a[disabled]{
                                         <div class="btn-group" role="group">
                                             <a href="javascript:void(0);" onclick="showHostingEvent('upcoming',this)" hosting-event-val="upcoming"
                                                 class="btn btn-outline-primary px-3 py-2 {{ request('tabs', 'upcoming') == 'upcoming' ? 'active text-white' : '' }}">
-                                                Upcoming 
+                                                {{ __('messages.front_upcoming') }}
                                             </a>
                                             <a href="javascript:void(0);" onclick="showHostingEvent('ongoing',this)" hosting-event-val="ongoing"
                                                 class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'ongoing' ? 'active text-white' : '' }}">
-                                                In-Progress 
+                                                {{ __('messages.front_in_progress') }}
                                             </a>
                                             <a href="javascript:void(0);" onclick="showHostingEvent('ended',this)" hosting-event-val="ended"
                                                 class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'ended' ? 'active text-white' : '' }}">
-                                                Completed 
+                                                {{ __('messages.front_completed') }}
                                             </a>
                                             <a href="javascript:void(0);" onclick="showHostingEvent('action_required',this)" hosting-event-val="action_required"
                                                 class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'action_required' ? 'active text-white' : '' }}">
-                                                Action Required
+                                                {{ __('messages.front_action_required') }}
                                             </a>
                                         </div>
                                         <!-- <div class="btn-group" role="group">
@@ -111,7 +111,7 @@ a[disabled]{
                                         {{-- <div class="nav custom2-tabs btn-group justify-content-end row-gap-3" role="tablist">
 											<a href="{{route('front-post-a-event')}}"><i class="fa-solid fa-plus fs-16 menu--link" title="Add New Event"></i></a>
 											<a href="#" class="ms-4"><i class="fa-solid fa-calendar-check fs-16 menu--link" title="Download Events iCal"></i></a>
-											<a href="#" data-toggle-target="event_filter" class="ms-4"><i class="fa-solid fa-filter fs-16 menu--link" title="Filter"></i></a>											
+											<a href="#" data-toggle-target="event_filter" class="ms-4"><i class="fa-solid fa-filter fs-16 menu--link" title="Filter"></i></a>
 										</div>										 --}}
                                     </div>
                                 </div>
@@ -171,10 +171,10 @@ a[disabled]{
                                             <div class="empty-icon-wrap mx-auto mb-3">
                                                 <i class="fa-regular fa-image fa-2x text-muted"></i>
                                             </div>
-                                            <h5 class="fw-semibold mb-2">No cleanup found</h5>
-                                            <p class="text-muted small mb-3">You aren't currently organizing any ongoing cleanups.<br/>Start a new initiative to help your community!</p>
+                                            <h5 class="fw-semibold mb-2">{{ __('messages.front_no_cleanup_found') }}</h5>
+                                            <p class="text-muted small mb-3">{{ __('messages.front_no_ongoing_cleanups_desc') }}</p>
                                             <a href="{{route('front-post-a-event')}}" class="btn btn-clear-filters">
-                                                <i class="fa-solid fa-paper-plane me-2"></i>Post A New Cleanup
+                                                <i class="fa-solid fa-paper-plane me-2"></i>{{ __('messages.post_new_cleanup') }}
                                             </a>
                                         </div>
                                     </div>
@@ -187,10 +187,10 @@ a[disabled]{
                                             <div class="empty-icon-wrap mx-auto mb-3">
                                                 <i class="fa-regular fa-image fa-2x text-muted"></i>
                                             </div>
-                                            <h5 class="fw-semibold mb-2">No cleanup found</h5>
-                                            <p class="text-muted small mb-3">You aren't currently organizing any upcoming cleanups.<br/>Start a new initiative to help your community!</p>
+                                            <h5 class="fw-semibold mb-2">{{ __('messages.front_no_cleanup_found') }}</h5>
+                                            <p class="text-muted small mb-3">{{ __('messages.front_no_upcoming_cleanups_desc') }}</p>
                                             <a href="{{route('front-post-a-event')}}" class="btn btn-clear-filters">
-                                                <i class="fa-solid fa-paper-plane me-2"></i>Post A New Cleanup
+                                                <i class="fa-solid fa-paper-plane me-2"></i>{{ __('messages.post_new_cleanup') }}
                                             </a>
                                         </div>
                                     </div>
@@ -203,10 +203,10 @@ a[disabled]{
                                             <div class="empty-icon-wrap mx-auto mb-3">
                                                 <i class="fa-regular fa-image fa-2x text-muted"></i>
                                             </div>
-                                            <h5 class="fw-semibold mb-2">No cleanup found</h5>
-                                            <p class="text-muted small mb-3">You don't have any past cleanups.<br/>Start a new initiative to help your community!</p>
+                                            <h5 class="fw-semibold mb-2">{{ __('messages.front_no_cleanup_found') }}</h5>
+                                            <p class="text-muted small mb-3">{{ __('messages.front_no_past_cleanups_desc') }}</p>
                                             <a href="{{route('front-post-a-event')}}" class="btn btn-clear-filters">
-                                                <i class="fa-solid fa-paper-plane me-2"></i>Post A New Cleanup
+                                                <i class="fa-solid fa-paper-plane me-2"></i>{{ __('messages.post_new_cleanup') }}
                                             </a>
                                         </div>
                                     </div>
@@ -219,14 +219,14 @@ a[disabled]{
                                             <div class="empty-icon-wrap mx-auto mb-3">
                                                 <i class="fa-regular fa-image fa-2x text-muted"></i>
                                             </div>
-                                            <h5 class="fw-semibold mb-2">No cleanup found</h5>
-                                            <p class="text-muted small mb-3">No action-required cleanups at the moment.</p>
+                                            <h5 class="fw-semibold mb-2">{{ __('messages.front_no_cleanup_found') }}</h5>
+                                            <p class="text-muted small mb-3">{{ __('messages.front_no_action_required_cleanups_desc') }}</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             @foreach ($hosting_events as $event)
-                                @php 
+                                @php
                                     $eventStatusClass = strtolower($event->runningStatus);
                                     $now = \Carbon\Carbon::now();
                                     $canCancelEvent = auth()->guard('front')->user()->id == $event->creator_id
@@ -238,7 +238,7 @@ a[disabled]{
                                     }
                                     $approvedCohostCount = $event->cohostRecords->where('request_status', 'approved')->count();
                                     $totalCohostCount = $event->cohostRecords->count();
-                                @endphp 
+                                @endphp
                                 <div class="main-card mt-2 event-row-{{$eventStatusClass}}">
                                     <div class="contact-list">
                                         <div
@@ -250,7 +250,7 @@ a[disabled]{
                                                 <div class="card-event-dt">
                                                      @if($event->isDetailActive() && !empty($event->slug))
                                                         <a href="{{route('view-event-details', ['slug' => $event->slug])}}" target="_BLANK"><h5 class="m-0">{{ $event->event_name }}</h5></a>
-                                                    @else 
+                                                    @else
                                                         <h5 class="m-0">{{ $event->event_name }}</h5>
                                                     @endif
                                                     <p class="mb-2">{{ $event->fullAddress }}</p>
@@ -266,10 +266,10 @@ a[disabled]{
                                                     @else
                                                         <div class="card-event-dt">
                                                             @if(empty($event->cancelled_at))
-                                                            <button {{ $event->is_completed==1?'disabled':'' }} class="btn btn-sm btn-default border-default show-alert-run-url" message="You want to send the waiver email to all attendees" url="{{route('send-waiver-bulk-email', ['id' => $event->encrypted_id])}}"><i class="fa fa-envelope me-2"></i>Send Wavier To All</button>
-                                                            <button {{ $event->is_completed==1?'disabled':'' }} class="btn btn-sm btn-default ms-2 border-default show-alert-run-url" message="You want to mark all attendees as checked-in" url="{{route('mark-bulk-checkin-with-email', ['id' => $event->encrypted_id])}}"><i class="fa fa-check-square me-2"></i>Check-In Signed Volunteers</button>
+                                                    <button {{ $event->is_completed==1?'disabled':'' }} class="btn btn-sm btn-default border-default show-alert-run-url" message="You want to send the waiver email to all attendees" url="{{route('send-waiver-bulk-email', ['id' => $event->encrypted_id])}}"><i class="fa fa-envelope me-2"></i>{{ __('messages.front_send_waiver_all') }}</button>
+                                                            <button {{ $event->is_completed==1?'disabled':'' }} class="btn btn-sm btn-default ms-2 border-default show-alert-run-url" message="You want to mark all attendees as checked-in" url="{{route('mark-bulk-checkin-with-email', ['id' => $event->encrypted_id])}}"><i class="fa fa-check-square me-2"></i>{{ __('messages.front_checkin_signed_volunteers') }}</button>
                                                             @endif
-                                                            <button class="btn btn-sm btn-default ms-2 border-default send-event-attendees-email" data-route="{{ route('front-send-custom-email-event-attendees', ['id' => $event->encrypted_id]) }}" data-bs-toggle="modal" data-bs-target="#sendEventAttendeesEmailModal"><i class="fa fa-paper-plane me-2"></i>Send Email</button>
+                                                            <button class="btn btn-sm btn-default ms-2 border-default send-event-attendees-email" data-route="{{ route('front-send-custom-email-event-attendees', ['id' => $event->encrypted_id]) }}" data-bs-toggle="modal" data-bs-target="#sendEventAttendeesEmailModal"><i class="fa fa-paper-plane me-2"></i>{{ __('messages.front_send_email') }}</button>
                                                         </div>
                                                     @endif
                                                 </div>
@@ -280,32 +280,32 @@ a[disabled]{
                                                     <i class="fa-solid fa-ellipsis-vertical"></i></button>
                                                 <div class="dropdown-menu dropdown-menu-right">
                                                     <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id])}}" class="dropdown-item">
-                                                        <i class="fa-solid fa-gear me-3"></i>Edit</a>
+                                                        <i class="fa-solid fa-gear me-3"></i>{{ __('messages.front_edit') }}</a>
                                                     @if($event->isDetailActive() && !empty($event->slug))
                                                         <a href="{{route('view-event-details', ['slug' => $event->slug])}}" target="_BLANK" class="dropdown-item">
-                                                        <i class="fa-solid fa-eye me-3"></i>View Event Page</a>
+                                                        <i class="fa-solid fa-eye me-3"></i>{{ __('messages.front_view_event_page') }}</a>
                                                         <!-- <a class="dropdown-item" href="javascript:void(0);" data-route="{{route('front-send-rsvp-emails', ['slug'=> $event->slug])}}" data-bs-toggle="modal" data-bs-target="#sendRsvpEmail">
                                                             <i class="fa-solid fa-envelope me-3"></i>Send RSVP Emails
                                                         </a> -->
                                                         <a href="javascript:void(0);" onclick="copyText('{{route('view-event-details', ['slug' => $event->slug])}}')" class="dropdown-item">
-                                                            <i class="fa-solid fa-copy me-3"></i>Copy Event Link
+                                                            <i class="fa-solid fa-copy me-3"></i>{{ __('messages.front_copy_event_link') }}
                                                         </a>
                                                     @endif
 
-                                                    <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step3'])}}" class="dropdown-item"> <i class="fa-solid fa-user-plus me-3"></i>Manage Co-Host</a>
+                                                    <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step3'])}}" class="dropdown-item"> <i class="fa-solid fa-user-plus me-3"></i>{{ __('messages.front_manage_cohost') }}</a>
                                                     <a target="_blank" href="{{route('front-registration-list', ['event' => $event->id])}}" class="dropdown-item">
-                                                    <i class="fa-solid fa-eye me-3"></i>Manage Registrations / Check-ins</a>
-                                                    <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step5'])}}" class="dropdown-item"> <i class="fa-solid fa-bar-chart me-3"></i>Event Cleanup Report</a>
+                                                    <i class="fa-solid fa-eye me-3"></i>{{ __('messages.front_manage_registrations_checkins') }}</a>
+                                                    <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step5'])}}" class="dropdown-item"> <i class="fa-solid fa-bar-chart me-3"></i>{{ __('messages.front_event_cleanup_report') }}</a>
                                                     @if(!empty($event->slug))
                                                     <a href="{{route('front-duplicate-an-event', ['slug' => $event->slug])}}" class="dropdown-item">
-                                                        <i class="fa-solid fa-clone me-3"></i>Duplicate Event
+                                                        <i class="fa-solid fa-clone me-3"></i>{{ __('messages.front_duplicate_event') }}
                                                     </a>
                                                     @if(!empty($event->start_datetime) && \Carbon\Carbon::parse($event->start_datetime)->gt(now()))
                                                     @endif
                                                     <a href="javascript:void(0);" class="dropdown-item recurring-event-btn"
                                                     data-action="{{ route('front-recurring-event-setup', ['event' => $event->encrypted_id]) }}"
                                                     data-bs-toggle="modal" data-bs-target="#recurringEventModal">
-                                                        <i class="fa-solid fa-repeat me-3"></i>Recurring Events
+                                                        <i class="fa-solid fa-repeat me-3"></i>{{ __('messages.front_recurring_events') }}
                                                     </a>
                                                     @endif
                                                     @if($event->is_completed!=1)
@@ -318,7 +318,7 @@ a[disabled]{
                                                     @endif
                                                     @if($canCancelEvent)
                                                     <a class="dropdown-item btn-cancel-event" data-url="" href="javascript:void(0);" reschedule-url="{{ route('front-reschedule-event', ['id' => $event->encrypted_id]) }}" cancel-url="{{ route('front-cancel-event', ['id' => $event->encrypted_id]) }}">
-                                                        <i class="fa-solid fa-ban me-3"></i>Cancel Event
+                                                        <i class="fa-solid fa-ban me-3"></i>{{ __('messages.front_cancel_event') }}
                                                     </a>
                                                     @endif
                                                     <!-- <a href="javascript:void(0);"
@@ -411,7 +411,7 @@ a[disabled]{
                                                             @if($event->is_completed==1)
                                                             <input disabled type="checkbox" {{ $event->status == 'published' ? 'checked' : '' }} class="event_publish_toggle" data-event-id="{{ $event->encrypted_id }}">
                                                             <span class="checkbox-slider" onclick=redirectWithMessage(this) url="" message="Publish status cannot be changed after the event is completed."></span>
-                                                            @else 
+                                                            @else
                                                             <input {{ $event->tickets()->active()->count()>0?'disabled':'' }} type="checkbox" {{ $event->status == 'published' ? 'checked' : '' }} class="event_publish_toggle" data-event-id="{{ $event->encrypted_id }}">
                                                             <span class="checkbox-slider" {{ $event->tickets()->active()->count()>0?'onclick=redirectWithMessage(this)':'' }} url="" message="An event cannot be unpublished once an attendee has registered."></span>
                                                             @endif
@@ -432,7 +432,7 @@ a[disabled]{
                                                             @if($event->is_completed==1)
                                                             <input disabled type="checkbox" {{ $event->status == 'published' ? 'checked' : '' }} class="event_publish_toggle" data-event-id="{{ $event->encrypted_id }}">
                                                             <span class="checkbox-slider" onclick=redirectWithMessage(this) url="" message="Publish status cannot be changed after the event is completed."></span>
-                                                            @else 
+                                                            @else
                                                             <input {{ $event->tickets()->active()->count()>0?'disabled':'' }} type="checkbox" {{ $event->status == 'published' ? 'checked' : '' }} class="event_publish_toggle" data-event-id="{{ $event->encrypted_id }}">
                                                             <span class="checkbox-slider" {{ $event->tickets()->active()->count()>0?'onclick=redirectWithMessage(this)':'' }} url="" message="An event cannot be unpublished once an attendee has registered."></span>
                                                             @endif

@@ -7,7 +7,7 @@
             <div class="row">
                 <!-- <div class="col-md-12">
                     <div class="d-main-title">
-                        <h3><i class="fa-solid fa-user-check me-3 mb-3"></i>Volunteer Check-in</h3>
+                        <h3><i class="fa-solid fa-user-check me-3 mb-3"></i>{{ __('messages.front_volunteer_checkin') }}</h3>
                         <p class="mb-2">Check-in volunteers for this cleanup event</p>
 
                         @php
@@ -26,15 +26,15 @@
 
                         @php
                             $breadcrumbs = [
-                                ['name' => 'Ongoing Cleanups', 'url' => route('front-cleanup-ongoing')],
-                                ['name' => 'Volunteer Check-in', 'url' => route('front-volunteer-check-in', ['id' => $event_id])],
+                                ['name' => __('messages.front_ongoing_cleanups'), 'url' => route('front-cleanup-ongoing')],
+                                ['name' => __('messages.front_volunteer_checkin'), 'url' => route('front-volunteer-check-in', ['id' => $event_id])],
                             ];
                         @endphp
                         <x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs"/>
                     </div>
 
                     <a href="{{ route('front-volunteer-check-in-export', ['id' => $event_id]) }}" class="primary-btn w-fit">
-                        <i class="fa-solid fa-file-pdf me-2"></i>Export Attendees
+                        <i class="fa-solid fa-file-pdf me-2"></i>{{ __('messages.front_export_attendees') }}
                     </a>
                 </div>
 
@@ -46,26 +46,26 @@
                             <form class="filter-form">
                                 <div class="row g-3 align-items-end">
                                     <div class="col-md-7">
-                                        <label class="form-label filter-label">Search Volunteer</label>
+                                        <label class="form-label filter-label">{{ __('messages.front_search_volunteer') }}</label>
                                         <div class="filter-input-wrap">
                                             <i class="fa fa-search filter-icon"></i>
-                                            <input class="form-control filter-field" value="{{ request()->search }}" name="search" type="text" placeholder="Name, email, or phone">
+                                            <input class="form-control filter-field" value="{{ request()->search }}" name="search" type="text" placeholder="{{ __('messages.front_name_email_phone') }}">
                                         </div>
                                     </div>
                                     <div class="col-md-3">
-                                        <label class="form-label filter-label">Status</label>
-                                        <select class="selectpicker filter-field w-100" name="status" title="Status: All">
-                                            <option value="">Status: All</option>
-                                            <option value="signed" @selected(request()->status == 'signed')>Signed</option>
-                                            <option value="unsigned" @selected(request()->status == 'unsigned')>Unsigned</option>
-                                            <option value="checked_in" @selected(request()->status == 'checked_in')>Checked-in</option>
-                                            <option value="not_checked_in" @selected(request()->status == 'not_checked_in')>Not Checked-in</option>
-                                            <option value="checked_in_signed" @selected(request()->status == 'checked_in_signed')>Checked-in & Signed</option>
+                                        <label class="form-label filter-label">{{ __('messages.front_status') }}</label>
+                                        <select class="selectpicker filter-field w-100" name="status" title="{{ __('messages.front_status_all') }}">
+                                            <option value="">{{ __('messages.front_status_all') }}</option>
+                                            <option value="signed" @selected(request()->status == 'signed')>{{ __('messages.front_signed') }}</option>
+                                            <option value="unsigned" @selected(request()->status == 'unsigned')>{{ __('messages.front_unsigned') }}</option>
+                                            <option value="checked_in" @selected(request()->status == 'checked_in')>{{ __('messages.front_checked_in') }}</option>
+                                            <option value="not_checked_in" @selected(request()->status == 'not_checked_in')>{{ __('messages.front_not_checked_in') }}</option>
+                                            <option value="checked_in_signed" @selected(request()->status == 'checked_in_signed')>{{ __('messages.front_checked_in_signed') }}</option>
                                         </select>
                                     </div>
                                     <div class="col-md-2 d-flex gap-2">
                                         <button class="btn btn-filter-search flex-grow-1" type="submit">
-                                            <i class="fa fa-search me-2"></i>Search
+                                            <i class="fa fa-search me-2"></i>{{ __('messages.front_search') }}
                                         </button>
                                         <a href="{{ route('front-volunteer-check-in', ['id' => $event_id]) }}" class="btn btn-filter-reset">
                                             <i class="fa fa-rotate-left"></i>
@@ -100,15 +100,15 @@
 
                                             <div class="volunteer-checkin-badges">
                                                 @if($isSigned)
-                                                    <span class="badge custom-badge-success">Signed</span>
+                                                    <span class="badge custom-badge-success">{{ __('messages.front_signed') }}</span>
                                                 @else
-                                                    <span class="badge custom-badge-danger">Unsigned</span>
+                                                    <span class="badge custom-badge-danger">{{ __('messages.front_unsigned') }}</span>
                                                 @endif
 
                                                 @if($isCheckedIn)
-                                                    <span class="badge custom-badge-success">Checked-in</span>
+                                                    <span class="badge custom-badge-success">{{ __('messages.front_checked_in') }}</span>
                                                 @else
-                                                    <span class="badge custom-badge-warning">Not Checked-in</span>
+                                                    <span class="badge custom-badge-warning">{{ __('messages.front_not_checked_in') }}</span>
                                                 @endif
                                             </div>
                                         </div>
@@ -118,24 +118,24 @@
                                         @if(!$isSigned && !$isCheckedIn)
                                             <form method="POST" action="{{ route('front-volunteer-sign-and-check-in', ['id' => $registration->encrypted_id]) }}" class="volunteer-sign-checkin-form">
                                                 @csrf
-                                                <label class="form-label fw-semibold">Volunteer Signature</label>
+                                                <label class="form-label fw-semibold">{{ __('messages.front_volunteer_signature') }}</label>
                                                 <input type="hidden" name="signature" id="{{ $signatureInputId }}">
                                                 <div class="volunteer-sign-pad js-signature" id="{{ $signatureId }}" data-input="#{{ $signatureInputId }}" data-width="420" data-height="115"></div>
 
                                                 <div class="d-flex justify-content-between align-items-center mt-2 gap-2 flex-wrap">
                                                     <button type="button" class="btn btn-sm btn-outline-secondary clear-volunteer-signature" data-pad="#{{ $signatureId }}" data-input="#{{ $signatureInputId }}">
-                                                        Clear
+                                                        {{ __('messages.front_clear') }}
                                                     </button>
                                                     <!-- <button type="submit" class="primary-btn w-fit btn-sign-checkin">
                                                         <i class="fa-solid fa-signature me-2"></i>Sign & Check-in
                                                     </button> -->
                                                     <div class="d-flex gap-2 flex-wrap">
                                                         <button type="button" class="btn btn-outline-primary btn-show-waiver-qr" data-url="{{ route('front-volunteer-waiver-qr', ['id' => $registration->encrypted_id]) }}">
-                                                            <i class="fa-solid fa-qrcode me-2"></i>Show QR Code
+                                                            <i class="fa-solid fa-qrcode me-2"></i>{{ __('messages.front_show_qr_code') }}
                                                         </button>
 
                                                         <button type="submit" class="primary-btn w-fit btn-sign-checkin">
-                                                            <i class="fa-solid fa-signature me-2"></i>Sign & Check-in
+                                                            <i class="fa-solid fa-signature me-2"></i>{{ __('messages.front_sign_checkin') }}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -144,22 +144,22 @@
                                             <form method="POST" action="{{ route('front-volunteer-mark-check-in', ['id' => $registration->encrypted_id]) }}">
                                                 @csrf
                                                 <div class="volunteer-status-line mb-3">
-                                                    <span>Waiver Signed</span>
+                                                    <span>{{ __('messages.front_waiver_signed') }}</span>
                                                     <strong>{{ date(config('app.dateTimeFormat'), strtotime($registration->waiver_filled_at)) }}</strong>
                                                 </div>
                                                 <button type="submit" class="primary-btn w-fit">
-                                                    <i class="fa-solid fa-user-check me-2"></i>Check-in
+                                                    <i class="fa-solid fa-user-check me-2"></i>{{ __('messages.front_checkin') }}
                                                 </button>
                                             </form>
                                         @else
                                             <div class="volunteer-status-stack">
                                                 <div class="volunteer-status-line">
-                                                    <span>Waiver Signed</span>
+                                                    <span>{{ __('messages.front_waiver_signed') }}</span>
                                                     <strong>{{ date(config('app.dateTimeFormat'), strtotime($registration->waiver_filled_at)) }}</strong>
                                                 </div>
                                                 <div class="volunteer-status-line">
-                                                    <span>Checked-in</span>
-                                                    <strong>{{ !empty($registration->checkin_dt) ? date(config('app.dateTimeFormat'), strtotime($registration->checkin_dt)) : 'Done' }}</strong>
+                                                    <span>{{ __('messages.front_checked_in') }}</span>
+                                                    <strong>{{ !empty($registration->checkin_dt) ? date(config('app.dateTimeFormat'), strtotime($registration->checkin_dt)) : __('messages.front_done') }}</strong>
                                                 </div>
                                             </div>
                                         @endif
@@ -174,8 +174,8 @@
                                             <div class="empty-icon-wrap mx-auto mb-3">
                                                 <i class="fa-regular fa-image fa-2x text-muted"></i>
                                             </div>
-                                            <h5 class="fw-semibold mb-2">No volunteer found for check-in</h5>
-                                            <p class="text-muted small mb-0">Confirmed volunteers will appear here for check-in.</p>
+                                            <h5 class="fw-semibold mb-2">{{ __('messages.front_no_volunteer_checkin_found') }}</h5>
+                                            <p class="text-muted small mb-0">{{ __('messages.front_checkin_empty_desc') }}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -195,11 +195,11 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="waiverQrModalLabel">Waiver QR Code</h5>
+                <h5 class="modal-title" id="waiverQrModalLabel">{{ __('messages.front_waiver_qr_code') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body text-center waiver-qr-modal-body">
-                <div id="waiverQrLoader" class="py-4">Generating QR code...</div>
+                <div id="waiverQrLoader" class="py-4">{{ __('messages.front_generating_qr_code') }}</div>
                 <div id="waiverQrContent" class="d-none">
                     <div id="waiverQrImage" class="waiver-qr-image py-4"></div>
                 </div>

@@ -19,11 +19,11 @@ $outPages = true;
 									</div>
 								</div>
 								@if(isset($url))
-									<h4>Are you sure, you want to unsubscribe this alert?</h4>
+									<h4>{{ __('messages.front_unsubscribe_alert_confirm') }}</h4>
 									@if(isset($alert) && isset($alert->id))
 									<div class="social-share mt-4 mb-0">
-										<span class="share-label">Alert Name: {{ $alert->alert_name }}</span>
-										<span class="share-label mb-0">Zip Code: {{ $alert->zipcode }}</span>
+										<span class="share-label">{{ __('messages.front_alert_name') }}: {{ $alert->alert_name }}</span>
+										<span class="share-label mb-0">{{ __('messages.front_zip_code') }}: {{ $alert->zipcode }}</span>
 									</div>
 									@endif 
 								@elseif(isset($msg)) 
@@ -33,13 +33,13 @@ $outPages = true;
 							@if(isset($url))
 							<div class="booking-confirmed-bottom">
 								<div class="booking-confirmed-bottom-bg p_30">
-									<a href="{{$url}}" class="primary-btn mt-0">Yes, unsubscribe now</a>
+									<a href="{{$url}}" class="primary-btn mt-0">{{ __('messages.front_yes_unsubscribe_now') }}</a>
 								</div>
 							</div>
 							@elseif(isset($msg))
 							<div class="booking-confirmed-bottom">
 								<div class="booking-confirmed-bottom-bg p_30">
-									<a href="{{route('front-email-alerts')}}" class="primary-btn mt-0"><i class="fa-solid fa-bell me-1"></i>Weekly Email Alerts</a>
+									<a href="{{route('front-email-alerts')}}" class="primary-btn mt-0"><i class="fa-solid fa-bell me-1"></i>{{ __('messages.weekly_email_alerts') }}</a>
 								</div>
 							</div>
 							@endif 

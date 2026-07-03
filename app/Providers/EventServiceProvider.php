@@ -18,6 +18,12 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
+        \App\Events\AdminImpersonationStarted::class => [
+            \App\Listeners\LogImpersonationActivity::class . '@handleStarted',
+        ],
+        \App\Events\AdminImpersonationEnded::class => [
+            \App\Listeners\LogImpersonationActivity::class . '@handleEnded',
+        ],
     ];
 
     /**

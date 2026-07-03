@@ -1,5 +1,9 @@
 @php
     $user = auth()->guard('front')->user();
+    $attendingEventsCount = $user ? $user->attendingEvents()->count() : 0;
+    $organizedEventsCount = $user ? $user->events()->active()->count() : 0;
+    $createdEventsCount = $user ? $user->events()->count() : 0;
+    $hasStripeAccount = $user && !empty($user->stripe_account_id);
 @endphp
 @extends('layouts.frontend')
 @push('style')
@@ -249,7 +253,7 @@
                         <section class="welcome-section">
                             <div class="row align-items-start g-4">
                                 <div class="col-12 col-lg-6">
-                                    <h1 class="welcome-title">Welcome, {{ $user->name }}</h1>
+                                    <h1 class="welcome-title">{{ __('messages.dashboard_welcome', ['name' => $user->name]) }}</h1>
                                     @php
                                         $breadcrumbs = [];
                                     @endphp
@@ -261,9 +265,9 @@
                                         <div class="d-flex align-items-center gap-3">
                                             <span>
                                                 <span class="d-flex align-items-center gap-3 mb-2">
-                                                    <span class="fw-bold fs-5 text-white">Start Check-in</span>
+                                                    <span class="fw-bold fs-5 text-white">{{ __('messages.start_checkin') }}</span>
                                                 </span>
-                                                <span class="text-muted fs-6 text-white">Manage attendee check-ins</span>
+                                                <span class="text-muted fs-6 text-white">{{ __('messages.manage_checkins') }}</span>
                                             </span>
                                         </div>
 
@@ -277,12 +281,12 @@
                                         <div class="d-flex align-items-center gap-3">
                                             <span>
                                                 <span class="d-flex align-items-center gap-3 mb-2">
-                                                    <span class="fw-bold fs-5 text-white">What's New?</span>
+                                                    <span class="fw-bold fs-5 text-white">{{ __('messages.whats_new') }}</span>
                                                     @if(!empty($hasNewReleaseNotes))
-                                                    <span class="dashboard-new-badge">New Updates</span>
+                                                    <span class="dashboard-new-badge">{{ __('messages.new_updates') }}</span>
                                                     @endif
                                                 </span>
-                                                <span class="text-muted fs-6 text-white">View latest updates</span>
+                                                <span class="text-muted fs-6 text-white">{{ __('messages.view_latest_updates') }}</span>
                                             </span>
                                         </div>
 
@@ -300,28 +304,28 @@
                                     <input type="radio" name="help-option" id="creating-event" value="Creating an event" hidden>
                                     <label for="creating-event" class="help-card">
                                         <div class="help-icon"><i class="fa-solid fa-plus"></i></div>
-                                        <h4>Create an event</h4>
+                                        <h4>{{ __('messages.create_event') }}</h4>
                                     </label>
                                 </div>
                                 <div class="help-card" onclick="window.location.href='{{route('front-profile')}}'">
                                     <input type="radio" name="help-option" id="your-account" value="Your account" hidden>
                                     <label for="your-account" class="help-card">
                                         <div class="help-icon"><i class="fa-solid fa-user"></i></div>
-                                        <h4>Manage Profile</h4>
+                                        <h4>{{ __('messages.manage_profile') }}</h4>
                                     </label>
                                 </div>
                                 <div class="help-card" onclick="window.location.href='{{route('front-cleanup-attending')}}'">
                                     <input type="radio" name="help-option" id="marketing-event" value="Marketing an event" hidden>
                                     <label for="marketing-event" class="help-card">
                                         <div class="help-icon"><i class="fa-solid fa-bullhorn"></i></div>
-                                        <h4>Events I'm Attending ({{$user->attendingEvents->count()}})</h4>
+                                        <h4>{{ __('messages.events_attending_count', ['count' => $attendingEventsCount]) }}</h4>
                                     </label>
                                 </div>
                                 <div class="help-card" onclick="window.location.href='{{route('front-cleanup-hosting', ['type' => 'organizer'])}}'">
                                     <input type="radio" name="help-option" id="payouts-taxes" value="Payouts and taxes" hidden>
                                     <label for="payouts-taxes" class="help-card">
                                         <div class="help-icon"><i class="fa-solid fa-money-check"></i></div>
-                                        <h4>Events I've Organized ({{$user->events()->active()->count()}})</h4>
+                                        <h4>{{ __('messages.events_organized_count', ['count' => $organizedEventsCount]) }}</h4>
                                     </label>
                                 </div>
                             </div>
@@ -329,20 +333,20 @@
                         <section class="section">
                             <div class="section-header">
                                 <div>
-                                    <h2 class="section-title">Your checklist</h2>
-                                    <p class="section-subtitle">We make it easy to plan successful events. Here's how to start!</p>
+                                    <h2 class="section-title">{{ __('messages.your_checklist') }}</h2>
+                                    <p class="section-subtitle">{{ __('messages.checklist_subtitle') }}</p>
                                 </div>
                             </div>
 
                             <div class="checklist">
                                 <div class="checklist-item">
                                     <div class="d-flex align-items-start gap-4">
-                                        <div class="checklist-icon {{$user->events->count() ? "" : "pending"}}" >
+                                        <div class="checklist-icon {{$createdEventsCount ? "" : "pending"}}" >
                                             <i class="fa-solid fa-check"></i>
                                         </div>
                                         <div class="checklist-content">
-                                            <h4>Create event</h4>
-                                            <p>Publish an event to reach millions of people on Eventbrite</p>
+                                            <h4>{{ __('messages.create_event') }}</h4>
+                                            <p>{{ __('messages.create_event_desc') }}</p>
                                         </div>
                                     </div>
                                     <a href="{{route('front-post-a-event')}}" class="start-btn text-white">
@@ -355,7 +359,7 @@
                                                 <path transform="rotate(-44.988 6.64 6.688)" d="M6.2 5.9H7v1.7h-.8z"></path>
                                             </g>
                                         </svg>
-                                        Post A New Event
+                                        {{ __('messages.post_new_event') }}
                                     </a>
                                 </div>
                                 <div class="checklist-item">
@@ -364,8 +368,8 @@
                                             <i class="fa-solid fa-check"></i>
                                         </div>
                                         <div class="checklist-content">
-                                            <h4>Set up your organizer profile</h4>
-                                            <p>Highlight your brand by adding your organizer's name, image, and bio</p>
+                                            <h4>{{ __('messages.setup_organizer_profile') }}</h4>
+                                            <p>{{ __('messages.setup_organizer_profile_desc') }}</p>
                                         </div>
                                     </div>
                                     <a href="{{route('front-profile')}}" class="start-btn text-white">
@@ -378,17 +382,17 @@
                                                 <path transform="rotate(-44.988 6.64 6.688)" d="M6.2 5.9H7v1.7h-.8z"></path>
                                             </g>
                                         </svg>
-                                        Setup Org. Profile
+                                        {{ __('messages.setup_org_profile_btn') }}
                                     </a>
                                 </div>
                                 <div class="checklist-item">
                                     <div class="d-flex align-items-start gap-4">
-                                        <div class="checklist-icon {{$user->stripe_account_id!='' ? "" : "pending"}}">
+                                        <div class="checklist-icon {{$hasStripeAccount ? "" : "pending"}}">
                                             <i class="fa-solid fa-check"></i>
                                         </div>
                                         <div class="checklist-content">
-                                            <h4>Add your Stripe Account</h4>
-                                            <p>Get paid for future ticket sales by connecting your Stripe account</p>
+                                            <h4>{{ __('messages.add_stripe_account') }}</h4>
+                                            <p>{{ __('messages.add_stripe_account_desc') }}</p>
                                         </div>
                                     </div>
 
@@ -402,7 +406,7 @@
                                                 <path transform="rotate(-44.988 6.64 6.688)" d="M6.2 5.9H7v1.7h-.8z"></path>
                                             </g>
                                         </svg>
-                                        Connect Stripe
+                                        {{ __('messages.connect_stripe') }}
                                     </a>
                                 </div>
                             </div>
@@ -462,18 +466,18 @@
                             
                             <div class="profile-stats">
                                 <div>
-                                    <div><b>{{$user->events->count()}}</b></div>
+                                    <div><b>{{$createdEventsCount}}</b></div>
                                     <div>
                                         <a href="{{route('front-cleanup-hosting', 'organizer')}}">
-                                            <b> Organized events </b>
+                                            <b>{{ __('messages.organized_events') }}</b>
                                         </a>
                                     </div>
                                 </div>
                                 <div>
-                                    <div><b>{{$user->attendingEvents->count()}}</b></div>
+                                    <div><b>{{$attendingEventsCount}}</b></div>
                                     <div>
                                         <a href="{{route('front-cleanup-attending')}}">
-                                            <b> Attended events </b>
+                                            <b>{{ __('messages.attended_events') }}</b>
                                         </a>
                                     </div>
                                 </div>

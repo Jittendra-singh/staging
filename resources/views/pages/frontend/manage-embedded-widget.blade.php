@@ -15,11 +15,11 @@
                 <div class="row">
                     <div class="col-md-12 d-flex justify-content-between">
                         <div class="d-main-title">
-                            <h3><i class="fa-solid fa-calendar-days me-3 mb-3"></i>Manage Embedded Widget</h3>
+                            <h3><i class="fa-solid fa-calendar-days me-3 mb-3"></i>{{ __('messages.front_manage_embedded_widget') }}</h3>
                             @php
                                 $breadcrumbs = [ 
                                     [
-                                        'name' => 'Manage Embedded Widget', 
+                                        'name' => __('messages.front_manage_embedded_widget'),
                                         'url' => route('front-manage-widget')
                                     ],
                                 ]
@@ -41,18 +41,18 @@
 
                     <div class="main-card mt-4 p-4 shadow-sm bg-white rounded">
                         <div class="bp-title">
-                            <h4 class="p-0 pb-3">Widget Content & Filters</h4>
+                            <h4 class="p-0 pb-3">{{ __('messages.front_widget_content_filters') }}</h4>
                         </div>
 
                         <div class="row">
                             <div class="col-md-4 mt-3">
-                                <label for="title" class="form-label">Widget Title *</label>
-                                <input type="text" id="title" class="text form-control h_40" name="title" placeholder="Enter title" value="{{ old('title', $widget->title ?? '') }}" required>
-                                <small>This title will not be displayed in the widget iframe.</small>
+                                <label for="title" class="form-label">{{ __('messages.front_widget_title') }} *</label>
+                                <input type="text" id="title" class="text form-control h_40" name="title" placeholder="{{ __('messages.front_enter_title') }}" value="{{ old('title', $widget->title ?? '') }}" required>
+                                <small>{{ __('messages.front_widget_title_help') }}</small>
                             </div>
 
                             <div class="col-md-4 mt-3">
-                                <label for="location" class="form-label">Location</label>
+                                <label for="location" class="form-label">{{ __('messages.front_location') }}</label>
                                 <input type="text" id="autocomplete" class="text form-control h_40" name="location" placeholder="Search and choose location" value="{{ old('location', $widget->location ?? '') }}">
                                 <input type="hidden" id="latitude" name="latitude" value="{{ old('latitude', $widget->location_lat ?? '') }}">
                                 <input type="hidden" id="longitude" name="longitude" value="{{ old('longitude', $widget->location_long ?? '') }}">
@@ -60,9 +60,9 @@
                             </div>
 
                             <div class="col-md-4 mt-3">
-                                <label for="distance" class="form-label">Distance (Miles)</label>
+                                <label for="distance" class="form-label">{{ __('messages.front_distance_miles') }}</label>
                                 <select class="form-select form-control h_40" id="distance" name="distance">
-                                    <option value="">Within</option>
+                                    <option value="">{{ __('messages.front_within') }}</option>
                                     @foreach([5,10,25,50,100] as $mile)
                                         <option value="{{ $mile }}" @selected(old('distance', $widget->distance ?? '') == $mile)>{{ $mile }} miles</option>
                                     @endforeach
@@ -71,7 +71,7 @@
                             </div>
 
                             <div class="col-md-4 mt-3">
-                                <label for="organizer_id" class="form-label">Organizer</label>
+                                <label for="organizer_id" class="form-label">{{ __('messages.front_organizer') }}</label>
                                 <select class="selectpicker1" name="organizer_id[]" title="Search and Select Organizer" data-selected-text-format="count > 1" data-size="5" multiple data-live-search="true">
                                     @foreach ($organizers as $organizer)
                                         @if(in_array($organizer->id, $selectedOrgIds))
@@ -82,8 +82,8 @@
                             </div>
 
                             <div class="col-md-4 mt-3">
-                                <label for="categories" class="form-label">Categories</label>
-                                <select class="selectpicker" name="category_id[]" title="Choose Categories" data-selected-text-format="count > 1" data-size="5" multiple data-live-search="true">
+                                <label for="categories" class="form-label">{{ __('messages.front_categories') }}</label>
+                                <select class="selectpicker" name="category_id[]" title="{{ __('messages.front_choose_categories') }}" data-selected-text-format="count > 1" data-size="5" multiple data-live-search="true">
                                     @foreach ($categories as $category)
                                         <option value="{{ $category->id }}" @selected(in_array($category->id, old('category_id', $selectedCatIds)))>{{ $category->name }}</option>
                                     @endforeach
@@ -159,11 +159,11 @@
                                 <div class="d-flex gap-4">
                                     <div class="form-check">
                                         <input class="form-check-input" type="radio" value="1" id="type" name="type" @checked(old('type', $widget->type ?? 1) == 1)>
-                                        <label class="form-check-label" for="type">List View</label>
+                                        <label class="form-check-label" for="type">{{ __('messages.front_list_view') }}</label>
                                     </div>
                                     <div class="form-check">
                                         <input class="form-check-input" type="radio" value="2" id="type2" name="type" @checked(old('type', $widget->type ?? 1) == 2)>
-                                        <label class="form-check-label" for="type2">Map View</label>
+                                        <label class="form-check-label" for="type2">{{ __('messages.front_map_view') }}</label>
                                     </div>
                                 </div>
                             </div>
@@ -172,9 +172,9 @@
 
                     <div class="d-flex mt-4 justify-content-start">
                         <button type="submit" class="primary-btn w-fit">
-                            {{isset($widget->id) ? 'Update' : 'Create'}} Widget Embed Code
+                            {{ isset($widget->id) ? __('messages.front_update') : __('messages.front_create') }} {{ __('messages.front_widget_embed_code') }}
                         </button>
-                        <a href="{{route('front-embedded-widget')}}" class="primary-btn w-fit ms-2">Close</a>
+                        <a href="{{route('front-embedded-widget')}}" class="primary-btn w-fit ms-2">{{ __('messages.front_close') }}</a>
                     </div>
                 </form>
                 <!-- <form action="{{route('front-save-widget', isset($widget->id)?encrypt($widget->id): null)}}" method="post" class="main-card mt-4 p-4 shadow-sm bg-white rounded" id="createWidgetForm">
@@ -273,16 +273,16 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="showWidgetDetailLabel">Embedded Widget Details</h5>
+                <h5 class="modal-title" id="showWidgetDetailLabel">{{ __('messages.front_embedded_widget_details') }}</h5>
                 <button type="button" class="close-model-btn" data-bs-dismiss="modal" aria-label="Close"><i
                         class="uil uil-multiply"></i></button>
             </div>
             <div class="modal-body" id="showWidgetDetailBody">
             </div>
             <div class="modal-footer">
-                <button type="button" class="primary-btn w-fit" id="copyWidgetCode">Copy Code</button>
+                <button type="button" class="primary-btn w-fit" id="copyWidgetCode">{{ __('messages.front_copy_code') }}</button>
                 <button type="button" class="primary-btn w-fit"
-                    data-bs-dismiss="modal">Close</button>
+                    data-bs-dismiss="modal">{{ __('messages.front_close') }}</button>
             </div>
         </div>
     </div>

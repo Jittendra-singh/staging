@@ -3,12 +3,13 @@ $outPages = isset($outPages) ? true : false;
 $is_session = session()->get('checkout_event');
 @endphp
 <!DOCTYPE html>
-<html lang="en" class="h-100">
+<html lang="{{ LaravelLocalization::getCurrentLocale() }}" dir="{{ LaravelLocalization::getCurrentLocaleDirection() }}" class="h-100">
 
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, shrink-to-fit=9">
+    {!! \App\Helpers\SeoHelper::generateHrefLangTags() !!}
     <meta name="title" content="{{ $seo_details->title ?? '' }}">
     <meta name="description" content="{{ $seo_details->description ?? '' }}">
     <meta name="keywords" content="{{ $seo_details->keywords ?? '' }}">
@@ -73,6 +74,23 @@ $is_session = session()->get('checkout_event');
 </head>
 
 <body class="d-flex flex-column h-100">
+    @if(app('impersonate')->isImpersonating())
+        <div class="impersonation-banner bg-warning text-dark px-3 py-2 text-center d-flex justify-content-between align-items-center" style="z-index: 9999; position: sticky; top: 0; width: 100%; font-size: 1rem; border-bottom: 2px solid #e0a800; font-family: 'Outfit', sans-serif;">
+            <div>
+                <i class="fa fa-user-secret me-2"></i>
+                <strong>{{ __('messages.impersonating_banner_prefix', ['name' => auth()->guard('front')->user()?->name]) }}</strong>
+                (<span>{{ auth()->guard('front')->user()?->email_address }}</span>)
+            </div>
+            <div>
+                <form action="{{ route('admin.impersonate.leave') }}" method="POST" class="d-inline-block m-0">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-dark text-white fw-bold px-3 py-1" style="border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-family: 'Outfit', sans-serif;">
+                        <i class="fa fa-sign-out-alt me-1"></i> {{ __('messages.impersonate_leave_btn') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    @endif
     <!-- Add Organisation Model Start-->
     <div class="modal fade" id="addorganisationModal" tabindex="-1" aria-labelledby="addorganisationLabel"
         aria-hidden="true">
@@ -319,9 +337,27 @@ $is_session = session()->get('checkout_event');
                                 </a>
                             </li>
                             @endif
+                            <li class="dropdown account-dropdown ms-0 me-3">
+                                <a href="#" class="account-link" role="button" id="languageClick"
+                                    data-bs-auto-close="outside" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fa-solid fa-globe"></i>
+                                    <span class="d-none d-md-inline">{{ LaravelLocalization::getCurrentLocaleNative() }}</span>
+                                    <i class="fas fa-caret-down arrow-icon"></i>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-account dropdown-menu-end"
+                                    aria-labelledby="languageClick">
+                                    @foreach(LaravelLocalization::getSupportedLocales() as $localeCode => $properties)
+                                        <li class="profile-link">
+                                            <a rel="alternate" hreflang="{{ $localeCode }}" href="{{ LaravelLocalization::getLocalizedURL($localeCode, null, [], true) }}" class="link-item">
+                                                {{ $properties['native'] }}
+                                            </a>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </li>
                             <li class="ms-0 me-3">
                                 <a href="{{ config('app.frontsite') }}donate" class="sign-up-btn text-white">
-                                    Donate
+                                    {{ __('messages.nav_donate') }}
                                 </a>
                             </li>
                             @if (auth()->guard('front')->check())
@@ -347,19 +383,19 @@ $is_session = session()->get('checkout_event');
                                         </div>
                                     </li>
                                     <li class="profile-link">
-                                        <a href="{{ route('front-dashboard') }}" class="link-item">Dashboard</a>
-                                        <a href="{{ route('front-cleanup-attending') }}" class="link-item">Cleanups I'm Attending</a>
-                                        <a href="{{ route('front-cleanup-hosting','organizer') }}" class="link-item">Cleanups I'm Hosting</a>
-                                        <a href="{{ route('front-email-alerts') }}" class="link-item">Weekly Email Alerts</a>
-                                        <a href="{{ route('front-profile') }}" class="link-item">My Profile</a>
-                                        <a href="{{ route('front-logout') }}" class="link-item">Logout</a>
+                                        <a href="{{ route('front-dashboard') }}" class="link-item">{{ __('messages.nav_dashboard') }}</a>
+                                        <a href="{{ route('front-cleanup-attending') }}" class="link-item">{{ __('messages.nav_attending') }}</a>
+                                        <a href="{{ route('front-cleanup-hosting','organizer') }}" class="link-item">{{ __('messages.nav_hosting') }}</a>
+                                        <a href="{{ route('front-email-alerts') }}" class="link-item">{{ __('messages.nav_alerts') }}</a>
+                                        <a href="{{ route('front-profile') }}" class="link-item">{{ __('messages.manage_profile') }}</a>
+                                        <a href="{{ route('front-logout') }}" class="link-item">{{ __('messages.logout') }}</a>
                                     </li>
                                 </ul>
                             </li>
                             @else
                             <li class="ms-0">
                                 <a href="{{ route('front-login') }}" class="primary-btn">
-                                    Login
+                                    {{ __('messages.login') }}
                                 </a>
                             </li>
                             @endif
@@ -381,22 +417,22 @@ $is_session = session()->get('checkout_event');
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                                         aria-expanded="false">
-                                        Cleanups <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
+                                        {{ __('messages.nav_cleanups') }} <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
                                             <title>Chevron right</title>
                                             <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                         </svg>
                                     </a>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="{{ route('view-events') }}">Find A Cleanup</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('front-post-a-event') }}">Organize A Cleanup</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('front-create-alert') }}">Get Notified</a></li>
-                                        <li><a class="dropdown-item" href="{{ config('app.frontsite') }}solo-cleanup/">Do A Solo Cleanup</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('view-events') }}">{{ __('messages.nav_find_cleanup') }}</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('front-post-a-event') }}">{{ __('messages.nav_organize_cleanup') }}</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('front-create-alert') }}">{{ __('messages.nav_get_notified') }}</a></li>
+                                        <li><a class="dropdown-item" href="{{ config('app.frontsite') }}solo-cleanup/">{{ __('messages.nav_solo_cleanup') }}</a></li>
                                     </ul>
                                 </li>
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                                         aria-expanded="false">
-                                        Programs <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
+                                        {{ __('messages.nav_programs') }} <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
                                             <title>Chevron right</title>
                                             <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                         </svg>
@@ -416,7 +452,7 @@ $is_session = session()->get('checkout_event');
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                                         aria-expanded="false">
-                                        Resources <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
+                                        {{ __('messages.nav_resources') }} <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
                                             <title>Chevron right</title>
                                             <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                         </svg>
@@ -431,7 +467,7 @@ $is_session = session()->get('checkout_event');
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                                         aria-expanded="false">
-                                        About Us <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
+                                        {{ __('messages.nav_about_us') }} <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
                                             <title>Chevron right</title>
                                             <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                         </svg>
@@ -518,50 +554,50 @@ $is_session = session()->get('checkout_event');
                     <li class="menu--item">
                         <a href="{{ route('front-dashboard') }}"
                             class="menu--link {{ url()->current() == route('front-dashboard') ? 'active' : '' }}"
-                            title="Dashboard" data-bs-toggle="tooltip" data-bs-placement="right">
+                            title="{{ __('messages.dashboard') }}" data-bs-toggle="tooltip" data-bs-placement="right">
                             <i class="fa-solid fa-gauge menu--icon"></i>
-                            <span class="menu--label">Dashboard</span>
+                            <span class="menu--label">{{ __('messages.dashboard') }}</span>
                         </a>
                     </li>
                     <li class="menu--item">
                         <a href="{{ route('front-cleanup-attending') }}"
                             class="menu--link {{ url()->current() == route('front-cleanup-attending') ? 'active' : '' }}"
-                            title="Attending" data-bs-toggle="tooltip" data-bs-placement="right">
+                            title="{{ __('messages.cleanups_attending') }}" data-bs-toggle="tooltip" data-bs-placement="right">
                             <i class="fa-solid fa-calendar-days menu--icon"></i>
-                            <span class="menu--label">Cleanups I'm Attending</span>
+                            <span class="menu--label">{{ __('messages.cleanups_attending') }}</span>
                         </a>
                     </li>
                     @if($adminUser->is_organiser == '1')
                     <li class="menu--item">
                         <a href="{{ route('front-cleanup-hosting', ['type' => 'organizer']) }}"
                             class="menu--link {{ request()->routeIs('front-cleanup-hosting',['type' => request()->segment(2) ?? 'organizer']) ? 'active' : '' }}"
-                            title="Cleanups I’m Hosting" data-bs-toggle="tooltip" data-bs-placement="right">
+                            title="{{ __('messages.cleanups_hosting') }}" data-bs-toggle="tooltip" data-bs-placement="right">
                             <i class="fa-solid fa-clock-rotate-left menu--icon"></i>
-                            <span class="menu--label">Cleanups I’m Hosting</span>
+                            <span class="menu--label">{{ __('messages.cleanups_hosting') }}</span>
                         </a>
                     </li>
                     @endif
                     <li class="menu--item">
                         <a href="{{ route('front-post-a-event') }}"
                             class="menu--link {{ url()->current() == route('front-post-a-event') ? 'active' : '' }}"
-                            title="Post a New Cleanup" data-bs-toggle="tooltip" data-bs-placement="right">
+                            title="{{ __('messages.post_new_cleanup') }}" data-bs-toggle="tooltip" data-bs-placement="right">
                             <i class="fa-solid fa-paper-plane menu--icon"></i>
-                            <span class="menu--label">Post a New Cleanup</span>
+                            <span class="menu--label">{{ __('messages.post_new_cleanup') }}</span>
                         </a>
                     </li>
                     <li class="menu--item">
                         <a href="{{ route('front-profile') }}" class="menu--link {{ url()->current() == route('front-profile') ? 'active' : '' }}"
-                            title="Manage Profile" data-bs-toggle="tooltip" data-bs-placement="right">
+                            title="{{ __('messages.manage_profile') }}" data-bs-toggle="tooltip" data-bs-placement="right">
                             <i class="fa-solid fa-user menu--icon"></i>
-                            <span class="menu--label">Manage Profile</span>
+                            <span class="menu--label">{{ __('messages.manage_profile') }}</span>
                         </a>
                     </li>
                     <li class="menu--item">
                         <a href="{{ route('front-email-alerts') }}"
                             class="menu--link {{ url()->current() == route('front-email-alerts') ? 'active' : '' }}"
-                            title="Weekly Email Alerts" data-bs-toggle="tooltip" data-bs-placement="right">
+                            title="{{ __('messages.weekly_email_alerts') }}" data-bs-toggle="tooltip" data-bs-placement="right">
                             <i class="fa-solid fa-bell menu--icon"></i>
-                            <span class="menu--label">Weekly Email Alerts</span>
+                            <span class="menu--label">{{ __('messages.weekly_email_alerts') }}</span>
                         </a>
                     </li>
 
@@ -573,18 +609,20 @@ $is_session = session()->get('checkout_event');
                         $isCertificateDetailVolunteerRequest = request()->routeIs('front-certificate-request-detail')
                             && isset($ticket)
                             && $adminUser->id != $ticket->volunteer_id;
+
+                        $hasAttendedCertificateEvents = $adminUser->attendingEventsWithoutActive()->exists();
                     @endphp
                     <li class="menu--item menu--item__has_sub_menu {{ request()->routeIs('front-certificate-my-requests') || request()->routeIs('front-certificate-volunteer-requests') || $isCertificateDetailMyRequest || $isCertificateDetailVolunteerRequest ? 'menu--subitens__opened' : '' }}">
                     <!-- <li class="menu--item menu--item__has_sub_menu {{ url()->current() == route('front-certificate-my-requests') ? 'menu--subitens__opened' : '' }} {{ url()->current() == route('front-certificate-volunteer-requests') ? 'menu--subitens__opened' : '' }}"> -->
                         <a class="menu--link">
                             <i class="menu--icon fa fa-vcard"></i>
-                            <span class="menu--label">Certificates </span>
+                            <span class="menu--label">{{ __('messages.certificates') }}</span>
                         </a>
-                        @if($adminUser->attendingEventsWithoutActive()->count()>0 || $adminUser->is_organiser == '1')
+                        @if($hasAttendedCertificateEvents || $adminUser->is_organiser == '1')
                         <ul class="sub_menu mt-0">
-                            @if($adminUser->attendingEventsWithoutActive()->count()>0)
+                            @if($hasAttendedCertificateEvents)
                             <li>
-                                <a href="{{ route('front-certificate-my-requests') }}" class="sub_menu--link {{ request()->routeIs('front-certificate-my-requests') || $isCertificateDetailMyRequest ? 'active' : '' }}" title="Track your requests and download your certificates once approved" data-bs-toggle="tooltip" data-bs-placement="right">My Requests</a>
+                                <a href="{{ route('front-certificate-my-requests') }}" class="sub_menu--link {{ request()->routeIs('front-certificate-my-requests') || $isCertificateDetailMyRequest ? 'active' : '' }}" title="{{ __('messages.my_requests_tooltip') }}" data-bs-toggle="tooltip" data-bs-placement="right">{{ __('messages.my_requests') }}</a>
 
                                 <!-- <a href="{{ route('front-certificate-my-requests') }}" class="sub_menu--link {{ url()->current() == route('front-certificate-my-requests') ? 'active' : '' }}" title="Track your requests and download your certificates once approved" data-bs-toggle="tooltip" data-bs-placement="right">My Requests</a> -->
                             </li>
@@ -592,7 +630,7 @@ $is_session = session()->get('checkout_event');
                             @if($adminUser->is_organiser == '1')
                             <li>
 
-                                <a href="{{ route('front-certificate-volunteer-requests') }}" class="sub_menu--link {{ request()->routeIs('front-certificate-volunteer-requests') || $isCertificateDetailVolunteerRequest ? 'active' : '' }}" title="Check volunteer requests and approve or reject them" data-bs-toggle="tooltip" data-bs-placement="right">Volunteer Requests</a>
+                                <a href="{{ route('front-certificate-volunteer-requests') }}" class="sub_menu--link {{ request()->routeIs('front-certificate-volunteer-requests') || $isCertificateDetailVolunteerRequest ? 'active' : '' }}" title="{{ __('messages.volunteer_requests_tooltip') }}" data-bs-toggle="tooltip" data-bs-placement="right">{{ __('messages.volunteer_requests') }}</a>
 
                                 <!-- <a href="{{ route('front-certificate-volunteer-requests') }}" class="sub_menu--link {{ url()->current() == route('front-certificate-volunteer-requests') ? 'active' : '' }}" title="Check volunteer requests and approve or reject them" data-bs-toggle="tooltip" data-bs-placement="right">Volunteer Requests</a> -->
                             </li>
@@ -621,9 +659,9 @@ $is_session = session()->get('checkout_event');
                     <li class="menu--item">
                         <a href="{{ route('front-registration-list') }}"
                             class="menu--link {{ url()->current() == route('front-registration-list') ? 'active' : '' }}"
-                            title="Registration Lists" data-bs-toggle="tooltip" data-bs-placement="right">
+                            title="{{ __('messages.registration_lists') }}" data-bs-toggle="tooltip" data-bs-placement="right">
                             <i class="fa-solid fa-list menu--icon"></i>
-                            <span class="menu--label">Registration Lists</span>
+                            <span class="menu--label">{{ __('messages.registration_lists') }}</span>
                         </a>
                     </li>
                     <!-- <li class="menu--item">
@@ -637,25 +675,25 @@ $is_session = session()->get('checkout_event');
                     <li class="menu--item">
                         <a href="{{ route('contact-lists') }}"
                             class="menu--link {{ url()->current() == route('contact-lists') ? 'active' : '' }}"
-                            title="Inbox" data-bs-toggle="tooltip" data-bs-placement="right">
+                            title="{{ __('messages.inbox_title') }}" data-bs-toggle="tooltip" data-bs-placement="right">
                             <i class="fa-solid fa-list-alt menu--icon"></i>
-                            <span class="menu--label">Inbox</span>
+                            <span class="menu--label">{{ __('messages.inbox_title') }}</span>
                         </a>
                     </li>
                     <li class="menu--item menu--item__has_sub_menu {{ request()->routeIs('front-sales-report') || request()->routeIs('front-orders') || request()->routeIs('front-order-details') || request()->routeIs('front-stripe-connect') ? 'menu--subitens__opened' : '' }}">
                         <a class="menu--link">
                             <i class="menu--icon fa fa-dollar"></i>
-                            <span class="menu--label">Financials</span>
+                            <span class="menu--label">{{ __('messages.financials') }}</span>
                         </a>
                         <ul class="sub_menu mt-0">
                             <li>
-                                <a href="{{ route('front-stripe-connect') }}" class="sub_menu--link {{ url()->current() == route('front-stripe-connect') ? 'active' : '' }}" title="Payment Setup" data-bs-toggle="tooltip" data-bs-placement="right">Stripe Connect</a>
+                                <a href="{{ route('front-stripe-connect') }}" class="sub_menu--link {{ url()->current() == route('front-stripe-connect') ? 'active' : '' }}" title="{{ __('messages.payment_setup') }}" data-bs-toggle="tooltip" data-bs-placement="right">{{ __('messages.stripe_connect') }}</a>
                             </li>
                             <li>
-                                <a href="{{ route('front-sales-report') }}" class="sub_menu--link {{ url()->current() == route('front-sales-report') ? 'active' : '' }}" title="Attendees & Bookings" data-bs-toggle="tooltip" data-bs-placement="right">Paid Tickets & Donations</a>
+                                <a href="{{ route('front-sales-report') }}" class="sub_menu--link {{ url()->current() == route('front-sales-report') ? 'active' : '' }}" title="{{ __('messages.attendees_bookings') }}" data-bs-toggle="tooltip" data-bs-placement="right">{{ __('messages.paid_tickets_donations') }}</a>
                             </li>
                             <li>
-                                <a href="{{ route('front-orders') }}" class="sub_menu--link {{ request()->routeIs('front-orders') || request()->routeIs('front-order-details') ? 'active' : '' }}" title="Revenue and Donation Summary" data-bs-toggle="tooltip" data-bs-placement="right">Orders</a>
+                                <a href="{{ route('front-orders') }}" class="sub_menu--link {{ request()->routeIs('front-orders') || request()->routeIs('front-order-details') ? 'active' : '' }}" title="{{ __('messages.revenue_donation_summary') }}" data-bs-toggle="tooltip" data-bs-placement="right">{{ __('messages.orders') }}</a>
 
                             </li>
                         </ul>
@@ -664,35 +702,35 @@ $is_session = session()->get('checkout_event');
                     <li class="menu--item">
                         <a href="{{ route('front-orders') }}"
                         class="menu--link {{ request()->routeIs('front-orders') || request()->routeIs('front-order-details') ? 'active' : '' }}"
-                        title="Orders" data-bs-toggle="tooltip" data-bs-placement="right">
+                        title="{{ __('messages.orders') }}" data-bs-toggle="tooltip" data-bs-placement="right">
                             <i class="fa-solid fa-shopping-cart menu--icon"></i>
-                            <span class="menu--label">Orders</span>
+                            <span class="menu--label">{{ __('messages.orders') }}</span>
                         </a>
                     </li>
                     @endif
 
                     <li class="menu--item">
-                        <a href="{{ route('front-embedded-widget') }}" class="menu--link {{ url()->current() == route('front-embedded-widget') ? 'active' : '' }}" title="Embedded Widget"
+                        <a href="{{ route('front-embedded-widget') }}" class="menu--link {{ url()->current() == route('front-embedded-widget') ? 'active' : '' }}" title="{{ __('messages.embedded_widget') }}"
                             data-bs-toggle="tooltip" data-bs-placement="right">
                             <i class="fa-solid fa-file-code menu--icon"></i>
-                            <span class="menu--label">Embedded Widget</span>
+                            <span class="menu--label">{{ __('messages.embedded_widget') }}</span>
                         </a>
                     </li>
 
                     <li class="menu--item">
-                        <a href="{{ route('front-embedded-widget-report') }}" class="menu--link {{ url()->current() == route('front-embedded-widget-report') ? 'active' : '' }}" title="Embedded Widget Report"
+                        <a href="{{ route('front-embedded-widget-report') }}" class="menu--link {{ url()->current() == route('front-embedded-widget-report') ? 'active' : '' }}" title="{{ __('messages.embedded_widget_report') }}"
                             data-bs-toggle="tooltip" data-bs-placement="right">
                             <i class="fa-solid fa-server menu--icon"></i>
-                            <span class="menu--label">Widget Report</span>
+                            <span class="menu--label">{{ __('messages.widget_report') }}</span>
                         </a>
                     </li>
                     <li class="menu--item">
-                        <a href="{{ route('front-release-notes') }}" class="menu--link {{ url()->current() == route('front-release-notes') ? 'active' : '' }}" title="Release Notes"
+                        <a href="{{ route('front-release-notes') }}" class="menu--link {{ url()->current() == route('front-release-notes') ? 'active' : '' }}" title="{{ __('messages.release_notes') }}"
                             data-bs-toggle="tooltip" data-bs-placement="right">
                             <i class="fa-solid fa-bullhorn menu--icon"></i>
-                            <span class="menu--label">Release Notes
+                            <span class="menu--label">{{ __('messages.release_notes') }}
                                 @if(!empty($hasNewReleaseNotes))
-                                    <span class="badge bg-danger ms-2">New</span>
+                                    <span class="badge bg-danger ms-2">{{ __('messages.new_badge') }}</span>
                                 @endif
                             </span>
                         </a>
@@ -714,10 +752,10 @@ $is_session = session()->get('checkout_event');
                 <div class="col-sm-5">
                     <div class="d-flex align-items-center justify-content-center gap-2">
                         <ul class="list-unstyled mb-0 d-flex gap-2">
-                            <li><a href="{{ config('app.frontsite') }}about/" class="text-decoration-none">About Us | </a></li>
-                            <li><a href="{{ config('app.frontsite') }}contact-us/" class="text-decoration-none"> Contact Us | </a></li>
-                            <li><a href="{{ config('app.frontsite') }}terms/" class="text-decoration-none"> Terms of Use | </a></li>
-                            <li><a href="#" class="text-decoration-none"> Privacy Policy</a></li>
+                            <li><a href="{{ config('app.frontsite') }}about/" class="text-decoration-none">{{ __('messages.footer_about') }} | </a></li>
+                            <li><a href="{{ config('app.frontsite') }}contact-us/" class="text-decoration-none"> {{ __('messages.footer_contact') }} | </a></li>
+                            <li><a href="{{ config('app.frontsite') }}terms/" class="text-decoration-none"> {{ __('messages.footer_terms') }} | </a></li>
+                            <li><a href="#" class="text-decoration-none"> {{ __('messages.footer_privacy') }}</a></li>
                         </ul>
                     </div>
                 </div>
@@ -741,18 +779,17 @@ $is_session = session()->get('checkout_event');
                     </div>
                 </div>
                 <div class="col-sm-4">
-                    <p class="text-center">Copyright © 2025 VolunteerCleanup.org</p>
+                    <p class="text-center">{{ __('messages.footer_copyright', ['year' => now()->year]) }}</p>
                 </div>
             </div>
             <div class="row">
                 <!-- Left Column -->
                 <div class="col-md-12 text-white">
                     <p class="mb-2 text-center">
-                        <strong>VolunteerCleanup.org</strong> mobilizes volunteers to clean neighborhoods, shorelines, and waterways,
-                        raising awareness of marine debris and reducing single-use plastics.
+                        {{ __('messages.brand_mission') }}
                     </p>
                     <p class="mb-0 text-center">
-                        A project of Miami Dade Coastal Cleanup, Inc. — a 501(c)(3) nonprofit (EIN 42-1766017)
+                        {{ __('messages.brand_legal') }}
                     </p>
                 </div>
             </div>

@@ -5,10 +5,22 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Traits\HelperTrait;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Lab404\Impersonate\Models\Impersonate;
 //use Illuminate\Database\Eloquent\SoftDeletes;
 class Volunteer extends Authenticatable
 {
-    use HasFactory, HelperTrait; //SoftDeletes
+    use HasFactory, HelperTrait, Impersonate; //SoftDeletes
+
+    public function canImpersonate(): bool
+    {
+        return false;
+    }
+
+    public function canBeImpersonated(): bool
+    {
+        return $this->status == 1;
+    }
+
     protected $guarded = ['id'];
     protected $hidden = [
         'password',

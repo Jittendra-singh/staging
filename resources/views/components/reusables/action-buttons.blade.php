@@ -21,6 +21,14 @@
             </a>
         @endif
     @endcan
+    @if($module == 'volunteers' && auth('web')->check() && (int) auth('web')->user()->role_id === 1 && isset($data) && $data->canBeImpersonated())
+        <form action="{{ route('admin.impersonate.take', ['user' => $data->id]) }}" method="POST" class="d-inline m-0">
+            @csrf
+            <button type="submit" class="btn btn-link p-0 text-primary" title="Impersonate Volunteer">
+                <i class="fs-5 mdi mdi-account-switch"></i>
+            </button>
+        </form>
+    @endif
     @can('delete', $module)
         <a data-id="{{ $id }}" data-module="{{ $deleteurl ??  $module }}" data-name="{{ $name }}"
             class="delete-record js-swal-confirm" href="javascript:void(0);">

@@ -1,24 +1,24 @@
 <?php
 use Illuminate\Support\Facades\Facade;
-define('ADMIN',1);
+defined('ADMIN') || define('ADMIN',1);
 // for frontend 
-define('SEND_MAIL',true);
-define('SUPPORT_EMAIL','outreach@volunteerCleanup.org');
-define('PARTNER_LOGIN_SMS','Hi, Contact No. {mobile}, your OTP to login is {otp} ');
-define('APPNAME','Volunteer Cleanup');
-define('APPNAMEEMAIL','VolunteerCleanup.Org Team');
+defined('SEND_MAIL') || define('SEND_MAIL',true);
+defined('SUPPORT_EMAIL') || define('SUPPORT_EMAIL','outreach@volunteerCleanup.org');
+defined('PARTNER_LOGIN_SMS') || define('PARTNER_LOGIN_SMS','Hi, Contact No. {mobile}, your OTP to login is {otp} ');
+defined('APPNAME') || define('APPNAME','Volunteer Cleanup');
+defined('APPNAMEEMAIL') || define('APPNAMEEMAIL','VolunteerCleanup.Org Team');
 // email subjects
-define('VOLUNTEER_REG_BY_BACKEND_SUB','Welcome, Eco Warrior ! Confirm Your Email to Dive In.');
-define('VOLUNTEER_REG_BY_FRONTEND_SUB','Welcome, Eco Warrior ! Confirm Your Email to Dive In.');
-define('FRONT_RESET_PASS_SUB','Reset Your Password');
-define('COHOST_INVITE_SUB','You\'re Invited to Co-Host an Event on '.APPNAME);
-define('COMM_SERVICE_FORM_SUB','Community Service Form');
-define('EVENT_SUMMARY_MAIL_SUB','You Did It! 🌍 Here\'s What We Achieved Together');
-define('CONTACT_ORG_MAIL_SUB','New Inquiry through VolunteerCleanup.Org website');
-define('EVENT_PUBLISH_MAIL_SUB','New Event Published on VolunteerCleanup.org – ');
-define('COMM_SERVICE_CONFIRMED_MAIL_SUB','New Inquiry through VolunteerCleanup.Org website');
-define('COMM_SERVICE_REQUEST_MAIL_SUB','Community Service Form Request');
-define('ACTIVATE_ACCOUNT_MAIL_SUB','Activate Your Account');
+defined('VOLUNTEER_REG_BY_BACKEND_SUB') || define('VOLUNTEER_REG_BY_BACKEND_SUB','Welcome, Eco Warrior ! Confirm Your Email to Dive In.');
+defined('VOLUNTEER_REG_BY_FRONTEND_SUB') || define('VOLUNTEER_REG_BY_FRONTEND_SUB','Welcome, Eco Warrior ! Confirm Your Email to Dive In.');
+defined('FRONT_RESET_PASS_SUB') || define('FRONT_RESET_PASS_SUB','Reset Your Password');
+defined('COHOST_INVITE_SUB') || define('COHOST_INVITE_SUB','You\'re Invited to Co-Host an Event on '.APPNAME);
+defined('COMM_SERVICE_FORM_SUB') || define('COMM_SERVICE_FORM_SUB','Community Service Form');
+defined('EVENT_SUMMARY_MAIL_SUB') || define('EVENT_SUMMARY_MAIL_SUB','You Did It! 🌍 Here\'s What We Achieved Together');
+defined('CONTACT_ORG_MAIL_SUB') || define('CONTACT_ORG_MAIL_SUB','New Inquiry through VolunteerCleanup.Org website');
+defined('EVENT_PUBLISH_MAIL_SUB') || define('EVENT_PUBLISH_MAIL_SUB','New Event Published on VolunteerCleanup.org – ');
+defined('COMM_SERVICE_CONFIRMED_MAIL_SUB') || define('COMM_SERVICE_CONFIRMED_MAIL_SUB','New Inquiry through VolunteerCleanup.Org website');
+defined('COMM_SERVICE_REQUEST_MAIL_SUB') || define('COMM_SERVICE_REQUEST_MAIL_SUB','Community Service Form Request');
+defined('ACTIVATE_ACCOUNT_MAIL_SUB') || define('ACTIVATE_ACCOUNT_MAIL_SUB','Activate Your Account');
 return [
     /*
     |--------------------------------------------------------------------------

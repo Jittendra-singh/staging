@@ -481,11 +481,11 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                     ]
                                 @endphp     
                             @else 
-                                <h3><i class="fa-solid fa-square-plus me-3 mb-3"></i>Post A New Cleanup</h3>
+                                <h3><i class="fa-solid fa-square-plus me-3 mb-3"></i>{{ __('messages.post_new_cleanup') }}</h3>
                                 @php
                                     $breadcrumbs = [
                                         [
-                                            'name' => 'Post A New Cleanup', 
+                                            'name' => __('messages.post_new_cleanup'),
                                             'url' => route('front-post-a-event')
                                         ],
                                     ]
@@ -582,7 +582,7 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                                         @foreach ($categories as $category)
                                                                             <option value="{{ $category->id }}"  data-default-banner="{{ $category->formattedDefaultBannerImg() }}"
                                                                                 @selected(old('event_category_id', $form_data->event_category_id ?? 0) == $category->id)>
-                                                                                {{ $category->name }}</option>
+                                                                                {{ $category->translated_name }}</option>
                                                                         @endforeach
                                                                     </select>
                                                                 </div>
@@ -1026,7 +1026,7 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                                                     <option value="{{ $tool->id }}"
                                                                                         @disabled(in_array($tool->id, $provided_tool_obj)) 
                                                                                         @selected(collect($bring_tool_obj)->contains($tool->id))>
-                                                                                        {{ $tool->name }}
+                                                                                        {{ $tool->translated_name }}
                                                                                     </option>
                                                                                 @endforeach
                                                                             </select>
@@ -1044,7 +1044,7 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                                                     <option value="{{ $tool->id }}"
                                                                                         @disabled(in_array($tool->id, $bring_tool_obj))
                                                                                         @selected(collect($provided_tool_obj)->contains($tool->id))>
-                                                                                        {{ $tool->name }}</option>
+                                                                                        {{ $tool->translated_name }}</option>
                                                                                 @endforeach
                                                                             </select>
                                                                         </div>
