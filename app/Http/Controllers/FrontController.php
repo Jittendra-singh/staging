@@ -738,7 +738,7 @@ class FrontController extends Controller
                         <h6 class="mt-3 mb-3"><span>Total to Attendee</h6span> <span class="float-end h5 text-primary">$<span name="pb_final_price_" id="pb_final_price" class="form-ele">'.$b_total.'</span></span></h6>
                         <p class="mb-3" style="color: #717171;font-style: italic;">Net to Organizer: $<span id="pb_net_org_price">'.$net_org_total.'</span> (after platform fee)</p>
                         <p style="color: #717171;font-style: italic;">Processing fees is estimated (~3% + $0.30) and may vary based on payment method and card type. Final amount is determined by Stripe.</p>
-                        <small style="color: #717171;font-style: italic;">Based on your last saved "Charge Bear By" setting in your Ticket Settings section.</small>
+                        <small style="color: #717171;font-style: italic;">Ticket totals are calculated based on your current fee settings. You can change who pays the processing fees in Ticket Settings.</small>
                     </div>
                 </div>
             </div>
@@ -1150,11 +1150,13 @@ class FrontController extends Controller
         if(!empty($start_datetime) && !empty($request->ticket_sell_end_time) && (strtotime(date('Y-m-d',strtotime($start_datetime))) < strtotime($request->ticket_sell_end_time)) ){
             return $this->generateJsonResponse(false, 'Ticket sell end date must be lower than or equal to event start date.');
         }
-
-        if($event->participation_type==1){
-            $hasSavedTickets = $event->eventTickets()->exists();
-            if (!$hasSavedTickets) {
-                return $this->generateJsonResponse(false, 'Please add at least one ticket type to the event, as you have selected VolunteerCleanup\'s Integrated Ticket System.');
+        
+        if (!$request->has('not_check_ticket_type')) {
+            if($event->participation_type==1){
+                $hasSavedTickets = $event->eventTickets()->exists();
+                if (!$hasSavedTickets) {
+                    return $this->generateJsonResponse(false, 'Please add at least one ticket type to the event, as you have selected VolunteerCleanup\'s Integrated Ticket System.');
+                }
             }
         }
 

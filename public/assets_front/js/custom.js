@@ -2732,6 +2732,46 @@ $(document).ready(function () {
 			}
 		});
 	});
+	$(document).on('click', '.show-alert-send-waiver-to-all', function () {
+		var control = this;
+		var message = $(control).attr('message');
+		var url = $(control).attr('url');
+		var urlRegistrationList = $(control).attr('url_registration_list');
+		var contentHtml = '<div class="alert-innter-ul p-4 text-center">'+
+                '<b class="text-center mb-2">Sends waiver emails only to volunteers whose waiver status is Unsigned (or not sent)</b>'+
+                '<small class="text-center mb-2 mt-3 d-block">Manage individual statuses, resend waivers to specific volunteers, and verify signatures directly in the Registration List.</small>'+
+				'<a href="' + urlRegistrationList + '">Review Attendees</a>'+
+            '</div>';
+		
+		Swal.fire({
+			title: "Sell to All",
+			//text: message,
+			html: contentHtml,
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonColor: '#3085d6',
+			cancelButtonColor: '#d33',
+			confirmButtonText: 'Yes'
+		}).then((willDelete) => {
+			if (willDelete.isConfirmed) {
+				$(control).attr('disabled', 'disabled');
+				$.ajax({
+					url: url,
+					method: 'POST',
+					data: {},
+					success: function (response) {
+						$(control).removeAttr('disabled');
+						if (response.status) {
+							showError(response.message, 'success');
+						}
+						else {
+							showError(response.message, 'error');
+						}
+					}
+				});
+			}
+		});
+	});
 	$(document).on('click', '.show-alert-run-url', function () {
 		var control = this;
 		var message = $(control).attr('message');

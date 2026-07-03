@@ -1380,7 +1380,10 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                                             </small>
                                                                         @endif
 
-                                                                        <!-- <button class="primary-btn w-fit trigger-go-to-next float-end mt-3" type="button">Save Ticket Settings</button> -->
+                                                                        <!-- <button class="primary-btn w-fit float-end mt-3" type="button">Save Ticket Settings</button> -->
+                                                                        <button class="primary-btn w-fit float-end mt-3 save-ticket-settings-only" type="button">
+                                                                            Save Ticket Settings
+                                                                        </button>
 
                                                                     </div>
                                                                 </div>
@@ -2479,6 +2482,77 @@ $(document).ready(function () {
 
     // Run once on page load to set the initial total
     calculateTotalVolunteers();
+
+
+    /* save to SAVE SETTING BUTTON */
+    $(document).on('click', '.save-ticket-settings-only', async function () {
+        const button = this;
+        const currentForm = button.closest('form');
+
+        if (!currentForm || button.classList.contains('processing')) {
+            return false;
+        }
+
+        const formData = new FormData(currentForm);
+
+        $('.ckeditor').each(function () {
+            const editor = $(this).data('ckeditorInstance');
+
+            if (editor) {
+                formData.set($(this).attr('name'), editor.getData());
+            }
+        });
+        formData.set('not_check_ticket_type', true);
+
+        try {
+            button.classList.add('processing');
+            button.disabled = true;
+            button.innerHTML = 'Saving...';
+
+            const response = await fetch(currentForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: { 'Accept': 'application/json' },
+            });
+
+            const res = await response.json();
+
+            if (!response.ok) {
+                throw new Error(res.message || 'Something went wrong.');
+            }
+
+            if (res.status) {
+                const data = res.data || {};
+
+                if (data.event_instance) {
+                    $('.event_instance').val(data.event_instance);
+                    history.pushState({}, '', `${frontbase}/post-an-event/${data.event_instance}`);
+                }
+
+                if (data.section_html) {
+                    for (const [key, value] of Object.entries(data.section_html)) {
+                        if (value) {
+                            document.querySelector(`.${key}`).innerHTML = value;
+                        }
+                    }
+                }
+
+                document.querySelectorAll('input[type="file"]').forEach(input => input.value = '');
+
+                showError(res.message || 'Ticket settings saved successfully.', 'success');
+            } else {
+                showError(res.message || 'Unable to save ticket settings.', 'error');
+            }
+        } catch (error) {
+            showError(error.message, 'error');
+        } finally {
+            button.classList.remove('processing');
+            button.disabled = false;
+            button.innerHTML = 'Save Ticket Settings';
+        }
+
+        return false;
+    });
 });
     </script>
 @endpush
