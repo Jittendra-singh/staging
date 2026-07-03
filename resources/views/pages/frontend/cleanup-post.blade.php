@@ -1097,15 +1097,24 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                                         </div>
                                                                     </div>
                                                                     <div class="col-md-12">
-                                                                        <div class="form-group mt-2">
-                                                                            <label class="form-label fs-6 d-flex align-items-center gap-2">
+                                                                        <div class="form-group mt-3">
+                                                                            <div class="d-flex align-items-start gap-2">
                                                                                 <input type="checkbox"
+                                                                                    class="mt-1 flex-shrink-0"
                                                                                     name="is_send_reminder_email"
                                                                                     value="1"
                                                                                     id="is_send_reminder_email"
                                                                                     @checked(old('is_send_reminder_email', $form_data->is_send_reminder_email ?? 1))>
-                                                                                Send Reminder Email to Volunteers
-                                                                            </label>
+
+                                                                                <label for="is_send_reminder_email" class="mb-0" style="cursor: pointer;">
+                                                                                    <span class="fw-semibold d-block">
+                                                                                        Send Reminder Email to Volunteers ( 2 Days before the Event )
+                                                                                    </span>
+                                                                                    <small class="text-muted">
+                                                                                        A reminder email will be sent 2 days before the event. It includes the event date & time, location, event details, your custom note, and a link to the event page.
+                                                                                    </small>
+                                                                                </label>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
 

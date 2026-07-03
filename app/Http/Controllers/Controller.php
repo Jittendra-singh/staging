@@ -109,7 +109,7 @@ class Controller extends BaseController
         curl_close($curl);
         return $response;
     }
-    public function mailUrl($slug,$param=null){
+    /* public function mailUrl($slug,$param=null){
         $checkUrl = route($slug,$param);
         if(strpos($checkUrl, 'volunteercleanup') !== false){
             $parsedUrl = parse_url($checkUrl);
@@ -122,6 +122,21 @@ class Controller extends BaseController
         }else{
             return $checkUrl;
         }
+    } */
+    public function mailUrl($slug, $param = null)
+    {
+        $checkUrl = route($slug, $param);
+
+        if (strpos($checkUrl, 'volunteercleanup') !== false) {
+            $parsedUrl = parse_url($checkUrl);
+
+            $remainingSlug = $parsedUrl['path'] ?? '';
+            $queryString = isset($parsedUrl['query']) ? '?' . $parsedUrl['query'] : '';
+
+            return rtrim(config('app.laravelurl'), '/') . $remainingSlug . $queryString;
+        }
+
+        return $checkUrl;
     }
     public function syncWithWP($volunteer,$tag=''){
         $url = config('app.wp_sync_url');
