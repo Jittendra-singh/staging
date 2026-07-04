@@ -658,6 +658,15 @@ class FrontController extends Controller
         {
             $allowPaidTickets = false;
         }
+        $showEarlyCloseWarning = false;
+        if (!empty($event->start_datetime) && !empty($sell_end_time)) {
+            $eventStartDate = Carbon::parse($event->start_datetime)->startOfDay();
+            $sellEndDate = Carbon::parse($sell_end_time)->startOfDay();
+
+            $showEarlyCloseWarning = $sellEndDate->lte($eventStartDate)
+                && $sellEndDate->diffInDays($eventStartDate) >= 2;
+        }
+
         $html = '
         <form method="post" id="ticketTypeForm" action="'.route('save-ticket-type').'">
         <div class="row mt-2 mb-3">
@@ -665,6 +674,7 @@ class FrontController extends Controller
             <input type="hidden" class="form-ele" name="ticket_id" value="'.$ticket_id.'">
             <input type="hidden" id="p_charge_bear_by" name="p_charge_bear_by" value="'.$charge_bear_by.'">
             <input type="hidden" id="p_fee_per" name="p_fee_per" value="'.$setting->event_commission.'">
+            <input type="hidden" class="ticket_event_start_date" value="'.(!empty($event->start_datetime) ? Carbon::parse($event->start_datetime)->format('Y-m-d') : '').'">
             <div class="col-md-8">
                 <div class="form-group">
                     <div class="row mb-2">
@@ -695,6 +705,16 @@ class FrontController extends Controller
                     <div class="col-sm-6 mt-3">
                         <label for="max_qty_allowed_per_order">Max Tickets Per Order*</label>
                         <input type="number" oninput="this.value = this.value.replace(/[^0-9]/g, \'\')" name="max_qty_allowed_per_order" value="'.$max_qty_allowed_per_order.'" class="form-control form-ele mt-1" min="1" required="">
+                    </div>
+                    <div class="col-sm-12 mt-3 ticket-early-close-warning" style="'.($showEarlyCloseWarning ? '' : 'display:none;').'">
+                        <div class="ticket-early-close-box">
+                            <span class="ticket-early-close-icon">
+                                <i class="fa fa-info"></i>
+                            </span>
+                            <div>
+                                <p>You\'ve chosen to close ticket sales more than 2 days before the event. Please verify this date to avoid closing registrations earlier than intended.</p>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-sm-6 mt-3">
                         <label for="ticket_sell_start_time">Sell Start Date*</label>

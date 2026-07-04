@@ -456,6 +456,40 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
     color: #6c757d;
     font-size: 12px;
 }
+
+
+
+/* modal changes */
+.ticket-early-close-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    border-left: 4px solid #4aa3ee;
+    background: #edf5ff;
+    color: #1f3f67;
+    padding: 14px 16px;
+    border-radius: 4px;
+}
+
+.ticket-early-close-icon {
+    width: 20px;
+    min-width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    border-radius: 50%;
+    background: #3d8fe0;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+}
+
+.ticket-early-close-box p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+}
 </style>
 @endpush
 @section('content')

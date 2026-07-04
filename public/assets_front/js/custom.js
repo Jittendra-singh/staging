@@ -3450,7 +3450,43 @@ function select2ajaxFunc(in_modal = '') {
 		keywordsList.css({ 'height': 'auto' }).height();
 	}); */
 }
+function parseDateOnlyValue(value) {
+	if (!value) {
+		return null;
+	}
 
+	var match = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+	if (!match) {
+		return null;
+	}
+
+	return new Date(parseInt(match[1], 10), parseInt(match[2], 10) - 1, parseInt(match[3], 10));
+}
+
+function toggleTicketEarlyCloseWarning() {
+	var $modalBody = $('#manage-ticket-popup-body');
+	var eventStartValue = $modalBody.find('.ticket_event_start_date').val() || $('#start_datetime').val();
+	var sellEndValue = $modalBody.find('.tk_sell_end_date').val();
+
+	var eventStartDate = parseDateOnlyValue(eventStartValue);
+	var sellEndDate = parseDateOnlyValue(sellEndValue);
+
+	if (!eventStartDate || !sellEndDate) {
+		$modalBody.find('.ticket-early-close-warning').hide();
+		return;
+	}
+
+	var diffDays = Math.floor((eventStartDate - sellEndDate) / (1000 * 60 * 60 * 24));
+
+	if (diffDays >= 2) {
+		$modalBody.find('.ticket-early-close-warning').show();
+	} else {
+		$modalBody.find('.ticket-early-close-warning').hide();
+	}
+}
+$(document).on('input change', '#start_datetime, #manage-ticket-popup-body .tk_sell_end_date', function () {
+	toggleTicketEarlyCloseWarning();
+});
 function callSellStartEndDatePicker() {
 	$('.tk_sell_start_date').datetimepicker({
 		scrollMonth: false,
@@ -3502,7 +3538,13 @@ function callSellStartEndDatePicker() {
 				maxDate: maxDateForSellDate ? maxDateForSellDate : false
 			})
 		},
+		onChangeDateTime: function () {
+			setTimeout(function () {
+				toggleTicketEarlyCloseWarning();
+			}, 50);
+		},
 	});
+	toggleTicketEarlyCloseWarning();
 }
 function fieldmasking() {
 	if ($('.decimalonly').length != 0) {
