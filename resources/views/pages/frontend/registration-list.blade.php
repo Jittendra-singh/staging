@@ -230,13 +230,6 @@
 												$formateddate = new DateTime($registration->waiver_filled_at);
 												$registration->waiver_filled_at_formated = $formateddate->format('d M, Y g:iA');
 											}
-											$resendWaiverLogs = $registration->resendWaiverLogs()->latest('created_at')->get()->map(function($log) {
-												return [
-													'type' => $log->link_send_type == 1 ? 'Original Email' : 'Alternative Email',
-													'email' => $log->link_send_to_email,
-													'send_at' => $log->createdDateTime,
-												];
-											});
 
 										@endphp
 										<div class="main-card mt-4">
@@ -294,7 +287,7 @@
 															</a>
 															<a href="javascript:void(0);"
 																class="dropdown-item btn-resend-waiver-logs-modal"
-																data-logs='@json($resendWaiverLogs)'
+																data-url="{{ route('front-resend-waiver-logs', ['ticket' => encrypt($registration->id)]) }}"
 																data-bs-toggle="modal"
 																data-bs-target="#resendWaiverLogsModal">
 																<i class="fa-solid fa-clock-rotate-left me-3"></i>Resend Waiver Logs
@@ -377,7 +370,10 @@
 															<span class="badge custom-badge-danger">Unsigned</span> 
 															<a href="{{ route('view-waiver-form', ['ticket' => encrypt($registration->id)]) }}" data-bs-toggle="tooltip" data-bs-original-title="Waiver Page Link" target="_blank"><span class="badge custom-badge-warning"><i class="fa fa-external-link"></i></span></a><br/>
 															<!-- <button class="btn btn-sm btn-outline-primary mt-2 btn-resend-waiver border-radius-30" url="{{ route('resend-waiver', ['ticket' => encrypt($registration->id)]) }}">Resend</button> -->
+															 
+															@if($registration->rsvp_confirmation===1)
 															<button class="btn btn-sm btn-outline-primary mt-2 border-radius-30 btn-resend-waiver-modal" defaultemail="{{ $registration->is_under_18==1?$registration->waiver_handler_email:$registration->volunteer->email_address }}" url="{{ route('resend-waiver', ['ticket' => encrypt($registration->id)]) }}" checkurl="{{ route('check-resend-waiver', ['ticket' => encrypt($registration->id)]) }}">Resend</button>
+															@endif
 															@endif 
 														</h6>
 													</div>	
@@ -929,6 +925,69 @@
 			});
 
 			$(window).on('resize', setManualWaiverUploadMode);
+		</script>
+		<script>
+
+			function renderResendWaiverLogs(logs) {
+				const $tbody = $('#resendWaiverLogsTableBody');
+				const $empty = $('.resend-waiver-log-empty');
+				const $tableWrap = $('.resend-waiver-log-table-wrap');
+
+				$tbody.empty();
+
+				if (!logs || logs.length === 0) {
+					$empty.show();
+					$tableWrap.hide();
+					return;
+				}
+
+				$empty.hide();
+				$tableWrap.show();
+
+				logs.forEach(function (log) {
+					$tbody.append(`
+						<tr>
+							<td><span class="resend-waiver-log-type">${escapeHtml(log.type)}</span></td>
+							<td>${escapeHtml(log.email)}</td>
+							<td>${escapeHtml(log.send_at)}</td>
+						</tr>
+					`);
+				});
+			}
+
+			$('.btn-resend-waiver-logs-modal').click(function () {
+				const url = $(this).data('url');
+
+				$('.resend-waiver-log-empty').hide();
+				$('.resend-waiver-log-table-wrap').show();
+				$('#resendWaiverLogsTableBody').html(`
+					<tr>
+						<td colspan="3" class="text-center text-muted py-3">Loading logs...</td>
+					</tr>
+				`);
+
+				$.ajax({
+					url: url,
+					type: 'GET',
+					success: function (response) {
+						if (response.status === true || response.success === true) {
+							const logs = response.data && response.data.logs ? response.data.logs : [];
+							renderResendWaiverLogs(logs);
+						} else {
+							renderResendWaiverLogs([]);
+						}
+					},
+					error: function () {
+						$('#resendWaiverLogsTableBody').html(`
+							<tr>
+								<td colspan="3" class="text-center text-danger py-3">Unable to fetch logs.</td>
+							</tr>
+						`);
+						$('.resend-waiver-log-empty').hide();
+						$('.resend-waiver-log-table-wrap').show();
+					}
+				});
+			});
 		</script>
 	@endpush
 	@push('style')

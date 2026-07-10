@@ -2247,8 +2247,7 @@ $(document).ready(function () {
 								showError(response.message, 'success');
 								$(control).after('<h6 class="coupon-status"><span class="badge custom-badge-warning">Requested</span></h6>');
 								$(control).remove();
-							}
-							else {
+							} else {
 								showError(response.message, 'error');
 							}
 						}
@@ -3052,7 +3051,7 @@ $(document).ready(function () {
 			}
 		});
 	});
-	$(document).on('click', '.btn-resend-waiver-logs-modal', function () {
+	/* $(document).on('click', '.btn-resend-waiver-logs-modal', function () {
 		var logs = $(this).data('logs');
 
 		if (typeof logs === 'string') {
@@ -3084,13 +3083,13 @@ $(document).ready(function () {
 			$('.resend-waiver-log-table-wrap').hide();
 			$('.resend-waiver-log-empty').show();
 		}
-	});
+	}); */
 
 
 	fieldmasking();
 });
 function escapeHtml(value) {
-	return $('<div>').text(value).html();
+	return $('<div>').text(value || '').html();
 }
 function selectResendOption(n) {
 	$('#resend_waiver_type1, #resend_waiver_type2').prop('checked', false);

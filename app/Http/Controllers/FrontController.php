@@ -2376,6 +2376,42 @@ class FrontController extends Controller
                                                         'events' => $organising_events , 
                                                     ]);
     }
+    public function resendWaiverLogs($ticket)
+    {
+        try {
+            $registration = EventOrderTicket::find(decrypt($ticket));
+
+            if (!$registration) {
+                return $this->generateJsonResponse(false, 'Registration not found.');
+            }
+
+            $organisingEventIds = auth()->guard('front')->user()
+                ->allControlEvents()
+                ->pluck('id');
+
+            if (!$organisingEventIds->contains($registration->event_id)) {
+                return $this->generateJsonResponse(false, 'Unauthorized action.');
+            }
+
+            $logs = $registration->resendWaiverLogs()
+                ->latest('created_at')
+                ->get()
+                ->map(function ($log) {
+                    return [
+                        'type' => $log->link_send_type == 1 ? 'Original Email' : 'Alternative Email',
+                        'email' => $log->link_send_to_email,
+                        'send_at' => $log->createdDateTime,
+                    ];
+                })
+                ->values();
+
+            return $this->generateJsonResponse(true, 'Logs fetched successfully.', [
+                'logs' => $logs,
+            ]);
+        } catch (\Exception $e) {
+            return $this->generateJsonResponse(false, 'Unable to fetch resend waiver logs.');
+        }
+    }
     public function requestCommunityForm($ticket){
         $orderTicket = EventOrderTicket::findOrFail(decrypt($ticket));
         if (!isset($orderTicket->id)) {

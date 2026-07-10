@@ -208,6 +208,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::post('disconnect-stripe-connect', 'disconnectStripeConnect')->name('front-disconnect-stripe-connect');
         Route::get('sales-report', 'salesReport')->name('front-sales-report');
         Route::get('registration-list', 'registrationList')->name('front-registration-list');
+        Route::get('registration-list/resend-waiver-logs/{ticket}', 'resendWaiverLogs')->name('front-resend-waiver-logs');
         Route::post('post-registration-notes', 'postRegistrationNotes')->name('front-post-registration-notes');
         Route::get('export-registration', 'exportRegistration')->name('front-export-registration');
         Route::post('ticket-mark-checkin/{id}', 'ticketMarkCheckin')->name('ticket-mark-checkin');

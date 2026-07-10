@@ -284,7 +284,8 @@ class Controller extends BaseController
             $content = @$object?->choices[0]?->message?->content;
             return $content;
         }
-        throw new PlanException( 405 , "AI is not giving any response rightnow." );
+        //throw new PlanException( 405 , "AI is not giving any response rightnow." );
+        throw new \Exception("AI is not giving any response right now.", 405);
     }
     public function getGoogleCoordinates($address){
         try{
