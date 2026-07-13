@@ -1010,6 +1010,7 @@ class FrontController extends Controller
             //}
 
         }
+        $lockEventAfterEnd = $isUpdating && !empty($eventObj->end_datetime) && Carbon::parse($eventObj->end_datetime)->lt(now());
         if(request()->participation_type==4){
             if(empty(request()->participation_type_external_link)){
                 return $this->generateJsonResponse(false, 'Please enter external link.');
@@ -1035,7 +1036,24 @@ class FrontController extends Controller
                             'participation_type' => 'required',
                             'participation_type_external_link' => 'nullable',
                         ]);
-        
+        if ($lockEventAfterEnd) {
+            foreach ([
+                'start_datetime',
+                'end_datetime',
+                'site_publish_date',
+                'site_depublish_date',
+                'event_timezone',
+                'country_id',
+                'venue',
+                'pincode',
+                'latitude',
+                'longitude',
+                'participation_type',
+                'participation_type_external_link',
+            ] as $lockedField) {
+                unset($validatedObj[$lockedField]);
+            }
+        }
         $eventObj->fill($validatedObj);
         $eventObj->is_private = $request->has('is_private') ? 1 : 0;
         $eventObj->allow_community_service_form = $validatedObj['allow_community_service_form'] ?? 0;
