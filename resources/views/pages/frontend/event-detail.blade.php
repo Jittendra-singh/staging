@@ -315,6 +315,9 @@ $icalStrData = getiCalData($event);
                         if($event->participation_type!=1){
                             $totalTicketCount = 0;
                         }
+                        if(!empty($event->cancelled_at)){
+                            $totalTicketCount = 0;
+                        }
                         @endphp 
                         <!-- if($event->sellTicketBooking() && $event->eventTickets->count() > 0) -->
                         @if($totalTicketCount > 0)
@@ -454,6 +457,14 @@ $icalStrData = getiCalData($event);
                                 </div>
                             </div>
                         </form>
+                        <hr />
+                        @elseif(!empty($event->cancelled_at))
+                            <div class="">
+                                <div class="pricing-section">
+                                    <h3>Ticket Information</h3>
+                                    <i style="font-style: italic;">This event has been cancelled. Registration is closed.</i>
+                                </div>
+                            </div>
                         <hr />
                         @elseif($event->participation_type==1 && !$isEventEnded)
                             @php 

@@ -4401,11 +4401,15 @@ class FrontController extends Controller
             abort(404, 'Event not found.');
         }
         if($event->is_completed==1){
-            $this->setFlashSession(false, 'Completed events cannot be cancelled.');
+            $this->setFlashSession(false, 'This event has already been completed and can no longer be cancelled.');
             return redirect()->back();
         }
         if(strtotime($event->end_datetime) < strtotime(now())){
-            $this->setFlashSession(false, 'Event cannot be cancelled after it has ended.');
+            $this->setFlashSession(false, 'This event has already ended and can no longer be cancelled. Please complete the event and submit the Cleanup Report.');
+            return redirect()->back();
+        }
+        if(strtotime($event->start_datetime) < strtotime(now())){
+            $this->setFlashSession(false, 'This event has already started and can no longer be cancelled. Please complete the event and submit the Cleanup Report once it ends.');
             return redirect()->back();
         }
         $event->update([

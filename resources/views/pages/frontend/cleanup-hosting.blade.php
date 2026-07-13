@@ -230,8 +230,12 @@ a[disabled]{
                                     $eventStatusClass = strtolower($event->runningStatus);
                                     $now = \Carbon\Carbon::now();
                                     $canCancelEvent = auth()->guard('front')->user()->id == $event->creator_id
+                                    && $event->is_completed != 1
+                                    && !empty($event->start_datetime)
+                                    && $event->start_datetime->gt($now);
+                                    /* $canCancelEvent = auth()->guard('front')->user()->id == $event->creator_id
                                         && $event->is_completed != 1
-                                        && (!empty($event->end_datetime) ? $event->end_datetime->gte($now) : true);
+                                        && (!empty($event->end_datetime) ? $event->end_datetime->gte($now) : true); */
                                     if($event->end_datetime && \Carbon\Carbon::parse($event->end_datetime)->lt($now) && $event->is_completed != 1)
                                     {
                                         $eventStatusClass = 'action_required';
@@ -256,7 +260,7 @@ a[disabled]{
                                                     <p class="mb-2">{{ $event->fullAddress }}</p>
                                                     @if(!empty($event->cancelled_at))
                                                     <h6 class="coupon-status">
-                                                        <span data-bs-toggle="tooltip" data-bs-original-title="This event has been cancelled at {{ date(config('app.dateTimeFormat'),strtotime($event->cancelled_at)) }}" class="badge custom-badge-danger 1">Not Cancelled</span>
+                                                        <span data-bs-toggle="tooltip" data-bs-original-title="This event has been cancelled at {{ date(config('app.dateTimeFormat'),strtotime($event->cancelled_at)) }}" class="badge custom-badge-danger 1">Cancelled</span>
                                                     </h6>
                                                     @endif
                                                     @if($event->is_active!=1)
@@ -316,7 +320,7 @@ a[disabled]{
                                                         <i class="fa-solid fa-envelope me-3"></i> Check-in All
                                                     </a> -->
                                                     @endif
-                                                    @if($canCancelEvent)
+                                                    @if(true) <!-- canCancelEvent -->
                                                     <a class="dropdown-item btn-cancel-event" data-url="" href="javascript:void(0);" reschedule-url="{{ route('front-reschedule-event', ['id' => $event->encrypted_id]) }}" cancel-url="{{ route('front-cancel-event', ['id' => $event->encrypted_id]) }}">
                                                         <i class="fa-solid fa-ban me-3"></i>Cancel Event
                                                     </a>

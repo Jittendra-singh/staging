@@ -25,6 +25,8 @@ if(isset($form_data->id)){
         ->count();
 }
 $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
+$lockEventAfterEnd = $is_updating && $is_event_end;
+$eventEndedLockMsg = 'This field cannot be changed because the event end date has passed.';
 @endphp 
 @push('style')
 <link rel="stylesheet" href="{{ asset('assets/libs/datetimepicker/jquery.datetimepicker.min.css') }} ">
@@ -490,6 +492,34 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
     font-size: 14px;
     line-height: 1.5;
 }
+
+
+/* lock field for event passed */
+.locked-event-ended-control {
+    opacity: .65;
+}
+
+.locked-event-ended-control input,
+.locked-event-ended-control select,
+.locked-event-ended-control textarea,
+.locked-event-ended-control .btn-switch,
+.locked-event-ended-control .fee-option,
+.locked-event-ended-control button {
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.locked-event-ended-control .fee-card {
+    background: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+.locked-event-ended-note {
+    display: block;
+    margin-top: 6px;
+    color: #6c757d;
+    font-size: 12px;
+}
 </style>
 @endpush
 @section('content')
@@ -657,7 +687,12 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                                     Date, Time & Location*
                                                                 </h4>
                                                             </div>
-                                                            <div class="p-4 bp-form main-form">
+                                                            <div class="p-4 bp-form main-form {{ $lockEventAfterEnd ? 'locked-event-ended-control' : '' }}">
+                                                                @if($lockEventAfterEnd)
+                                                                    <small class="locked-event-ended-note mb-3">
+                                                                        {{ $eventEndedLockMsg }}
+                                                                    </small>
+                                                                @endif
                                                                 <div class="row g-4">
                                                                     @php 
                                                                     $longerThanOneWeek = false;
@@ -680,14 +715,14 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                                     <div class="col-md-6">
                                                                         <label class="form-label  fs-6">Start Date Time*</label>
                                                                         <div class="loc-group position-relative">
-                                                                            <input autocomplete="off" class="form-control h_50 datepicker-here-pp" id="start_datetime" data-language="en" name="start_datetime" type="text" placeholder="YYYY/MM/DD" value="{{ !empty($sDate)?date('Y-m-d, H:i',strtotime($sDate)):'' }}" required />
+                                                                            <input autocomplete="off" class="form-control h_50 datepicker-here-pp" id="start_datetime" data-language="en" name="start_datetime" @readonly($lockEventAfterEnd) type="text" placeholder="YYYY/MM/DD" value="{{ !empty($sDate)?date('Y-m-d, H:i',strtotime($sDate)):'' }}" required />
                                                                             <span class="absolute-icon"><i class="fa-solid fa-calendar-days"></i></span>
                                                                         </div>
                                                                     </div>
                                                                     <div class="col-md-6">
                                                                         <label class="form-label fs-6">End Date Time*</label>
                                                                         <div class="loc-group position-relative">
-                                                                            <input autocomplete="off" name="end_datetime"
+                                                                            <input autocomplete="off" name="end_datetime" @readonly($lockEventAfterEnd)
                                                                                 class="form-control h_50 datepicker-here-pp" id="end_datetime" data-language="en" type="text"
                                                                                 placeholder="YYYY/MM/DD"
                                                                                 value="{{!empty($eDate)?date('Y-m-d, H:i',strtotime($eDate)):''}}" required />
@@ -705,7 +740,7 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                                                 <input autocomplete="off"
                                                                                     class="form-control h_50 datepicker-here-pp"
                                                                                     data-language="en"
-                                                                                    name="site_publish_date" id="site_publish_date" type="text"
+                                                                                    name="site_publish_date" @readonly($lockEventAfterEnd) id="site_publish_date" type="text"
                                                                                     placeholder="YYYY/MM/DD"
                                                                                     value="{{ old('site_publish_date', $form_data->site_publish_date ?? date('Y-m-d')) }}" required />
                                                                                 <span class="absolute-icon">
@@ -716,7 +751,7 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                                         <div class="col-md-6">
                                                                             <label class="form-label fs-6">Event Page Expiry Date*</label>
                                                                             <div class="loc-group position-relative">
-                                                                                <input autocomplete="off" name="site_depublish_date"
+                                                                                <input autocomplete="off" name="site_depublish_date" @readonly($lockEventAfterEnd)
                                                                                     class="form-control h_50 datepicker-here-pp" id="site_depublish_date"
                                                                                     data-language="en" type="text"
                                                                                     placeholder="YYYY/MM/DD"
@@ -768,7 +803,7 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                                     <div class="row g-4">
                                                                         <div class="col-md-6">
                                                                             <label class="form-label fs-6">Event Address or Venue Name*</label>
-                                                                            <input class="form-control h_50" name="venue" id="venue" type="text" placeholder="Enter here" value="{{ old('venue', $form_data->venue ?? '') }}" required />
+                                                                            <input class="form-control h_50" name="venue" @readonly($lockEventAfterEnd) id="venue" type="text" placeholder="Enter here" value="{{ old('venue', $form_data->venue ?? '') }}" required />
                                                                             <input type="hidden" id="latitude" name="latitude" value="{{ old('latitude', $form_data->latitude ?? '') }}">
                                                                             <input type="hidden" id="longitude" name="longitude" value="{{ old('longitude', $form_data->longitude ?? '') }}">
                                                                             <div id="results"></div>
@@ -777,7 +812,7 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                                             <label class="form-label fs-6">Zip
                                                                                 Code*</label>
                                                                             <input class="form-control h_50"
-                                                                                name="pincode" id="pincode" type="text"
+                                                                                name="pincode" @readonly($lockEventAfterEnd) id="pincode" type="text"
                                                                                 placeholder="Enter here"
                                                                                 value="{{ old('pincode', $form_data->pincode ?? '') }}" required />
                                                                         </div>
@@ -786,7 +821,7 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                                 <div class="col-md-12">
                                                                     <div class="form-group mt-2">
                                                                         <label class="private-event d-flex mt-4">
-                                                                            <input type="checkbox" name="is_private"
+                                                                            <input type="checkbox" name="is_private" @readonly($lockEventAfterEnd)
                                                                                 value="1"
                                                                                 @checked(old('is_private', $form_data->is_private ?? false))>
                                                                             <span class="ms-2">This is a private
@@ -809,7 +844,12 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                             </div>
                                                             <div class="p-4 bp-form main-form">
                                                                 <div class="content-holder row  ">
-                                                                    <div class="setting-item col-sm-12">
+                                                                    <div class="setting-item col-sm-12  {{ $lockEventAfterEnd ? 'locked-event-ended-control' : '' }}">
+                                                                        @if($lockEventAfterEnd)
+                                                                            <small class="locked-event-ended-note mb-3">
+                                                                                Volunteer registration options cannot be changed because the event end date has passed.
+                                                                            </small>
+                                                                        @endif
                                                                         <!-- <div class="d-flex align-items-start">
                                                                             <div class="d-flex flex-column">
                                                                                 <label class="color-black fw-bold mb-3">Who will bear the Stripe processing charges and platform fees for paid tickets?</label>
@@ -886,7 +926,7 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                                                         </div>
                                                                                     </label>
                                                                                     <input class="form-control h_50 urlmask mt-2" style="{{ old('participation_type', $form_data->participation_type ?? 1) == 4 ? 'display: block;' : 'display: none;' }}"
-                                                                                        name="participation_type_external_link" id="participation_type_external_link" type="url"
+                                                                                        name="participation_type_external_link" @readonly($lockEventAfterEnd) id="participation_type_external_link" type="url"
                                                                                         placeholder="Enter external link here"
                                                                                         value="{{ old('participation_type_external_link', $form_data->participation_type_external_link ?? '') }}" />
                                                                                 </div>
@@ -1187,7 +1227,9 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                         <h4 class="px-0 mb-0">
                                                             <i class="fa-solid fa-ticket step_icon me-3"></i>Ticket Types
                                                         </h4>
+                                                        @if(!$lockEventAfterEnd)
                                                         <button type="button" onclick="openTicketTypePopup(this);" url="{{ route('manage-ticket-type-html') }}" class="primary-btn w-auto" >Add Ticket Type</button>
+                                                        @endif
                                                     </div>
                                                     @if(!(!empty(auth()->guard('front')->user()->stripe_email) && !empty(auth()->guard('front')->user()->stripe_account_id)))
                                                     <div class="alert alert-warning" role="alert">
@@ -1197,6 +1239,11 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                     @endif
 
                                                     <div class="custom-ticket-container">
+                                                        @if($lockEventAfterEnd)
+                                                            <small class="locked-event-ended-note mb-3">
+                                                                Ticket types cannot be changed and added because the event end date has passed.
+                                                            </small>
+                                                        @endif
                                                         <div class="accordion mb-4 ticket-container ticket-container-section" id="accordionExample">
                                                             <table class="table">
                                                                 <tr>
@@ -1222,13 +1269,24 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                                             <div class="form-group">
                                                                                 <div class="d-flex align-items-start">
                                                                                     <label class="btn-switch m-0 me-3">
-                                                                                        <input value="1" name="event_ticket_status_toggle" type="checkbox" {{ isset($ticket->is_active)?($ticket->is_active==1 ? 'checked' : ''):'checked' }}  class="event_ticket_status_toggle" data-url="{{route('update-ticket-status',encrypt($ticket->id))}}">
+                                                                                        <input value="1" name="event_ticket_status_toggle" {{ $lockEventAfterEnd ? 'disabled aria-disabled=true tabindex=-1' : '' }} type="checkbox" {{ isset($ticket->is_active)?($ticket->is_active==1 ? 'checked' : ''):'checked' }}  class="event_ticket_status_toggle" data-url="{{route('update-ticket-status',encrypt($ticket->id))}}">
                                                                                         <span class="checkbox-slider"></span>
                                                                                     </label>
                                                                                 </div>
                                                                             </div>
                                                                         </td>
-                                                                        <td><button onclick="openTicketTypePopup(this);" url="{{ route('manage-ticket-type-html', ['id'=>encrypt($ticket->id)]) }}" type="button" class="btn btn-primary btn-sm"><i class="fa-solid fa-pen"></i></button></td>
+                                                                        <!-- <td><button onclick="openTicketTypePopup(this);" url="{{ route('manage-ticket-type-html', ['id'=>encrypt($ticket->id)]) }}" type="button" class="btn btn-primary btn-sm"><i class="fa-solid fa-pen"></i></button></td> -->
+                                                                        <td>
+                                                                            @if($lockEventAfterEnd)
+                                                                                <button type="button" class="btn btn-secondary btn-sm" disabled title="Ticket types cannot be edited because the event end date has passed.">
+                                                                                    <i class="fa-solid fa-lock"></i>
+                                                                                </button>
+                                                                            @else
+                                                                                <button onclick="openTicketTypePopup(this);" url="{{ route('manage-ticket-type-html', ['id'=>encrypt($ticket->id)]) }}" type="button" class="btn btn-primary btn-sm">
+                                                                                    <i class="fa-solid fa-pen"></i>
+                                                                                </button>
+                                                                            @endif
+                                                                        </td>
                                                                     </tr>
                                                                 @endforeach
                                                                 @else 
@@ -1241,7 +1299,7 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                     </div>
 
                                                 </div>
-                                                <div class="main-card p-4 mt-4" id="ticket_settings_section">
+                                                <div class="main-card p-4 mt-4 {{ $lockEventAfterEnd ? 'locked-event-ended-control' : '' }}" id="ticket_settings_section">
                                                     <div
                                                         class="bp-title d-flex align-items-center justify-content-between">
                                                         <h4 class="px-0 mb-0">
@@ -1267,6 +1325,11 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                         </div>
                                                     </div> -->
                                                     <div class="row mb-4">
+                                                        @if($lockEventAfterEnd)
+                                                            <small class="locked-event-ended-note">
+                                                                Ticket settings cannot be changed because the event end date has passed.
+                                                            </small>
+                                                        @endif
                                                         <div class="form-group">
                                                             <div class="ticket-section">
                                                                 <label class="form-label fs-16 mt-3">CHECKOUT & REGISTRATION</label>
@@ -1424,10 +1487,11 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                                         @endif
 
                                                                         <!-- <button class="primary-btn w-fit float-end mt-3" type="button">Save Ticket Settings</button> -->
+                                                                         @if(!$lockEventAfterEnd)
                                                                         <button class="primary-btn w-fit float-end mt-3 save-ticket-settings-only" type="button">
                                                                             Save Ticket Settings
                                                                         </button>
-
+                                                                        @endif
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -1514,7 +1578,7 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                         </div>
                                                     </div> -->
                                                 </div>
-                                                <div class="main-card p-4 mt-4">
+                                                <div class="main-card p-4 mt-4 {{ $lockEventAfterEnd ? 'locked-event-ended-control' : '' }}">
                                                     <div
                                                         class="bp-title mb-4 d-flex align-items-center justify-content-between">
                                                         <h4 class="px-0 mb-0">
@@ -1523,6 +1587,11 @@ $lockRefundAndFees = $is_updating && $totalRegisteredAttendeesCount > 0;
                                                     </div>
 
                                                     <div class="waiver-container-section">
+                                                        @if($lockEventAfterEnd)
+                                                            <small class="locked-event-ended-note">
+                                                                Waiver settings cannot be changed because the event end date has passed.
+                                                            </small>
+                                                        @endif
                                                         @php
                                                             $waiver_form_type = old('waiver_form_type', $form_data->waiver_form_type ?? null);
                                                             $waiver_form_content = old('waiver_form_content', $form_data->waiver_form_content ?? null);
