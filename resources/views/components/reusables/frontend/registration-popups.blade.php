@@ -127,7 +127,7 @@
                                     <div class="col-md-3 fw-semibold text-muted">Ticket Price :</div>
                                     <div class="col-md-9">{{config('app.currency')}}<span class="registration-ticket-subtotal"></span></div>
                                 </div>
-                                <div class="row mb-2">
+                                <div class="row mb-2 ticket_question_div">
                                     <div class="col-md-3 fw-semibold text-muted "><span class="ticket_questions"></span> :</div>
                                     <div class="col-md-9 ticket_answer"></div>
                                 </div>

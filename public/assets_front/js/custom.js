@@ -768,7 +768,12 @@ function populateOrderDetails(targetButton) {
 	}
 	if (event) {
 		$('#registrationDetails .registration-event-name').text(event.event_name);
-		$('#registrationDetails .ticket_questions').text(event.ticket_questions ? event.ticket_questions.replace(/<([^>]+)>/ig, '') : '');
+		if(event.ticket_questions && event.ticket_questions.replace(/<([^>]+)>/ig, '')!=''){
+			$('.ticket_question_div').show();
+			$('#registrationDetails .ticket_questions').text(event.ticket_questions ? event.ticket_questions.replace(/<([^>]+)>/ig, '') : '');
+		} else {
+			$('.ticket_question_div').hide();
+		}
 		event.waiver_form_type != null ? $('#registrationDetails .waiver-div').show() : $('#registrationDetails .waiver-div').hide();
 	}
 	if (ticket) {
