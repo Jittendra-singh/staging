@@ -17,6 +17,9 @@ a[disabled]{
 </style>
 @endpush
 @section('content')
+    @php
+        $activeTab = $active_tab ?? request('tabs', 'upcoming');
+    @endphp
     <div class="wrapper wrapper-body">
         <div class="dashboard-body">
             <div class="container-fluid">
@@ -57,7 +60,7 @@ a[disabled]{
                         <div class="main-card mt-5">
                             <div class="dashboard-wrap-content p-4">
                                 <div class="d-md-flex flex-wrap align-items-center">
-                                    <div class="dashboard-date-wrap col-sm-6 rs">
+                                    <div class="dashboard-date-wrap col-sm-5 rs">
                                         <div class="btn-group" role="group">
                                             <a href="{{ route('front-cleanup-hosting', ['type' => 'organizer']) }}"
                                                 class="btn btn-outline-primary px-3 py-2 {{ request()->segment(2)!='cohost'?'active text-white':'' }} ">
@@ -79,9 +82,9 @@ a[disabled]{
                                             @endif
                                         </h5> -->
                                     </div>
-                                    <div class="rs mt_r4 col-sm-6 ps-3 text-end">
+                                    <div class="rs mt_r4 col-sm-7 ps-3 text-end">
                                         <div class="btn-group" role="group">
-                                            <a href="javascript:void(0);" onclick="showHostingEvent('upcoming',this)" hosting-event-val="upcoming"
+                                            <!-- <a href="javascript:void(0);" onclick="showHostingEvent('upcoming',this)" hosting-event-val="upcoming"
                                                 class="btn btn-outline-primary px-3 py-2 {{ request('tabs', 'upcoming') == 'upcoming' ? 'active text-white' : '' }}">
                                                 Upcoming 
                                             </a>
@@ -94,6 +97,30 @@ a[disabled]{
                                                 Completed 
                                             </a>
                                             <a href="javascript:void(0);" onclick="showHostingEvent('action_required',this)" hosting-event-val="action_required"
+                                                class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'action_required' ? 'active text-white' : '' }}">
+                                                Action Required
+                                            </a> -->
+                                            <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'upcoming', 'start_date_sort' => request('start_date_sort', 'desc')]) }}"
+                                                class="btn btn-outline-primary px-3 py-2 {{ request('tabs', 'upcoming') == 'upcoming' ? 'active text-white' : '' }}">
+                                                Upcoming
+                                            </a>
+
+                                            <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'ongoing', 'start_date_sort' => request('start_date_sort', 'desc')]) }}"
+                                                class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'ongoing' ? 'active text-white' : '' }}">
+                                                In-Progress
+                                            </a>
+
+                                            <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'ended', 'start_date_sort' => request('start_date_sort', 'desc')]) }}"
+                                                class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'ended' ? 'active text-white' : '' }}">
+                                                Completed
+                                            </a>
+
+                                            <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'cancelled', 'start_date_sort' => request('start_date_sort', 'desc')]) }}"
+                                                class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'cancelled' ? 'active text-white' : '' }}">
+                                                Cancelled
+                                            </a>
+
+                                            <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'action_required', 'start_date_sort' => request('start_date_sort', 'desc')]) }}"
                                                 class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'action_required' ? 'active text-white' : '' }}">
                                                 Action Required
                                             </a>
@@ -164,7 +191,7 @@ a[disabled]{
                         </div>
                     	<x-reusables.frontend.alert />
                         <div class="event-list">
-                            <div class="main-card mt-2 event-row-ongoing-not-found" style="display:none;">
+                            <div class="main-card mt-2 event-row-ongoing-not-found" style="{{ $hosting_events->isEmpty() && $activeTab == 'ongoing' ? '' : 'display:none;' }}">
                                 <div class="contact-list">
                                     <div class="card-top event-top p-4 align-items-center top d-flex flex-wrap justify-content-center">
                                         <div class="text-center py-4">
@@ -180,7 +207,7 @@ a[disabled]{
                                     </div>
                                 </div>
                             </div>
-                            <div class="main-card mt-2 event-row-upcoming-not-found" style="display:none;">
+                            <div class="main-card mt-2 event-row-upcoming-not-found" style="{{ $hosting_events->isEmpty() && $activeTab == 'upcoming' ? '' : 'display:none;' }}">
                                 <div class="contact-list">
                                     <div class="card-top event-top p-4 align-items-center top d-flex flex-wrap justify-content-center">
                                         <div class="text-center py-4">
@@ -196,7 +223,7 @@ a[disabled]{
                                     </div>
                                 </div>
                             </div>
-                            <div class="main-card mt-2 event-row-ended-not-found" style="display:none;">
+                            <div class="main-card mt-2 event-row-ended-not-found" style="{{ $hosting_events->isEmpty() && $activeTab == 'ended' ? '' : 'display:none;' }}">
                                 <div class="contact-list">
                                     <div class="card-top event-top p-4 align-items-center top d-flex flex-wrap justify-content-center">
                                         <div class="text-center py-4">
@@ -212,7 +239,21 @@ a[disabled]{
                                     </div>
                                 </div>
                             </div>
-                            <div class="main-card mt-2 event-row-action_required-not-found" style="display:none;">
+                            <div class="main-card mt-2 event-row-cancelled-not-found"
+                                style="{{ $hosting_events->isEmpty() && $activeTab == 'cancelled' ? '' : 'display:none;' }}">
+                                <div class="contact-list">
+                                    <div class="card-top event-top p-4 align-items-center top d-flex flex-wrap justify-content-center">
+                                        <div class="text-center py-4">
+                                            <div class="empty-icon-wrap mx-auto mb-3">
+                                                <i class="fa-regular fa-image fa-2x text-muted"></i>
+                                            </div>
+                                            <h5 class="fw-semibold mb-2">No cleanup found</h5>
+                                            <p class="text-muted small mb-3">You don't have any cancelled cleanups.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="main-card mt-2 event-row-action_required-not-found" style="{{ $hosting_events->isEmpty() && $activeTab == 'action_required' ? '' : 'display:none;' }}">
                                 <div class="contact-list">
                                     <div class="card-top event-top p-4 align-items-center top d-flex flex-wrap justify-content-center">
                                         <div class="text-center py-4">
@@ -227,7 +268,8 @@ a[disabled]{
                             </div>
                             @foreach ($hosting_events as $event)
                                 @php 
-                                    $eventStatusClass = strtolower($event->runningStatus);
+                                    //$eventStatusClass = strtolower($event->runningStatus);
+                                    $eventStatusClass = !empty($event->cancelled_at) ? 'cancelled' : strtolower($event->runningStatus);
                                     $now = \Carbon\Carbon::now();
                                     $canCancelEvent = auth()->guard('front')->user()->id == $event->creator_id
                                     && $event->is_completed != 1
@@ -236,8 +278,7 @@ a[disabled]{
                                     /* $canCancelEvent = auth()->guard('front')->user()->id == $event->creator_id
                                         && $event->is_completed != 1
                                         && (!empty($event->end_datetime) ? $event->end_datetime->gte($now) : true); */
-                                    if($event->end_datetime && \Carbon\Carbon::parse($event->end_datetime)->lt($now) && $event->is_completed != 1)
-                                    {
+                                    if(empty($event->cancelled_at) && $event->end_datetime && \Carbon\Carbon::parse($event->end_datetime)->lt($now) && $event->is_completed != 1){
                                         $eventStatusClass = 'action_required';
                                     }
                                     $approvedCohostCount = $event->cohostRecords->where('request_status', 'approved')->count();
@@ -451,9 +492,11 @@ a[disabled]{
                                 </div>
                             @endforeach
                         </div>
+                        @if ($hosting_events->hasPages())
                         <div class="mt-2">
                             {{ $hosting_events->links() }}
                         </div>
+                        @endif
                     </div>
                 </div>
             </div>

@@ -1972,8 +1972,8 @@ $(document).ready(function () {
     		$('#tabsInput').val(tab);
 		});
 
-		var val = $('[hosting-event-val].active').attr('hosting-event-val');
-		showHostingEvent(val);
+		/* var val = $('[hosting-event-val].active').attr('hosting-event-val');
+		showHostingEvent(val); */
 	}
 	$('.select-all-ticket-checkbox').change(function () {
 		if ($(this).prop('checked')) {
@@ -3319,11 +3319,16 @@ function showHostingEvent(type, control = null) {
 	$('.event-row-ended').hide();
 	$('.event-row-ongoing').hide();
 	$('.event-row-action_required').hide();
+	$('.event-row-cancelled').hide();
 	$('.event-row-' + type).show();
 	$('.event-row-ended-not-found').hide();
 	$('.event-row-upcoming-not-found').hide();
 	$('.event-row-ongoing-not-found').hide();
 	$('.event-row-action_required-not-found').hide();
+	$('.event-row-cancelled-not-found').hide();
+	if (type == 'cancelled' && !$('.event-row-cancelled').length > 0) {
+		$('.event-row-cancelled-not-found').show();
+	}
 	if (type == 'ended' && !$('.event-row-ended').length > 0) {
 		$('.event-row-ended-not-found').show();
 	}

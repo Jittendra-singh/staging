@@ -255,7 +255,7 @@ class FrontController extends Controller
             'seo_details'      => (object)['title' => 'Attending Events'] ,
         ]);
     }
-    public function cleanupHosting($type)
+    public function cleanupHostingOLD($type)
     {
         if(auth()->guard('front')->user()->is_organiser == 0){
             $this->setFlashSession(false , 'Please organizer atleast 1 event to view this page.');
@@ -286,6 +286,77 @@ class FrontController extends Controller
             'seo_details' => (object)['title' => 'Cleanups I\'m Hosting'],
         ]);
     }
+    public function cleanupHosting($type = 'organizer')
+    {
+        if (auth()->guard('front')->user()->is_organiser == 0) {
+            $this->setFlashSession(false, 'Please organizer atleast 1 event to view this page.');
+            return redirect()->route('front-dashboard');
+        }
+
+        $user = auth()->guard('front')->user();
+
+        if ($type == 'cohost') {
+            $hosting_events_builder = $user->cohostingEvents();
+        } else {
+            $hosting_events_builder = $user->events();
+        }
+        
+        $cohostEventCount = $user->cohostingEvents()->count();
+        $hostingEventCount = $user->events()->count();
+
+        $startDateSort = request('start_date_sort', 'desc');
+        if (!in_array($startDateSort, ['asc', 'desc'])) {
+            $startDateSort = 'desc';
+        }
+
+        $tab = request('tabs', 'upcoming');
+        if (!in_array($tab, ['upcoming', 'ongoing', 'ended', 'cancelled', 'action_required'])) {
+            $tab = 'upcoming';
+        }
+
+        $now = now();
+
+        $hosting_events_builder
+            ->with(['category', 'cohostRecords'])
+            ->when($tab != 'cancelled', function ($q) {
+                $q->whereNull('cancelled_at');
+            })
+            ->when($tab == 'upcoming', function ($q) use ($now) {
+                $q->where('start_datetime', '>', $now);
+            })
+            ->when($tab == 'ongoing', function ($q) use ($now) {
+                $q->where('start_datetime', '<=', $now)
+                ->where('end_datetime', '>=', $now);
+            })
+            ->when($tab == 'ended', function ($q) use ($now) {
+                $q->where('end_datetime', '<', $now)
+                ->where('is_completed', 1);
+            })
+            ->when($tab == 'cancelled', function ($q) {
+                $q->whereNotNull('cancelled_at');
+            })
+            ->when($tab == 'action_required', function ($q) use ($now) {
+                $q->where('end_datetime', '<', $now)
+                ->where(function ($subQ) {
+                    $subQ->whereNull('is_completed')
+                        ->orWhere('is_completed', '!=', 1);
+                });
+            });
+
+        $hosting_events = $hosting_events_builder
+            ->orderBy('start_datetime', $startDateSort)
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('pages.frontend.cleanup-hosting', [
+            'cohost_event_count' => $cohostEventCount,
+            'hosting_event_count' => $hostingEventCount,
+            'hosting_events' => $hosting_events,
+            'active_tab' => $tab,
+            'seo_details' => (object)['title' => 'Cleanups I\'m Hosting'],
+        ]);
+    }
+
     public function cleanupOngoing()
     {
         $user = auth()->guard('front')->user();
