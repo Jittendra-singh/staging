@@ -101,6 +101,10 @@
                                     <div class="col-md-3 fw-semibold text-muted">Event :</div>
                                     <div class="col-md-9 registration-event-name"></div>
                                 </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-3 fw-semibold text-muted">Under 18 :</div>
+                                    <div class="col-md-9 registration-is-under-18">-</div>
+                                </div>
                             </div>
                         </div>
                         <div class="row mb-2">

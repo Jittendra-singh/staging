@@ -161,7 +161,7 @@
 																data-order='@json($data_order)' data-volunteer='@json($data_volunteer)'
 																data-registration='@json($data_registration)'  >
 																<i class="fa-solid fa-gear me-3"></i>Ticket Details
-															</a>				
+															</a>
 															@if(!empty($event->waiver_form_type) && !$registration->is_under_18 && $registration->rsvp_confirmation!==0 && $event->is_active==1)	
 															<a class="dropdown-item" target="_blank" href="{{route('view-waiver-form', ['ticket' => encrypt($registration->id)])}}"><i class="fa-solid fa-link me-3"></i>
 																@if(!empty($registration->waiver_filled_at))

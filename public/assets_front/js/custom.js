@@ -782,8 +782,10 @@ function populateOrderDetails(targetButton) {
 		//$('#registrationDetails .waiver_filled_at').text(registration.waiver_filled_at ? registration.waiver_filled_at_formated : 'Pending');
 		//$('#registrationDetails .waiver_handled_by').text(registration.waiver_handler_email != '' ? registration.waiver_handler_name + ' (' + registration.waiver_handler_email + ')' : '');
 		$('#registrationDetails .waiver_filled_at').text(registration.waiver_filled_at ? registration.waiver_filled_at_formated : '-');
+		$('.registration-is-under-18').text('No');
 		if (registration.is_under_18 == 1) {
 			ticketUserName = registration.waiver_handler_name + ' (' + registration.waiver_handler_email + ')';
+			$('.registration-is-under-18').text('Yes');
 		}
 		$('#registrationDetails .waiver_handled_by').text(registration.waiver_filled_at ? ticketUserName : 'Not signed yet');
 	}
