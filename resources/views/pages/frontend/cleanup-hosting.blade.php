@@ -361,7 +361,7 @@ a[disabled]{
                                                         <i class="fa-solid fa-envelope me-3"></i> Check-in All
                                                     </a> -->
                                                     @endif
-                                                    @if(true) <!-- canCancelEvent -->
+                                                    @if(empty($event->cancelled_at)) <!-- canCancelEvent -->
                                                     <a class="dropdown-item btn-cancel-event" data-url="" href="javascript:void(0);" reschedule-url="{{ route('front-reschedule-event', ['id' => $event->encrypted_id]) }}" cancel-url="{{ route('front-cancel-event', ['id' => $event->encrypted_id]) }}">
                                                         <i class="fa-solid fa-ban me-3"></i>Cancel Event
                                                     </a>
