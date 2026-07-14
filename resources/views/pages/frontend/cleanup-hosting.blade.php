@@ -2,7 +2,7 @@
 @push('style')
 <style>
 .contact-list .bottom .icon-box{
-    width: 20%;
+    width: 15%;
 }
 .link-deactive{
     color: grey!important;
@@ -13,6 +13,9 @@ a[disabled]{
 }
 .border-default,.border-default:hover{
     border:1px solid var(--bs-body-color);
+}
+.cancelled-count{
+    font-size: 10px;
 }
 </style>
 @endpush
@@ -110,6 +113,11 @@ a[disabled]{
                                                 In-Progress
                                             </a>
 
+                                            <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'action_required', 'start_date_sort' => request('start_date_sort', 'desc')]) }}"
+                                                class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'action_required' ? 'active text-white' : '' }}">
+                                                Action Required
+                                            </a>
+
                                             <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'ended', 'start_date_sort' => request('start_date_sort', 'desc')]) }}"
                                                 class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'ended' ? 'active text-white' : '' }}">
                                                 Completed
@@ -118,11 +126,6 @@ a[disabled]{
                                             <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'cancelled', 'start_date_sort' => request('start_date_sort', 'desc')]) }}"
                                                 class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'cancelled' ? 'active text-white' : '' }}">
                                                 Cancelled
-                                            </a>
-
-                                            <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'action_required', 'start_date_sort' => request('start_date_sort', 'desc')]) }}"
-                                                class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'action_required' ? 'active text-white' : '' }}">
-                                                Action Required
                                             </a>
                                         </div>
                                         <!-- <div class="btn-group" role="group">
@@ -409,6 +412,13 @@ a[disabled]{
                                                 </span>
                                                 <p><!-- <i class="fa-solid fa-check-square me-1"></i> -->Check-In</p>
                                                 <h6 class="coupon-status">{{$event->tickets()->active()->where('checkin',1)->count()}} / {{$event->tickets()->active()->count()}}</h6>
+                                            </div>
+                                            <div class="icon-box ">
+                                                <span class="icon">
+                                                    <i class="fa-solid fa-user-times"></i>
+                                                </span>
+                                                <p><!-- <i class="fa-solid fa-check-square me-1"></i> -->Cancelled</p>
+                                                <h6 class="coupon-status"><span class="badge custom-badge-danger cancelled-count">{{$event->tickets()->where('checkin',0)->count()}}</span></h6>
                                             </div>
                                             <div class="icon-box ">
                                                 <span class="icon">
