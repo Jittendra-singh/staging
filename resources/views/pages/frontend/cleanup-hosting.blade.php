@@ -343,7 +343,10 @@ a[disabled]{
                                                     <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step3'])}}" class="dropdown-item"> <i class="fa-solid fa-user-plus me-3"></i>Manage Co-Host</a>
                                                     <a target="_blank" href="{{route('front-registration-list', ['event' => $event->id])}}" class="dropdown-item">
                                                     <i class="fa-solid fa-eye me-3"></i>Manage Registrations / Check-ins</a>
+                                                    
+                                                    @if(empty($event->cancelled_at))
                                                     <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step5'])}}" class="dropdown-item"> <i class="fa-solid fa-bar-chart me-3"></i>Event Cleanup Report</a>
+                                                    @endif
                                                     @if(!empty($event->slug))
                                                     <a href="{{route('front-duplicate-an-event', ['slug' => $event->slug])}}" class="dropdown-item">
                                                         <i class="fa-solid fa-clone me-3"></i>Duplicate Event
@@ -364,7 +367,7 @@ a[disabled]{
                                                         <i class="fa-solid fa-envelope me-3"></i> Check-in All
                                                     </a> -->
                                                     @endif
-                                                    @if(empty($event->cancelled_at)) <!-- canCancelEvent -->
+                                                    @if(empty($event->cancelled_at) && $event->is_completed!=1) <!-- canCancelEvent -->
                                                     <a class="dropdown-item btn-cancel-event" data-url="" href="javascript:void(0);" reschedule-url="{{ route('front-reschedule-event', ['id' => $event->encrypted_id]) }}" cancel-url="{{ route('front-cancel-event', ['id' => $event->encrypted_id]) }}">
                                                         <i class="fa-solid fa-ban me-3"></i>Cancel Event
                                                     </a>
@@ -413,6 +416,7 @@ a[disabled]{
                                                 <p><!-- <i class="fa-solid fa-check-square me-1"></i> -->Check-In</p>
                                                 <h6 class="coupon-status">{{$event->tickets()->active()->where('checkin',1)->count()}} / {{$event->tickets()->active()->count()}}</h6>
                                             </div>
+                                            @if($event->tickets()->where('checkin',0)->count()>0)
                                             <div class="icon-box ">
                                                 <span class="icon">
                                                     <i class="fa-solid fa-user-times"></i>
@@ -420,6 +424,7 @@ a[disabled]{
                                                 <p><!-- <i class="fa-solid fa-check-square me-1"></i> -->Cancelled</p>
                                                 <h6 class="coupon-status"><span class="badge custom-badge-danger cancelled-count">{{$event->tickets()->where('checkin',0)->count()}}</span></h6>
                                             </div>
+                                            @endif
                                             <div class="icon-box ">
                                                 <span class="icon">
                                                     <i class="fa-solid fa-handshake"></i>
@@ -475,6 +480,7 @@ a[disabled]{
                                                 </div>
                                             </div> -->
                                         </div>
+                                        @if(empty($event->cancelled_at))
                                         <div class="bottom d-flex flex-wrap justify-content-end align-items-center p-4">
                                             <div class="icon-box me-auto">
                                                 <span class="icon">
@@ -498,6 +504,7 @@ a[disabled]{
                                             <a class="primary-btn w-fit" href="{{route('front-reschedule-event', ['id' => $event->encrypted_id])}}" {{ ($event->is_completed==1 || $event->is_active!=1)?'disabled':'' }}>Reschedule</a>
                                             <a class="sign-up-btn text-white w-fit ms-3" href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step5'])}}" {{ ($eventStatusClass!='action_required' || $event->is_active!=1)?'disabled':'' }}>Submit Wrap-Up Report</a>
                                         </div>
+                                        @endif
                                     </div>
                                 </div>
                             @endforeach
