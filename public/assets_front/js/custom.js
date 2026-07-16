@@ -2744,20 +2744,20 @@ $(document).ready(function () {
 		var url = $(control).attr('url');
 		var urlRegistrationList = $(control).attr('url_registration_list');
 		var contentHtml = '<div class="alert-innter-ul p-4 text-center">'+
-                '<b class="text-center mb-2">Sends waiver emails only to volunteers whose waiver status is Unsigned (or not sent)</b>'+
-                '<small class="text-center mb-2 mt-3 d-block">Manage individual statuses, resend waivers to specific volunteers, and verify signatures directly in the Registration List.</small>'+
+                '<b class="text-center mb-2">This will send waiver emails to all volunteers whose waiver status is Unsigned or Not Sent.</b>'+
+                '<small class="text-center mb-2 mt-3 d-block">If you\'d prefer to review individual waiver statuses, resend waivers to specific volunteers, or verify signatures first, click</small>'+
 				'<a href="' + urlRegistrationList + '">Review Attendees</a>'+
             '</div>';
 		
 		Swal.fire({
-			title: "Sell to All",
+			title: "Send to All",
 			//text: message,
 			html: contentHtml,
 			icon: "warning",
 			showCancelButton: true,
 			confirmButtonColor: '#3085d6',
 			cancelButtonColor: '#d33',
-			confirmButtonText: 'Yes'
+			confirmButtonText: 'Send Waivers'
 		}).then((willDelete) => {
 			if (willDelete.isConfirmed) {
 				$(control).attr('disabled', 'disabled');

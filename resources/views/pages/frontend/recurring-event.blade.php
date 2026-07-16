@@ -135,6 +135,16 @@
 
                         <div class="recurring-event-content" style="{{ $i === 1 ? '' : 'display: none;' }}">
                             <div class="row g-4 main-form">
+                                <div class="col-12">
+                                    <label class="form-label fs-6">Event Name*</label>
+                                    <input
+                                        type="text"
+                                        name="recurrences[{{ $i }}][event_name]"
+                                        class="form-control h_50"
+                                        value="{{ old("recurrences.$i.event_name", $event->event_name) }}"
+                                        required
+                                    >
+                                </div>
                                 <div class="col-md-6">
                                     <label class="form-label fs-6">Start Date Time*</label>
                                     <div class="loc-group position-relative">

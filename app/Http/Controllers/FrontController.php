@@ -229,7 +229,6 @@ class FrontController extends Controller
             'seo_details' => (object)['title' => 'Release Notes'],
         ]);
     }
-
     public function cleanupAttending(){
         //$attending_events = auth()->guard('front')->user()->attendingEvents()
         $attending_events = auth()->guard('front')->user()->attendingEventsWithoutActive()
@@ -838,6 +837,77 @@ class FrontController extends Controller
         ';
         return $this->generateJsonResponse(true, '', $html);
     }
+    public function cleanupDetail($id)
+    {
+        $authUser = auth()->guard('front')->user();
+        $eventId = decrypt($id);
+
+        $eventObj = Event::with([
+                'creator',
+                'category',
+                'country',
+                'eventTickets.soldTickets',
+                'tags',
+                'volunteertags',
+                'bringTools',
+                'providedTools',
+                'cohostRecords.volunteer',
+                'cohostRecords.permissions',
+                'wrapup_email_sender',
+                'orders',
+            ])
+            ->where(function ($query) use ($authUser) {
+                $query->where('creator_id', $authUser->id)
+                    ->orWhereHas('cohostRecords', function ($cohostQuery) use ($authUser) {
+                        $cohostQuery
+                            ->where('volunteer_id', $authUser->id)
+                            ->where('request_status', 'approved');
+                    });
+            })
+            ->findOrFail($eventId);
+
+        $registeredCount = $eventObj->tickets()
+            ->where('rsvp_confirmation', 1)
+            ->count();
+
+        $checkedInCount = $eventObj->tickets()
+            ->where('rsvp_confirmation', 1)
+            ->where('checkin', 1)
+            ->count();
+
+        $waiverSignedCount = $eventObj->tickets()
+            ->where('rsvp_confirmation', 1)
+            ->whereNotNull('waiver_filled_at')
+            ->count();
+
+        $cancelledCount = $eventObj->tickets()
+            ->where('rsvp_confirmation', 0)
+            ->count();
+
+        $donationAmount = (float) $eventObj->orders()
+            ->sum('donation_amount');
+
+        $registeredFromOtherSites =
+            (int) ($eventObj->volunteer_registered_from_other_sites ?? 0);
+
+        return view('pages.frontend.cleanup-detail', [
+            'form_data' => $eventObj,
+
+            'statistics' => [
+                'registered' => $registeredCount,
+                'checked_in' => $checkedInCount,
+                'waivers' => $waiverSignedCount,
+                'cancelled' => $cancelledCount,
+                'donations' => $donationAmount,
+                'other_sites' => $registeredFromOtherSites,
+                'total_volunteers' => $registeredCount + $registeredFromOtherSites,
+            ],
+
+            'seo_details' => (object) [
+                'title' => 'Cleanup Details: '.$eventObj->event_name,
+            ],
+        ]);
+    }
     public function postEvent($id = null){
         $eventObj = $id ? Event::findOrFail(decrypt($id)) : null ;
         $setting = Setting::first();
@@ -987,6 +1057,7 @@ class FrontController extends Controller
 
         $validated = request()->validate([
             'recurrences' => 'required|array|min:1|max:52',
+            'recurrences.*.event_name' => 'required|string',
             'recurrences.*.start_datetime' => 'required|date',
             'recurrences.*.end_datetime' => 'required|date|after:recurrences.*.start_datetime',
             'recurrences.*.site_publish_date' => 'required|date',
@@ -1001,8 +1072,13 @@ class FrontController extends Controller
 
             foreach ($validated['recurrences'] as $index => $recurrence) {
                 $newEvent = $parentEvent->replicate();
-                $newEvent->event_name = $parentEvent->event_name;
-                $newEvent->slug = $this->generateSlug(Event::class, 'slug', $parentEvent->slug ?: $parentEvent->event_name, 0);
+                $newEvent->event_name = trim($recurrence['event_name']);
+                $newEvent->slug = $this->generateSlug(
+                    Event::class,
+                    'slug',
+                    $newEvent->event_name,
+                    0
+                );
                 $newEvent->creator_id = auth()->guard('front')->user()->id;
                 $newEvent->status = 'draft';
                 $newEvent->cancelled_at = null;
@@ -4290,7 +4366,7 @@ class FrontController extends Controller
         }
         $tickets = $event->tickets()->where('rsvp_confirmation', 1)->whereNotNull('waiver_filled_at')->where('checkin',0)->get();
         if($tickets->count() == 0){
-            return $this->generateJsonResponse(false, 'No waiver-signed volunteers found to mark as checked-in.');
+            return $this->generateJsonResponse(false, 'No eligible volunteers found. Volunteers must sign their waiver before they can be checked in.');
         }
         if($tickets->isNotEmpty()){
             $to_arr = [];

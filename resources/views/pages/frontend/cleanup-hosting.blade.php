@@ -296,11 +296,7 @@ a[disabled]{
                                                     <img src="{{ $event->formattedBanner() }}" alt="{{ $event->event_name }}">
                                                 </div>
                                                 <div class="card-event-dt">
-                                                     @if($event->isDetailActive() && !empty($event->slug))
-                                                        <a href="{{route('view-event-details', ['slug' => $event->slug])}}" target="_BLANK"><h5 class="m-0">{{ $event->event_name }}</h5></a>
-                                                    @else 
-                                                        <h5 class="m-0">{{ $event->event_name }}</h5>
-                                                    @endif
+                                                    <a href="{{route('front-cleanup-detail', ['id' => $event->encrypted_id])}}" target="_BLANK"><h5 class="m-0">{{ $event->event_name }}</h5></a>
                                                     <p class="mb-2">{{ $event->fullAddress }}</p>
                                                     @if(!empty($event->cancelled_at))
                                                     <h6 class="coupon-status">
@@ -328,7 +324,9 @@ a[disabled]{
                                                     <i class="fa-solid fa-ellipsis-vertical"></i></button>
                                                 <div class="dropdown-menu dropdown-menu-right">
                                                     <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id])}}" class="dropdown-item">
-                                                        <i class="fa-solid fa-gear me-3"></i>Edit</a>
+                                                        <i class="fa-solid fa-gear me-3"></i>Edit Event</a>
+                                                    <a href="{{route('front-cleanup-detail', ['id'=> $event->encrypted_id])}}" class="dropdown-item">
+                                                        <i class="fa-solid fa-clipboard-list me-3"></i>View Event Detail</a>
                                                     @if($event->isDetailActive() && !empty($event->slug))
                                                         <a href="{{route('view-event-details', ['slug' => $event->slug])}}" target="_BLANK" class="dropdown-item">
                                                         <i class="fa-solid fa-eye me-3"></i>View Event Page</a>
@@ -345,7 +343,7 @@ a[disabled]{
                                                     <i class="fa-solid fa-eye me-3"></i>Manage Registrations / Check-ins</a>
                                                     
                                                     @if(empty($event->cancelled_at))
-                                                    <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step5'])}}" class="dropdown-item"> <i class="fa-solid fa-bar-chart me-3"></i>Event Cleanup Report</a>
+                                                    <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step5'])}}" class="dropdown-item"> <i class="fa-solid fa-bar-chart me-3"></i>Manage Event Cleanup Report</a>
                                                     @endif
                                                     @if(!empty($event->slug))
                                                     <a href="{{route('front-duplicate-an-event', ['slug' => $event->slug])}}" class="dropdown-item">
@@ -356,7 +354,7 @@ a[disabled]{
                                                     <a href="javascript:void(0);" class="dropdown-item recurring-event-btn"
                                                     data-action="{{ route('front-recurring-event-setup', ['event' => $event->encrypted_id]) }}"
                                                     data-bs-toggle="modal" data-bs-target="#recurringEventModal">
-                                                        <i class="fa-solid fa-repeat me-3"></i>Recurring Events
+                                                        <i class="fa-solid fa-repeat me-3"></i>Create Recurring Events 
                                                     </a>
                                                     @endif
                                                     @if($event->is_completed!=1)
@@ -381,7 +379,7 @@ a[disabled]{
                                                     </a> -->
                                                     @if(auth()->guard('front')->user()->id==$event->creator_id)
                                                     <a class="dropdown-item delete-record" data-url="{{route('front-cleanup-hosting-delete', ['id'=> $event->id])}}">
-                                                        <i class="fa-solid fa-trash-can me-3"></i>Delete
+                                                        <i class="fa-solid fa-trash-can me-3"></i>Delete Event 
                                                     </a>
                                                     @endif
                                                 </div>
