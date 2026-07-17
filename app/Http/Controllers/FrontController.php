@@ -910,6 +910,22 @@ class FrontController extends Controller
     }
     public function postEvent($id = null){
         $eventObj = $id ? Event::findOrFail(decrypt($id)) : null ;
+
+        if(isset($eventObj->id) && !empty($eventObj->id)){
+            if(!empty($eventObj->cancelled_at)){
+                $this->setFlashSession(false, 'Cancelled event can not be edited.');
+                return redirect()->back();
+            }
+            if($eventObj->is_completed==1){
+                $this->setFlashSession(false, 'Completed event can not be edited.');
+                return redirect()->back();
+            }
+            if(strtotime($eventObj->start_datetime) < strtotime(date('Y-m-d H:i:s'))){
+                $this->setFlashSession(false, 'Only upcoming events can be edited.');
+                return redirect()->back();
+            }
+        }
+        
         $setting = Setting::first();
         $open_tab = request()->has('open_tab') ? request()->open_tab : '' ;
         return view('pages.frontend.cleanup-post', [

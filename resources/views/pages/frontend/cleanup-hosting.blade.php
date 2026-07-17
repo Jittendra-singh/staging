@@ -286,6 +286,7 @@ a[disabled]{
                                     }
                                     $approvedCohostCount = $event->cohostRecords->where('request_status', 'approved')->count();
                                     $totalCohostCount = $event->cohostRecords->count();
+                                    
                                 @endphp 
                                 <div class="main-card mt-2 event-row-{{$eventStatusClass}}">
                                     <div class="contact-list">
@@ -296,7 +297,12 @@ a[disabled]{
                                                     <img src="{{ $event->formattedBanner() }}" alt="{{ $event->event_name }}">
                                                 </div>
                                                 <div class="card-event-dt">
-                                                    <a href="{{route('front-cleanup-detail', ['id' => $event->encrypted_id])}}" target="_BLANK"><h5 class="m-0">{{ $event->event_name }}</h5></a>
+                                                    @if(!empty($event->slug))
+                                                    <a href="{{route('view-event-details', ['slug' => $event->slug])}}" target="_BLANK"><h5 class="m-0">{{ $event->event_name }}</h5></a>
+                                                    @else 
+                                                    <h5 class="m-0">{{ $event->event_name }}</h5>
+                                                    @endif
+
                                                     <p class="mb-2">{{ $event->fullAddress }}</p>
                                                     @if(!empty($event->cancelled_at))
                                                     <h6 class="coupon-status">
@@ -323,40 +329,61 @@ a[disabled]{
                                                     aria-haspopup="true" aria-expanded="false">
                                                     <i class="fa-solid fa-ellipsis-vertical"></i></button>
                                                 <div class="dropdown-menu dropdown-menu-right">
+
+                                                    @if($activeTab=='upcoming')
                                                     <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id])}}" class="dropdown-item">
-                                                        <i class="fa-solid fa-gear me-3"></i>Edit Event</a>
+                                                        <i class="fa-solid fa-gear me-3"></i>Edit Event
+                                                    </a>
+                                                    @endif
+
                                                     <a href="{{route('front-cleanup-detail', ['id'=> $event->encrypted_id])}}" class="dropdown-item">
-                                                        <i class="fa-solid fa-clipboard-list me-3"></i>View Event Detail</a>
-                                                    @if($event->isDetailActive() && !empty($event->slug))
-                                                        <a href="{{route('view-event-details', ['slug' => $event->slug])}}" target="_BLANK" class="dropdown-item">
-                                                        <i class="fa-solid fa-eye me-3"></i>View Event Page</a>
+                                                        <i class="fa-solid fa-clipboard-list me-3"></i>View Event Detail
+                                                    </a>
+
+                                                    @if(!empty($event->slug))
+                                                        <!-- <a href="{{route('view-event-details', ['slug' => $event->slug])}}" target="_BLANK" class="dropdown-item">
+                                                        <i class="fa-solid fa-eye me-3"></i>View Event Page</a> -->
+
                                                         <!-- <a class="dropdown-item" href="javascript:void(0);" data-route="{{route('front-send-rsvp-emails', ['slug'=> $event->slug])}}" data-bs-toggle="modal" data-bs-target="#sendRsvpEmail">
                                                             <i class="fa-solid fa-envelope me-3"></i>Send RSVP Emails
                                                         </a> -->
-                                                        <a href="javascript:void(0);" onclick="copyText('{{route('view-event-details', ['slug' => $event->slug])}}')" class="dropdown-item">
+
+                                                        <!-- <a href="javascript:void(0);" onclick="copyText('{{route('view-event-details', ['slug' => $event->slug])}}')" class="dropdown-item">
                                                             <i class="fa-solid fa-copy me-3"></i>Copy Event Link
-                                                        </a>
+                                                        </a> -->
                                                     @endif
 
+                                                    @if($activeTab=='upcoming')
                                                     <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step3'])}}" class="dropdown-item"> <i class="fa-solid fa-user-plus me-3"></i>Manage Co-Host</a>
+                                                    @endif
+                                                    
+                                                    @if($activeTab=='upcoming' || $activeTab=='ongoing' || $activeTab=='action_required')
                                                     <a target="_blank" href="{{route('front-registration-list', ['event' => $event->id])}}" class="dropdown-item">
                                                     <i class="fa-solid fa-eye me-3"></i>Manage Registrations / Check-ins</a>
+                                                    @endif
                                                     
+                                                    @if($activeTab=='upcoming' || $activeTab=='ongoing' || $activeTab=='action_required')
                                                     @if(empty($event->cancelled_at))
                                                     <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step5'])}}" class="dropdown-item"> <i class="fa-solid fa-bar-chart me-3"></i>Manage Event Cleanup Report</a>
                                                     @endif
+                                                    @endif
+
+                                                    @if($activeTab=='ended')
+                                                    <a href="{{route('cleanup-highlights', ['event'=> $event->encrypted_id])}}" class="dropdown-item"> <i class="fa-solid fa-bar-chart me-3"></i>Cleanup Highlights</a>
+                                                    @endif
+
                                                     @if(!empty($event->slug))
                                                     <a href="{{route('front-duplicate-an-event', ['slug' => $event->slug])}}" class="dropdown-item">
                                                         <i class="fa-solid fa-clone me-3"></i>Duplicate Event
                                                     </a>
-                                                    @if(!empty($event->start_datetime) && \Carbon\Carbon::parse($event->start_datetime)->gt(now()))
-                                                    @endif
+
                                                     <a href="javascript:void(0);" class="dropdown-item recurring-event-btn"
                                                     data-action="{{ route('front-recurring-event-setup', ['event' => $event->encrypted_id]) }}"
                                                     data-bs-toggle="modal" data-bs-target="#recurringEventModal">
                                                         <i class="fa-solid fa-repeat me-3"></i>Create Recurring Events 
                                                     </a>
                                                     @endif
+
                                                     @if($event->is_completed!=1)
                                                     <!-- <a message="You want to send the waiver email to all attendees" href="javascript:void(0);" url="{{route('send-waiver-bulk-email', ['id' => $event->encrypted_id])}}" class="dropdown-item show-alert-run-url">
                                                         <i class="fa-solid fa-envelope me-3"></i>Send Waiver Email To All
@@ -365,11 +392,15 @@ a[disabled]{
                                                         <i class="fa-solid fa-envelope me-3"></i> Check-in All
                                                     </a> -->
                                                     @endif
+
+                                                    @if($activeTab=='upcoming')
                                                     @if(empty($event->cancelled_at) && $event->is_completed!=1) <!-- canCancelEvent -->
                                                     <a class="dropdown-item btn-cancel-event" data-url="" href="javascript:void(0);" reschedule-url="{{ route('front-reschedule-event', ['id' => $event->encrypted_id]) }}" cancel-url="{{ route('front-cancel-event', ['id' => $event->encrypted_id]) }}">
                                                         <i class="fa-solid fa-ban me-3"></i>Cancel Event
                                                     </a>
                                                     @endif
+                                                    @endif
+
                                                     <!-- <a href="javascript:void(0);"
                                                     class="dropdown-item send-event-attendees-email"
                                                     data-route="{{ route('front-send-custom-email-event-attendees', ['id' => $event->encrypted_id]) }}"
@@ -377,10 +408,13 @@ a[disabled]{
                                                     data-bs-target="#sendEventAttendeesEmailModal">
                                                         <i class="fa-solid fa-envelope me-3"></i>Send Email
                                                     </a> -->
+                                                    
+                                                    @if($activeTab=='upcoming')
                                                     @if(auth()->guard('front')->user()->id==$event->creator_id)
                                                     <a class="dropdown-item delete-record" data-url="{{route('front-cleanup-hosting-delete', ['id'=> $event->id])}}">
                                                         <i class="fa-solid fa-trash-can me-3"></i>Delete Event 
                                                     </a>
+                                                    @endif
                                                     @endif
                                                 </div>
                                             </div>
