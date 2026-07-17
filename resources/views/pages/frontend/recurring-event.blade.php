@@ -43,6 +43,43 @@
 .recurring-event-header[aria-expanded="true"] .recurring-event-toggle-icon {
     transform: rotate(180deg);
 }
+
+
+
+
+.parent-registration-mode {
+    border-top: 1px solid #edf0f4;
+    padding-top: 24px;
+}
+
+.parent-registration-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: #212529;
+}
+
+.parent-registration-dot {
+    width: 10px;
+    height: 10px;
+    margin-top: 5px;
+    border: 3px solid #16c784;
+    border-radius: 50%;
+    flex: 0 0 10px;
+}
+
+.parent-registration-message {
+    padding: 14px 16px;
+    border: 1px solid #e4e8ee;
+    border-radius: 6px;
+    background: #f8f9fb;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.parent-registration-message p {
+    margin-bottom: 0;
+}
 </style>
 @endpush
 
@@ -206,87 +243,165 @@
                                 </div>
                             </div>
 
-                            <div class="bp-title mt-4">
-                                <h4 class="px-0 mb-0">
-                                    <i class="fa-solid fa-ticket step_icon me-3"></i>
-                                    Tickets
-                                </h4>
+                            @php
+                                $participationType = (int) $event->participation_type;
+
+                                $participationLabels = [
+                                    1 => 'VolunteerCleanup’s Integrated Ticket System',
+                                    2 => 'Walk-in Mode',
+                                    3 => 'Informational Only',
+                                    4 => 'Use an External Registration System',
+                                ];
+                            @endphp
+
+                            <div class="parent-registration-mode mt-4">
+                                <div class="bp-title mb-3">
+                                    <h4 class="px-0 mb-0">
+                                        <i class="fa-solid fa-flag step_icon me-3"></i>
+                                        Volunteer Registration Mode (Based on Parent Event)
+                                    </h4>
+                                </div>
+
+                                <div class="parent-registration-option">
+                                    <span class="parent-registration-dot"></span>
+
+                                    <div>
+                                        <span>
+                                            {{ $participationLabels[$participationType] ?? 'Unknown registration mode' }}
+                                        </span>
+
+                                        @if($participationType === 2)
+                                            <div class="parent-registration-message mt-3">
+                                                <p>
+                                                    Volunteers can attend without registering or reserving tickets.
+                                                    No ticket setup is required for recurring events.
+                                                </p>
+                                            </div>
+                                        @elseif($participationType === 3)
+                                            <div class="parent-registration-message mt-3">
+                                                <p>
+                                                    This event is for informational purposes only.
+                                                    Registration and ticket setup are not required.
+                                                </p>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                @if($participationType === 4)
+                                    <div class="main-form mt-3">
+                                        <label
+                                            for="external-registration-url-{{ $i }}"
+                                            class="form-label fs-6"
+                                        >
+                                            External Registration URL*
+                                        </label>
+
+                                        <input
+                                            type="url"
+                                            id="external-registration-url-{{ $i }}"
+                                            name="recurrences[{{ $i }}][participation_type_external_link]"
+                                            class="form-control h_50 urlmask"
+                                            placeholder="Enter external registration URL"
+                                            value="{{ old(
+                                                "recurrences.$i.participation_type_external_link",
+                                                $event->participation_type_external_link
+                                            ) }}"
+                                            required
+                                        >
+
+                                        @error("recurrences.$i.participation_type_external_link")
+                                            <span class="text-danger small mt-1 d-block">
+                                                {{ $message }}
+                                            </span>
+                                        @enderror
+                                    </div>
+                                @endif
                             </div>
+                            
+                            @if((int) $event->participation_type === 1)
+                                <div class="bp-title mt-4">
+                                    <h4 class="px-0 mb-0">
+                                        <i class="fa-solid fa-ticket step_icon me-3"></i>
+                                        Tickets
+                                    </h4>
+                                </div>
 
-                            @if($event->eventTickets->count() > 0)
-                                <div class="table-responsive mt-3">
-                                    <table class="table recurring-ticket-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Ticket Name</th>
-                                                <th>Type</th>
-                                                <th>Price</th>
-                                                <th>Total Tickets</th>
-                                                <th>Sell Start Date</th>
-                                                <th>Sell End Date</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach($event->eventTickets as $ticketIndex => $ticket)
-                                                @php
-                                                    if ($isUpcomingEvent) {
-                                                        // Existing logic for upcoming events.
-                                                        $sellStart = \Carbon\Carbon::parse($ticket->sell_start_time)->addDays($days);
-                                                        $sellEnd = \Carbon\Carbon::parse($ticket->sell_end_time)->addDays($days);
-                                                    } else {
-                                                        // New logic for past / ongoing parent events.
-                                                        $sellStart = \Carbon\Carbon::today()->addDays($days);
-
-                                                        $parentTicketSellStart = \Carbon\Carbon::parse($ticket->sell_start_time);
-                                                        $parentTicketSellEnd = \Carbon\Carbon::parse($ticket->sell_end_time);
-
-                                                        if ($parentTicketSellEnd->isSameDay($parentEnd)) {
-                                                            // If parent ticket sell end date is same as parent event end date,
-                                                            // recurring ticket sell end date should be same as recurring event end date.
-                                                            $sellEnd = $end->copy();
-                                                        } else {
-                                                            // Otherwise maintain the same difference between parent ticket sell start and sell end.
-                                                            $ticketSellDurationDays = $parentTicketSellStart->diffInDays($parentTicketSellEnd);
-                                                            $sellEnd = $sellStart->copy()->addDays($ticketSellDurationDays);
-                                                        }
-                                                    }
-                                                @endphp
-
+                                @if($event->eventTickets->count() > 0)
+                                    <div class="table-responsive mt-3">
+                                        <table class="table recurring-ticket-table">
+                                            <thead>
                                                 <tr>
-                                                    <td>{{ $ticket->ticket_name }}</td>
-                                                    <td>{{ ucfirst($ticket->ticket_type) }}</td>
-                                                    <td>{{ config('app.currency') . formatAmt($ticket->ticket_price) }}</td>
-                                                    <td>{{ $ticket->available_quantity }}</td>
-                                                    <td>
-                                                        <input
-                                                            autocomplete="off"
-                                                            name="recurrences[{{ $i }}][tickets][{{ $ticketIndex }}][sell_start_time]"
-                                                            class="form-control h_50 recurring-date-picker recurring-date-input recurring-ticket-sell-start"
-                                                            value="{{ $sellStart->format('Y-m-d') }}"
-                                                            required
-                                                        >
-                                                        <small class="date-helper-text"></small>
-                                                    </td>
-                                                    <td>
-                                                        <input
-                                                            autocomplete="off"
-                                                            name="recurrences[{{ $i }}][tickets][{{ $ticketIndex }}][sell_end_time]"
-                                                            class="form-control h_50 recurring-date-picker recurring-date-input recurring-ticket-sell-end"
-                                                            value="{{ $sellEnd->format('Y-m-d') }}"
-                                                            required
-                                                        >
-                                                        <small class="date-helper-text"></small>
-                                                    </td>
+                                                    <th>Ticket Name</th>
+                                                    <th>Type</th>
+                                                    <th>Price</th>
+                                                    <th>Total Tickets</th>
+                                                    <th>Sell Start Date</th>
+                                                    <th>Sell End Date</th>
                                                 </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            @else
-                                <div class="text-center py-4 mt-3 border rounded">
-                                    <h6 class="mb-1">Tickets not found</h6>
-                                    <p class="text-muted small mb-0">This parent event does not have any ticket types.</p>
-                                </div>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($event->eventTickets as $ticketIndex => $ticket)
+                                                    @php
+                                                        if ($isUpcomingEvent) {
+                                                            // Existing logic for upcoming events.
+                                                            $sellStart = \Carbon\Carbon::parse($ticket->sell_start_time)->addDays($days);
+                                                            $sellEnd = \Carbon\Carbon::parse($ticket->sell_end_time)->addDays($days);
+                                                        } else {
+                                                            // New logic for past / ongoing parent events.
+                                                            $sellStart = \Carbon\Carbon::today()->addDays($days);
+
+                                                            $parentTicketSellStart = \Carbon\Carbon::parse($ticket->sell_start_time);
+                                                            $parentTicketSellEnd = \Carbon\Carbon::parse($ticket->sell_end_time);
+
+                                                            if ($parentTicketSellEnd->isSameDay($parentEnd)) {
+                                                                // If parent ticket sell end date is same as parent event end date,
+                                                                // recurring ticket sell end date should be same as recurring event end date.
+                                                                $sellEnd = $end->copy();
+                                                            } else {
+                                                                // Otherwise maintain the same difference between parent ticket sell start and sell end.
+                                                                $ticketSellDurationDays = $parentTicketSellStart->diffInDays($parentTicketSellEnd);
+                                                                $sellEnd = $sellStart->copy()->addDays($ticketSellDurationDays);
+                                                            }
+                                                        }
+                                                    @endphp
+
+                                                    <tr>
+                                                        <td>{{ $ticket->ticket_name }}</td>
+                                                        <td>{{ ucfirst($ticket->ticket_type) }}</td>
+                                                        <td>{{ config('app.currency') . formatAmt($ticket->ticket_price) }}</td>
+                                                        <td>{{ $ticket->available_quantity }}</td>
+                                                        <td>
+                                                            <input
+                                                                autocomplete="off"
+                                                                name="recurrences[{{ $i }}][tickets][{{ $ticketIndex }}][sell_start_time]"
+                                                                class="form-control h_50 recurring-date-picker recurring-date-input recurring-ticket-sell-start"
+                                                                value="{{ $sellStart->format('Y-m-d') }}"
+                                                                required
+                                                            >
+                                                            <small class="date-helper-text"></small>
+                                                        </td>
+                                                        <td>
+                                                            <input
+                                                                autocomplete="off"
+                                                                name="recurrences[{{ $i }}][tickets][{{ $ticketIndex }}][sell_end_time]"
+                                                                class="form-control h_50 recurring-date-picker recurring-date-input recurring-ticket-sell-end"
+                                                                value="{{ $sellEnd->format('Y-m-d') }}"
+                                                                required
+                                                            >
+                                                            <small class="date-helper-text"></small>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @else
+                                    <div class="text-center py-4 mt-3 border rounded">
+                                        <h6 class="mb-1">Tickets not found</h6>
+                                        <p class="text-muted small mb-0">This parent event does not have any ticket types.</p>
+                                    </div>
+                                @endif
                             @endif
                         </div>
                     </div>

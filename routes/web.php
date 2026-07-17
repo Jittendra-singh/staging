@@ -129,6 +129,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
 
         Route::get('embedded-widget', 'embeddedWidget')->name('front-embedded-widget');
         Route::get('manage-widget/{id?}', 'manageWidget')->name('front-manage-widget');
+        Route::post('widget-event-count', 'widgetEventCount')->name('front-widget-event-count');
         Route::post('save-widget/{id?}', 'saveWidget')->name('front-save-widget');
         Route::get('embedded-widget-report', 'embeddedWidgetReport')->name('front-embedded-widget-report');
         Route::post('embedded-widget-report', 'embeddedWidgetReport')->name('front-embedded-widget-report');

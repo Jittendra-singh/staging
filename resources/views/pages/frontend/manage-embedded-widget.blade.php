@@ -335,7 +335,7 @@ $(document).ready(function () {
     });
 
 
-    $('#createWidgetForm').on('submit', function (e) {
+    /* $('#createWidgetForm').on('submit', function (e) {
         let hasError = false;
 
         const $form = $(this);
@@ -399,6 +399,234 @@ $(document).ready(function () {
 
             return false;
         }
+    }); */
+    let widgetPreviewRequestRunning = false;
+    let widgetFormConfirmed = false;
+
+    function applyDefaultWidgetDistance() {
+        const $form = $('#createWidgetForm');
+        const location = $.trim($form.find('[name="location"]').val());
+        const latitude = $.trim($form.find('[name="latitude"]').val());
+        const longitude = $.trim($form.find('[name="longitude"]').val());
+        const $distance = $form.find('[name="distance"]');
+
+        if (
+            location !== '' &&
+            latitude !== '' &&
+            longitude !== '' &&
+            $.trim($distance.val()) === ''
+        ) {
+            $distance.val('25').trigger('change');
+        }
+    }
+
+    /*
+    * Google Places fills latitude/longitude shortly before the input loses
+    * focus. The small timeout allows place_changed to finish first.
+    */
+    $('#autocomplete').on('blur change', function () {
+        setTimeout(function () {
+            applyDefaultWidgetDistance();
+        }, 150);
+    });
+
+    /*
+    * Also apply the default to old/edit data when the page already contains
+    * a selected location but no distance.
+    */
+    applyDefaultWidgetDistance();
+
+    $('#createWidgetForm').on('submit', function (e) {
+        const form = this;
+        const $form = $(form);
+
+        /*
+        * Native form.submit() does not trigger this event again, but this flag
+        * also protects the flow if another script triggers submit.
+        */
+        if (widgetFormConfirmed) {
+            return true;
+        }
+
+        e.preventDefault();
+        applyDefaultWidgetDistance();
+
+        let hasError = false;
+
+        const $title = $form.find('[name="title"]');
+        const $location = $form.find('[name="location"]');
+        const $latitude = $form.find('[name="latitude"]');
+        const $longitude = $form.find('[name="longitude"]');
+        const $distance = $form.find('[name="distance"]');
+
+        $form.find('.client-validation-error').remove();
+        $form
+            .find('.is-invalid, .form-control-danger')
+            .removeClass('is-invalid form-control-danger');
+
+        function showFieldError($field, message) {
+            hasError = true;
+
+            $field.addClass('is-invalid form-control-danger');
+
+            if ($field.closest('.bootstrap-select').length) {
+                $field
+                    .closest('.bootstrap-select')
+                    .after(
+                        '<div class="invalid-feedback d-block client-validation-error">' +
+                        message +
+                        '</div>'
+                    );
+            } else {
+                $field.after(
+                    '<div class="invalid-feedback d-block client-validation-error">' +
+                    message +
+                    '</div>'
+                );
+            }
+        }
+
+        if ($.trim($title.val()) === '') {
+            showFieldError($title, 'Please enter widget title.');
+        }
+
+
+        if (
+            $.trim($location.val()) !== '' &&
+            (
+                $.trim($latitude.val()) === '' ||
+                $.trim($longitude.val()) === ''
+            )
+        ) {
+            showFieldError(
+                $location,
+                'Please choose a valid location from the suggested location list.'
+            );
+        }
+
+        if (
+            $.trim($distance.val()) !== '' &&
+            (
+                $.trim($location.val()) === '' ||
+                $.trim($latitude.val()) === '' ||
+                $.trim($longitude.val()) === ''
+            )
+        ) {
+            showFieldError(
+                $location,
+                'Please select location when distance is selected.'
+            );
+        }
+
+        if (hasError) {
+            const $firstError = $form.find('.is-invalid').first();
+
+            if ($firstError.length) {
+                $('html, body').animate({
+                    scrollTop: $firstError.offset().top - 120
+                }, 300);
+
+                $firstError.focus();
+            }
+
+            return false;
+        }
+
+        if (widgetPreviewRequestRunning) {
+            return false;
+        }
+
+        widgetPreviewRequestRunning = true;
+
+        const $submitButton = $form.find('button[type="submit"]');
+        const originalButtonText = $submitButton.html();
+
+        $submitButton
+            .prop('disabled', true)
+            .html('<i class="fa-solid fa-spinner fa-spin me-2"></i>Checking Events...');
+
+        $.ajax({
+            url: "{{ route('front-widget-event-count') }}",
+            type: 'POST',
+            data: $form.serialize(),
+            success: function (response) {
+                if (!response.status) {
+                    showError(
+                        response.message || 'Unable to check widget events.',
+                        'error'
+                    );
+
+                    return;
+                }
+
+                let alertIcon = 'success';
+
+                if (response.case === 2) {
+                    alertIcon = 'warning';
+                } else if (response.case === 3) {
+                    alertIcon = 'info';
+                }
+
+                Swal.fire({
+                    title: 'Widget Event Availability',
+                    html: response.message,
+                    icon: alertIcon,
+                    showCancelButton: true,
+                    confirmButtonText: 'Save',
+                    cancelButtonText: 'Close',
+                    confirmButtonColor: '#16c784',
+                    cancelButtonColor: '#6c757d',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                }).then(function (result) {
+                    if (result.isConfirmed) {
+                        widgetFormConfirmed = true;
+
+                        /*
+                        * Submit using the native DOM method so this AJAX preview
+                        * handler is not executed a second time.
+                        */
+                        form.submit();
+                    }
+                });
+            },
+            error: function (xhr) {
+                let message = 'Unable to check matching events. Please try again.';
+
+                if (xhr.responseJSON) {
+                    if (xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    }
+
+                    if (xhr.responseJSON.errors) {
+                        const firstErrorGroup = Object.values(
+                            xhr.responseJSON.errors
+                        )[0];
+
+                        if (firstErrorGroup && firstErrorGroup[0]) {
+                            message = firstErrorGroup[0];
+                        }
+                    }
+                }
+
+                Swal.fire({
+                    title: 'Unable to Check Events',
+                    text: message,
+                    icon: 'error',
+                    confirmButtonText: 'Close',
+                    confirmButtonColor: '#6c757d'
+                });
+            },
+            complete: function () {
+                widgetPreviewRequestRunning = false;
+
+                $submitButton
+                    .prop('disabled', false)
+                    .html(originalButtonText);
+            }
+        });
+
+        return false;
     });
 });
 </script>

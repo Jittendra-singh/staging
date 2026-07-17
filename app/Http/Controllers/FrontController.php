@@ -1071,7 +1071,7 @@ class FrontController extends Controller
             ->where('creator_id', auth()->guard('front')->user()->id)
             ->findOrFail(decrypt($event));
 
-        $validated = request()->validate([
+        /* $validated = request()->validate([
             'recurrences' => 'required|array|min:1|max:52',
             'recurrences.*.event_name' => 'required|string',
             'recurrences.*.start_datetime' => 'required|date',
@@ -1081,6 +1081,32 @@ class FrontController extends Controller
             'recurrences.*.tickets' => 'nullable|array',
             'recurrences.*.tickets.*.sell_start_time' => 'required|date',
             'recurrences.*.tickets.*.sell_end_time' => 'required|date|after_or_equal:recurrences.*.tickets.*.sell_start_time',
+        ]); */
+        $rules = [
+            'recurrences' => 'required|array|min:1|max:52',
+            'recurrences.*.event_name' => 'required|string',
+            'recurrences.*.start_datetime' => 'required',
+            'recurrences.*.end_datetime' => 'required|after:recurrences.*.start_datetime',
+            'recurrences.*.site_publish_date' => 'required|date',
+            'recurrences.*.site_depublish_date' => 'required|date|after_or_equal:recurrences.*.site_publish_date',
+        ];
+
+        if ((int) $parentEvent->participation_type === 1) {
+            $rules['recurrences.*.tickets'] = 'required|array';
+            $rules['recurrences.*.tickets.*.sell_start_time'] = 'required|date';
+            $rules['recurrences.*.tickets.*.sell_end_time'] =
+                'required|date|after_or_equal:recurrences.*.tickets.*.sell_start_time';
+        }
+
+        if ((int) $parentEvent->participation_type === 4) {
+            $rules['recurrences.*.participation_type_external_link'] = 'required';
+        }
+
+        $validated = request()->validate($rules, [
+            'recurrences.*.participation_type_external_link.required' =>
+                'Please enter an external registration URL for every recurring event.',
+            'recurrences.*.participation_type_external_link.url' =>
+                'Please enter a valid external registration URL.',
         ]);
 
         DB::transaction(function () use ($parentEvent, $validated) {
@@ -1110,20 +1136,34 @@ class FrontController extends Controller
                 $newEvent->end_datetime = Carbon::parse($recurrence['end_datetime']);
                 $newEvent->site_publish_date = Carbon::parse($recurrence['site_publish_date'])->format('Y-m-d');
                 $newEvent->site_depublish_date = Carbon::parse($recurrence['site_depublish_date'])->format('Y-m-d');
+                // The registration mode always comes from the parent event.
+                $newEvent->participation_type = $parentEvent->participation_type;
+                if ((int) $parentEvent->participation_type === 4) {
+                    $newEvent->participation_type_external_link =
+                        trim($recurrence['participation_type_external_link']);
+                }
                 $newEvent->created_at = $now;
                 $newEvent->updated_at = $now;
                 $newEvent->save();
+                
+                if ((int) $parentEvent->participation_type === 1) {
+                    foreach ($parentEvent->eventTickets as $ticketIndex => $ticket) {
+                        $ticketDates = $recurrence['tickets'][$ticketIndex];
 
-                foreach ($parentEvent->eventTickets as $ticketIndex => $ticket) {
-                    $newTicket = $ticket->replicate();
-                    $newTicket->event_id = $newEvent->id;
-                    $newTicket->sell_start_time = Carbon::parse($recurrence['tickets'][$ticketIndex]['sell_start_time'])->format('Y-m-d');
-                    $newTicket->sell_end_time = Carbon::parse($recurrence['tickets'][$ticketIndex]['sell_end_time'])->format('Y-m-d');
-                    $newTicket->wp_id = null;
-                    $newTicket->wp_meta = null;
-                    $newTicket->created_at = $now;
-                    $newTicket->updated_at = $now;
-                    $newTicket->save();
+                        $newTicket = $ticket->replicate();
+                        $newTicket->event_id = $newEvent->id;
+                        $newTicket->sell_start_time = Carbon::parse(
+                            $ticketDates['sell_start_time']
+                        )->format('Y-m-d');
+                        $newTicket->sell_end_time = Carbon::parse(
+                            $ticketDates['sell_end_time']
+                        )->format('Y-m-d');
+                        $newTicket->wp_id = null;
+                        $newTicket->wp_meta = null;
+                        $newTicket->created_at = $now;
+                        $newTicket->updated_at = $now;
+                        $newTicket->save();
+                    }
                 }
 
                 $newEvent->tags()->attach($parentEvent->tags()->pluck('tags.id')->toArray());
@@ -3460,6 +3500,225 @@ class FrontController extends Controller
         $data['event_tags'] = \App\Models\Tag::orderBy('name')->get();
         $data['seo_details'] = (object)['title' => 'Manage Embedded Widget'];
         return view('pages.frontend.manage-embedded-widget', $data); 
+    }
+    public function widgetEventCount()
+    {
+        $request = request();
+
+        $validated = $request->validate([
+            'location'             => 'nullable|string|max:255',
+            'latitude'             => 'nullable|numeric',
+            'longitude'            => 'nullable|numeric',
+            'distance'             => 'nullable|integer|in:5,10,25,50,100',
+            'organizer_id'         => 'nullable|array',
+            'organizer_id.*'       => 'integer|exists:volunteers,id',
+            'category_id'          => 'nullable|array',
+            'category_id.*'        => 'integer|exists:event_categories,id',
+            'ftr_tag_ids'          => 'nullable|array',
+            'ftr_tag_ids.*'        => 'integer|exists:tags,id',
+            'ftr_event_title'      => 'nullable|string|max:255',
+            'ftr_event_start_dt'   => 'nullable|date',
+            'ftr_event_end_dt'     => 'nullable|date|after_or_equal:ftr_event_start_dt',
+            'event_per_page'       => 'nullable|integer|min:1|max:100',
+            'type'                 => 'required|in:1,2',
+        ]);
+
+        $hasLocation = (
+            $request->filled('location') &&
+            $request->filled('latitude') &&
+            $request->filled('longitude')
+        );
+
+        /*
+        * Reject partially selected/typed locations so the result does not
+        * incorrectly count events without applying the intended location.
+        */
+        if (
+            $request->filled('location') &&
+            (
+                !$request->filled('latitude') ||
+                !$request->filled('longitude')
+            )
+        ) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Please choose a valid location from the suggested location list.',
+            ], 422);
+        }
+
+        if ($request->filled('distance') && !$hasLocation) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Please select a location when distance is selected.',
+            ], 422);
+        }
+
+        /*
+        * This query mirrors the filters used by showWidget().
+        */
+        $getMatchingEventCount = function (?int $distance = null) use ($request, $hasLocation) {
+            $query = Event::query()
+                ->detailActive()
+                ->where('status', 'published')
+                ->whereNull('cancelled_at')
+                ->where('is_private', 0);
+
+            if ($request->filled('organizer_id')) {
+                $query->whereIn('creator_id', $request->input('organizer_id'));
+            }
+
+            if ($request->filled('category_id')) {
+                $query->whereIn(
+                    'event_category_id',
+                    $request->input('category_id')
+                );
+            }
+
+            if ($request->filled('ftr_tag_ids')) {
+                $tagIds = $request->input('ftr_tag_ids');
+
+                $query->whereHas('tags', function ($tagQuery) use ($tagIds) {
+                    $tagQuery->whereIn('tags.id', $tagIds);
+                });
+            }
+
+            if ($request->filled('ftr_event_title')) {
+                $query->where(
+                    'event_name',
+                    'like',
+                    '%' . trim($request->input('ftr_event_title')) . '%'
+                );
+            }
+
+            if ($request->filled('ftr_event_start_dt')) {
+                $query->whereDate(
+                    'events.start_datetime',
+                    '>=',
+                    $request->input('ftr_event_start_dt')
+                );
+            }
+
+            if ($request->filled('ftr_event_end_dt')) {
+                $query->whereDate(
+                    'events.end_datetime',
+                    '<=',
+                    $request->input('ftr_event_end_dt')
+                );
+            }
+
+            if ($hasLocation && $distance !== null) {
+                $latitude = (float) $request->input('latitude');
+                $longitude = (float) $request->input('longitude');
+
+                // Earth radius in miles.
+                $earthRadius = 3956;
+
+                $query
+                    ->select('events.*')
+                    ->selectRaw(
+                        "(
+                            ? * acos(
+                                cos(radians(?))
+                                * cos(radians(events.latitude))
+                                * cos(radians(events.longitude) - radians(?))
+                                + sin(radians(?))
+                                * sin(radians(events.latitude))
+                            )
+                        ) AS widget_distance",
+                        [
+                            $earthRadius,
+                            $latitude,
+                            $longitude,
+                            $latitude,
+                        ]
+                    )
+                    ->whereNotNull('events.latitude')
+                    ->whereNotNull('events.longitude')
+                    ->having('widget_distance', '<=', $distance);
+            }
+
+            /*
+            * get()->count() is intentional because the geographical filter
+            * uses HAVING on the calculated distance column.
+            */
+            return $query->get()->count();
+        };
+
+        $selectedDistance = $hasLocation
+            ? (int) $request->input('distance')
+            : null;
+
+        $currentTotal = $getMatchingEventCount($selectedDistance);
+
+        /*
+        * List widgets show event_per_page events on the first page.
+        * Map widgets currently show all matching map markers.
+        */
+        $formatDisplayCount = function (int $total) use ($request) {
+            if ((int) $request->input('type') === 1) {
+                $perPage = (int) $request->input('event_per_page', 3);
+
+                return min($total, $perPage);
+            }
+
+            return $total;
+        };
+
+        if ($currentTotal > 0) {
+            return response()->json([
+                'status' => true,
+                'case' => 1,
+                'current_total' => $currentTotal,
+                'display_count' => $formatDisplayCount($currentTotal),
+                'message' => sprintf(
+                    'Great! Your current widget settings will display %d %s.',
+                    $formatDisplayCount($currentTotal),
+                    $formatDisplayCount($currentTotal) === 1 ? 'event' : 'events'
+                ),
+            ]);
+        }
+
+        /*
+        * A 100-mile retry only makes sense when a valid location exists.
+        * Without a location, the second query would be identical.
+        */
+        $hundredMileTotal = $hasLocation
+            ? $getMatchingEventCount(100)
+            : 0;
+
+        if ($hundredMileTotal > 0) {
+            return response()->json([
+                'status' => true,
+                'case' => 2,
+                'current_total' => 0,
+                'hundred_mile_total' => $hundredMileTotal,
+                'display_count' => $formatDisplayCount($hundredMileTotal),
+                'message' => sprintf(
+                    'No events match your current widget settings. If you increase the search distance to 100 miles, %d %s will be available for display. Please update the distance before saving the widget.',
+                    $formatDisplayCount($hundredMileTotal),
+                    $formatDisplayCount($hundredMileTotal) === 1 ? 'event' : 'events'
+                ),
+            ]);
+        }
+        if (!$hasLocation) {
+            return response()->json([
+                'status' => true,
+                'case' => 3,
+                'current_total' => 0,
+                'hundred_mile_total' => 0,
+                'display_count' => 0,
+                'message' => 'No events match your current widget settings. Try changing the location, date range, or other filters to display events.',
+            ]);
+        }
+
+        return response()->json([
+            'status' => true,
+            'case' => 3,
+            'current_total' => 0,
+            'hundred_mile_total' => 0,
+            'display_count' => 0,
+            'message' => 'No events match your current widget settings. Even with a 100-mile search radius, no events are currently available. Try changing the location, date range, or other filters to display events.',
+        ]);
     }
     public function embeddedWidgetReport()
     {

@@ -225,9 +225,9 @@
     .cleanup-detail-page .summary-action-btn {
         align-items: center;
         background: #fff;
-        border: 1px solid var(--bs-primary);
+        border: 1px solid var(--linear-gradient-2);
         border-radius: 6px;
-        color: var(--bs-primary);
+        color: var(--linear-gradient-2);
         display: inline-flex;
         font-size: 14px;
         font-weight: 600;
@@ -239,8 +239,8 @@
     }
 
     .cleanup-detail-page .summary-action-btn:hover {
-        background: var(--bs-primary);
-        color: #fff;
+        background: var(--linear-gradient-2);
+        color: #fff!important;
     }
 
     .cleanup-detail-page .summary-action-btn.disabled {
@@ -340,7 +340,7 @@
         background: rgba(var(--bs-primary-rgb), .08);
         border: 1px solid rgba(var(--bs-primary-rgb), .18);
         border-radius: 20px;
-        color: var(--bs-primary);
+        color: var(--linear-gradient-2);
         display: inline-flex;
         font-size: 12px;
         font-weight: 600;
@@ -361,7 +361,7 @@
         align-items: center;
         background: rgba(var(--bs-primary-rgb), .10);
         border-radius: 50%;
-        color: var(--bs-primary);
+        color: var(--linear-gradient-2);
         display: flex;
         flex: 0 0 42px;
         height: 42px;
@@ -389,7 +389,7 @@
     .cleanup-detail-page .content-box {
         background: #f8fafb;
         border: 1px solid #e5e9ec;
-        border-left: 3px solid var(--bs-primary);
+        border-left: 3px solid var(--linear-gradient-2);
         border-radius: 7px;
         padding: 18px 20px;
     }
@@ -432,7 +432,7 @@
         align-items: center;
         background: rgba(var(--bs-primary-rgb), .08);
         border-radius: 5px;
-        color: var(--bs-primary);
+        color: var(--linear-gradient-2);
         display: flex;
         flex: 0 0 30px;
         height: 30px;
@@ -475,7 +475,7 @@
     }
 
     .cleanup-detail-page .subsection-title i {
-        color: var(--bs-primary);
+        color: var(--linear-gradient-2);
     }
 
     .cleanup-detail-page .location-card {
@@ -520,7 +520,7 @@
         background: rgba(var(--bs-primary-rgb), .08);
         border: 1px solid rgba(var(--bs-primary-rgb), .18);
         border-radius: 20px;
-        color: var(--bs-primary);
+        color: var(--linear-gradient-2);
         display: inline-flex;
         font-size: 12px;
         font-weight: 600;
@@ -596,7 +596,7 @@
         align-items: center;
         background: rgba(var(--bs-primary-rgb), .08);
         border-radius: 6px;
-        color: var(--bs-primary);
+        color: var(--linear-gradient-2);
         display: inline-flex;
         font-size: 13px;
         font-weight: 600;
@@ -626,7 +626,7 @@
         align-items: center;
         background: rgba(var(--bs-primary-rgb), .08);
         border-radius: 50%;
-        color: var(--bs-primary);
+        color: var(--linear-gradient-2);
         display: flex;
         height: 38px;
         justify-content: center;
@@ -678,7 +678,7 @@
         align-items: center;
         background: rgba(var(--bs-primary-rgb), .09);
         border-radius: 50%;
-        color: var(--bs-primary);
+        color: var(--linear-gradient-2);
         display: flex;
         flex: 0 0 40px;
         height: 40px;
@@ -720,7 +720,7 @@
         align-items: center;
         background: rgba(var(--bs-primary-rgb), .09);
         border-radius: 7px;
-        color: var(--bs-primary);
+        color: var(--linear-gradient-2);
         display: flex;
         flex: 0 0 40px;
         height: 40px;
@@ -914,9 +914,9 @@
                                         {{ $text($event->category?->name) }}
                                     </span>
 
-                                    <span class="soft-badge">
+                                    <!-- <span class="soft-badge">
                                         {{ ucfirst($text($event->status)) }}
-                                    </span>
+                                    </span> -->
 
                                     <span class="soft-badge">
                                         {{ $event->is_private ? 'Private Event' : 'Public Event' }}
