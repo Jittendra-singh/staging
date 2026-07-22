@@ -2,13 +2,16 @@
 
 @php
     $event = $form_data;
+    $authUser = auth()->guard('front')->user();
 
     $text = function ($value, $fallback = 'Not Provided') {
         if (is_null($value)) {
             return $fallback;
         }
 
-        $cleanValue = is_string($value) ? trim(strip_tags($value)) : $value;
+        $cleanValue = is_string($value)
+            ? trim(strip_tags($value))
+            : $value;
 
         return $cleanValue === '' ? $fallback : $cleanValue;
     };
@@ -18,13 +21,15 @@
     $formatDateTime = function ($value) {
         return empty($value)
             ? 'Not Provided'
-            : \Carbon\Carbon::parse($value)->format(config('app.dateTimeFormat'));
+            : \Carbon\Carbon::parse($value)
+                ->format(config('app.dateTimeFormat'));
     };
 
     $formatDate = function ($value) {
         return empty($value)
             ? 'Not Provided'
-            : \Carbon\Carbon::parse($value)->format(config('app.dateFormat', 'M d, Y'));
+            : \Carbon\Carbon::parse($value)
+                ->format(config('app.dateFormat', 'M d, Y'));
     };
 
     $participationTypes = [
@@ -41,31 +46,54 @@
         'external_link' => 'External Link',
     ];
 
+    $now = now();
+
+    $startDate = !empty($event->start_datetime)
+        ? \Carbon\Carbon::parse($event->start_datetime)
+        : null;
+
+    $endDate = !empty($event->end_datetime)
+        ? \Carbon\Carbon::parse($event->end_datetime)
+        : null;
+
     if (!empty($event->cancelled_at)) {
         $runningStatus = 'Cancelled';
         $statusClass = 'danger';
+        $statusDetailLabel = 'Cancelled At';
+        $statusDetailValue = $formatDateTime($event->cancelled_at);
     } elseif ((int) $event->is_completed === 1) {
         $runningStatus = 'Completed';
         $statusClass = 'success';
-    } elseif (
-        !empty($event->start_datetime) &&
-        \Carbon\Carbon::parse($event->start_datetime)->isFuture()
-    ) {
+        $statusDetailLabel = 'Completed On';
+        $statusDetailValue = $formatDateTime($event->end_datetime);
+    } elseif ($startDate && $startDate->isFuture()) {
         $runningStatus = 'Upcoming';
         $statusClass = 'primary';
+        $statusDetailLabel = 'Upcoming';
+        $statusDetailValue = $formatDateTime($event->start_datetime);
     } elseif (
-        !empty($event->start_datetime) &&
-        !empty($event->end_datetime) &&
-        now()->between(
-            \Carbon\Carbon::parse($event->start_datetime),
-            \Carbon\Carbon::parse($event->end_datetime)
-        )
+        $startDate &&
+        $endDate &&
+        $now->between($startDate, $endDate)
     ) {
-        $runningStatus = 'Ongoing';
+        $runningStatus = 'In-Progress';
         $statusClass = 'warning';
+        $statusDetailLabel = 'In-Progress';
+        $statusDetailValue = 'Until '.$formatDateTime(
+            $event->end_datetime
+        );
+    } elseif ($endDate && $endDate->isPast()) {
+        $runningStatus = 'Action Required';
+        $statusClass = 'danger';
+        $statusDetailLabel = 'Action Required';
+        $statusDetailValue = 'Ended '.$formatDateTime(
+            $event->end_datetime
+        );
     } else {
-        $runningStatus = 'Ended';
+        $runningStatus = 'Not Scheduled';
         $statusClass = 'secondary';
+        $statusDetailLabel = 'Event Status';
+        $statusDetailValue = 'Schedule Not Provided';
     }
 
     $publicEventUrl = !empty($event->slug)
@@ -76,87 +104,93 @@
         ? route('front-registration-calendar', ['slug' => $event->slug])
         : null;
 
+    $organizerName = trim(
+        ($event->creator?->first_name ?? '').' '.
+        ($event->creator?->last_name ?? '')
+    );
+
+    if ($organizerName === '') {
+        $organizerName = $text($event->creator?->name);
+    }
+
+    $isCreator = $authUser &&
+        (int) $event->creator_id === (int) $authUser->id;
+
+    $isApprovedCohost = $authUser &&
+        $event->cohostRecords->contains(function ($cohost) use ($authUser) {
+            return (int) $cohost->volunteer_id === (int) $authUser->id
+                && $cohost->request_status === 'approved';
+        });
+
+    $canEditEvent = (
+        $isCreator ||
+        $isApprovedCohost
+    ) &&
+        empty($event->cancelled_at) &&
+        (int) $event->is_completed !== 1 &&
+        $startDate &&
+        $startDate->isFuture();
+
     $afterEventImages = [];
 
     if (!empty($event->after_event_images)) {
-        $afterEventImages = json_decode($event->after_event_images, true) ?: [];
+        $afterEventImages =
+            json_decode($event->after_event_images, true) ?: [];
     }
 
     $waiverPdfPath = null;
 
-    if ($event->waiver_form_type === 'pdf' && !empty($event->waiver_form_content)) {
+    if (
+        $event->waiver_form_type === 'pdf' &&
+        !empty($event->waiver_form_content)
+    ) {
         $waiverData = json_decode($event->waiver_form_content);
 
         if (is_object($waiverData) && !empty($waiverData->path)) {
             $waiverPdfPath = asset($waiverData->path);
-        } elseif (filter_var($event->waiver_form_content, FILTER_VALIDATE_URL)) {
+        } elseif (
+            filter_var(
+                $event->waiver_form_content,
+                FILTER_VALIDATE_URL
+            )
+        ) {
             $waiverPdfPath = $event->waiver_form_content;
         }
     }
-
-    $cohostPermissionLabels = config('app.cohost_permissions', []);
 
     $scheduleItems = [
         [
             'label' => 'Start Date & Time',
             'value' => $formatDateTime($event->start_datetime),
-            'icon' => 'fa-calendar-day',
         ],
         [
             'label' => 'End Date & Time',
             'value' => $formatDateTime($event->end_datetime),
-            'icon' => 'fa-calendar-check',
         ],
         [
             'label' => 'Page Publish Date',
             'value' => $formatDate($event->site_publish_date),
-            'icon' => 'fa-eye',
         ],
         [
             'label' => 'Page Expiry Date',
             'value' => $formatDate($event->site_depublish_date),
-            'icon' => 'fa-eye-slash',
         ],
         [
             'label' => 'Timezone',
             'value' => ucfirst($text($event->event_timezone)),
-            'icon' => 'fa-clock',
         ],
         [
             'label' => 'Country',
             'value' => $text($event->country?->country_name),
-            'icon' => 'fa-earth-americas',
-        ],
-        [
-            'label' => 'ZIP/Postcode',
-            'value' => $text($event->pincode),
-            'icon' => 'fa-location-crosshairs',
-        ],
-        [
-            'label' => 'Latitude',
-            'value' => $text($event->latitude),
-            'icon' => 'fa-map-pin',
-        ],
-        [
-            'label' => 'Longitude',
-            'value' => $text($event->longitude),
-            'icon' => 'fa-map-pin',
         ],
     ];
 
     $registrationItems = [
         [
             'label' => 'Participation Method',
-            'value' => $participationTypes[$event->participation_type] ?? 'Not Provided',
+            'value' => $participationTypes[$event->participation_type]
+                ?? 'Not Provided',
         ],
-        /* [
-            'label' => 'Global Ticket Sale Start',
-            'value' => $formatDate($event->ticket_sell_start_time),
-        ],
-        [
-            'label' => 'Global Ticket Sale End',
-            'value' => $formatDate($event->ticket_sell_end_time),
-        ], */
         [
             'label' => 'Allow Donations',
             'value' => $yesNo($event->allow_donations),
@@ -174,29 +208,24 @@
             'value' => $yesNo($event->show_remaining_tickets),
         ],
         [
-            'label' => 'Sell Tickets Individually',
-            'value' => $yesNo($event->sell_tickets_individually),
-        ],
-        [
             'label' => 'Fees & Processing Paid By',
             'value' => (int) $event->charge_bear_by === 1
-                ? 'Added on top of the ticket price'
-                : 'Deducted from organizer ticket revenue',
+                ? 'Volunteer'
+                : 'Organizer',
         ],
     ];
 
-    $seoItems = [
-        [
-            'label' => 'Meta Title',
-            'value' => $text($event->meta_title),
-            'icon' => 'fa-heading',
-        ],
-        [
-            'label' => 'Focus Keywords',
-            'value' => $text($event->meta_focus_keyword),
-            'icon' => 'fa-tags',
-        ],
-    ];
+    $hasVolunteerQuestions = !empty(
+        trim(strip_tags($event->ticket_questions ?? ''))
+    );
+
+    $hasReminderNote = !empty(
+        trim(strip_tags($event->reminder_custom_note ?? ''))
+    );
+
+    $hasWaiverContent = !empty(
+        trim((string) $event->waiver_form_content)
+    );
 @endphp
 
 @push('style')
@@ -205,8 +234,8 @@
         min-width: 0;
     }
 
-    .cleanup-detail-page .dashboard-body,
     .cleanup-detail-page .container-fluid,
+    .cleanup-detail-page .dashboard-body,
     .cleanup-detail-page .main-card,
     .cleanup-detail-page .collapse,
     .cleanup-detail-page .collapsing {
@@ -219,7 +248,7 @@
     }
 
     .cleanup-detail-page .summary-toolbar {
-        gap: 10px;
+        gap: 9px;
     }
 
     .cleanup-detail-page .summary-action-btn {
@@ -229,18 +258,18 @@
         border-radius: 6px;
         color: var(--linear-gradient-2);
         display: inline-flex;
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 600;
-        gap: 8px;
+        gap: 7px;
         justify-content: center;
-        min-height: 43px;
-        padding: 9px 17px;
+        min-height: 40px;
+        padding: 8px 15px;
         transition: all .2s ease;
     }
 
     .cleanup-detail-page .summary-action-btn:hover {
         background: var(--linear-gradient-2);
-        color: #fff!important;
+        color: #fff !important;
     }
 
     .cleanup-detail-page .summary-action-btn.disabled {
@@ -250,7 +279,7 @@
     }
 
     .cleanup-detail-page .detail-section {
-        border: 1px solid #e6e9ec;
+        border: 1px solid #e5e9ec;
         overflow: hidden;
     }
 
@@ -262,7 +291,7 @@
         color: #17191c;
         display: flex;
         justify-content: space-between;
-        padding: 17px 20px;
+        padding: 16px 19px;
         text-align: left;
         width: 100%;
     }
@@ -279,32 +308,35 @@
     .cleanup-detail-page .detail-section-toggle h4 {
         align-items: center;
         display: flex;
-        font-size: 17px;
+        font-size: 16px;
         font-weight: 600;
         margin: 0;
     }
 
-    .cleanup-detail-page .detail-section-toggle .section-toggle-icon {
+    .cleanup-detail-page .section-toggle-icon {
         color: #6c757d;
-        font-size: 13px;
+        font-size: 12px;
         transition: transform .2s ease;
     }
 
-    .cleanup-detail-page .detail-section-toggle[aria-expanded="true"] .section-toggle-icon {
+    .cleanup-detail-page
+    .detail-section-toggle[aria-expanded="true"]
+    .section-toggle-icon {
         transform: rotate(180deg);
     }
 
-    .cleanup-detail-page .detail-section-toggle[aria-expanded="false"] {
+    .cleanup-detail-page
+    .detail-section-toggle[aria-expanded="false"] {
         border-bottom-color: transparent;
     }
 
     .cleanup-detail-page .detail-section-body {
-        padding: 24px;
+        padding: 22px;
     }
 
     .cleanup-detail-page .summary-banner {
         background: #f3f5f6;
-        border-radius: 8px;
+        border-radius: 7px;
         height: 330px;
         overflow: hidden;
         position: relative;
@@ -318,15 +350,15 @@
 
     .cleanup-detail-page .summary-status {
         position: absolute;
-        right: 16px;
-        top: 16px;
+        right: 14px;
+        top: 14px;
     }
 
     .cleanup-detail-page .event-title {
         color: #17191c;
-        font-size: 25px;
+        font-size: 24px;
         font-weight: 700;
-        line-height: 1.35;
+        line-height: 1.3;
         margin: 0;
     }
 
@@ -342,170 +374,147 @@
         border-radius: 20px;
         color: var(--linear-gradient-2);
         display: inline-flex;
-        font-size: 12px;
-        font-weight: 600;
-        padding: 5px 11px;
-    }
-
-    .cleanup-detail-page .organizer-card {
-        align-items: center;
-        background: #f8fafb;
-        border: 1px solid #e6e9ec;
-        border-radius: 8px;
-        display: flex;
-        gap: 13px;
-        padding: 14px 16px;
-    }
-
-    .cleanup-detail-page .organizer-icon {
-        align-items: center;
-        background: rgba(var(--bs-primary-rgb), .10);
-        border-radius: 50%;
-        color: var(--linear-gradient-2);
-        display: flex;
-        flex: 0 0 42px;
-        height: 42px;
-        justify-content: center;
-        width: 42px;
-    }
-
-    .cleanup-detail-page .organizer-caption {
-        color: #75808a;
-        display: block;
         font-size: 11px;
         font-weight: 600;
-        letter-spacing: .04em;
-        margin-bottom: 2px;
-        text-transform: uppercase;
+        padding: 4px 10px;
+    }
+
+    /*
+     * Compact organizer presentation.
+     * No oversized avatar or disconnected caption.
+     */
+    .cleanup-detail-page .organizer-row {
+        align-items: center;
+        display: flex;
+        gap: 7px;
+        margin-top: 12px;
+    }
+
+    .cleanup-detail-page .organizer-row i {
+        color: var(--linear-gradient-2);
+        font-size: 13px;
+        width: 15px;
+    }
+
+    .cleanup-detail-page .organizer-label {
+        color: #6c767f;
+        font-size: 12px;
+        font-weight: 600;
     }
 
     .cleanup-detail-page .organizer-name {
-        color: #17191c;
-        font-size: 15px;
+        color: #24282c;
+        font-size: 13px;
         font-weight: 600;
-        margin: 0;
     }
 
-    .cleanup-detail-page .content-box {
-        background: #f8fafb;
-        border: 1px solid #e5e9ec;
-        border-left: 3px solid var(--linear-gradient-2);
-        border-radius: 7px;
-        padding: 18px 20px;
-    }
-
-    .cleanup-detail-page .content-box-label {
-        color: #66717c;
+    /*
+     * Shared compact label/value spacing.
+     */
+    .cleanup-detail-page .detail-label {
+        color: #69747e;
         display: block;
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 700;
-        letter-spacing: .05em;
-        margin-bottom: 9px;
+        letter-spacing: .035em;
+        line-height: 1.35;
+        margin: 0 0 3px;
         text-transform: uppercase;
     }
 
-    .cleanup-detail-page .content-box-value {
+    .cleanup-detail-page .detail-value {
         color: #272b2f;
-        font-size: 14px;
-        line-height: 1.75;
+        font-size: 13px;
+        line-height: 1.55;
         margin: 0;
         overflow-wrap: anywhere;
         white-space: pre-line;
     }
 
-    .cleanup-detail-page .info-card {
-        background: #fff;
-        border: 1px solid #e7eaed;
-        border-radius: 7px;
-        height: 100%;
-        padding: 15px 16px;
+    .cleanup-detail-page .description-block {
+        margin-top: 18px;
     }
 
-    .cleanup-detail-page .info-card-head {
-        align-items: center;
-        display: flex;
-        gap: 9px;
-        margin-bottom: 8px;
-    }
-
-    .cleanup-detail-page .info-card-icon {
-        align-items: center;
-        background: rgba(var(--bs-primary-rgb), .08);
-        border-radius: 5px;
-        color: var(--linear-gradient-2);
-        display: flex;
-        flex: 0 0 30px;
-        height: 30px;
-        justify-content: center;
-        width: 30px;
-    }
-
-    .cleanup-detail-page .info-card-label {
-        color: #68737d;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: .04em;
-        line-height: 1.4;
-        text-transform: uppercase;
-    }
-
-    .cleanup-detail-page .info-card-value {
-        color: #202428;
-        font-size: 14px;
-        font-weight: 500;
-        line-height: 1.55;
+    .cleanup-detail-page .description-text {
+        color: #30353a;
+        font-size: 13px;
+        line-height: 1.7;
         margin: 0;
-        overflow-wrap: anywhere;
+        white-space: pre-line;
     }
 
-    .cleanup-detail-page .empty-value {
-        color: #929aa2 !important;
-        font-style: italic;
-        font-weight: 400 !important;
+    .cleanup-detail-page .overview-meta {
+        border-top: 1px solid #e4e9ec;
+        margin-top: 17px;
+        padding-top: 8px;
+    }
+
+    .cleanup-detail-page .simple-grid {
+        display: grid;
+        gap: 0 24px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .cleanup-detail-page .simple-field {
+        border-bottom: 1px solid #edf0f2;
+        min-width: 0;
+        padding: 10px 0;
+    }
+
+    .cleanup-detail-page .overview-meta .simple-field {
+        border-bottom: 0;
+        padding-bottom: 2px;
+        padding-top: 5px;
     }
 
     .cleanup-detail-page .subsection-title {
-        align-items: center;
-        color: #23272b;
-        display: flex;
-        font-size: 16px;
-        font-weight: 650;
-        gap: 9px;
-        margin: 0 0 16px;
-    }
-
-    .cleanup-detail-page .subsection-title i {
+        border-bottom: 1px solid #dfe5e8;
         color: var(--linear-gradient-2);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: .02em;
+        margin: 0 0 7px;
+        padding-bottom: 8px;
+        text-transform: uppercase;
+    }
+    .cleanup-detail-page .reporting-details-row {
+        margin-top: 0;
+        padding-top: 10px;
     }
 
-    .cleanup-detail-page .location-card {
-        background: #f8fafb;
-        border: 1px solid #e5e9ec;
-        border-radius: 8px;
-        padding: 18px;
+    .cleanup-detail-page .location-box {
+        border: 1px solid #e3e8eb;
+        border-radius: 5px;
+        padding: 13px 15px;
     }
 
-    .cleanup-detail-page .location-address {
-        color: #212529;
-        font-size: 15px;
-        font-weight: 600;
-        line-height: 1.6;
-        margin: 0;
+    .cleanup-detail-page .location-heading-row {
+        align-items: flex-start;
+        display: flex;
+        gap: 15px;
+        justify-content: space-between;
+    }
+
+    .cleanup-detail-page .location-content {
+        min-width: 0;
     }
 
     .cleanup-detail-page .map-link {
         align-items: center;
         display: inline-flex;
-        font-size: 13px;
+        flex: 0 0 auto;
+        font-size: 11px;
         font-weight: 600;
-        gap: 7px;
-        margin-top: 11px;
+        gap: 5px;
+        line-height: 1.4;
+        margin-top: 1px;
+        white-space: nowrap;
     }
 
     .cleanup-detail-page .media-banner {
         background: #f3f5f6;
         border: 1px solid #e5e9ec;
-        border-radius: 8px;
+        border-radius: 5px;
         height: 270px;
         overflow: hidden;
     }
@@ -516,241 +525,235 @@
         width: 100%;
     }
 
-    .cleanup-detail-page .tool-chip {
-        background: rgba(var(--bs-primary-rgb), .08);
-        border: 1px solid rgba(var(--bs-primary-rgb), .18);
-        border-radius: 20px;
-        color: var(--linear-gradient-2);
-        display: inline-flex;
-        font-size: 12px;
-        font-weight: 600;
-        margin: 0 6px 6px 0;
-        padding: 6px 11px;
-    }
-
-    .cleanup-detail-page .ticket-card {
-        background: #fff;
-        border: 1px solid #e3e7ea;
-        border-radius: 8px;
-        height: 100%;
-        overflow: hidden;
-    }
-
-    .cleanup-detail-page .ticket-card-header {
-        align-items: flex-start;
-        background: #f8fafb;
-        border-bottom: 1px solid #e5e9ec;
-        display: flex;
-        gap: 12px;
-        justify-content: space-between;
-        padding: 15px 17px;
-    }
-
-    .cleanup-detail-page .ticket-card-title {
-        color: #202428;
-        font-size: 15px;
-        font-weight: 700;
-        line-height: 1.4;
+    .cleanup-detail-page .text-list {
+        color: #30353a;
+        font-size: 13px;
+        line-height: 1.55;
         margin: 0;
     }
 
-    .cleanup-detail-page .ticket-card-body {
-        padding: 10px 17px 17px;
+    .cleanup-detail-page .settings-list {
+        display: grid;
+        gap: 0 26px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .cleanup-detail-page .ticket-row {
-        align-items: flex-start;
-        border-bottom: 1px solid #edf0f2;
+    .cleanup-detail-page .setting-row {
+        align-items: center;
+        border-bottom: 1px solid #e7ebed;
         display: flex;
-        gap: 16px;
+        gap: 18px;
         justify-content: space-between;
-        padding: 9px 0;
+        min-height: 40px;
+        padding: 8px 0;
     }
 
-    .cleanup-detail-page .ticket-row:last-child {
-        border-bottom: 0;
-    }
-
-    .cleanup-detail-page .ticket-row-label {
-        color: #747d85;
+    .cleanup-detail-page .setting-label {
+        color: #505960;
         font-size: 12px;
+        line-height: 1.45;
     }
 
-    .cleanup-detail-page .ticket-row-value {
+    .cleanup-detail-page .setting-value {
         color: #24282c;
         font-size: 12px;
         font-weight: 600;
+        line-height: 1.45;
         max-width: 60%;
         overflow-wrap: anywhere;
         text-align: right;
     }
 
-    .cleanup-detail-page .waiver-box {
-        background: #f8fafb;
-        border: 1px solid #e5e9ec;
-        border-radius: 8px;
-        padding: 20px;
-    }
-
-    .cleanup-detail-page .waiver-type {
+    .cleanup-detail-page .popover-trigger {
         align-items: center;
-        background: rgba(var(--bs-primary-rgb), .08);
-        border-radius: 6px;
+        background: none;
+        border: 0;
         color: var(--linear-gradient-2);
         display: inline-flex;
-        font-size: 13px;
-        font-weight: 600;
-        gap: 8px;
-        padding: 8px 12px;
+        font-size: 11px;
+        gap: 4px;
+        margin-left: 5px;
+        padding: 0;
     }
 
-    .cleanup-detail-page .waiver-content {
+    .cleanup-detail-page .popover-trigger:hover {
+        text-decoration: underline;
+    }
+
+    .cleanup-detail-page .status-dot {
+        border-radius: 50%;
+        display: inline-block;
+        height: 7px;
+        margin-right: 6px;
+        width: 7px;
+    }
+
+    .cleanup-detail-page .status-dot.active {
+        background: #12a875;
+    }
+
+    .cleanup-detail-page .status-dot.inactive {
+        background: #dc3545;
+    }
+
+    .cleanup-detail-page .ticket-table-wrap {
+        border: 1px solid #e1e6e9;
+        border-radius: 5px;
+        overflow-x: auto;
+    }
+
+    .cleanup-detail-page .ticket-table {
         color: #30353a;
-        font-size: 14px;
-        line-height: 1.8;
-        margin: 16px 0 0;
+        font-size: 11px;
+        margin: 0;
+        min-width: 1000px;
+        width: 100%;
+    }
+
+    .cleanup-detail-page .ticket-table thead th {
+        background: #f1f3f4;
+        border-bottom: 1px solid #dfe4e7;
+        color: #68737d;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: .025em;
+        padding: 10px;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .cleanup-detail-page .ticket-table tbody td {
+        border-bottom: 1px solid #edf0f2;
+        padding: 10px;
+        vertical-align: middle;
+    }
+
+    .cleanup-detail-page .ticket-name {
+        font-weight: 600;
+    }
+
+    .cleanup-detail-page .ticket-subvalue,
+    .cleanup-detail-page .ticket-date-secondary {
+        color: #7a838b;
+        display: block;
+        font-size: 9px;
+        margin-top: 2px;
+    }
+
+    .cleanup-detail-page .ticket-date-primary,
+    .cleanup-detail-page .ticket-date-secondary {
+        white-space: nowrap;
+    }
+
+    .cleanup-detail-page .ticket-description-row td {
+        background: #fafbfb;
+        color: #6f7880;
+        font-size: 10px;
+        line-height: 1.55;
+        padding-bottom: 10px !important;
+        padding-top: 7px !important;
+    }
+
+    .cleanup-detail-page .ticket-description-label {
+        color: #505960;
+        font-weight: 700;
+        margin-right: 4px;
+    }
+
+    .cleanup-detail-page .waiver-row {
+        align-items: center;
+        border-bottom: 1px solid #e6eaed;
+        display: flex;
+        gap: 18px;
+        justify-content: space-between;
+        min-height: 43px;
+        padding: 7px 0;
+    }
+
+    .cleanup-detail-page .waiver-information {
+        min-width: 0;
+    }
+
+    .cleanup-detail-page .waiver-toggle {
+        align-items: center;
+        background: none;
+        border: 0;
+        color: var(--linear-gradient-2);
+        display: inline-flex;
+        flex: 0 0 auto;
+        font-size: 11px;
+        font-weight: 600;
+        gap: 5px;
+        padding: 4px 0;
+    }
+
+    .cleanup-detail-page .waiver-toggle i {
+        transition: transform .2s ease;
+    }
+
+    .cleanup-detail-page
+    .waiver-toggle[aria-expanded="true"] i {
+        transform: rotate(180deg);
+    }
+
+    .cleanup-detail-page .waiver-collapse-content {
+        background: #f8fafb;
+        border: 1px solid #e5e9ec;
+        border-radius: 5px;
+        color: #30353a;
+        font-size: 12px;
+        line-height: 1.7;
+        margin-top: 9px;
         overflow-wrap: anywhere;
+        padding: 13px 14px;
         white-space: pre-line;
     }
 
     .cleanup-detail-page .summary-stat {
-        background: #fff;
-        border: 1px solid #e4e8eb;
-        border-radius: 8px;
+        border: 1px solid #e2e7ea;
+        border-radius: 5px;
         height: 100%;
-        padding: 19px 12px;
+        padding: 15px 9px;
         text-align: center;
-    }
-
-    .cleanup-detail-page .summary-stat-icon {
-        align-items: center;
-        background: rgba(var(--bs-primary-rgb), .08);
-        border-radius: 50%;
-        color: var(--linear-gradient-2);
-        display: flex;
-        height: 38px;
-        justify-content: center;
-        margin: 0 auto 10px;
-        width: 38px;
     }
 
     .cleanup-detail-page .summary-stat-label {
         color: #75808a;
         display: block;
-        font-size: 10px;
+        font-size: 9px;
         font-weight: 700;
-        letter-spacing: .04em;
         text-transform: uppercase;
     }
 
     .cleanup-detail-page .summary-stat-value {
         color: #17191c;
         display: block;
-        font-size: 22px;
-        font-weight: 700;
-        margin-top: 5px;
-    }
-
-    .cleanup-detail-page .cohost-card {
-        background: #fff;
-        border: 1px solid #e4e8eb;
-        border-radius: 8px;
-        height: 100%;
-        padding: 18px;
-    }
-
-    .cleanup-detail-page .cohost-header {
-        align-items: center;
-        display: flex;
-        gap: 12px;
-        justify-content: space-between;
-        margin-bottom: 15px;
-    }
-
-    .cleanup-detail-page .cohost-person {
-        align-items: center;
-        display: flex;
-        gap: 11px;
-        min-width: 0;
-    }
-
-    .cleanup-detail-page .cohost-avatar {
-        align-items: center;
-        background: rgba(var(--bs-primary-rgb), .09);
-        border-radius: 50%;
-        color: var(--linear-gradient-2);
-        display: flex;
-        flex: 0 0 40px;
-        height: 40px;
-        justify-content: center;
-        width: 40px;
-    }
-
-    .cleanup-detail-page .cohost-name {
-        color: #202428;
-        font-size: 14px;
-        font-weight: 700;
-        margin: 0 0 2px;
-    }
-
-    .cleanup-detail-page .cohost-email {
-        color: #737c84;
-        display: block;
-        font-size: 12px;
-        overflow-wrap: anywhere;
-    }
-
-    .cleanup-detail-page .cohost-status {
-        flex-shrink: 0;
-        white-space: nowrap;
-    }
-
-    .cleanup-detail-page .report-metric {
-        align-items: center;
-        background: #f8fafb;
-        border: 1px solid #e5e9ec;
-        border-radius: 8px;
-        display: flex;
-        gap: 13px;
-        height: 100%;
-        padding: 16px;
-    }
-
-    .cleanup-detail-page .report-metric-icon {
-        align-items: center;
-        background: rgba(var(--bs-primary-rgb), .09);
-        border-radius: 7px;
-        color: var(--linear-gradient-2);
-        display: flex;
-        flex: 0 0 40px;
-        height: 40px;
-        justify-content: center;
-        width: 40px;
-    }
-
-    .cleanup-detail-page .report-metric-label {
-        color: #75808a;
-        display: block;
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: .04em;
-        text-transform: uppercase;
-    }
-
-    .cleanup-detail-page .report-metric-value {
-        color: #202428;
-        display: block;
-        font-size: 15px;
+        font-size: 20px;
         font-weight: 700;
         margin-top: 3px;
     }
 
+    .cleanup-detail-page .report-status-alert {
+        background: rgba(220, 53, 69, .10);
+        border: 1px solid rgba(220, 53, 69, .18);
+        border-radius: 5px;
+        color: #b02a37;
+        font-size: 11px;
+        padding: 11px 13px;
+    }
+
     .cleanup-detail-page .after-event-image {
         border: 1px solid #e5e9ec;
-        border-radius: 8px;
+        border-radius: 5px;
         height: 190px;
         object-fit: cover;
         width: 100%;
+    }
+
+    .cleanup-detail-page .empty-value {
+        color: #929aa2 !important;
+        font-style: italic;
+        font-weight: 400 !important;
     }
 
     @media (max-width: 991px) {
@@ -758,43 +761,144 @@
             height: 280px;
         }
 
-        .cleanup-detail-page .media-banner {
-            height: 230px;
+        .cleanup-detail-page .simple-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .cleanup-detail-page .settings-list {
+            grid-template-columns: 1fr;
         }
     }
 
     @media (max-width: 767px) {
-        .cleanup-detail-page .summary-toolbar {
-            width: 100%;
-        }
-
-        .cleanup-detail-page .summary-action-btn {
-            flex: 1;
-        }
-
-        .cleanup-detail-page .detail-section-toggle {
-            padding: 15px 16px;
-        }
-
-        .cleanup-detail-page .detail-section-toggle h4 {
-            font-size: 15px;
-        }
-
         .cleanup-detail-page .detail-section-body {
-            padding: 17px;
+            padding: 16px;
         }
 
         .cleanup-detail-page .summary-banner {
             height: 220px;
         }
 
-        .cleanup-detail-page .event-title {
-            font-size: 21px;
+        .cleanup-detail-page .media-banner {
+            height: 210px;
         }
 
-        .cleanup-detail-page .ticket-row-value {
-            max-width: 55%;
+        .cleanup-detail-page .simple-grid {
+            grid-template-columns: 1fr;
         }
+
+        .cleanup-detail-page .summary-toolbar {
+            width: 100%;
+        }
+
+        .cleanup-detail-page .summary-action-btn {
+            flex: 1 1 auto;
+        }
+
+        .cleanup-detail-page .location-heading-row {
+            display: block;
+        }
+
+        .cleanup-detail-page .map-link {
+            margin-top: 7px;
+        }
+
+        .cleanup-detail-page .setting-row {
+            align-items: flex-start;
+        }
+
+        .cleanup-detail-page .waiver-row {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 5px;
+        }
+    }
+    .cleanup-detail-page .seo-field {
+        border-bottom: 1px solid #edf0f2;
+        padding: 14px 0;
+    }
+
+    .cleanup-detail-page .seo-field:first-child {
+        padding-top: 0;
+    }
+
+    .cleanup-detail-page .seo-field:last-child {
+        border-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .cleanup-detail-page .seo-field .detail-label {
+        margin-bottom: 2px;
+    }
+
+    .cleanup-detail-page .seo-field .detail-value {
+        line-height: 1.55;
+        white-space: normal;
+    }
+    .cleanup-detail-page .quick-actions-section {
+        background: #f8faf9;
+        border: 1px solid #dce5e1;
+        border-radius: 7px;
+        padding: 22px 24px;
+    }
+
+    .cleanup-detail-page .quick-actions-title {
+        color: #17191c;
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0 0 17px;
+    }
+
+    .cleanup-detail-page .quick-actions-list {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+    }
+
+    .cleanup-detail-page .quick-action-form {
+        margin: 0;
+    }
+
+    .cleanup-detail-page .quick-actions-section {
+        background: #f8faf9;
+        border: 1px solid #dce5e1;
+        border-radius: 7px;
+        padding: 22px 24px;
+    }
+
+    .cleanup-detail-page .quick-actions-title {
+        color: #17191c;
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0 0 17px;
+    }
+
+    .cleanup-detail-page .quick-actions-list {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .cleanup-detail-page .quick-action-form {
+        display: inline-flex;
+        margin: 0;
+    }
+
+    @media (max-width: 575px) {
+        .cleanup-detail-page .quick-actions-section {
+            padding: 18px;
+        }
+
+        .cleanup-detail-page .quick-actions-list,
+        .cleanup-detail-page .quick-action-form,
+        .cleanup-detail-page .quick-actions-list .summary-action-btn {
+            width: 100%;
+        }
+    }
+    .summary-action-btn i{
+        font-size: 13px;
     }
 </style>
 @endpush
@@ -815,23 +919,41 @@
                             $breadcrumbs = [
                                 [
                                     'name' => 'Cleanups I\'m Hosting',
-                                    'url' => route('front-cleanup-hosting', [
-                                        'type' => 'organizer',
-                                    ]),
+                                    'url' => route(
+                                        'front-cleanup-hosting',
+                                        ['type' => 'organizer']
+                                    ),
                                 ],
                                 [
                                     'name' => $event->event_name,
-                                    'url' => route('front-cleanup-detail', [
-                                        'id' => $event->encrypted_id,
-                                    ]),
+                                    'url' => route(
+                                        'front-cleanup-detail',
+                                        ['id' => $event->encrypted_id]
+                                    ),
                                 ],
                             ];
                         @endphp
 
-                        <x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs" />
+                        <x-reusables.frontend.breadcrumb
+                            :breadcrumbs="$breadcrumbs"
+                        />
                     </div>
 
                     <div class="d-flex flex-wrap summary-toolbar">
+                        
+                        @if(!empty($event->slug))
+                            <a
+                                href="{{ route(
+                                    'front-duplicate-an-event',
+                                    ['slug' => $event->slug]
+                                ) }}"
+                                class="summary-action-btn"
+                            >
+                                <i class="fa-regular fa-clone"></i>
+                                <span>Duplicate Event</span>
+                            </a>
+                        @endif
+                        
                         @if($publicEventUrl)
                             <button
                                 type="button"
@@ -853,7 +975,10 @@
                         @endif
 
                         @if($iCalUrl)
-                            <a href="{{ $iCalUrl }}" class="summary-action-btn">
+                            <a
+                                href="{{ $iCalUrl }}"
+                                class="summary-action-btn"
+                            >
                                 <i class="fa-solid fa-calendar-days"></i>
                                 <span>Download iCal</span>
                             </a>
@@ -865,6 +990,19 @@
                                 <i class="fa-solid fa-calendar-days"></i>
                                 <span>Download iCal</span>
                             </span>
+                        @endif
+
+                        @if($canEditEvent)
+                            <a
+                                href="{{ route(
+                                    'front-post-a-event',
+                                    ['id' => $event->encrypted_id]
+                                ) }}"
+                                class="summary-action-btn"
+                            >
+                                <i class="fa-solid fa-pen-to-square"></i>
+                                <span>Edit</span>
+                            </a>
                         @endif
                     </div>
                 </div>
@@ -905,119 +1043,84 @@
                             </div>
                         </div>
 
-                        <div class="row g-4 align-items-start">
-                            <div class="col-lg-8">
-                                <h2 class="event-title">{{ $event->event_name }}</h2>
+                        <h2 class="event-title">
+                            {{ $event->event_name }}
+                        </h2>
 
-                                <div class="event-badges mt-3">
-                                    <span class="soft-badge">
-                                        {{ $text($event->category?->name) }}
+                        <div class="event-badges mt-2">
+                            <span class="soft-badge">
+                                {{ $text($event->category?->name) }}
+                            </span>
+
+                            <span class="soft-badge">
+                                {{ $event->is_private
+                                    ? 'Private Event'
+                                    : 'Public Event' }}
+                            </span>
+                        </div>
+
+                        <div class="organizer-row">
+                            <i class="fa-solid fa-user"></i>
+
+                            <span class="organizer-label">
+                                Organizer:
+                            </span>
+
+                            <span class="organizer-name">
+                                {{ $organizerName }}
+                            </span>
+                        </div>
+
+                        <div class="description-block">
+                            <span class="detail-label">Description</span>
+
+                            <p class="description-text {{ empty(
+                                trim(strip_tags($event->description ?? ''))
+                            ) ? 'empty-value' : '' }}">
+                                {{ $text($event->description) }}
+                            </p>
+                        </div>
+
+                        <div class="overview-meta">
+                            <div class="simple-grid">
+                                <div class="simple-field">
+                                    <span class="detail-label">
+                                        Event URL Slug
                                     </span>
 
-                                    <!-- <span class="soft-badge">
-                                        {{ ucfirst($text($event->status)) }}
-                                    </span> -->
-
-                                    <span class="soft-badge">
-                                        {{ $event->is_private ? 'Private Event' : 'Public Event' }}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div class="col-lg-4">
-                                <div class="organizer-card">
-                                    <div class="organizer-icon">
-                                        <i class="fa-solid fa-user"></i>
-                                    </div>
-
-                                    <div>
-                                        <span class="organizer-caption">Organizer</span>
-                                        <p class="organizer-name">
-                                            {{ $text($event->creator?->name) }}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-12">
-                                <div class="content-box">
-                                    <span class="content-box-label">Description</span>
-
-                                    <p class="content-box-value {{ empty(trim(strip_tags($event->description ?? ''))) ? 'empty-value' : '' }}">
-                                        {{ $text($event->description) }}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6 col-xl-4">
-                                <div class="info-card">
-                                    <div class="info-card-head">
-                                        <span class="info-card-icon">
-                                            <i class="fa-solid fa-link"></i>
-                                        </span>
-
-                                        <span class="info-card-label">Event URL Slug</span>
-                                    </div>
-
-                                    <p class="info-card-value {{ empty($event->slug) ? 'empty-value' : '' }}">
+                                    <p class="detail-value {{ empty(
+                                        $event->slug
+                                    ) ? 'empty-value' : '' }}">
                                         {{ $text($event->slug) }}
                                     </p>
                                 </div>
-                            </div>
 
-                            <!-- <div class="col-md-6 col-xl-3">
-                                <div class="info-card">
-                                    <div class="info-card-head">
-                                        <span class="info-card-icon">
-                                            <i class="fa-solid fa-file-circle-check"></i>
-                                        </span>
+                                <div class="simple-field">
+                                    <span class="detail-label">
+                                        {{ $statusDetailLabel }}
+                                    </span>
 
-                                        <span class="info-card-label">Community Service Form</span>
-                                    </div>
-
-                                    <p class="info-card-value">
-                                        {{ $yesNo($event->allow_community_service_form) }}
+                                    <p class="detail-value">
+                                        {{ $statusDetailValue }}
                                     </p>
                                 </div>
-                            </div> -->
 
-                            <div class="col-md-6 col-xl-4">
-                                <div class="info-card">
-                                    <div class="info-card-head">
-                                        <span class="info-card-icon">
-                                            <i class="fa-solid fa-ban"></i>
-                                        </span>
-
-                                        <span class="info-card-label">Cancelled At</span>
-                                    </div>
-
-                                    <p class="info-card-value {{ empty($event->cancelled_at) ? 'empty-value' : '' }}">
-                                        {{ $formatDateTime($event->cancelled_at) }}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6 col-xl-4">
-                                <div class="info-card">
-                                    <div class="info-card-head">
-                                        <span class="info-card-icon">
-                                            <i class="fa-solid fa-globe"></i>
-                                        </span>
-
-                                        <span class="info-card-label">Public Event URL</span>
-                                    </div>
+                                <div class="simple-field">
+                                    <span class="detail-label">
+                                        Public Event URL
+                                    </span>
 
                                     @if($publicEventUrl)
                                         <a
                                             href="{{ $publicEventUrl }}"
                                             target="_blank"
-                                            class="info-card-value"
+                                            rel="noopener"
+                                            class="detail-value"
                                         >
-                                            Open public event page
-                                            <i class="fa-solid fa-arrow-up-right-from-square ms-1"></i>
+                                            {{ $publicEventUrl }}
                                         </a>
                                     @else
-                                        <p class="info-card-value empty-value">
+                                        <p class="detail-value empty-value">
                                             Not Provided
                                         </p>
                                     @endif
@@ -1048,102 +1151,90 @@
 
                 <div id="cleanupScheduleSection" class="collapse show">
                     <div class="detail-section-body">
-                        <h5 class="subsection-title">
-                            <i class="fa-solid fa-clock"></i>
-                            Event Schedule
-                        </h5>
+                        <h5 class="subsection-title">Event Schedule</h5>
 
-                        <div class="row g-3">
-                            @foreach(array_slice($scheduleItems, 0, 6) as $item)
-                                <div class="col-md-6 col-xl-4">
-                                    <div class="info-card">
-                                        <div class="info-card-head">
-                                            <span class="info-card-icon">
-                                                <i class="fa-solid {{ $item['icon'] }}"></i>
-                                            </span>
+                        <div class="simple-grid">
+                            @foreach($scheduleItems as $item)
+                                <div class="simple-field">
+                                    <span class="detail-label">
+                                        {{ $item['label'] }}
+                                    </span>
 
-                                            <span class="info-card-label">
-                                                {{ $item['label'] }}
-                                            </span>
-                                        </div>
-
-                                        <p class="info-card-value {{ $item['value'] === 'Not Provided' ? 'empty-value' : '' }}">
-                                            {{ $item['value'] }}
-                                        </p>
-                                    </div>
+                                    <p class="detail-value {{
+                                        $item['value'] === 'Not Provided'
+                                            ? 'empty-value'
+                                            : ''
+                                    }}">
+                                        {{ $item['value'] }}
+                                    </p>
                                 </div>
                             @endforeach
                         </div>
 
-                        <hr class="my-4">
-
-                        <h5 class="subsection-title">
-                            <i class="fa-solid fa-location-dot"></i>
+                        <h5 class="subsection-title mt-4">
                             Event Location
                         </h5>
 
-                        <div class="location-card mb-3">
-                            <span class="content-box-label">Event Address or Venue</span>
+                        <div class="location-box">
+                            <div class="location-heading-row">
+                                <div class="location-content">
+                                    <span class="detail-label">
+                                        Event Address or Venue
+                                    </span>
 
-                            <p class="location-address {{ empty($event->venue) ? 'empty-value' : '' }}">
-                                {{ $text($event->venue) }}
-                            </p>
+                                    <p class="detail-value {{ empty(
+                                        $event->fullAddress
+                                    ) ? 'empty-value' : '' }}">
+                                        {{ $text($event->fullAddress) }}
+                                    </p>
+                                </div>
 
-                            @if(!empty($event->latitude) && !empty($event->longitude))
-                                <a
-                                    href="https://www.google.com/maps?q={{ urlencode($event->latitude.','.$event->longitude) }}"
-                                    target="_blank"
-                                    class="map-link"
-                                >
-                                    <i class="fa-solid fa-map-location-dot"></i>
-                                    View on Google Maps
-                                </a>
-                            @endif
+                                @if(
+                                    !empty($event->latitude) &&
+                                    !empty($event->longitude)
+                                )
+                                    <a
+                                        href="https://www.google.com/maps?q={{ urlencode(
+                                            $event->latitude.','.$event->longitude
+                                        ) }}"
+                                        target="_blank"
+                                        rel="noopener"
+                                        class="map-link"
+                                    >
+                                        <i class="fa-solid fa-location-dot"></i>
+                                        View on Google Maps
+                                    </a>
+                                @endif
+                            </div>
                         </div>
 
-                        <div class="row g-3">
-                            @foreach(array_slice($scheduleItems, 6) as $item)
-                                <div class="col-md-4">
-                                    <div class="info-card">
-                                        <div class="info-card-head">
-                                            <span class="info-card-icon">
-                                                <i class="fa-solid {{ $item['icon'] }}"></i>
-                                            </span>
+                        <div class="row g-4 mt-1">
+                            <div class="col-md-6">
+                                <span class="detail-label">
+                                    Parking Information
+                                </span>
 
-                                            <span class="info-card-label">
-                                                {{ $item['label'] }}
-                                            </span>
-                                        </div>
-
-                                        <p class="info-card-value {{ $item['value'] === 'Not Provided' ? 'empty-value' : '' }}">
-                                            {{ $item['value'] }}
-                                        </p>
-                                    </div>
-                                </div>
-                            @endforeach
-
-                            <div class="col-lg-6">
-                                <div class="content-box h-100">
-                                    <span class="content-box-label">
-                                        Parking Information
-                                    </span>
-
-                                    <p class="content-box-value {{ empty($event->parking_info_details) ? 'empty-value' : '' }}">
-                                        {{ $text($event->parking_info_details) }}
-                                    </p>
-                                </div>
+                                <p class="detail-value {{ empty(
+                                    $event->parking_info_details
+                                ) ? 'empty-value' : '' }}">
+                                    {{ $text(
+                                        $event->parking_info_details
+                                    ) }}
+                                </p>
                             </div>
 
-                            <div class="col-lg-6">
-                                <div class="content-box h-100">
-                                    <span class="content-box-label">
-                                        Meeting Spot Information
-                                    </span>
+                            <div class="col-md-6">
+                                <span class="detail-label">
+                                    Meeting Spot Information
+                                </span>
 
-                                    <p class="content-box-value {{ empty($event->meeting_spot_details) ? 'empty-value' : '' }}">
-                                        {{ $text($event->meeting_spot_details) }}
-                                    </p>
-                                </div>
+                                <p class="detail-value {{ empty(
+                                    $event->meeting_spot_details
+                                ) ? 'empty-value' : '' }}">
+                                    {{ $text(
+                                        $event->meeting_spot_details
+                                    ) }}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -1171,11 +1262,10 @@
                 <div id="cleanupMediaSection" class="collapse show">
                     <div class="detail-section-body">
                         <h5 class="subsection-title">
-                            <i class="fa-solid fa-image"></i>
                             Event Banner ({{ ucfirst($text(
-                                            $event->banner_image_orientation,
-                                            'Landscape'
-                                        )) }})
+                                $event->banner_image_orientation,
+                                'Landscape'
+                            )) }})
                         </h5>
 
                         <div class="media-banner">
@@ -1185,211 +1275,97 @@
                             >
                         </div>
 
-                        <!-- <div class="row g-3 mt-1">
-                            <div class="col-md-4">
-                                <div class="info-card">
-                                    <div class="info-card-head">
-                                        <span class="info-card-icon">
-                                            <i class="fa-solid fa-crop-simple"></i>
-                                        </span>
-
-                                        <span class="info-card-label">
-                                            Banner Orientation
-                                        </span>
-                                    </div>
-
-                                    <p class="info-card-value">
-                                        {{ ucfirst($text(
-                                            $event->banner_image_orientation,
-                                            'Landscape'
-                                        )) }}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <div class="info-card">
-                                    <div class="info-card-head">
-                                        <span class="info-card-icon">
-                                            <i class="fa-solid fa-repeat"></i>
-                                        </span>
-
-                                        <span class="info-card-label">
-                                            Event Recurrence
-                                        </span>
-                                    </div>
-
-                                    <p class="info-card-value {{ empty($event->event_reoccurance) ? 'empty-value' : '' }}">
-                                        {{ $text($event->event_reoccurance) }}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <div class="info-card">
-                                    <div class="info-card-head">
-                                        <span class="info-card-icon">
-                                            <i class="fa-solid fa-video"></i>
-                                        </span>
-
-                                        <span class="info-card-label">Video URL</span>
-                                    </div>
-
-                                    @if(!empty($event->video_url))
-                                        <a
-                                            href="{{ $event->video_url }}"
-                                            target="_blank"
-                                            class="info-card-value"
-                                        >
-                                            Open video
-                                            <i class="fa-solid fa-arrow-up-right-from-square ms-1"></i>
-                                        </a>
-                                    @else
-                                        <p class="info-card-value empty-value">
-                                            Not Provided
-                                        </p>
-                                    @endif
-                                </div>
-                            </div>
-                        </div> -->
-
-                        <hr class="my-4">
-
-                        <h5 class="subsection-title">
-                            <i class="fa-solid fa-screwdriver-wrench"></i>
+                        <h5 class="subsection-title mt-4">
                             Tools & Classification
                         </h5>
 
-                        <div class="row g-3">
+                        <div class="row g-4">
                             <div class="col-md-6">
-                                <div class="info-card">
-                                    <div class="info-card-head">
-                                        <span class="info-card-icon">
-                                            <i class="fa-solid fa-hand"></i>
-                                        </span>
+                                <span class="detail-label">
+                                    What Should Volunteers Bring?
+                                </span>
 
-                                        <span class="info-card-label">
-                                            What Should Volunteers Bring?
-                                        </span>
-                                    </div>
-
-                                    <div>
-                                        @forelse($event->bringTools as $tool)
-                                            <span class="tool-chip">
-                                                {{ $tool->name }}
-                                            </span>
-                                        @empty
-                                            <p class="info-card-value empty-value">
-                                                Not Provided
-                                            </p>
-                                        @endforelse
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="info-card">
-                                    <div class="info-card-head">
-                                        <span class="info-card-icon">
-                                            <i class="fa-solid fa-box-open"></i>
-                                        </span>
-
-                                        <span class="info-card-label">
-                                            What Will Be Provided?
-                                        </span>
-                                    </div>
-
-                                    <div>
-                                        @forelse($event->providedTools as $tool)
-                                            <span class="tool-chip">
-                                                {{ $tool->name }}
-                                            </span>
-                                        @empty
-                                            <p class="info-card-value empty-value">
-                                                Not Provided
-                                            </p>
-                                        @endforelse
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- <div class="col-md-6">
-                                <div class="info-card">
-                                    <div class="info-card-head">
-                                        <span class="info-card-icon">
-                                            <i class="fa-solid fa-users"></i>
-                                        </span>
-
-                                        <span class="info-card-label">Volunteer Tags</span>
-                                    </div>
-
-                                    <div>
-                                        @forelse($event->volunteertags as $tag)
-                                            <span class="tool-chip">
-                                                {{ $tag->name }}
-                                            </span>
-                                        @empty
-                                            <p class="info-card-value empty-value">
-                                                Not Provided
-                                            </p>
-                                        @endforelse
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="info-card">
-                                    <div class="info-card-head">
-                                        <span class="info-card-icon">
-                                            <i class="fa-solid fa-tags"></i>
-                                        </span>
-
-                                        <span class="info-card-label">Event Tags</span>
-                                    </div>
-
-                                    <div>
-                                        @forelse($event->tags as $tag)
-                                            <span class="tool-chip">
-                                                {{ $tag->name }}
-                                            </span>
-                                        @empty
-                                            <p class="info-card-value empty-value">
-                                                Not Provided
-                                            </p>
-                                        @endforelse
-                                    </div>
-                                </div>
-                            </div> -->
-
-                            <div class="col-md-4">
-                                <div class="info-card">
-                                    <div class="info-card-head">
-                                        <span class="info-card-icon">
-                                            <i class="fa-solid fa-bell"></i>
-                                        </span>
-
-                                        <span class="info-card-label">
-                                            Reminder Email Enabled
-                                        </span>
-                                    </div>
-
-                                    <p class="info-card-value">
-                                        {{ $yesNo($event->is_send_reminder_email) }}
+                                @if($event->bringTools->isNotEmpty())
+                                    <p class="text-list">
+                                        {{ $event->bringTools
+                                            ->pluck('name')
+                                            ->implode(', ') }}
                                     </p>
-                                </div>
-                            </div>
-
-                            <div class="col-md-8">
-                                <div class="content-box h-100">
-                                    <span class="content-box-label">
-                                        Reminder Custom Note
-                                    </span>
-
-                                    <p class="content-box-value {{ empty($event->reminder_custom_note) ? 'empty-value' : '' }}">
-                                        {{ $text($event->reminder_custom_note) }}
+                                @else
+                                    <p class="text-list empty-value">
+                                        Not Provided
                                     </p>
-                                </div>
+                                @endif
                             </div>
+
+                            <div class="col-md-6">
+                                <span class="detail-label">
+                                    What Will Be Provided?
+                                </span>
+
+                                @if($event->providedTools->isNotEmpty())
+                                    <p class="text-list">
+                                        {{ $event->providedTools
+                                            ->pluck('name')
+                                            ->implode(', ') }}
+                                    </p>
+                                @else
+                                    <p class="text-list empty-value">
+                                        Not Provided
+                                    </p>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- SEO --}}
+            <div class="main-card detail-section mt-4">
+                <button
+                    type="button"
+                    class="detail-section-toggle"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#cleanupSeoSection"
+                    aria-expanded="true"
+                    aria-controls="cleanupSeoSection"
+                >
+                    <h4>
+                        <i class="fa-solid fa-magnifying-glass step_icon me-3"></i>
+                        SEO Details
+                    </h4>
+
+                    <i class="fa-solid fa-chevron-down section-toggle-icon"></i>
+                </button>
+
+                <div id="cleanupSeoSection" class="collapse show">
+                    <div class="detail-section-body">
+                        <div class="seo-field">
+                            <span class="detail-label">Meta Title</span>
+
+                            <p class="detail-value {{ empty(
+                                $event->meta_title
+                            ) ? 'empty-value' : '' }}">{{ $text($event->meta_title) }}</p>
+                        </div>
+
+                        <div class="seo-field">
+                            <span class="detail-label">
+                                Focus Keywords
+                            </span>
+
+                            <p class="detail-value {{ empty(
+                                $event->meta_focus_keyword
+                            ) ? 'empty-value' : '' }}">{{ $text($event->meta_focus_keyword) }}</p>
+                        </div>
+
+                        <div class="seo-field">
+                            <span class="detail-label">
+                                Meta Description
+                            </span>
+
+                            <p class="detail-value {{ empty(
+                                $event->meta_description
+                            ) ? 'empty-value' : '' }}">{{ $text($event->meta_description) }}</p>
                         </div>
                     </div>
                 </div>
@@ -1416,219 +1392,346 @@
                 <div id="cleanupRegistrationSection" class="collapse show">
                     <div class="detail-section-body">
                         <h5 class="subsection-title">
-                            <i class="fa-solid fa-sliders"></i>
                             Registration Settings
                         </h5>
 
-                        <div class="row g-3">
+                        <div class="settings-list">
                             @foreach($registrationItems as $item)
-                                <div class="col-md-6 col-xl-4">
-                                    <div class="info-card">
-                                        <div class="info-card-head">
-                                            <span class="info-card-icon">
-                                                <i class="fa-solid fa-circle-check"></i>
-                                            </span>
+                                <div class="setting-row">
+                                    <span class="setting-label">
+                                        {{ $item['label'] }}
+                                    </span>
 
-                                            <span class="info-card-label">
-                                                {{ $item['label'] }}
-                                            </span>
-                                        </div>
-
-                                        <p class="info-card-value {{ $item['value'] === 'Not Provided' ? 'empty-value' : '' }}">
-                                            {{ $item['value'] }}
-                                        </p>
-                                    </div>
+                                    <span class="setting-value {{
+                                        $item['value'] === 'Not Provided'
+                                            ? 'empty-value'
+                                            : ''
+                                    }}">
+                                        {{ $item['value'] }}
+                                    </span>
                                 </div>
                             @endforeach
 
-                            @if($event->participation_type==4)
-                            <div class="col-md-8">
-                                <div class="info-card">
-                                    <div class="info-card-head">
-                                        <span class="info-card-icon">
-                                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                                        </span>
+                            <div class="setting-row">
+                                <span class="setting-label">
+                                    Reminder Email Enabled
+                                </span>
 
-                                        <span class="info-card-label">
-                                            External Registration URL
-                                        </span>
-                                    </div>
+                                <span class="setting-value">
+                                    {{ $yesNo(
+                                        $event->is_send_reminder_email
+                                    ) }}
 
-                                    @if(!empty($event->participation_type_external_link))
-                                        <a
-                                            href="{{ $event->participation_type_external_link }}"
-                                            target="_blank"
-                                            class="info-card-value"
+                                    @if($hasReminderNote)
+                                        <button
+                                            type="button"
+                                            class="popover-trigger"
+                                            data-bs-toggle="popover"
+                                            data-bs-trigger="focus"
+                                            data-bs-placement="top"
+                                            data-bs-html="false"
+                                            data-bs-title="Reminder Custom Note"
+                                            data-bs-content="{{ $text(
+                                                $event->reminder_custom_note
+                                            ) }}"
+                                            aria-label="View reminder custom note"
                                         >
-                                            {{ $event->participation_type_external_link }}
-                                        </a>
-                                    @else
-                                        <p class="info-card-value empty-value">
-                                            Not Provided
-                                        </p>
+                                            <i class="fa-regular fa-circle-question"></i>
+                                            View
+                                        </button>
                                     @endif
-                                </div>
+                                </span>
                             </div>
-                            @endif
 
-                            <div class="col-md-12">
-                                <div class="content-box h-100">
-                                    <span class="content-box-label">
-                                        Volunteer Questions
+                            <div class="setting-row">
+                                <span class="setting-label">
+                                    Volunteer Questions
+                                </span>
+
+                                <span class="setting-value">
+                                    {{ $hasVolunteerQuestions ? 'Yes' : 'No' }}
+
+                                    @if($hasVolunteerQuestions)
+                                        <button
+                                            type="button"
+                                            class="popover-trigger"
+                                            data-bs-toggle="popover"
+                                            data-bs-trigger="focus"
+                                            data-bs-placement="top"
+                                            data-bs-html="false"
+                                            data-bs-title="Volunteer Questions"
+                                            data-bs-content="{{ $text(
+                                                $event->ticket_questions
+                                            ) }}"
+                                            aria-label="View volunteer questions"
+                                        >
+                                            <i class="fa-regular fa-circle-question"></i>
+                                            View
+                                        </button>
+                                    @endif
+                                </span>
+                            </div>
+
+                            @if((int) $event->participation_type === 4)
+                                <div class="setting-row">
+                                    <span class="setting-label">
+                                        External Registration URL
                                     </span>
 
-                                    <p class="content-box-value {{ empty($event->ticket_questions) ? 'empty-value' : '' }}">
-                                        {{ $text($event->ticket_questions) }}
-                                    </p>
+                                    <span class="setting-value">
+                                        @if(!empty(
+                                            $event->participation_type_external_link
+                                        ))
+                                            <a
+                                                href="{{ $event->participation_type_external_link }}"
+                                                target="_blank"
+                                                rel="noopener"
+                                            >
+                                                {{ $event->participation_type_external_link }}
+                                            </a>
+                                        @else
+                                            <span class="empty-value">
+                                                Not Provided
+                                            </span>
+                                        @endif
+                                    </span>
                                 </div>
-                            </div>
+                            @endif
                         </div>
 
-                        <hr class="my-4">
-
-                        <h5 class="subsection-title">
-                            <i class="fa-solid fa-ticket-simple"></i>
+                        <h5 class="subsection-title mt-4">
                             Ticket Types
                         </h5>
 
-                        <div class="row g-3">
-                            @forelse($event->eventTickets as $ticket)
-                                @php
-                                    $soldCount = $ticket->soldTickets
-                                        ->where('rsvp_confirmation', 1)
-                                        ->count();
+                        <div class="ticket-table-wrap">
+                            <table class="table ticket-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Price</th>
+                                        <th>Sold</th>
+                                        <th>Cancelled</th>
+                                        <th>Remaining</th>
+                                        <th>Max. Per Order</th>
+                                        <th>Sales Date</th>
+                                        <th>Passcode</th>
+                                    </tr>
+                                </thead>
 
-                                    $cancelledTicketCount = $ticket->soldTickets
-                                        ->where('rsvp_confirmation', 0)
-                                        ->count();
+                                @forelse($event->eventTickets as $ticket)
+                                    @php
+                                        $soldCount = $ticket->soldTickets
+                                            ->where(
+                                                'rsvp_confirmation',
+                                                1
+                                            )
+                                            ->count();
 
-                                    $remainingCount = max(
-                                        0,
-                                        (int) $ticket->available_quantity - $soldCount
-                                    );
+                                        $cancelledTicketCount =
+                                            $ticket->soldTickets
+                                                ->where(
+                                                    'rsvp_confirmation',
+                                                    0
+                                                )
+                                                ->count();
 
-                                    $ticketRows = [
-                                        ['Status', $ticket->is_active ? 'Active' : 'Inactive'],
-                                        [
-                                            'Price',
-                                            $ticket->ticket_type === 'paid'
-                                                ? '$'.number_format((float) $ticket->ticket_price, 2)
-                                                : 'Free',
-                                        ],
-                                        ['Available Quantity', $ticket->available_quantity],
-                                        ['Sold', $soldCount],
-                                        ['Cancelled', $cancelledTicketCount],
-                                        ['Remaining', $remainingCount],
-                                        [
-                                            'Maximum Per Order',
-                                            $text($ticket->max_qty_allowed_per_order),
-                                        ],
-                                        ['Sale Start', $formatDate($ticket->sell_start_time)],
-                                        ['Sale End', $formatDate($ticket->sell_end_time)],
-                                        ['Passcode', $text($ticket->pass_code)],
-                                    ];
-                                @endphp
+                                        $remainingCount = max(
+                                            0,
+                                            (int) $ticket
+                                                ->available_quantity -
+                                            $soldCount
+                                        );
+                                    @endphp
 
-                                <div class="col-lg-6">
-                                    <div class="ticket-card">
-                                        <div class="ticket-card-header">
-                                            <h6 class="ticket-card-title">
+                                    <tbody>
+                                        <tr>
+                                            <td class="ticket-name">
+                                                <span
+                                                    class="status-dot {{
+                                                        $ticket->is_active
+                                                            ? 'active'
+                                                            : 'inactive'
+                                                    }}"
+                                                    title="{{ $ticket->is_active
+                                                        ? 'Active'
+                                                        : 'Inactive' }}"
+                                                ></span>
+
                                                 {{ $ticket->ticket_name }}
-                                            </h6>
 
-                                            <span class="badge bg-light text-dark border">
-                                                {{ ucfirst($ticket->ticket_type) }}
-                                            </span>
-                                        </div>
+                                                <span class="ticket-subvalue">
+                                                    {{ ucfirst(
+                                                        $ticket->ticket_type
+                                                    ) }}
+                                                </span>
+                                            </td>
 
-                                        <div class="ticket-card-body">
-                                            @foreach($ticketRows as $ticketRow)
-                                                <div class="ticket-row">
-                                                    <span class="ticket-row-label">
-                                                        {{ $ticketRow[0] }}
-                                                    </span>
+                                            <td>
+                                                {{ $ticket->ticket_type ===
+                                                    'paid'
+                                                    ? '$'.number_format(
+                                                        (float) $ticket
+                                                            ->ticket_price,
+                                                        2
+                                                    )
+                                                    : 'Free' }}
+                                            </td>
 
-                                                    <span class="ticket-row-value {{ $ticketRow[1] === 'Not Provided' ? 'empty-value' : '' }}">
-                                                        {{ $ticketRow[1] }}
-                                                    </span>
-                                                </div>
-                                            @endforeach
+                                            <td>
+                                                {{ $soldCount }} /
+                                                {{ $ticket->available_quantity }}
+                                            </td>
 
-                                            <div class="content-box mt-3">
-                                                <span class="content-box-label">
-                                                    Ticket Description
+                                            <td>
+                                                {{ $cancelledTicketCount }}
+                                            </td>
+
+                                            <td>
+                                                {{ $remainingCount }}
+                                            </td>
+
+                                            <td>
+                                                {{ $text(
+                                                    $ticket
+                                                        ->max_qty_allowed_per_order
+                                                ) }}
+                                            </td>
+
+                                            <td>
+                                                <span class="ticket-date-primary">
+                                                    {{ $formatDate(
+                                                        $ticket
+                                                            ->sell_start_time
+                                                    ) }}
                                                 </span>
 
-                                                <p class="content-box-value {{ empty($ticket->ticket_description) ? 'empty-value' : '' }}">
-                                                    {{ $text($ticket->ticket_description) }}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @empty
-                                <div class="col-12">
-                                    <div class="content-box">
-                                        <p class="content-box-value empty-value">
-                                            No ticket types have been added.
-                                        </p>
-                                    </div>
-                                </div>
-                            @endforelse
+                                                <span class="ticket-date-secondary">
+                                                    to
+                                                    {{ $formatDate(
+                                                        $ticket
+                                                            ->sell_end_time
+                                                    ) }}
+                                                </span>
+                                            </td>
+
+                                            <td>
+                                                <span class="{{ empty(
+                                                    $ticket->pass_code
+                                                ) ? 'empty-value' : '' }}">
+                                                    {{ $text(
+                                                        $ticket->pass_code
+                                                    ) }}
+                                                </span>
+                                            </td>
+                                        </tr>
+
+                                        <tr class="ticket-description-row">
+                                            <td colspan="8">
+                                                <span class="ticket-description-label">
+                                                    Ticket Description:
+                                                </span>
+
+                                                <span class="{{ empty(
+                                                    $ticket->ticket_description
+                                                ) ? 'empty-value' : '' }}">
+                                                    {{ $text(
+                                                        $ticket
+                                                            ->ticket_description
+                                                    ) }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                @empty
+                                    <tbody>
+                                        <tr>
+                                            <td
+                                                colspan="8"
+                                                class="text-center empty-value"
+                                            >
+                                                No ticket types have been added.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                @endforelse
+                            </table>
                         </div>
 
-                        <hr class="my-4">
-
-                        <h5 class="subsection-title">
-                            <i class="fa-solid fa-file-signature"></i>
+                        <h5 class="subsection-title mt-4">
                             Waiver Information
                         </h5>
 
-                        <div class="waiver-box">
-                            <span class="waiver-type">
-                                <i class="fa-solid fa-file-shield"></i>
-
-                                {{ $waiverTypes[$event->waiver_form_type]
-                                    ?? 'No Waiver Form' }}
-                            </span>
-
-                            <div class="mt-3">
-                                <span class="content-box-label">
-                                    Waiver Content
+                        <div class="waiver-row">
+                            <div class="waiver-information">
+                                <span class="detail-label">
+                                    Waiver Type
                                 </span>
 
-                                @if($waiverPdfPath)
-                                    <a
-                                        href="{{ $waiverPdfPath }}"
-                                        target="_blank"
-                                        class="summary-action-btn"
-                                    >
-                                        <i class="fa-solid fa-file-pdf"></i>
-                                        View Waiver PDF
-                                    </a>
-                                @elseif(
-                                    $event->waiver_form_type === 'external_link' &&
-                                    !empty($event->waiver_form_content)
-                                )
-                                    <a
-                                        href="{{ $event->waiver_form_content }}"
-                                        target="_blank"
-                                        class="waiver-content d-block"
-                                    >
-                                        {{ $event->waiver_form_content }}
-                                    </a>
-                                @else
-                                    <p class="waiver-content {{ empty($event->waiver_form_content) ? 'empty-value' : '' }}">
-                                        {{ $text($event->waiver_form_content) }}
-                                    </p>
-                                @endif
+                                <p class="detail-value">
+                                    {{ $waiverTypes[
+                                        $event->waiver_form_type
+                                    ] ?? 'No Waiver Form' }}
+                                </p>
                             </div>
+
+                            @if($hasWaiverContent)
+                                <button
+                                    type="button"
+                                    class="waiver-toggle"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#cleanupWaiverContent"
+                                    aria-expanded="false"
+                                    aria-controls="cleanupWaiverContent"
+                                >
+                                    <span class="waiver-toggle-text">
+                                        Show Waiver Content
+                                    </span>
+
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </button>
+                            @endif
                         </div>
+
+                        @if($hasWaiverContent)
+                            <div
+                                id="cleanupWaiverContent"
+                                class="collapse"
+                            >
+                                <div class="waiver-collapse-content">
+                                    @if($waiverPdfPath)
+                                        <a
+                                            href="{{ $waiverPdfPath }}"
+                                            target="_blank"
+                                            rel="noopener"
+                                            class="summary-action-btn"
+                                        >
+                                            <i class="fa-solid fa-file-pdf"></i>
+                                            View Waiver PDF
+                                        </a>
+                                    @elseif(
+                                        $event->waiver_form_type ===
+                                            'external_link'
+                                    )
+                                        <a
+                                            href="{{ $event->waiver_form_content }}"
+                                            target="_blank"
+                                            rel="noopener"
+                                        >
+                                            {{ $event->waiver_form_content }}
+                                        </a>
+                                    @else
+                                        {{ $text(
+                                            $event->waiver_form_content
+                                        ) }}
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
 
-            {{-- Statistics --}}
+            {{-- Registration statistics --}}
             <div class="main-card detail-section mt-4">
                 <button
                     type="button"
@@ -1651,11 +1754,9 @@
                         <div class="row g-3">
                             <div class="col-6 col-md-4 col-xl">
                                 <div class="summary-stat">
-                                    <span class="summary-stat-icon">
-                                        <i class="fa-solid fa-user-group"></i>
+                                    <span class="summary-stat-label">
+                                        Registered
                                     </span>
-
-                                    <span class="summary-stat-label">Registered</span>
                                     <span class="summary-stat-value">
                                         {{ $statistics['registered'] }}
                                     </span>
@@ -1664,11 +1765,9 @@
 
                             <div class="col-6 col-md-4 col-xl">
                                 <div class="summary-stat">
-                                    <span class="summary-stat-icon">
-                                        <i class="fa-solid fa-user-check"></i>
+                                    <span class="summary-stat-label">
+                                        Checked In
                                     </span>
-
-                                    <span class="summary-stat-label">Checked In</span>
                                     <span class="summary-stat-value">
                                         {{ $statistics['checked_in'] }}
                                     </span>
@@ -1677,11 +1776,9 @@
 
                             <div class="col-6 col-md-4 col-xl">
                                 <div class="summary-stat">
-                                    <span class="summary-stat-icon">
-                                        <i class="fa-solid fa-file-signature"></i>
+                                    <span class="summary-stat-label">
+                                        Waivers Signed
                                     </span>
-
-                                    <span class="summary-stat-label">Waivers Signed</span>
                                     <span class="summary-stat-value">
                                         {{ $statistics['waivers'] }}
                                     </span>
@@ -1690,12 +1787,10 @@
 
                             <div class="col-6 col-md-4 col-xl">
                                 <div class="summary-stat">
-                                    <span class="summary-stat-icon">
-                                        <i class="fa-solid fa-user-xmark"></i>
+                                    <span class="summary-stat-label">
+                                        Cancelled
                                     </span>
-
-                                    <span class="summary-stat-label">Cancelled</span>
-                                    <span class="summary-stat-value">
+                                    <span class="summary-stat-value text-danger">
                                         {{ $statistics['cancelled'] }}
                                     </span>
                                 </div>
@@ -1703,13 +1798,14 @@
 
                             <div class="col-6 col-md-4 col-xl">
                                 <div class="summary-stat">
-                                    <span class="summary-stat-icon">
-                                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                                    <span class="summary-stat-label">
+                                        Donations
                                     </span>
-
-                                    <span class="summary-stat-label">Donations</span>
                                     <span class="summary-stat-value">
-                                        ${{ number_format($statistics['donations'], 2) }}
+                                        ${{ number_format(
+                                            $statistics['donations'],
+                                            2
+                                        ) }}
                                     </span>
                                 </div>
                             </div>
@@ -1718,152 +1814,7 @@
                 </div>
             </div>
 
-            {{-- Co-hosts --}}
-            <div class="main-card detail-section mt-4">
-                <button
-                    type="button"
-                    class="detail-section-toggle"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#cleanupCohostSection"
-                    aria-expanded="true"
-                    aria-controls="cleanupCohostSection"
-                >
-                    <h4>
-                        <i class="fa-solid fa-people-group step_icon me-3"></i>
-                        Co-Hosts
-                    </h4>
-
-                    <i class="fa-solid fa-chevron-down section-toggle-icon"></i>
-                </button>
-
-                <div id="cleanupCohostSection" class="collapse show">
-                    <div class="detail-section-body">
-                        <div class="row g-3">
-                            @forelse($event->cohostRecords as $cohost)
-                                <div class="col-lg-6">
-                                    <div class="cohost-card">
-                                        <div class="cohost-header">
-                                            <div class="cohost-person">
-                                                <span class="cohost-avatar">
-                                                    <i class="fa-solid fa-user"></i>
-                                                </span>
-
-                                                <div>
-                                                    <h6 class="cohost-name">
-                                                        {{ $text($cohost->volunteer?->name) }}
-                                                    </h6>
-
-                                                    <span class="cohost-email">
-                                                        {{ $text($cohost->volunteer?->email_address) }}
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            <span class="badge bg-light text-dark border cohost-status">
-                                                {{ ucfirst($text($cohost->request_status)) }}
-                                            </span>
-                                        </div>
-
-                                        <div class="content-box">
-                                            <span class="content-box-label">
-                                                Extra Notes
-                                            </span>
-
-                                            <p class="content-box-value {{ empty($cohost->extra_notes) ? 'empty-value' : '' }}">
-                                                {{ $text($cohost->extra_notes) }}
-                                            </p>
-                                        </div>
-
-                                        <!-- <div class="mt-3">
-                                            <span class="content-box-label">
-                                                Permissions
-                                            </span>
-
-                                            @forelse($cohost->permissions as $permission)
-                                                <span class="tool-chip">
-                                                    {{ $cohostPermissionLabels[$permission->permission]
-                                                        ?? 'Permission '.$permission->permission }}
-                                                </span>
-                                            @empty
-                                                <p class="info-card-value empty-value">
-                                                    Not Provided
-                                                </p>
-                                            @endforelse
-                                        </div> -->
-                                    </div>
-                                </div>
-                            @empty
-                                <div class="col-12">
-                                    <div class="content-box">
-                                        <p class="content-box-value empty-value">
-                                            No co-hosts have been added.
-                                        </p>
-                                    </div>
-                                </div>
-                            @endforelse
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- SEO --}}
-            <div class="main-card detail-section mt-4">
-                <button
-                    type="button"
-                    class="detail-section-toggle"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#cleanupSeoSection"
-                    aria-expanded="true"
-                    aria-controls="cleanupSeoSection"
-                >
-                    <h4>
-                        <i class="fa-solid fa-magnifying-glass step_icon me-3"></i>
-                        SEO Details
-                    </h4>
-
-                    <i class="fa-solid fa-chevron-down section-toggle-icon"></i>
-                </button>
-
-                <div id="cleanupSeoSection" class="collapse show">
-                    <div class="detail-section-body">
-                        <div class="row g-3">
-                            @foreach($seoItems as $seoItem)
-                                <div class="col-lg-6">
-                                    <div class="info-card">
-                                        <div class="info-card-head">
-                                            <span class="info-card-icon">
-                                                <i class="fa-solid {{ $seoItem['icon'] }}"></i>
-                                            </span>
-
-                                            <span class="info-card-label">
-                                                {{ $seoItem['label'] }}
-                                            </span>
-                                        </div>
-
-                                        <p class="info-card-value {{ $seoItem['value'] === 'Not Provided' ? 'empty-value' : '' }}">
-                                            {{ $seoItem['value'] }}
-                                        </p>
-                                    </div>
-                                </div>
-                            @endforeach
-
-                            <div class="col-12">
-                                <div class="content-box">
-                                    <span class="content-box-label">
-                                        Meta Description
-                                    </span>
-
-                                    <p class="content-box-value {{ empty($event->meta_description) ? 'empty-value' : '' }}">
-                                        {{ $text($event->meta_description) }}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Cleanup reporting --}}
+            {{-- Wrap-up and reports --}}
             <div class="main-card detail-section mt-4 mb-4">
                 <button
                     type="button"
@@ -1875,7 +1826,7 @@
                 >
                     <h4>
                         <i class="fa-solid fa-clipboard-check step_icon me-3"></i>
-                        Cleanup Reporting
+                        Wrap-Up & Reports
                     </h4>
 
                     <i class="fa-solid fa-chevron-down section-toggle-icon"></i>
@@ -1883,226 +1834,233 @@
 
                 <div id="cleanupReportingSection" class="collapse show">
                     <div class="detail-section-body">
-                        <h5 class="subsection-title">
-                            <i class="fa-solid fa-users"></i>
-                            Volunteer Summary
-                        </h5>
+                        @if((int) $event->is_completed !== 1)
+                            <div class="report-status-alert mb-4">
+                                <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                                Cleanup Report Status: Pending. Please complete
+                                this after the event concludes.
+                            </div>
+                        @endif
 
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <div class="report-metric">
-                                    <span class="report-metric-icon">
-                                        <i class="fa-solid fa-user-group"></i>
-                                    </span>
+                        <div class="row g-5">
+                            <div class="col-lg-6">
+                                <h5 class="subsection-title">
+                                    Volunteer Stats
+                                </h5>
 
-                                    <div>
-                                        <span class="report-metric-label">
-                                            Registered Volunteers
+                                <div class="simple-grid">
+                                    <div class="simple-field">
+                                        <span class="detail-label">
+                                            Registered
                                         </span>
 
-                                        <span class="report-metric-value">
+                                        <p class="detail-value">
                                             {{ $statistics['registered'] }}
-                                        </span>
+                                        </p>
                                     </div>
-                                </div>
-                            </div>
 
-                            <div class="col-md-4">
-                                <div class="report-metric">
-                                    <span class="report-metric-icon">
-                                        <i class="fa-solid fa-globe"></i>
-                                    </span>
-
-                                    <div>
-                                        <span class="report-metric-label">
-                                            Registered From Other Sites
+                                    <div class="simple-field">
+                                        <span class="detail-label">
+                                            Other Sites
                                         </span>
 
-                                        <span class="report-metric-value">
+                                        <p class="detail-value">
                                             {{ $statistics['other_sites'] }}
+                                        </p>
+                                    </div>
+
+                                    <div class="simple-field">
+                                        <span class="detail-label">
+                                            Total
                                         </span>
+
+                                        <p class="detail-value">
+                                            {{ $statistics[
+                                                'total_volunteers'
+                                            ] }}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="col-md-4">
-                                <div class="report-metric">
-                                    <span class="report-metric-icon">
-                                        <i class="fa-solid fa-users"></i>
-                                    </span>
+                            <div class="col-lg-6">
+                                <h5 class="subsection-title">
+                                    Cleanup Impact
+                                </h5>
 
-                                    <div>
-                                        <span class="report-metric-label">
-                                            Total Volunteers
+                                <div class="simple-grid">
+                                    <div class="simple-field">
+                                        <span class="detail-label">
+                                            Waste Collected
                                         </span>
 
-                                        <span class="report-metric-value">
-                                            {{ $statistics['total_volunteers'] }}
+                                        <p class="detail-value {{
+                                            is_null($event->waste_collected)
+                                                ? 'empty-value'
+                                                : ''
+                                        }}">
+                                            {{ is_null(
+                                                $event->waste_collected
+                                            )
+                                                ? 'Not Provided'
+                                                : $event->waste_collected
+                                                    .' Pound (lb)' }}
+                                        </p>
+                                    </div>
+
+                                    <div class="simple-field">
+                                        <span class="detail-label">
+                                            Area Cleaned
                                         </span>
+
+                                        <p class="detail-value {{
+                                            is_null($event->area_cleaned)
+                                                ? 'empty-value'
+                                                : ''
+                                        }}">
+                                            {{ is_null($event->area_cleaned)
+                                                ? 'Not Provided'
+                                                : $event->area_cleaned
+                                                    .' Yards' }}
+                                        </p>
+                                    </div>
+
+                                    <div class="simple-field">
+                                        <span class="detail-label">
+                                            Total Hours
+                                        </span>
+
+                                        <p class="detail-value {{
+                                            is_null($event->volunteer_hours)
+                                                ? 'empty-value'
+                                                : ''
+                                        }}">
+                                            {{ $text(
+                                                $event->volunteer_hours
+                                            ) }}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <hr class="my-4">
+                        <h5 class="subsection-title mt-4">
+                            Reporting Details
+                        </h5>
 
-                        <h5 class="subsection-title">
-                            <i class="fa-solid fa-leaf"></i>
-                            Cleanup Impact
+                        <div class="row gx-4 reporting-details-row">
+                            <div class="col-md-6">
+                                <span class="detail-label">
+                                    Cleanup Report Status
+                                </span>
+
+                                <p class="detail-value">
+                                    {{ (int) $event->is_completed === 1
+                                        ? 'Completed'
+                                        : 'Pending' }}
+                                </p>
+                            </div>
+
+                            <div class="col-md-6">
+                                <span class="detail-label">
+                                    Wrap-Up Completed By
+                                </span>
+
+                                <p class="detail-value {{ empty(
+                                    $event->wrapup_email_sender
+                                ) ? 'empty-value' : '' }}">
+                                    {{ $text(
+                                        $event->wrapup_email_sender?->name
+                                    ) }}
+                                </p>
+                            </div>
+
+                            <div class="col-12 mt-3">
+                                <span class="detail-label">
+                                    Post Event Comments
+                                </span>
+
+                                <p class="detail-value {{ empty(
+                                    $event->post_event_notes
+                                ) ? 'empty-value' : '' }}">
+                                    {{ $text($event->post_event_notes) }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <h5 class="subsection-title mt-4">
+                            Post Event Images
                         </h5>
 
                         <div class="row g-3">
-                            <div class="col-md-4">
-                                <div class="report-metric">
-                                    <span class="report-metric-icon">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </span>
+                            @forelse($afterEventImages as $image)
+                                @php
+                                    $imagePath = is_array($image)
+                                        ? ($image['path'] ?? null)
+                                        : $image;
+                                @endphp
 
-                                    <div>
-                                        <span class="report-metric-label">
-                                            Waste Collected
-                                        </span>
-
-                                        <span class="report-metric-value {{ is_null($event->waste_collected) ? 'empty-value' : '' }}">
-                                            {{ is_null($event->waste_collected)
-                                                ? 'Not Provided'
-                                                : $event->waste_collected.' Pound (lb)' }}
-                                        </span>
+                                @if($imagePath)
+                                    <div class="col-sm-6 col-lg-3">
+                                        <a
+                                            href="{{ asset($imagePath) }}"
+                                            target="_blank"
+                                            rel="noopener"
+                                        >
+                                            <img
+                                                src="{{ asset($imagePath) }}"
+                                                class="after-event-image"
+                                                alt="Post event image"
+                                            >
+                                        </a>
                                     </div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <div class="report-metric">
-                                    <span class="report-metric-icon">
-                                        <i class="fa-solid fa-ruler-combined"></i>
-                                    </span>
-
-                                    <div>
-                                        <span class="report-metric-label">
-                                            Area Cleaned
-                                        </span>
-
-                                        <span class="report-metric-value {{ is_null($event->area_cleaned) ? 'empty-value' : '' }}">
-                                            {{ is_null($event->area_cleaned)
-                                                ? 'Not Provided'
-                                                : $event->area_cleaned.' Yards' }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <div class="report-metric">
-                                    <span class="report-metric-icon">
-                                        <i class="fa-solid fa-clock"></i>
-                                    </span>
-
-                                    <div>
-                                        <span class="report-metric-label">
-                                            Total Volunteer Hours
-                                        </span>
-
-                                        <span class="report-metric-value {{ is_null($event->volunteer_hours) ? 'empty-value' : '' }}">
-                                            {{ $text($event->volunteer_hours) }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="report-metric">
-                                    <span class="report-metric-icon">
-                                        <i class="fa-solid fa-clipboard-check"></i>
-                                    </span>
-
-                                    <div>
-                                        <span class="report-metric-label">
-                                            Cleanup Report Status
-                                        </span>
-
-                                        <span class="report-metric-value">
-                                            {{ (int) $event->is_completed === 1
-                                                ? 'Completed'
-                                                : 'Pending' }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="report-metric">
-                                    <span class="report-metric-icon">
-                                        <i class="fa-solid fa-user-check"></i>
-                                    </span>
-
-                                    <div>
-                                        <span class="report-metric-label">
-                                            Wrap-Up Completed By
-                                        </span>
-
-                                        <span class="report-metric-value {{ empty($event->wrapup_email_sender) ? 'empty-value' : '' }}">
-                                            {{ $text($event->wrapup_email_sender?->name) }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-12">
-                                <div class="content-box">
-                                    <span class="content-box-label">
-                                        Post Event Comments
-                                    </span>
-
-                                    <p class="content-box-value {{ empty($event->post_event_notes) ? 'empty-value' : '' }}">
-                                        {{ $text($event->post_event_notes) }}
+                                @endif
+                            @empty
+                                <div class="col-12">
+                                    <p class="detail-value empty-value">
+                                        Not Provided
                                     </p>
                                 </div>
-                            </div>
-
-                            <div class="col-12">
-                                <h5 class="subsection-title mt-2">
-                                    <i class="fa-solid fa-images"></i>
-                                    Post Event Images
-                                </h5>
-
-                                <div class="row g-3">
-                                    @forelse($afterEventImages as $image)
-                                        @php
-                                            $imagePath = is_array($image)
-                                                ? ($image['path'] ?? null)
-                                                : $image;
-                                        @endphp
-
-                                        @if($imagePath)
-                                            <div class="col-sm-6 col-lg-3">
-                                                <a
-                                                    href="{{ asset($imagePath) }}"
-                                                    target="_blank"
-                                                >
-                                                    <img
-                                                        src="{{ asset($imagePath) }}"
-                                                        class="after-event-image"
-                                                        alt="Post event image"
-                                                    >
-                                                </a>
-                                            </div>
-                                        @endif
-                                    @empty
-                                        <div class="col-12">
-                                            <div class="content-box">
-                                                <p class="content-box-value empty-value">
-                                                    Not Provided
-                                                </p>
-                                            </div>
-                                        </div>
-                                    @endforelse
-                                </div>
-                            </div>
+                            @endforelse
                         </div>
                     </div>
                 </div>
             </div>
+
+            {{-- Quick actions --}}
+            <div class="quick-actions-section mt-4 mb-4">
+                <h4 class="quick-actions-title">
+                    Quick Actions
+                </h4>
+                <div class="d-flex flex-wrap summary-toolbar">
+                    
+                    @if(!empty($event->slug))
+                        <a
+                            href="{{ route(
+                                'front-duplicate-an-event',
+                                ['slug' => $event->slug]
+                            ) }}"
+                            class="summary-action-btn"
+                        >
+                            <i class="fa-regular fa-clone"></i>
+                            <span>Duplicate Event</span>
+                        </a>
+                    @endif
+                    
+                    @if($iCalUrl)
+                        <a
+                            href="{{ $iCalUrl }}"
+                            class="summary-action-btn"
+                        >
+                            <i class="fa-solid fa-calendar-plus"></i>
+                            <span>Download iCal</span>
+                        </a>
+                    @endif
+                </div>
+
+            </div>
+
+
         </div>
     </div>
 </div>
@@ -2110,6 +2068,60 @@
 
 @push('script')
 <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var popoverElements = document.querySelectorAll(
+            '[data-bs-toggle="popover"]'
+        );
+
+        if (
+            typeof bootstrap !== 'undefined' &&
+            bootstrap.Popover
+        ) {
+            Array.prototype.forEach.call(
+                popoverElements,
+                function (element) {
+                    new bootstrap.Popover(element, {
+                        container: 'body'
+                    });
+                }
+            );
+        }
+
+        var waiverContent = document.getElementById(
+            'cleanupWaiverContent'
+        );
+
+        if (waiverContent) {
+            waiverContent.addEventListener(
+                'show.bs.collapse',
+                function () {
+                    updateWaiverToggleText(
+                        'Hide Waiver Content'
+                    );
+                }
+            );
+
+            waiverContent.addEventListener(
+                'hide.bs.collapse',
+                function () {
+                    updateWaiverToggleText(
+                        'Show Waiver Content'
+                    );
+                }
+            );
+        }
+    });
+
+    function updateWaiverToggleText(text) {
+        var textElement = document.querySelector(
+            '.waiver-toggle-text'
+        );
+
+        if (textElement) {
+            textElement.textContent = text;
+        }
+    }
+
     function copyCleanupEventUrl(url, button) {
         if (!url) {
             return;
@@ -2152,7 +2164,6 @@
 
         input.focus();
         input.select();
-
         document.execCommand('copy');
 
         document.body.removeChild(input);

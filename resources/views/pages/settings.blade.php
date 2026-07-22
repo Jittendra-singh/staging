@@ -23,7 +23,7 @@
                     @method('PUT')
                     <div class="row">
                         <div class="col-sm-4">
-                            <label for="event_commission" class="form-label">Commissions <span class="text-danger">*</span></label>
+                            <label for="event_commission" class="form-label">Platform Fees <span class="text-danger">*</span></label>
                             <input class="form-control" type="number" value="{{$event_commission}}" name="event_commission" id="event_commission" required>
                         </div>
                         <div class="col-12 mt-3">

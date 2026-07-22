@@ -920,10 +920,10 @@ class FrontController extends Controller
                 $this->setFlashSession(false, 'Completed event can not be edited.');
                 return redirect()->back();
             }
-            if(strtotime($eventObj->start_datetime) < strtotime(date('Y-m-d H:i:s'))){
+            /* if(strtotime($eventObj->start_datetime) < strtotime(date('Y-m-d H:i:s'))){
                 $this->setFlashSession(false, 'Only upcoming events can be edited.');
                 return redirect()->back();
-            }
+            } */
         }
         
         $setting = Setting::first();
@@ -3694,7 +3694,7 @@ class FrontController extends Controller
                 'hundred_mile_total' => $hundredMileTotal,
                 'display_count' => $formatDisplayCount($hundredMileTotal),
                 'message' => sprintf(
-                    'No events match your current widget settings. If you increase the search distance to 100 miles, %d %s will be available for display. Please update the distance before saving the widget.',
+                    'No events match your current widget settings. However, %d %s are available within 100 miles. Increase the search distance to 100 miles (or more) to display these events before saving your widget.',
                     $formatDisplayCount($hundredMileTotal),
                     $formatDisplayCount($hundredMileTotal) === 1 ? 'event' : 'events'
                 ),
@@ -3707,7 +3707,7 @@ class FrontController extends Controller
                 'current_total' => 0,
                 'hundred_mile_total' => 0,
                 'display_count' => 0,
-                'message' => 'No events match your current widget settings. Try changing the location, date range, or other filters to display events.',
+                'message' => 'No events match your current widget settings. Select a location or adjust your date range and other filters to display events.',
             ]);
         }
 
@@ -3717,7 +3717,7 @@ class FrontController extends Controller
             'current_total' => 0,
             'hundred_mile_total' => 0,
             'display_count' => 0,
-            'message' => 'No events match your current widget settings. Even with a 100-mile search radius, no events are currently available. Try changing the location, date range, or other filters to display events.',
+            'message' => 'No events match your current widget settings. If you save this widget, visitors will see an empty widget until matching events become available. Even with a 100-mile search radius, no events are currently available. Try changing the location, date range, or other filters to display events.',
         ]);
     }
     public function embeddedWidgetReport()

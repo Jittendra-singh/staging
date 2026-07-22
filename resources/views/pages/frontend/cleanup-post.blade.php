@@ -466,9 +466,9 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
     display: flex;
     align-items: flex-start;
     gap: 12px;
-    border-left: 4px solid #4aa3ee;
-    background: #edf5ff;
-    color: #1f3f67;
+    border-left: 4px solid #b42323;
+    background: #ffe1e1;
+    color: #202939;
     padding: 14px 16px;
     border-radius: 4px;
 }
@@ -479,7 +479,7 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
     height: 20px;
     margin-top: 2px;
     border-radius: 50%;
-    background: #3d8fe0;
+    background: #b42323;
     color: #fff;
     display: inline-flex;
     align-items: center;
@@ -488,6 +488,7 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
 }
 
 .ticket-early-close-box p {
+    color: #202939;
     margin: 0;
     font-size: 14px;
     line-height: 1.5;
