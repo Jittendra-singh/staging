@@ -356,10 +356,10 @@
 
     .cleanup-detail-page .event-title {
         color: #17191c;
-        font-size: 24px;
+        font-size: 20px;
+        line-height: 28px;
         font-weight: 700;
-        line-height: 1.3;
-        margin: 0;
+        margin-bottom: 0;
     }
 
     .cleanup-detail-page .event-badges {
@@ -369,14 +369,13 @@
     }
 
     .cleanup-detail-page .soft-badge {
-        background: rgba(var(--bs-primary-rgb), .08);
-        border: 1px solid rgba(var(--bs-primary-rgb), .18);
-        border-radius: 20px;
+        background: rgba(var(--bs-primary-rgb), .08); 
         color: var(--linear-gradient-2);
         display: inline-flex;
-        font-size: 11px;
-        font-weight: 600;
-        padding: 4px 10px;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 0.4rem 0.75rem;
+        border-radius: 1rem;
     }
 
     /*
@@ -386,8 +385,7 @@
     .cleanup-detail-page .organizer-row {
         align-items: center;
         display: flex;
-        gap: 7px;
-        margin-top: 12px;
+        gap: 7px; 
     }
 
     .cleanup-detail-page .organizer-row i {
@@ -398,13 +396,13 @@
 
     .cleanup-detail-page .organizer-label {
         color: #6c767f;
-        font-size: 12px;
+        font-size: 14px;
         font-weight: 600;
     }
 
     .cleanup-detail-page .organizer-name {
         color: #24282c;
-        font-size: 13px;
+        font-size: 14px;
         font-weight: 600;
     }
 
@@ -414,8 +412,8 @@
     .cleanup-detail-page .detail-label {
         color: #69747e;
         display: block;
-        font-size: 10px;
-        font-weight: 700;
+        font-size: 14px;
+        font-weight: 500;
         letter-spacing: .035em;
         line-height: 1.35;
         margin: 0 0 3px;
@@ -424,34 +422,25 @@
 
     .cleanup-detail-page .detail-value {
         color: #272b2f;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 1.55;
-        margin: 0;
-        overflow-wrap: anywhere;
-        white-space: pre-line;
+        margin-top: 5px; 
     }
 
-    .cleanup-detail-page .description-block {
-        margin-top: 18px;
-    }
+    
 
     .cleanup-detail-page .description-text {
         color: #30353a;
-        font-size: 13px;
-        line-height: 1.7;
-        margin: 0;
-        white-space: pre-line;
+        font-size: 14px;
+        line-height: 1.625;
+        margin-top: 10px; 
     }
 
-    .cleanup-detail-page .overview-meta {
-        border-top: 1px solid #e4e9ec;
-        margin-top: 17px;
-        padding-top: 8px;
-    }
+  
 
     .cleanup-detail-page .simple-grid {
         display: grid;
-        gap: 0 24px;
+        gap: 24px;
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
@@ -470,22 +459,27 @@
     .cleanup-detail-page .subsection-title {
         border-bottom: 1px solid #dfe5e8;
         color: var(--linear-gradient-2);
-        font-size: 12px;
+        font-size: 14px;
         font-weight: 700;
         letter-spacing: .02em;
         margin: 0 0 7px;
-        padding-bottom: 8px;
+        padding-bottom: 10px;
         text-transform: uppercase;
     }
     .cleanup-detail-page .reporting-details-row {
         margin-top: 0;
-        padding-top: 10px;
+        padding-top: 20px;
+        margin-bottom: 30px;
     }
 
     .cleanup-detail-page .location-box {
         border: 1px solid #e3e8eb;
         border-radius: 5px;
         padding: 13px 15px;
+        margin-top: 20px;
+    }
+    .cleanup-detail-page .location-box .location-content .detail-value{
+        margin-bottom: 0;
     }
 
     .cleanup-detail-page .location-heading-row {
@@ -503,8 +497,8 @@
         align-items: center;
         display: inline-flex;
         flex: 0 0 auto;
-        font-size: 11px;
-        font-weight: 600;
+        font-size: 12px;
+        font-weight: 400;
         gap: 5px;
         line-height: 1.4;
         margin-top: 1px;
@@ -550,13 +544,13 @@
 
     .cleanup-detail-page .setting-label {
         color: #505960;
-        font-size: 12px;
+        font-size: 16px;
         line-height: 1.45;
     }
 
     .cleanup-detail-page .setting-value {
         color: #24282c;
-        font-size: 12px;
+        font-size: 14px;
         font-weight: 600;
         line-height: 1.45;
         max-width: 60%;
@@ -600,6 +594,7 @@
         border: 1px solid #e1e6e9;
         border-radius: 5px;
         overflow-x: auto;
+        margin-top: 20px;
     }
 
     .cleanup-detail-page .ticket-table {
@@ -614,8 +609,8 @@
         background: #f1f3f4;
         border-bottom: 1px solid #dfe4e7;
         color: #68737d;
-        font-size: 9px;
-        font-weight: 700;
+        font-size: 12px;
+        font-weight: 500;
         letter-spacing: .025em;
         padding: 10px;
         text-transform: uppercase;
@@ -626,6 +621,7 @@
         border-bottom: 1px solid #edf0f2;
         padding: 10px;
         vertical-align: middle;
+        font-size: 14px;
     }
 
     .cleanup-detail-page .ticket-name {
@@ -638,6 +634,9 @@
         display: block;
         font-size: 9px;
         margin-top: 2px;
+    }
+    .cleanup-detail-page .ticket-subvalue{
+        font-size: 12px;
     }
 
     .cleanup-detail-page .ticket-date-primary,
@@ -668,6 +667,7 @@
         justify-content: space-between;
         min-height: 43px;
         padding: 7px 0;
+        align-items: start;
     }
 
     .cleanup-detail-page .waiver-information {
@@ -681,8 +681,8 @@
         color: var(--linear-gradient-2);
         display: inline-flex;
         flex: 0 0 auto;
-        font-size: 11px;
-        font-weight: 600;
+        font-size: 12px;
+        font-weight: 500;
         gap: 5px;
         padding: 4px 0;
     }
@@ -701,12 +701,11 @@
         border: 1px solid #e5e9ec;
         border-radius: 5px;
         color: #30353a;
-        font-size: 12px;
-        line-height: 1.7;
-        margin-top: 9px;
+        font-size: 16px;
+        line-height: 1.2;
+        margin-top: 20px;
         overflow-wrap: anywhere;
-        padding: 13px 14px;
-        white-space: pre-line;
+        padding: 13px 14px; 
     }
 
     .cleanup-detail-page .summary-stat {
@@ -720,8 +719,8 @@
     .cleanup-detail-page .summary-stat-label {
         color: #75808a;
         display: block;
-        font-size: 9px;
-        font-weight: 700;
+        font-size: 12px;
+        font-weight: 500;
         text-transform: uppercase;
     }
 
@@ -738,7 +737,7 @@
         border: 1px solid rgba(220, 53, 69, .18);
         border-radius: 5px;
         color: #b02a37;
-        font-size: 11px;
+        font-size: 15px;
         padding: 11px 13px;
     }
 
@@ -755,6 +754,7 @@
         font-style: italic;
         font-weight: 400 !important;
     }
+
 
     @media (max-width: 991px) {
         .cleanup-detail-page .summary-banner {
@@ -900,6 +900,47 @@
     .summary-action-btn i{
         font-size: 13px;
     }
+
+
+
+    /*cleanup event view detail new css */
+.cleanup-detail-page .event-meta-wrapper{
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.cleanup-detail-page .divider-hr{
+        width: 100%;
+        height: 1px;
+        background-color: #e5e9ec;
+        margin: 16px 0;
+}
+.cleanup-detail-page .schedule-event-grid{
+       margin-top: 20px;
+}
+.cleanup-detail-page .schedule-event-grid .simple-field{
+   border: 1px solid #dadadaba;
+    padding: 16px;
+    border-radius: 8px;
+}
+.cleanup-detail-page .schedule-event-grid .simple-field .detail-value {
+    margin: 0;
+}
+.cleanup-detail-page .spot-box-content {
+    border: 1px solid #dadada;
+    padding: 20px;
+    border-radius: 5px;
+}
+.cleanup-detail-page .cleanup-impact-grid .simple-field, .cleanup-detail-page .volunteer-stats-grid .simple-field{
+    border: 1px solid #e5e9ec;
+    padding: 16px;
+    border-radius: 8px;
+}
+.cleanup-detail-page .cleanup-impact-grid, .cleanup-detail-page .volunteer-stats-grid{
+    margin-top: 20px;
+}
+
+
 </style>
 @endpush
 
@@ -1043,11 +1084,12 @@
                             </div>
                         </div>
 
-                        <h2 class="event-title">
+                       <div class="event-meta-wrapper">
+                         <h2 class="event-title">
                             {{ $event->event_name }}
                         </h2>
 
-                        <div class="event-badges mt-2">
+                        <div class="event-badges">
                             <span class="soft-badge">
                                 {{ $text($event->category?->name) }}
                             </span>
@@ -1080,7 +1122,8 @@
                                 {{ $text($event->description) }}
                             </p>
                         </div>
-
+                       </div>
+                        <div class="divider-hr"></div>
                         <div class="overview-meta">
                             <div class="simple-grid">
                                 <div class="simple-field">
@@ -1153,7 +1196,7 @@
                     <div class="detail-section-body">
                         <h5 class="subsection-title">Event Schedule</h5>
 
-                        <div class="simple-grid">
+                        <div class="simple-grid schedule-event-grid">
                             @foreach($scheduleItems as $item)
                                 <div class="simple-field">
                                     <span class="detail-label">
@@ -1209,8 +1252,10 @@
                         </div>
 
                         <div class="row g-4 mt-1">
-                            <div class="col-md-6">
-                                <span class="detail-label">
+                            <div class="col-md-6 p-3">
+                                <div class="spot-box-content">
+                                <div>
+                                    <span class="detail-label">
                                     Parking Information
                                 </span>
 
@@ -1221,9 +1266,12 @@
                                         $event->parking_info_details
                                     ) }}
                                 </p>
+                                </div>
+                                </div>
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-md-6 p-3">
+                                <div class="spot-box-content">
                                 <span class="detail-label">
                                     Meeting Spot Information
                                 </span>
@@ -1235,6 +1283,8 @@
                                         $event->meeting_spot_details
                                     ) }}
                                 </p>
+                                </div>
+                               
                             </div>
                         </div>
                     </div>
@@ -1279,9 +1329,10 @@
                             Tools & Classification
                         </h5>
 
-                        <div class="row g-4">
-                            <div class="col-md-6">
-                                <span class="detail-label">
+                        <div class="row g-4 ">
+                            <div class="col-md-6 p-3">
+                                <div class="spot-box-content">
+                                    <span class="detail-label">
                                     What Should Volunteers Bring?
                                 </span>
 
@@ -1296,9 +1347,12 @@
                                         Not Provided
                                     </p>
                                 @endif
+                                </div>
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-md-6 p-3">
+                                <div class="spot-box-content">
+                                    
                                 <span class="detail-label">
                                     What Will Be Provided?
                                 </span>
@@ -1314,6 +1368,7 @@
                                         Not Provided
                                     </p>
                                 @endif
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1731,6 +1786,105 @@
                 </div>
             </div>
 
+            {{-- Co-hosts --}}
+            <div class="main-card detail-section mt-4">
+                <button
+                    type="button"
+                    class="detail-section-toggle"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#cleanupCohostSection"
+                    aria-expanded="true"
+                    aria-controls="cleanupCohostSection"
+                >
+                    <h4>
+                        <i class="fa-solid fa-people-group step_icon me-3"></i>
+                        Co-Hosts Management
+                    </h4>
+
+                    <i class="fa-solid fa-chevron-down section-toggle-icon"></i>
+                </button>
+
+                <div id="cleanupCohostSection" class="collapse show">
+                    <div class="detail-section-body">
+                        <h5 class="subsection-title">
+                            Co-Host
+                        </h5>
+
+                        <div class="ticket-table-wrap">
+                            <table class="table ticket-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Status</th>
+                                        <th>Extra Notes</th>
+                                    </tr>
+                                </thead>
+
+                                @forelse($event->cohostRecords as $cohost)
+                                    @php
+                                        $soldCount = $ticket->soldTickets
+                                            ->where(
+                                                'rsvp_confirmation',
+                                                1
+                                            )
+                                            ->count();
+
+                                        $cancelledTicketCount =
+                                            $ticket->soldTickets
+                                                ->where(
+                                                    'rsvp_confirmation',
+                                                    0
+                                                )
+                                                ->count();
+
+                                        $remainingCount = max(
+                                            0,
+                                            (int) $ticket
+                                                ->available_quantity -
+                                            $soldCount
+                                        );
+                                    @endphp
+
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                {{ $text($cohost->volunteer?->name) }}
+                                            </td>
+
+                                            <td>
+                                                {{ $text($cohost->volunteer?->email_address) }}
+                                            </td>
+
+                                            <td>
+                                                {{ ucfirst($text($cohost->request_status)) }}
+                                            </td>
+
+                                            <td>
+                                                <p class="content-box-value {{ empty($cohost->extra_notes) ? 'empty-value' : '' }}">
+                                                    {{ $text($cohost->extra_notes) }}
+                                                </p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                @empty
+                                    <tbody>
+                                        <tr>
+                                            <td
+                                                colspan="4"
+                                                class="text-center empty-value"
+                                            >
+                                                No co-host have been added.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                @endforelse
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {{-- Registration statistics --}}
             <div class="main-card detail-section mt-4">
                 <button
@@ -1848,7 +2002,7 @@
                                     Volunteer Stats
                                 </h5>
 
-                                <div class="simple-grid">
+                                <div class="simple-grid volunteer-stats-grid">
                                     <div class="simple-field">
                                         <span class="detail-label">
                                             Registered
@@ -1888,7 +2042,7 @@
                                     Cleanup Impact
                                 </h5>
 
-                                <div class="simple-grid">
+                                <div class="simple-grid cleanup-impact-grid">
                                     <div class="simple-field">
                                         <span class="detail-label">
                                             Waste Collected
