@@ -4,7 +4,7 @@
     $event = $form_data;
     $authUser = auth()->guard('front')->user();
 
-    $text = function ($value, $fallback = 'Not Provided') {
+    $text = function ($value, $fallback = 'Not Available') {
         if (is_null($value)) {
             return $fallback;
         }
@@ -20,14 +20,14 @@
 
     $formatDateTime = function ($value) {
         return empty($value)
-            ? 'Not Provided'
+            ? 'Not Available'
             : \Carbon\Carbon::parse($value)
                 ->format(config('app.dateTimeFormat'));
     };
 
     $formatDate = function ($value) {
         return empty($value)
-            ? 'Not Provided'
+            ? 'Not Available'
             : \Carbon\Carbon::parse($value)
                 ->format(config('app.dateFormat', 'M d, Y'));
     };
@@ -93,7 +93,7 @@
         $runningStatus = 'Not Scheduled';
         $statusClass = 'secondary';
         $statusDetailLabel = 'Event Status';
-        $statusDetailValue = 'Schedule Not Provided';
+        $statusDetailValue = 'Schedule Not Available';
     }
 
     $publicEventUrl = !empty($event->slug)
@@ -189,7 +189,7 @@
         [
             'label' => 'Participation Method',
             'value' => $participationTypes[$event->participation_type]
-                ?? 'Not Provided',
+                ?? 'Not Available',
         ],
         [
             'label' => 'Allow Donations',
@@ -268,7 +268,8 @@
     }
 
     .cleanup-detail-page .summary-action-btn:hover {
-        background: var(--linear-gradient-2);
+        /* background: var(--linear-gradient-2); */
+        background: #0091ff !important;
         color: #fff !important;
     }
 
@@ -577,9 +578,12 @@
     .cleanup-detail-page .status-dot {
         border-radius: 50%;
         display: inline-block;
-        height: 7px;
+        height: 9px;
+        width: 9px;
         margin-right: 6px;
-        width: 7px;
+        position: relative;
+        /* cursor: pointer; */
+        vertical-align: middle;
     }
 
     .cleanup-detail-page .status-dot.active {
@@ -588,6 +592,70 @@
 
     .cleanup-detail-page .status-dot.inactive {
         background: #dc3545;
+    }
+
+        /* Status dot hover tooltip */
+    .cleanup-detail-page .status-dot[data-tooltip]::before {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 100%;
+        left: 60%;
+        transform: translateX(-15%) translateY(-4px);
+        background: #1e293b;
+        color: #ffffff;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 500;
+        line-height: 1.4;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        z-index: 1050;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15);
+    }
+
+    .cleanup-detail-page .status-dot[data-tooltip]::after {
+        content: '';
+        position: absolute;
+        bottom: 100%;
+        left: 60%;
+        transform: translateX(-50%) translateY(0);
+        border-width: 4px 4px 0 4px;
+        border-style: solid;
+        border-color: #1e293b transparent transparent transparent;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        z-index: 1050;
+    }
+
+    .cleanup-detail-page .status-dot[data-tooltip]:hover::before,
+    .cleanup-detail-page .status-dot[data-tooltip]:hover::after {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .cleanup-detail-page .status-dot.active[data-tooltip]:hover::after {
+      border-color:green transparent transparent transparent;
+    }
+    .cleanup-detail-page .status-dot.inactive[data-tooltip]:hover::after {
+      border-color:red transparent transparent transparent;
+    }
+
+    .cleanup-detail-page .status-dot[data-tooltip]:hover::before {
+        transform: translateX(-15%) translateY(-4px);
+    }
+    .cleanup-detail-page .status-dot.active[data-tooltip]:hover::before {
+        transform: translateX(-15%) translateY(-4px);
+        background: green;
+    }
+    .cleanup-detail-page .status-dot.inactive[data-tooltip]:hover::before {
+        transform: translateX(-15%) translateY(-4px);
+        background: red;
     }
 
     .cleanup-detail-page .ticket-table-wrap {
@@ -1164,7 +1232,7 @@
                                         </a>
                                     @else
                                         <p class="detail-value empty-value">
-                                            Not Provided
+                                            Not Available
                                         </p>
                                     @endif
                                 </div>
@@ -1204,7 +1272,7 @@
                                     </span>
 
                                     <p class="detail-value {{
-                                        $item['value'] === 'Not Provided'
+                                        $item['value'] === 'Not Available'
                                             ? 'empty-value'
                                             : ''
                                     }}">
@@ -1344,7 +1412,7 @@
                                     </p>
                                 @else
                                     <p class="text-list empty-value">
-                                        Not Provided
+                                        Not Available
                                     </p>
                                 @endif
                                 </div>
@@ -1365,7 +1433,7 @@
                                     </p>
                                 @else
                                     <p class="text-list empty-value">
-                                        Not Provided
+                                        Not Available
                                     </p>
                                 @endif
                                 </div>
@@ -1458,7 +1526,7 @@
                                     </span>
 
                                     <span class="setting-value {{
-                                        $item['value'] === 'Not Provided'
+                                        $item['value'] === 'Not Available'
                                             ? 'empty-value'
                                             : ''
                                     }}">
@@ -1546,7 +1614,7 @@
                                             </a>
                                         @else
                                             <span class="empty-value">
-                                                Not Provided
+                                                Not Available
                                             </span>
                                         @endif
                                     </span>
@@ -1607,9 +1675,11 @@
                                                             ? 'active'
                                                             : 'inactive'
                                                     }}"
-                                                    title="{{ $ticket->is_active
+                                                    data-tooltip="{{ $ticket->is_active
                                                         ? 'Active'
                                                         : 'Inactive' }}"
+                                                    data-bs-toggle="tooltip"
+                                                    data-bs-placement="top"
                                                 ></span>
 
                                                 {{ $ticket->ticket_name }}
@@ -2002,37 +2072,41 @@
                                     Volunteer Stats
                                 </h5>
 
-                                <div class="simple-grid volunteer-stats-grid">
-                                    <div class="simple-field">
-                                        <span class="detail-label">
-                                            Registered
-                                        </span>
 
-                                        <p class="detail-value">
-                                            {{ $statistics['registered'] }}
-                                        </p>
+                                <div class="row g-3 mt-2">
+                                    <div class="col-6 col-md-4 col-xl">
+                                        <div class="summary-stat">
+                                            <span class="summary-stat-label">
+                                                Registered
+                                            </span>
+                                            <span class="summary-stat-value">
+                                                {{ $statistics['registered'] }}
+                                            </span>
+                                        </div>
                                     </div>
 
-                                    <div class="simple-field">
-                                        <span class="detail-label">
-                                            Other Sites
-                                        </span>
-
-                                        <p class="detail-value">
-                                            {{ $statistics['other_sites'] }}
-                                        </p>
+                                    <div class="col-6 col-md-4 col-xl">
+                                        <div class="summary-stat">
+                                            <span class="summary-stat-label">
+                                                Other Sites
+                                            </span>
+                                            <span class="summary-stat-value">
+                                                {{ $statistics['other_sites'] }}
+                                            </span>
+                                        </div>
                                     </div>
 
-                                    <div class="simple-field">
-                                        <span class="detail-label">
-                                            Total
-                                        </span>
-
-                                        <p class="detail-value">
-                                            {{ $statistics[
+                                    <div class="col-6 col-md-4 col-xl">
+                                        <div class="summary-stat">
+                                            <span class="summary-stat-label">
+                                                Total
+                                            </span>
+                                            <span class="summary-stat-value">
+                                                {{ $statistics[
                                                 'total_volunteers'
                                             ] }}
-                                        </p>
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -2042,57 +2116,40 @@
                                     Cleanup Impact
                                 </h5>
 
-                                <div class="simple-grid cleanup-impact-grid">
-                                    <div class="simple-field">
-                                        <span class="detail-label">
-                                            Waste Collected
-                                        </span>
-
-                                        <p class="detail-value {{
-                                            is_null($event->waste_collected)
-                                                ? 'empty-value'
-                                                : ''
-                                        }}">
-                                            {{ is_null(
-                                                $event->waste_collected
-                                            )
-                                                ? 'Not Provided'
-                                                : $event->waste_collected
-                                                    .' Pound (lb)' }}
-                                        </p>
+                                <div class="row g-3 mt-2">
+                                    <div class="col-6 col-md-4 col-xl">
+                                        <div class="summary-stat">
+                                            <span class="summary-stat-label">
+                                                Waste Collected
+                                            </span>
+                                            <span class="summary-stat-value">
+                                                {{ is_null($event->waste_collected)
+                                                ? '-' : $event->waste_collected .' Pound (lb)' }}
+                                            </span>
+                                        </div>
                                     </div>
 
-                                    <div class="simple-field">
-                                        <span class="detail-label">
-                                            Area Cleaned
-                                        </span>
-
-                                        <p class="detail-value {{
-                                            is_null($event->area_cleaned)
-                                                ? 'empty-value'
-                                                : ''
-                                        }}">
-                                            {{ is_null($event->area_cleaned)
-                                                ? 'Not Provided'
-                                                : $event->area_cleaned
-                                                    .' Yards' }}
-                                        </p>
+                                    <div class="col-6 col-md-4 col-xl">
+                                        <div class="summary-stat">
+                                            <span class="summary-stat-label">
+                                                Area Cleaned
+                                            </span>
+                                            <span class="summary-stat-value">
+                                                {{ is_null($event->area_cleaned)
+                                                ? '-' : $event->area_cleaned .' Yards' }}
+                                            </span>
+                                        </div>
                                     </div>
 
-                                    <div class="simple-field">
-                                        <span class="detail-label">
-                                            Total Hours
-                                        </span>
-
-                                        <p class="detail-value {{
-                                            is_null($event->volunteer_hours)
-                                                ? 'empty-value'
-                                                : ''
-                                        }}">
-                                            {{ $text(
-                                                $event->volunteer_hours
-                                            ) }}
-                                        </p>
+                                    <div class="col-6 col-md-4 col-xl">
+                                        <div class="summary-stat">
+                                            <span class="summary-stat-label">
+                                                Total Hours
+                                            </span>
+                                            <span class="summary-stat-value">
+                                                {{ !empty($event->volunteer_hours)?$event->volunteer_hours:'-' }}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -2172,7 +2229,7 @@
                             @empty
                                 <div class="col-12">
                                     <p class="detail-value empty-value">
-                                        Not Provided
+                                        Not Available
                                     </p>
                                 </div>
                             @endforelse
@@ -2201,6 +2258,26 @@
                         </a>
                     @endif
                     
+                    @if($publicEventUrl)
+                            <button
+                                type="button"
+                                class="summary-action-btn"
+                                onclick="copyCleanupEventUrl(@js($publicEventUrl), this)"
+                            >
+                                <i class="fa-solid fa-share-nodes"></i>
+                                <span>Share</span>
+                            </button>
+                        @else
+                            <button
+                                type="button"
+                                class="summary-action-btn disabled"
+                                title="The event does not have a public URL"
+                            >
+                                <i class="fa-solid fa-share-nodes"></i>
+                                <span>Share</span>
+                            </button>
+                        @endif
+                    
                     @if($iCalUrl)
                         <a
                             href="{{ $iCalUrl }}"
@@ -2208,6 +2285,19 @@
                         >
                             <i class="fa-solid fa-calendar-plus"></i>
                             <span>Download iCal</span>
+                        </a>
+                    @endif
+
+                    @if($canEditEvent)
+                        <a
+                            href="{{ route(
+                                'front-post-a-event',
+                                ['id' => $event->encrypted_id]
+                            ) }}"
+                            class="summary-action-btn"
+                        >
+                            <i class="fa-solid fa-pen-to-square"></i>
+                            <span>Edit</span>
                         </a>
                     @endif
                 </div>

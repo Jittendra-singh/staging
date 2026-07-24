@@ -337,7 +337,7 @@ a[disabled]{
                                                     @endif
 
                                                     <a href="{{route('front-cleanup-detail', ['id'=> $event->encrypted_id])}}" class="dropdown-item">
-                                                        <i class="fa-solid fa-clipboard-list me-3"></i>View Event Detail
+                                                        <i class="fa-solid fa-clipboard-list me-3"></i>View Event Summary
                                                     </a>
 
                                                     @if(!empty($event->slug))
