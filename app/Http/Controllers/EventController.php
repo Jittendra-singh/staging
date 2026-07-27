@@ -122,6 +122,7 @@ class EventController extends Controller
         $event['location'] = $request['venue'].' '.$request['pincode'];
         $event['start_date'] = $request['start_datetime'];
         $event['end_date'] = $request['end_datetime'];
+        $event['category'] = !empty(trim($request['event_category']))?trim($request['event_category']):'N/A';
         $content = $this->getEventMetaDataByAi($event);
         return $this->generateJsonResponse(true, '', json_decode($content));
     }

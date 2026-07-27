@@ -331,9 +331,9 @@ a[disabled]{
                                                 <div class="dropdown-menu dropdown-menu-right">
 
                                                     @if($activeTab=='upcoming')
-                                                    <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id])}}" class="dropdown-item">
+                                                    <!-- <a href="{{route('front-post-a-event', ['id'=> $event->encrypted_id])}}" class="dropdown-item">
                                                         <i class="fa-solid fa-gear me-3"></i>Edit Event
-                                                    </a>
+                                                    </a> -->
                                                     @endif
 
                                                     <a href="{{route('front-cleanup-detail', ['id'=> $event->encrypted_id])}}" class="dropdown-item">
@@ -533,8 +533,13 @@ a[disabled]{
                                                     </div>
                                                 </div>
                                             </div>
-                                            <a class="primary-btn w-fit" href="{{route('front-reschedule-event', ['id' => $event->encrypted_id])}}" {{ ($event->is_completed==1 || $event->is_active!=1)?'disabled':'' }}>Reschedule</a>
+                                            @if($activeTab=='upcoming')
+                                            <a class="sign-up-btn text-white w-fit me-3" href="{{route('front-post-a-event', ['id'=> $event->encrypted_id])}}" {{ ($event->is_active!=1)?'disabled':'' }}>Edit Event</a>
+                                            @endif
+                                            <a class="primary-btn w-fit" href="{{route('front-reschedule-event', ['id' => $event->encrypted_id])}}" {{ ($event->is_completed==1 || $event->is_active!=1)?'disabled':'' }}>Reschedule Event</a>
+                                            @if($activeTab!='upcoming')
                                             <a class="sign-up-btn text-white w-fit ms-3" href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step5'])}}" {{ ($eventStatusClass!='action_required' || $event->is_active!=1)?'disabled':'' }}>Submit Wrap-Up Report</a>
+                                            @endif
                                         </div>
                                         @endif
                                     </div>

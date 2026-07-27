@@ -827,8 +827,9 @@ class FrontController extends Controller
                         <hr class="my-2" />
                         <h6 class="mt-3 mb-3"><span>Total to Attendee</h6span> <span class="float-end h5 text-primary">$<span name="pb_final_price_" id="pb_final_price" class="form-ele">'.$b_total.'</span></span></h6>
                         <p class="mb-3" style="color: #717171;font-style: italic;">Net to Organizer: $<span id="pb_net_org_price">'.$net_org_total.'</span> (after platform fee)</p>
-                        <p style="color: #717171;font-style: italic;">Processing fees is estimated (~3% + $0.30) and may vary based on payment method and card type. Final amount is determined by Stripe.</p>
-                        <small style="color: #717171;font-style: italic;">Ticket totals are calculated based on your current fee settings. You can change who pays the processing fees in Ticket Settings.</small>
+                        <p class="breackdown_info_text_free" style="color: #717171;font-style: italic;">No payment processing or platform fees apply to this ticket. Registrations will be recorded automatically and appear in your Registration List.</p>
+                        <p class="breackdown_info_text" style="color: #717171;font-style: italic;">Processing fees is estimated (~3% + $0.30) and may vary based on payment method and card type. Final amount is determined by Stripe.</p>
+                        <small class="breackdown_info_text" style="color: #717171;font-style: italic;">Ticket totals are calculated based on your current fee settings. You can change who pays the processing fees in Ticket Settings.</small>
                     </div>
                 </div>
             </div>
@@ -1870,6 +1871,12 @@ class FrontController extends Controller
             }
             if(strtotime($validated['sell_start_time']) >= strtotime($validated['sell_end_time'])){
                 throw new \Exception("Ticket sell end date must be greater than the ticket sell start date.");
+            }
+            if(strtotime($validated['sell_start_time']) < strtotime($event->site_publish_date)){
+                throw new \Exception("Ticket sell start date must be greater than or equal to the event page publish date.");
+            }
+            if(strtotime($validated['sell_end_time']) > strtotime(date('Y-m-d',strtotime($event->end_datetime)))){
+                throw new \Exception("Ticket sell end date should not be greater than the event end date.");
             }
             $ticketData = [
                 'ticket_name' => $validated['ticket_name'],
@@ -4349,6 +4356,7 @@ class FrontController extends Controller
         $event['location'] = $request['venue'].' '.$request['pincode'];
         $event['start_date'] = $request['start_datetime'];
         $event['end_date'] = $request['end_datetime'];
+        $event['category'] = !empty(trim($request['event_category']))?trim($request['event_category']):'N/A';
         $content = $this->getEventMetaDataByAi($event);
         return $this->generateJsonResponse(true, '', json_decode($content));
     }

@@ -521,6 +521,42 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
     color: #6c757d;
     font-size: 12px;
 }
+
+
+
+.seo-details-heading {
+    display: flex;
+    align-items: center;
+}
+
+.seo-info-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 21px;
+    height: 21px;
+    margin-left: 8px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--secondary-color);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.seo-info-trigger:hover,
+.seo-info-trigger:focus {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: var(--secondary-color);
+    outline: none;
+}
+
+.seo-info-trigger:focus-visible {
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+}
 </style>
 @endpush
 @section('content')
@@ -629,13 +665,13 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                                 </div>
                                                             </div>
                                                             <div class="col-md-6 mt-4">
-                                                                <label class="form-label fs-6">Your Event URL Slug <i class="fa fa-info-circle" data-bs-toggle="tooltip" data-bs-title="Your event page URL will display as www.volunteercleanup.org/event/slug"></i>
+                                                                <label class="form-label fs-6">Event Link <i class="fa fa-info-circle" data-bs-toggle="tooltip" data-bs-title="Your event page URL will display as www.volunteercleanup.org/event/slug"></i>
 
                                                                 </label>
                                                                 <div class="form-group hstack ">
                                                                     <input class="form-control h_50 slugmask event_slug" name="slug" type="text" placeholder="Enter event slug and validate" id="slug" value="{{ old('slug', $form_data->slug ?? '') }}">
 
-                                                                    <button ajaxurl="{{ route('front-check-event-slug') }}" id="validate_event_slug" class="primary-btn w-fit ms-2" type="button">Validate</button>
+                                                                    <button ajaxurl="{{ route('front-check-event-slug') }}" id="validate_event_slug" class="primary-btn w-fit ms-2" type="button" style="    white-space: nowrap;">Check Availability</button>
                                                                 </div>
                                                             </div>
                                                             <div class="col-md-6 mt-4">
@@ -1196,7 +1232,7 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                                     <div class="col-md-12 reminder-custom-note-wrapper"
                                                                         style="{{ old('is_send_reminder_email', $form_data->is_send_reminder_email ?? 1) ? '' : 'display:none;' }}">
                                                                         <div class="form-group mt-2">
-                                                                            <label class="form-label fs-6">Custom Note</label>
+                                                                            <label class="form-label fs-6">Custom Note for Reminder Email</label>
                                                                             <textarea name="reminder_custom_note" rows="4" class="form-control ckeditor">{{ old('reminder_custom_note', $form_data->reminder_custom_note ?? '') }}</textarea>
                                                                         </div>
                                                                     </div>
@@ -1594,7 +1630,7 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                             </small>
                                                         @endif
                                                         @php
-                                                            $waiver_form_type = old('waiver_form_type', $form_data->waiver_form_type ?? null);
+                                                            $waiver_form_type = old('waiver_form_type', $form_data->waiver_form_type ?? 'default');
                                                             $waiver_form_content = old('waiver_form_content', $form_data->waiver_form_content ?? null);
                                                             //$waiver_form_type = $form_data->waiver_form_type ?? null;
                                                         @endphp
@@ -1603,10 +1639,10 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                                 <div class="mb-3">
                                                                     <label for="waiver_form_type" class="form-label">Waiver Form Type</label>
                                                                     <select class="form-select" id="waiver_form_type" name="waiver_form_type">
-                                                                        <option value="default" @selected($waiver_form_type == 'default') >Default Content</option>
-                                                                        <option value="text" @selected($waiver_form_type == 'text') >Custom Content</option>
-                                                                        <option value="pdf"  @selected($waiver_form_type == 'pdf')> Upload PDF</option>
-                                                                        <option value="external_link" @selected($waiver_form_type == 'external_link')> External Link</option>
+                                                                        <option value="default" @selected($waiver_form_type == 'default') >Default Waiver</option>
+                                                                        <option value="text" @selected($waiver_form_type == 'text') >Custom Waiver</option>
+                                                                        <option value="pdf"  @selected($waiver_form_type == 'pdf')> Upload Waiver PDF</option>
+                                                                        <option value="external_link" @selected($waiver_form_type == 'external_link')> External Waiver Link</option>
                                                                         <option value="" @selected(!$waiver_form_type)> No Waiver Form</option>
                                                                     </select>
                                                                     <small>Volunteers will be required to sign this digital waiver after completing registration.</small>
@@ -1741,7 +1777,21 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                             <div class="tab-from-content">
                                                 <div class="main-card">
                                                     <div class="bp-title">
-                                                        <h4><i class="fa-solid fa-gear step_icon me-3"></i>SEO Details</h4>
+                                                        <h4 class="seo-details-heading">
+                                                            <i class="fa-solid fa-gear step_icon me-3"></i>
+                                                            SEO Details
+                                                            <button
+                                                                type="button"
+                                                                class="seo-info-trigger"
+                                                                data-bs-toggle="popover"
+                                                                data-bs-trigger="click"
+                                                                data-bs-placement="right"
+                                                                data-bs-content="SEO helps search engines like Google find your cleanup. Click Generate with AI to automatically create SEO details based on your event. You can review and edit them before saving."
+                                                                aria-label="More information about SEO Details"
+                                                            >
+                                                                <span aria-hidden="true"><i class="fa-solid fa-info-circle"></i></span>
+                                                            </button>
+                                                        </h4>
                                                     </div>
                                                     <div class="p-4 bp-form main-form">
                                                         <div class="row">
@@ -2666,6 +2716,37 @@ $(document).ready(function () {
 
         return false;
     });
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    var seoInfoPopover = document.querySelector('.seo-info-trigger');
+
+    if (
+        seoInfoPopover &&
+        typeof bootstrap !== 'undefined' &&
+        bootstrap.Popover
+    ) {
+        new bootstrap.Popover(seoInfoPopover, {
+            container: 'body'
+        });
+    }
+});
+document.addEventListener('click', function (event) {
+    var seoInfoTrigger = document.querySelector('.seo-info-trigger');
+
+    if (
+        !seoInfoTrigger ||
+        seoInfoTrigger.contains(event.target) ||
+        event.target.closest('.popover')
+    ) {
+        return;
+    }
+
+    var popoverInstance = bootstrap.Popover.getInstance(seoInfoTrigger);
+
+    if (popoverInstance) {
+        popoverInstance.hide();
+    }
 });
     </script>
 @endpush

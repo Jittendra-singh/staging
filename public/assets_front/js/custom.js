@@ -157,7 +157,8 @@ $(document).ready(function () {
 				'start_datetime': $('#start_datetime').val(),
 				'end_datetime': $('#end_datetime').val(),
 				'venue': $('#venue').val(),
-				'pincode': $('#pincode').val()
+				'pincode': $('#pincode').val(),
+				'event_category':$('[name="event_category_id"] option:selected').text()
 			},
 			success: function (response) {
 				target.text('Generate By AI');
@@ -1568,6 +1569,7 @@ $(document).ready(function () {
 		} else {
 			$('#p_ticket_price').prop('readonly', false);
 		}
+		updateBreakdownTextInfo();
 	});
 	$(document).on('change', '.ticket_type_select', function () {
 		let name = $(this).attr('name');
@@ -3261,12 +3263,23 @@ function openTicketTypePopup(control) {
 				fieldmasking();
 				callSellStartEndDatePicker();
 				pCalcPriceBreakdown();
+				updateBreakdownTextInfo();
 			}
 			else {
 				showError(response.message, 'error');
 			}
 		}
 	});
+}
+function updateBreakdownTextInfo(){
+	var ticketType = $('#p_ticket_type_select').val();
+	if(ticketType=='free'){
+		$('.breackdown_info_text').hide();
+		$('.breackdown_info_text_free').show();
+	} else {
+		$('.breackdown_info_text').show();
+		$('.breackdown_info_text_free').hide();
+	}
 }
 function submitTicketTypeForm() {
 	// Validate max_qty_allowed_per_order against available_quantity

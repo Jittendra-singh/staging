@@ -209,7 +209,7 @@ class Controller extends BaseController
         return $text;
     }
     public function getEventMetaDataByAi($event){
-        $content = "You are an SEO expert. Based on the given event details, generate the following:
+        /* $content = "You are an SEO expert. Based on the given event details, generate the following:
 
         1. Meta Title (up to 60 characters) – a short, SEO-friendly title.
         2. Meta Description (up to 160 characters) – a compelling description optimized for search engines.
@@ -218,6 +218,7 @@ class Controller extends BaseController
         Event Name: {$event['name']}
         Event Description: {$event['description']}
         Location: {$event['location']}
+        Event Category: {$event['category']}
         Start Date: {$event['start_date']}
         End Date: {$event['end_date']}
 
@@ -230,6 +231,52 @@ class Controller extends BaseController
             \"meta_title\": \"\",
             \"meta_description\": \"\",
             \"meta_keywords\": \"\"
+        }"; */
+        $content = "You are an SEO content specialist for local volunteer and cleanup events. Create accurate, natural-sounding SEO metadata using only the event details below.
+
+        Event Title: {$event['name']}
+        Event Description: {$event['description']}
+        Event Location: {$event['location']}
+        Event Category: {$event['category']}
+        Start Date: {$event['start_date']}
+        End Date: {$event['end_date']}
+
+        Generate:
+
+        1. meta_title
+        - Maximum 60 characters.
+        - Make it clear, natural, specific, and suitable for search results.
+        - Use the event title and meaningful location or category details when useful.
+        - Include a date only when it improves clarity and still fits the character limit.
+        - If including a date, write it in a human-readable format such as \"July 23, 2026\". Never use ISO/numeric date formats such as \"2026-07-23\".
+        - Do not add dates, locations, activities, or claims that are not present in the event details.
+
+        2. meta_description
+        - Maximum 160 characters.
+        - Write a useful, human-friendly summary based on the actual event title, description, location, date, category, and cleanup purpose.
+        - Explain what participants can expect or contribute, when supported by the event description.
+        - Avoid vague or generic phrases such as \"amazing event\", \"you won't want to miss\", \"join us\", \"exciting\", or \"community event\" unless they are specifically supported by the event details.
+        - Do not invent facts, benefits, sponsors, activities, dates, or locations.
+        - If including a date, write it in a human-readable format such as \"July 23, 2026\". Never use ISO/numeric date formats such as \"2026-07-23\".
+        - If including a date, do not add like \"August 11-13, 2026\" this, use proper user friendly date structure to show the 2 dates.
+
+        3. meta_keywords
+        - Return 5 to 8 high-intent SEO keywords or key phrases.
+        - Base them only on the event title, description, location, and category.
+        - Prefer specific multi-word phrases that people may search for, such as a cleanup type, neighborhood/city, venue, event category, or volunteer activity.
+        - Do not include generic standalone terms such as \"USA\", \"2026\", \"Event\", \"Community\", \"Volunteer\", or a country name unless they are an essential part of a specific search phrase.
+        - Do not duplicate keywords or repeat the same phrase with minor wording changes.
+
+        Output rules:
+        - Return only valid JSON. Do not use Markdown, code fences, labels, explanations, or extra text.
+        - Use exactly these string keys: meta_title, meta_description, meta_keywords.
+        - meta_keywords must be one plain comma-separated string.
+        - Ignore HTML markup in the event description and use only its meaningful text.
+        - If the event title or description is missing, unclear, or insufficient to create accurate content, return exactly:
+        {
+        \"meta_title\": \"\",
+        \"meta_description\": \"\",
+        \"meta_keywords\": \"\"
         }";
         $content = $this->hitApiToAi($content);
         return $content; 

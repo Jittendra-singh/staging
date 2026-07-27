@@ -430,7 +430,8 @@ $(document).ready(function () {
                         'start_datetime': $('#start_datetime').val(),
                         'end_datetime': $('#end_datetime').val(),
                         'venue': $('#venue').val(),
-                        'pincode': $('#pincode').val()
+                        'pincode': $('#pincode').val(),
+				'event_category':$('[name="event_category_id"] option:selected').text()
                   },
                   success: function (response) {
                         target.text('Generate By AI');
