@@ -5552,7 +5552,7 @@ class FrontController extends Controller
         $records = Event::with('creator:id,first_name,last_name,email_address')
         ->where('is_completed', 0)
         ->where('finalize_email_count', '>', 0)
-        ->where('finalize_email_count', '<', 4)
+        ->where('finalize_email_count', '<', 3)
         //->whereRaw("DATE_ADD(DATE(end_datetime), INTERVAL (finalize_email_count * 3) DAY) = CURDATE()")
         ->whereRaw("DATE_ADD(DATE(end_datetime), INTERVAL ((finalize_email_count * 3) + 1) DAY) = CURDATE()")
         ->get();
