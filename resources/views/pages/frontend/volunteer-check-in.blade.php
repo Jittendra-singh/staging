@@ -99,10 +99,14 @@
                                             @endif
 
                                             <div class="volunteer-checkin-badges">
-                                                @if($isSigned)
-                                                    <span class="badge custom-badge-success">Signed</span>
-                                                @else
-                                                    <span class="badge custom-badge-danger">Unsigned</span>
+                                                @if(!empty($event->waiver_form_type))
+                                                    @if($isSigned)
+                                                        <span class="badge custom-badge-success">Signed</span>
+                                                    @else
+                                                        <span class="badge custom-badge-danger">Unsigned</span>
+                                                    @endif
+                                                @else 
+                                                    <span class="badge custom-badge-success">No Waiver</span>
                                                 @endif
 
                                                 @if($isCheckedIn)
@@ -115,7 +119,7 @@
                                     </div>
 
                                     <div class="volunteer-checkin-action">
-                                        @if(!$isSigned && !$isCheckedIn)
+                                        @if((!empty($event->waiver_form_type) && !$isSigned && !$isCheckedIn) || (empty($event->waiver_form_type) && !$isCheckedIn))
                                             <form method="POST" action="{{ route('front-volunteer-sign-and-check-in', ['id' => $registration->encrypted_id]) }}" class="volunteer-sign-checkin-form">
                                                 @csrf
                                                 <label class="form-label fw-semibold">Volunteer Signature</label>
@@ -130,9 +134,11 @@
                                                         <i class="fa-solid fa-signature me-2"></i>Sign & Check-in
                                                     </button> -->
                                                     <div class="d-flex gap-2 flex-wrap">
+                                                        @if(!empty($event->waiver_form_type))
                                                         <button type="button" class="btn btn-outline-primary btn-show-waiver-qr" data-url="{{ route('front-volunteer-waiver-qr', ['id' => $registration->encrypted_id]) }}">
                                                             <i class="fa-solid fa-qrcode me-2"></i>Show QR Code
                                                         </button>
+                                                        @endif
 
                                                         <button type="submit" class="primary-btn w-fit btn-sign-checkin">
                                                             <i class="fa-solid fa-signature me-2"></i>Sign & Check-in
@@ -140,12 +146,16 @@
                                                     </div>
                                                 </div>
                                             </form>
-                                        @elseif($isSigned && !$isCheckedIn)
+                                        @elseif((!empty($event->waiver_form_type) && $isSigned && !$isCheckedIn) || (empty($event->waiver_form_type) && !$isCheckedIn))
                                             <form method="POST" action="{{ route('front-volunteer-mark-check-in', ['id' => $registration->encrypted_id]) }}">
                                                 @csrf
                                                 <div class="volunteer-status-line mb-3">
                                                     <span>Waiver Signed</span>
+                                                    @if(!empty($event->waiver_form_type))
                                                     <strong>{{ date(config('app.dateTimeFormat'), strtotime($registration->waiver_filled_at)) }}</strong>
+                                                    @else 
+                                                    <strong>No Waiver</strong>
+                                                    @endif
                                                 </div>
                                                 <button type="submit" class="primary-btn w-fit">
                                                     <i class="fa-solid fa-user-check me-2"></i>Check-in
@@ -155,7 +165,11 @@
                                             <div class="volunteer-status-stack">
                                                 <div class="volunteer-status-line">
                                                     <span>Waiver Signed</span>
+                                                    @if(!empty($event->waiver_form_type))
                                                     <strong>{{ date(config('app.dateTimeFormat'), strtotime($registration->waiver_filled_at)) }}</strong>
+                                                    @else 
+                                                    <strong>No Waiver</strong>
+                                                    @endif
                                                 </div>
                                                 <div class="volunteer-status-line">
                                                     <span>Checked-in</span>

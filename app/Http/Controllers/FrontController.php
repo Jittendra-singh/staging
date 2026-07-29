@@ -515,7 +515,7 @@ class FrontController extends Controller
                 return redirect()->back();
             }
 
-            if (empty($orderTicket->waiver_filled_at)) {
+            if (!empty($orderTicket->event->waiver_form_type) && empty($orderTicket->waiver_filled_at)) {
                 $orderTicket->waiver_filled_at = now();
                 $orderTicket->signature = request()->signature;
                 $orderTicket->save();
@@ -2870,7 +2870,7 @@ class FrontController extends Controller
                     return $this->generateJsonResponse(true, 'Volunteer has been checked out successfully.');
                 }
             } else {
-                if(!empty($orderTicket->waiver_filled_at)){
+                if((!empty($event->waiver_form_type) && !empty($orderTicket->waiver_filled_at)) || empty($event->waiver_form_type)){
                     /* $emailData = [
                         'volunteer' => $volunteer->first_name.' '.$volunteer->last_name,
                         'event_title' => $event->event_name,
@@ -2934,11 +2934,20 @@ class FrontController extends Controller
                         return $this->generateJsonResponse(true, 'Volunteer has been marked as check-in successfully.');
                     }
                 } else {
-                    if($callFromBackend){
-                        $this->setFlashSession(true , "Waiver should be signed before marking the volunteer checked-in.");
-                        return redirect()->back();
+                    if(!empty($event->waiver_form_type) && empty($orderTicket->waiver_filled_at)){
+                        if($callFromBackend){
+                            $this->setFlashSession(true , "Waiver should be signed before marking the volunteer checked-in.");
+                            return redirect()->back();
+                        } else {
+                            return $this->generateJsonResponse(true, 'Waiver should be signed before marking the volunteer checked-in.');
+                        }
                     } else {
-                        return $this->generateJsonResponse(true, 'Waiver should be signed before marking the volunteer checked-in.');
+                        if($callFromBackend){
+                            $this->setFlashSession(true , "Something went wrong.");
+                            return redirect()->back();
+                        } else {
+                            return $this->generateJsonResponse(true, 'Something went wrong.');
+                        }
                     }
                 }
             }
