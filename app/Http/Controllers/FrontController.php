@@ -5546,14 +5546,15 @@ class FrontController extends Controller
             Event::whereIn('id', $eventIds)->increment('finalize_email_count');
         }
     }
-    public function cronEventFinalizeReminder(){ // call after first finalize email with 72 hours duration
+    public function cronEventFinalizeReminder(){ // Send 3 reminders, each 3 days after the previous email
         set_time_limit(0);
         ini_set('max_execution_time', 0);
         $records = Event::with('creator:id,first_name,last_name,email_address')
         ->where('is_completed', 0)
         ->where('finalize_email_count', '>', 0)
-        ->where('finalize_email_count', '<', 5)
-        ->whereRaw("DATE_ADD(DATE(end_datetime), INTERVAL (finalize_email_count * 3) DAY) = CURDATE()")
+        ->where('finalize_email_count', '<', 4)
+        //->whereRaw("DATE_ADD(DATE(end_datetime), INTERVAL (finalize_email_count * 3) DAY) = CURDATE()")
+        ->whereRaw("DATE_ADD(DATE(end_datetime), INTERVAL ((finalize_email_count * 3) + 1) DAY) = CURDATE()")
         ->get();
         if($records->isNotEmpty()){
             $to_arr = [];
