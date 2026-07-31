@@ -3785,6 +3785,7 @@ class FrontController extends Controller
             'longitude'            => 'nullable',
             'distance'             => 'nullable',
             'type'                 => 'required',
+            'empty_behavior'       => 'required|in:1,2',
             'ftr_tag_ids'          => 'nullable|array',
             'ftr_tag_ids.*'        => 'exists:tags,id',
             'ftr_event_title'      => 'nullable|string|max:255',
@@ -4020,97 +4021,170 @@ class FrontController extends Controller
         ';
         return $this->generateJsonResponse(true, 'Widget found.', $html);
     }
-    public function showWidget($id){
-        $widget = VolunteerWidget::where('status',1)->where('is_active',1)->find(decrypt($id));
+    public function showWidget($id)
+    {
+        $widget = VolunteerWidget::where('status', 1)
+            ->where('is_active', 1)
+            ->find(decrypt($id));
+
         $events = null;
         $location_array = null;
-        if(isset($widget->id)){
-            // add view log
+        $miles100_count = 0;
+
+        if (isset($widget->id)) {
             $this->addWidgetLog($id, 1);
 
             $pData = [];
-            if(!empty($widget->org_ids)){
+
+            if (!empty($widget->org_ids)) {
                 $pData['organizer_id'] = explode(',', $widget->org_ids);
             }
-            if(!empty($widget->cat_ids)){
+
+            if (!empty($widget->cat_ids)) {
                 $pData['event_category_id'] = explode(',', $widget->cat_ids);
             }
-            if (!empty($widget->location) && !empty($widget->distance) && !empty($widget->location_lat) && !empty($widget->location_long)) {
+
+            if (
+                !empty($widget->location) &&
+                !empty($widget->distance) &&
+                !empty($widget->location_lat) &&
+                !empty($widget->location_long)
+            ) {
                 $pData['location'] = $widget->location;
                 $pData['distance'] = $widget->distance;
                 $pData['latitude'] = $widget->location_lat;
                 $pData['longitude'] = $widget->location_long;
                 $pData['unit'] = 'mi';
             }
+
             $request = request();
             $request->merge($pData);
-            if($widget->type==1){
-                //$events = Event::with('category')->listactive()->where('is_private',0)->paginate(3)->withQueryString();
-                $eventPerPage = !empty($widget->event_per_page) ? (int) $widget->event_per_page : 3;
 
-                $events = Event::with('category')
+            $hasWidgetLocation = !empty($widget->location_lat)
+                && !empty($widget->location_long);
+
+            $eventQuery = function () use ($widget) {
+                return Event::with('category')
                     ->listactive()
                     ->where('is_private', 0)
                     ->when(!empty($widget->ftr_tag_ids), function ($query) use ($widget) {
                         $tagIds = array_filter(explode(',', $widget->ftr_tag_ids));
+
                         $query->whereHas('tags', function ($tagQuery) use ($tagIds) {
                             $tagQuery->whereIn('tags.id', $tagIds);
                         });
                     })
                     ->when(!empty($widget->ftr_event_title), function ($query) use ($widget) {
-                        $query->where('event_name', 'like', '%' . $widget->ftr_event_title . '%');
+                        $query->where(
+                            'event_name',
+                            'like',
+                            '%' . $widget->ftr_event_title . '%'
+                        );
                     })
                     ->when(!empty($widget->ftr_event_start_dt), function ($query) use ($widget) {
-                        $query->whereDate('events.start_datetime', '>=', $widget->ftr_event_start_dt);
+                        $query->whereDate(
+                            'events.start_datetime',
+                            '>=',
+                            $widget->ftr_event_start_dt
+                        );
                     })
                     ->when(!empty($widget->ftr_event_end_dt), function ($query) use ($widget) {
-                        $query->whereDate('events.end_datetime', '<=', $widget->ftr_event_end_dt);
-                    })
+                        $query->whereDate(
+                            'events.end_datetime',
+                            '<=',
+                            $widget->ftr_event_end_dt
+                        );
+                    });
+            };
+
+            if ($widget->type == 1) {
+                $eventPerPage = !empty($widget->event_per_page)
+                    ? (int) $widget->event_per_page
+                    : 3;
+
+                $events = $eventQuery()
                     ->paginate($eventPerPage)
                     ->withQueryString();
-            } else {
-                $mapEvents = Event::with('category')
-                ->listactive()
-                ->where('is_private', 0)
-                ->when(!empty($widget->ftr_tag_ids), function ($query) use ($widget) {
-                    $tagIds = array_filter(explode(',', $widget->ftr_tag_ids));
 
-                    $query->whereHas('tags', function ($tagQuery) use ($tagIds) {
-                        $tagQuery->whereIn('tags.id', $tagIds);
-                    });
-                })
-                ->when(!empty($widget->ftr_event_title), function ($query) use ($widget) {
-                    $query->where('event_name', 'like', '%' . $widget->ftr_event_title . '%');
-                })
-                ->when(!empty($widget->ftr_event_start_dt), function ($query) use ($widget) {
-                    $query->whereDate('events.start_datetime', '>=', $widget->ftr_event_start_dt);
-                })
-                ->when(!empty($widget->ftr_event_end_dt), function ($query) use ($widget) {
-                    $query->whereDate('events.end_datetime', '<=', $widget->ftr_event_end_dt);
-                })
-                ->get();
+                /*
+                * Search within 100 miles only when the widget's saved
+                * filter/distance produced no events.
+                */
+                if ($events->total() === 0 && $hasWidgetLocation) {
+                    $request->merge([
+                        'location' => $widget->location,
+                        'distance' => 100,
+                        'latitude' => $widget->location_lat,
+                        'longitude' => $widget->location_long,
+                        'unit' => 'mi',
+                    ]);
+
+                    $events = $eventQuery()
+                        ->paginate($eventPerPage)
+                        ->withQueryString();
+
+                    $miles100_count = $events->total();
+                }
+            } else {
+                $mapEvents = $eventQuery()->get();
+
+                /*
+                * Search within 100 miles only when the widget's saved
+                * filter/distance produced no events.
+                */
+                if ($mapEvents->isEmpty() && $hasWidgetLocation) {
+                    $request->merge([
+                        'location' => $widget->location,
+                        'distance' => 100,
+                        'latitude' => $widget->location_lat,
+                        'longitude' => $widget->location_long,
+                        'unit' => 'mi',
+                    ]);
+
+                    $mapEvents = $eventQuery()->get();
+                    $miles100_count = $mapEvents->count();
+                }
+
                 $location_array = $mapEvents->map(function ($event) use ($widget) {
-                    if (!$event->latitude || !$event->longitude) 
+                    if (!$event->latitude || !$event->longitude) {
                         return null;
-                    
+                    }
+
                     return [
                         'lat' => (float) $event->latitude,
                         'lng' => (float) $event->longitude,
-                        'title' => '<b>Name:</b> '.$event->event_name.'<br/><b>Date Time:</b> '.$event->startTimeAndEndTime.'<br/><b>Address:</b> '.$event->venue.'<br/><b>Link:</b> <a href="javascript:void(0);" ajaxurl="'.route('front-add-widget-log',['widget_id'=>encrypt($widget->id),'type'=>2,'ref_id'=>$event->id]).'" url="'.$this->mailUrl('view-event-details', ['slug' => $event->slug,'widget_id'=>encrypt($widget->id)]).'" title="'.$event->event_name.'" class="widget-event-click"><b>View Event</b></a>',
+                        'title' => '<b>Name:</b> ' . $event->event_name .
+                            '<br/><b>Date Time:</b> ' . $event->startTimeAndEndTime .
+                            '<br/><b>Address:</b> ' . $event->venue .
+                            '<br/><b>Link:</b> <a href="javascript:void(0);" ajaxurl="' .
+                            route('front-add-widget-log', [
+                                'widget_id' => encrypt($widget->id),
+                                'type' => 2,
+                                'ref_id' => $event->id,
+                            ]) .
+                            '" url="' .
+                            $this->mailUrl('view-event-details', [
+                                'slug' => $event->slug,
+                                'widget_id' => encrypt($widget->id),
+                            ]) .
+                            '" title="' . $event->event_name .
+                            '" class="widget-event-click"><b>View Event</b></a>',
                     ];
                 })->filter()->values()->all();
             }
         }
-        
+
         $data['widget'] = $widget;
         $data['events'] = $events;
         $data['location_array'] = $location_array;
-        $data['seo_details'] = (object)[
+        $data['miles100_count'] = $miles100_count;
+        $data['seo_details'] = (object) [
             'title' => 'Volunteer Cleanup',
             'description' => 'Browse the list of upcoming cleanups.',
             'keywords' => 'volunteer, cleanups, events, opportunities',
         ];
-        return view('pages.frontend.show-widget', $data); 
+
+        return view('pages.frontend.show-widget', $data);
     }
     public function addWidgetLog($widget_id, $type, $ref_id=null){
         // we need to prevent that if user accidently clicked the button twice and hit the ajax twice then multiple logs should not be created so update below code accordingly 

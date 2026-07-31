@@ -1400,8 +1400,15 @@ class FrontOrderController extends Controller
         } */
 
         $alertName = 'Weekly Cleanups Near '.$pincode;
-        $this->createWeeklyAlert($volunteer->id, $alertName, $pincode,2);
+        $createFrom  = 2;
+        if ($request->has('create_from') && !empty($request->create_from)) {
+            $createFrom  = $request->create_from;
+        }
+        $this->createWeeklyAlert($volunteer->id, $alertName, $pincode,$createFrom);
         $this->setFlashSession(true, "Weekly alert has been created successfully.");
+        if ($request->has('from_widget') && $request->from_widget==1) {
+            return redirect()->back();
+        }
         return redirect()->route('front-create-alert');
     }
     public function submitCreateNewsletter(){

@@ -60,13 +60,7 @@
 																<tr class="single-tr">										
 																	<td>{{$data->alert_name}}</td>	
 																	<td>{{$data->zipcode}}</td>
-																	@if($data->created_from==1)	
-																		<td>Alert Page</td>
-																	@elseif($data->created_from==2)
-																		<td>Registration Page</td>
-																	@elseif($data->created_from==3)
-																		<td>Booking Page</td>
-																	@endif
+																	<td>{{ config('app.widget_create_from')[$data->created_from] }}</td>
 																	<td>{{$data->created_at}}</td>
 																	<!-- <td>
 																		@if($data->status)

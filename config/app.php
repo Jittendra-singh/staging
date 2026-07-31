@@ -215,6 +215,7 @@ return [
     'dateTimeFormat'            =>        'd M, Y h:i A',
     'eventDateTimeFormat'       =>        'D, M d, Y h:i A',
     'timeFormat'                =>        'h:i A',
+    'widget_create_from'        =>         [1 => 'Dashboard', 2 => 'Alert Page', 3 => 'Registration', 4 => 'Booking Page' , 5 => 'Widget'],
     'menu_permissions'          =>         [1 => 'View', 2 => 'Create', 3 => 'Update', 4 => 'Delete' , 5 => 'UpdateProfile'],
     'app_name'                  =>         env('APP_NAME', 'Laravel'),
     'accessibility'             =>         ['3' => "Both" , '1' => "Portal Only" , '2' =>  "App Only" ] ,

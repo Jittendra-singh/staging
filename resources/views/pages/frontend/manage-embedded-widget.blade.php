@@ -6,6 +6,37 @@
     width: 1000px!important;
     max-width: unset!important;
 }
+.empty-state-behavior {
+    border-top: 1px solid #e5e7eb;
+    margin-top: 2.5rem;
+    padding-top: 2.5rem;
+}
+
+.empty-state-option {
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    cursor: pointer;
+    height: 100%;
+    padding: 1rem;
+}
+
+.empty-state-option .form-check-input {
+    margin-top: 0.2rem;
+}
+
+.empty-state-option-title {
+    color: #111827;
+    font-size: 14px;
+    font-weight: 600;
+    margin-left: 10px;
+
+}
+
+.empty-state-option-description {
+    color: #6b7280;
+    line-height: 1.5;
+    margin: 0.45rem 0 0 10px;
+}
 </style>
 @endpush
 @section('content')
@@ -164,6 +195,64 @@
                                     <div class="form-check">
                                         <input class="form-check-input" type="radio" value="2" id="type2" name="type" @checked(old('type', $widget->type ?? 1) == 2)>
                                         <label class="form-check-label" for="type2">Map View</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-12 empty-state-behavior">
+                                
+                                <div class="bp-title">
+                                    <h4 class="p-0 pb-2">Empty State Behavior</h4>
+                                </div>
+
+                                <p class="mb-4">
+                                    Choose what users see when no events match your current filters, even after expanding the search to the next available distance.
+                                </p>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="empty-state-option w-100">
+                                            <div class="form-check mb-0">
+                                                <input
+                                                    class="form-check-input"
+                                                    type="radio"
+                                                    name="empty_behavior"
+                                                    id="empty_behavior_notify"
+                                                    value="1"
+                                                    @checked(old('empty_behavior', $widget->empty_behavior ?? 1) == 1)
+                                                >
+
+                                                <span class="empty-state-option-title">
+                                                    Offer to Notify (Default)
+                                                </span>
+
+                                                <p class="empty-state-option-description">
+                                                    Displays an email capture form for visitors to be notified of cleanups in their area via zip code.
+                                                </p>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="empty-state-option w-100">
+                                            <div class="form-check mb-0">
+                                                <input
+                                                    class="form-check-input"
+                                                    type="radio"
+                                                    name="empty_behavior"
+                                                    id="empty_behavior_host_only"
+                                                    value="2"
+                                                    @checked(old('empty_behavior', $widget->empty_behavior ?? 1) == 2)
+                                                >
+
+                                                <span class="empty-state-option-title">
+                                                    Host Only
+                                                </span>
+
+                                                <p class="empty-state-option-description">
+                                                    When no matching events are available, encourage visitors to organize a cleanup instead of displaying an empty widget. If chosen, users will see a CTA to “Organize an Event”.
+                                                </p>
+                                            </div>
+                                        </label>
                                     </div>
                                 </div>
                             </div>
