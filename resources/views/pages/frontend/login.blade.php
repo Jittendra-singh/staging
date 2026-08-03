@@ -23,7 +23,9 @@
                             <div class="registration">
                                 <form action="{{ route('front-login-post') }}" method="POST" class="validateform login-panel-form">
                                     @csrf
-
+                                    @if(request()->filled('redirect_to'))
+                                        <input type="hidden" name="redirect_to" value="{{ request('redirect_to') }}">
+                                    @endif
                                     <div class="login-panel-heading">
                                         <h2 class="registration-title">Welcome back</h2>
                                         <p>Please enter your details to sign in.</p>

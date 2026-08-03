@@ -142,8 +142,8 @@ class FrontAuthController extends Controller
             $this->setFlashSession(true, 'Your account has been created successfully. We will activate your account once you verify your email address.');
         }
 
-        return redirect()->route('front-login');
-
+        //return redirect()->route('front-login');
+        return redirect()->route('front-post-a-event');
     }
 
     public function verifyEmail($id,$timestamp){
@@ -193,6 +193,9 @@ class FrontAuthController extends Controller
                                         ])) {
             //return redirect()->route('front-post-a-event');
             //return redirect()->route('front-dashboard');
+            if ($request->filled('redirect_to')) {
+                return redirect($request->redirect_to);
+            }
             return redirect()->intended(route('front-dashboard'));
 
         } else {

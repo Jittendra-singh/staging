@@ -448,13 +448,13 @@ a[disabled]{
                                                 <p><!-- <i class="fa-solid fa-check-square me-1"></i> -->Check-In</p>
                                                 <h6 class="coupon-status">{{$event->tickets()->active()->where('checkin',1)->count()}} / {{$event->tickets()->active()->count()}}</h6>
                                             </div>
-                                            @if($event->tickets()->where('checkin',0)->count()>0)
+                                            @if($event->tickets()->where('rsvp_confirmation',0)->count()>0)
                                             <div class="icon-box ">
                                                 <span class="icon">
                                                     <i class="fa-solid fa-user-times"></i>
                                                 </span>
                                                 <p><!-- <i class="fa-solid fa-check-square me-1"></i> -->Cancelled</p>
-                                                <h6 class="coupon-status"><span class="badge custom-badge-danger cancelled-count">{{$event->tickets()->where('checkin',0)->count()}}</span></h6>
+                                                <h6 class="coupon-status"><span class="badge custom-badge-danger cancelled-count">{{$event->tickets()->where('rsvp_confirmation',0)->count()}}</span></h6>
                                             </div>
                                             @endif
                                             <div class="icon-box ">

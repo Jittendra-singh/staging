@@ -307,20 +307,25 @@ $icalStrData = getiCalData($event);
                         }
                         
                         $totalTicketCount = $evenTickets->count();
+                        $allTicketCount = $eventAllTickets->count();
                         $isEventEnded = false;
+                        $ticketIds = $eventAllTickets->pluck('id')->toArray();
                         if(strtotime($event->end_datetime) < strtotime(date('Y-m-d H:i:s'))){
                             $totalTicketCount = 0;
+                            $allTicketCount = 0;
                             $isEventEnded = true;
                         }
                         if($event->participation_type!=1){
                             $totalTicketCount = 0;
+                            $allTicketCount = 0;
                         }
                         if(!empty($event->cancelled_at)){
                             $totalTicketCount = 0;
+                            $allTicketCount = 0;
                         }
                         @endphp 
                         <!-- if($event->sellTicketBooking() && $event->eventTickets->count() > 0) -->
-                        @if($totalTicketCount > 0)
+                        @if($allTicketCount > 0)
                         @else 
                         <a href="{{route('add-event-to-calendar',['id'=>encrypt($event->id)])}}"  class="secondary-btn w-100 my-4">
                             <svg class="lucide lucide-download" fill="none" height="20" stroke="currentColor"
@@ -349,14 +354,14 @@ $icalStrData = getiCalData($event);
                         {{-- Apply Ticket Conditions --}}
                         <!-- if($event->sellTicketBooking() && $event->eventTickets->count() > 0) -->
                         <x-reusables.frontend.alert />
-                        @if($totalTicketCount > 0)
+                        @if($allTicketCount>0)
                         <form action="{{route('land-to-checkout')}}" method="post">
                             @csrf
                             <input type="hidden" name="event" value="{{$event->encrypted_id}}">
                             <div class="">
                                 <div class="pricing-section">
                                     <h3>Ticket Information</h3>
-                                    @foreach ($evenTickets as $eticket)
+                                    @foreach ($eventAllTickets as $eticket) <!-- evenTickets -->
                                     @php
                                     $session_ticket = collect($ticket_session)->firstWhere('id', $eticket->id);
                                     $booked_count = $session_ticket ? $session_ticket['count'] : 0;
@@ -367,6 +372,10 @@ $icalStrData = getiCalData($event);
                                     $allowedPerOrder = $eticket->max_qty_allowed_per_order;
                                     if((empty($event->creator->stripe_email) || empty($event->creator->stripe_account_id)) && $eticket->ticket_type=='paid'){
                                         continue;
+                                    }
+                                    $upcomingDate = '';
+                                    if(strtotime($eticket->sell_start_time) > strtotime(date('Y-m-d'))){
+                                        $upcomingDate = \Carbon\Carbon::parse($eticket->sell_start_time)->format(config('app.dateFormat'));
                                     }
                                     @endphp
                                     <div class="parent-price-item mb-3 pb-3 ">
@@ -390,13 +399,18 @@ $icalStrData = getiCalData($event);
                                                 <!-- <div class="price">
                                                     {{ $eticket->payable_price ? '$'.$eticket->payable_price : 'Free'}}
                                                 </div> -->
-                                                @if($event->show_remaining_tickets)
+                                                @if(!empty($upcomingDate))
+                                                <span class="price-label">
+                                                    <span class="badge badge-primary bg-primary"><span>Available from {{ $upcomingDate }}</span></span>
+                                                </span>
+                                                @elseif($event->show_remaining_tickets)
                                                 <span class="price-label">
                                                     <span class="badge badge-primary bg-primary"><span id="availTicketCount_{{ $eticket->id }}">{{ $curAvailTickets-$booked_count }}</span> tickets available</span>
                                                 </span>
                                                 @endif
                                                 <!-- <div class="price-label">{{$eticket->ticket_name}}</div> -->
                                             </div>
+                                            @if(empty($upcomingDate))
                                             @if($event->sell_tickets_individually)
                                             <div class=" w-auto">
                                                 <label for="order_ticket_{{$eticket->id}}">
@@ -427,13 +441,40 @@ $icalStrData = getiCalData($event);
                                                     @endif -->
                                                 </div>
                                             @endif
+                                            @endif
                                         </div>
                                     </div>
                                     @endforeach
 
+                                    @if(!empty($upcomingDate))
+                                        @if(auth()->guard('front')->user() && isset(auth()->guard('front')->user()->id))
+                                            @php 
+                                            
+                                            $now = \Carbon\Carbon::now();
+                                            $upcomingTickets = $eventAllTickets->filter(function ($ticket) use ($now) {
+                                                return $ticket->sell_start_time > $now;
+                                            });
+                                            $nextTicket = $upcomingTickets->sortBy('sell_start_time')->first();
+
+                                            $ticketNotifications = auth()->guard('front')->user()->ticketNotifications()->where('is_sent', 0)->get();
+                                            @endphp 
+                                            @if($ticketNotifications->contains('ticket_id', $nextTicket->id))
+                                                <p class="m-0"><i style="font-style: italic;" class="text-primary">An email notification will be sent once tickets are available.</i></p>
+                                            @else
+                                                <a class="primary-btn w-100" href="{{route('save-ticket-notify', encrypt($nextTicket->id))}}">
+                                                    Notify Me for upcoming ticket
+                                                </a>
+                                            @endif 
+                                        @else 
+                                        <a href="{{ route('front-login',['redirect_to'=>request()->fullUrl()]) }}" class="primary-btn w-100">
+                                            Notify Me for upcoming ticket
+                                        </a>
+                                        @endif 
+                                    @else 
                                     <button class="primary-btn w-100" id="proceed_checkout_btn" type="submit">
                                         Get Tickets
                                     </button>
+                                    @endif
                                     <a href="{{route('add-event-to-calendar',['id'=>encrypt($event->id)])}}" class="secondary-btn w-100 my-4">
                                         <svg class="lucide lucide-download" fill="none" height="20" stroke="currentColor"
                                             stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
