@@ -234,9 +234,11 @@
                                     </h3>
 
                                     <p class="widget-empty-description">
-                                        We couldn't find any events near you right now. Sign up to be
-                                        the first to know when a new cleanup or community event is
-                                        organized in your area.
+                                        @if(!empty($widget->location))
+                                            No upcoming events were found near {{$widget->location}}. Sign up to be notified when a new cleanup or community event is scheduled in this area.
+                                        @else
+                                            No upcoming events were found. Sign up to be notified when a new cleanup or community event is scheduled in your area.
+                                        @endif
                                     </p>
 
                                 @elseif($emptyBehavior === 2)
