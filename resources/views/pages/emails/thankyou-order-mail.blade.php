@@ -18,6 +18,7 @@
         <li><strong>Total Ticket Amount:</strong> {{ round($order->grand_total-$order->donation_amount,2) }}</li>
         <li><strong>Donation Amount:</strong> {{ round($order->donation_amount,2) }}</li>
         <li><strong>Total Paid:</strong> {{ round($order->grand_total,2) }}</li>
+        <li><strong>Accompanying Children:</strong> {{ $total_children ?? 0 }}</li>
     </ul><br/>
 
     <p>If you purchased tickets for other attendees, they will receive their own confirmation emails with event details.You can view your full order details anytime from your dashboard:</p>

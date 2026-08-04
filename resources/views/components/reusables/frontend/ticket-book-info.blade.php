@@ -19,7 +19,7 @@
             @php
                 $name_counter = $name_counter + 1 ;
             @endphp
-            <div class=" pb-4 parent-container" data-ticket="1" data-ticketid="{{$ticket_id}}">
+            <div class=" pb-4 parent-container" data-ticket="1" data-ticketid="{{$ticket_id}}" data-ticket-index="{{$name_counter}}">
                 <div class="row">
                     <div class="col-lg-3 col-md-3">
                         <div class="form-group mt-4">
@@ -55,27 +55,73 @@
                         </div>
                     @endif
                 </div>
-                @if($is_waiver_allowed)
-                    <div class="row waiver-form-div">
-                        <div class="col-lg-12 col-md-4">
+                <div class="row attendee-age-options">
+                    @if($is_waiver_allowed)
+                        <div class="col-lg-auto col-md-auto under-18-option">
                             <div class="form-group mt-4">
                                 <label class="form-label mt-4" for="is-18-checkbox-{{$name_counter}}">
-                                    <input type="checkbox" name="ticket[{{$name_counter}}][is_under_18]" class="form-check-input waiver_check_age is_under_18" id="is-18-checkbox-{{$name_counter}}" value="1"> This volunteer is under 18 years of age.
+                                    <input type="checkbox"
+                                        name="ticket[{{$name_counter}}][is_under_18]"
+                                        class="form-check-input waiver_check_age is_under_18"
+                                        id="is-18-checkbox-{{$name_counter}}"
+                                        value="1">
+                                    This volunteer is under 18 years of age.
                                 </label>
-                            </div>  
+                            </div>
                         </div>
+                    @endif
+
+                    @if($event->allow_child_under13)
+                        <div class="col-lg-auto col-md-auto child-option">
+                            <div class="form-group mt-4">
+                                <label class="form-label mt-4" for="has-children-checkbox-{{$name_counter}}">
+                                    <input type="checkbox"
+                                        name="ticket[{{$name_counter}}][has_children]"
+                                        class="form-check-input has-children-checkbox"
+                                        id="has-children-checkbox-{{$name_counter}}"
+                                        value="1">
+                                    I am coming with children below 13 years
+                                </label>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+
+                @if($is_waiver_allowed)
+                    <div class="row waiver-form-div">
                         <div class="col-lg-4 col-md-4 waiver-guardian d-none">
                             <div class="form-group mt-4">
                                 <label class="form-label">Guardian Name*</label>
-                                <input class="form-control guardian_name is_under_18" name="ticket[{{$name_counter}}][waiver_handler_name]" type="text" placeholder="Enter guardian name">
+                                <input class="form-control guardian_name is_under_18"
+                                    name="ticket[{{$name_counter}}][waiver_handler_name]"
+                                    type="text"
+                                    placeholder="Enter guardian name">
                             </div>
                         </div>
+
                         <div class="col-lg-4 col-md-4 waiver-guardian d-none">
                             <div class="form-group mt-4">
                                 <label class="form-label">Guardian Email*</label>
-                                <input class="form-control guardian_email is_under_18" name="ticket[{{$name_counter}}][waiver_handler_email]" type="text" placeholder="Enter guardian email">
+                                <input class="form-control guardian_email is_under_18"
+                                    name="ticket[{{$name_counter}}][waiver_handler_email]"
+                                    type="text"
+                                    placeholder="Enter guardian email">
                             </div>
                         </div>
+                    </div>
+                @endif
+
+                @if($event->allow_child_under13)
+                    <div class="children-fields-container d-none mt-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label mb-0 fw-bold">Children Information</label>
+                            <button type="button" class="btn btn-sm btn-outline-primary add-child-row">
+                                <i class="fa-solid fa-plus"></i> Add Child
+                            </button>
+                        </div>
+
+                        <div class="children-rows"></div>
+                        <small class="text-muted">You can add up to 4 children below 13 years of age.</small>
                     </div>
                 @endif
             </div>

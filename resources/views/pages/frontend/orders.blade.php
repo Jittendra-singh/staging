@@ -140,7 +140,22 @@
                                                     <tr>
                                                         <td>{{$order->order_number}}</td>
                                                         <td>{{$order->event->event_name}}</td>
-                                                        <td>{{$order->total_tickets}} Ticket{{ $order->total_tickets>1?'s':'' }}</td>
+                                                        @php
+                                                            $childrenCount = $order->tickets->sum(function ($ticket) {
+                                                                return $ticket->children->count();
+                                                            });
+                                                        @endphp
+
+                                                        <td>
+                                                            {{ $order->total_tickets }} Ticket{{ $order->total_tickets > 1 ? 's' : '' }}
+
+                                                            @if($childrenCount > 0)
+                                                                <br>
+                                                                <small class="text-primary">
+                                                                    {{ $childrenCount }} accompanying child{{ $childrenCount > 1 ? 'ren' : '' }}
+                                                                </small>
+                                                            @endif
+                                                        </td>
                                                         <td>{{$order->createdDateTime}}</td>
                                                         <td>
                                                             <a title="View Order Details" href="{{route('front-order-details',[

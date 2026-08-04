@@ -221,6 +221,14 @@
 											$data_event 		= $event ? $event->only('event_name', 'venue', 'start_datetime', 'end_datetime', 'waiver_form_type', 'ticket_questions') : collect([]);
 											$data_event['start_datetime'] = $event->startTimeAndEndTime;
 											$data_registration 	= $registration ? $registration->only('ticket_number', 'price', 'waiver_handler_email', 'waiver_filled_at', 'ticket_answer') : collect([]);
+											$data_registration['children'] = $registration->children
+											->map(function ($child) {
+												return [
+													'child_name' => $child->child_name,
+													'child_age' => $child->child_age,
+												];
+											})
+											->values();
 											$data_order 		= $order ? $order->only('order_number','grand_total','total_tickets') : collect([]); 
 											$data_volunteer 	= $volunteer ? $volunteer->only('first_name','last_name','email_address','phone') : collect([]);
 											$data_ticket 		= $ticket ? $ticket->only('ticket_type','ticket_name','email_address','phone') : collect([]);
@@ -241,7 +249,16 @@
 														</div>
 														<div class="card-event-dt">
 															<h5 class="m-0">{{$volunteer->name}}</h5>
-															<small>{{$volunteer->email_address}}</small>
+															<small>
+																{{ $volunteer->email_address }}
+
+																@if($registration->children->isNotEmpty())
+																	<span class="text-primary">
+																		(with {{ $registration->children->count() }} accompanying
+																		{{ $registration->children->count() === 1 ? 'child' : 'children' }})
+																	</span>
+																@endif
+															</small>
 															<p class="mt-1 mb-0">{{$event->event_name}}</p>
 															@if($registration->checkin!=1 && $registration->community_form_status=='requested')
 															<span class="badge custom-badge-warning mt-1">Certificate Requested</span>

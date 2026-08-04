@@ -155,6 +155,14 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="row mb-4 registration-children-section d-none">
+                            <div class="col-12">
+                                <h5 class="mb-3">Accompanying Children:</h5>
+                                <hr class="mt-0 mb-3">
+
+                                <ul class="registration-children-list mb-0"></ul>
+                            </div>
+                        </div>
                         <div class="row mb-2 waiver-div">
                             <div class="col-12">
                                 <h5 class=" mb-3">Waiver Information:</h5>

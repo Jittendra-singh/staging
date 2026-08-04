@@ -232,6 +232,7 @@
                             <th>Type</th>
                             <th>Price</th>
                             <th>Volunteer</th>
+                            <th>Accompanying Children</th>
                             <th>Email</th>
                             <th>Phone</th>
                             <!-- <th>Extra Notes</th> -->
@@ -256,6 +257,17 @@
                                 <td>{{ $ticket->ticket->ticket_type }}</td>
                                 <td>${{ $ticket->price }}</td>
                                 <td>{{ $ticket->volunteer->name ?? '-' }}</td>
+                                <td>
+                                    @if($ticket->children->isNotEmpty())
+                                        <ul class="mb-0 ps-3">
+                                            @foreach($ticket->children as $child)
+                                                <li>{{ $child->child_name }} (Age {{ $child->child_age }})</li>
+                                            @endforeach
+                                        </ul>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
                                 <td>{{ $ticket->volunteer->email_address ?? '-' }}</td>
                                 <td>{{ $ticket->volunteer->phone ?? '-' }}</td>
                                 <!-- <td>{{ $ticket->extra_notes }}</td> -->

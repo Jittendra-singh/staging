@@ -19,6 +19,7 @@ use App\Models\VolunteerWidgetLog;
 use App\Exceptions\CustomException;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Controllers\StripeController;
+use Illuminate\Validation\ValidationException;
 class FrontOrderController extends Controller
 {
     public function landToCheckout(){
@@ -327,6 +328,11 @@ class FrontOrderController extends Controller
 
             if(!$event)
                 throw new CustomException("No booking for this event.");
+
+            $childrenByTicket = $this->validatedChildrenByTicket(
+                $event,
+                request()->input('ticket', [])
+            );
             
             //DB::beginTransaction();
                 $pincode = '';
@@ -494,6 +500,15 @@ class FrontOrderController extends Controller
                                                     'rsvp_confirmation'    => 1, // RSVP values added here after RSVP Waiver flow changes 
                                                     'rsvp_filled_at'    => now(), 
                                                 ]);
+
+                        foreach ($childrenByTicket[$ticket_key] ?? [] as $child) {
+                            $event_order_ticket_obj->children()->create([
+                                'event_id' => $event->id,
+                                'order_id' => $order_object->id,
+                                'child_name' => $child['child_name'],
+                                'child_age' => $child['child_age'],
+                            ]);
+                        }
                         
                         if(SEND_MAIL){
                             $email_people_array[$ticket_volunteer->email_address] = [   
@@ -585,7 +600,7 @@ class FrontOrderController extends Controller
             //DB::commit();
             /**emptying the sessions */
             Session::forget(['ticket_booking', 'checkout_event', 'checkout_order_details']);
-            
+            $totalChildren = collect($childrenByTicket)->flatten(1)->count();
             $this->setFlashSession(true, "Great! we have created order.");
             if(SEND_MAIL){
                 // send email to organizer 
@@ -598,6 +613,7 @@ class FrontOrderController extends Controller
                     'buyer_phone'=>$creating_volunteer->phone,
                     //'volunteer_name'=>$creating_volunteer->first_name.' '.$creating_volunteer->last_name,
                     //'volunteer_email'=>$creating_volunteer->email_address,
+                    'total_children' => $totalChildren,
                     'action_type'=>'registered',
                     'order'=>$order_object,
                     'event_name'=>$event->event_name,
@@ -643,6 +659,7 @@ class FrontOrderController extends Controller
                     //'total_tickets'=>count($email_people_array),
                     'name'=>$creating_volunteer->first_name.' '.$creating_volunteer->last_name,
                     'event_tickets'=>$ticket_booking,
+                    'total_children' => $totalChildren,
                     'order'=>$order_object,
                     'order_url'=>$this->mailUrl('front-order-details', [encrypt($order_object->id)]),
                 ];
@@ -745,7 +762,7 @@ class FrontOrderController extends Controller
         ]);
     } */
     public function viewTicketPdf($ticket){
-        $ticket = EventOrderTicket::with('volunteer')->findOrFail(decrypt($ticket));
+        $ticket = EventOrderTicket::with(['volunteer', 'children', 'eventOrder'])->findOrFail(decrypt($ticket));
         $event  = $ticket->event;
         $volunteerName = $ticket->volunteer->first_name.' '.$ticket->volunteer->last_name;
 
@@ -1491,5 +1508,81 @@ END:VCALENDAR"; */
             }
         }
         return "done";
+    }
+    private function validatedChildrenByTicket(Event $event, array $tickets): array
+    {
+        $childrenByTicket = [];
+
+        foreach ($tickets as $ticketKey => $ticket) {
+            $hasChildren = filter_var(
+                $ticket['has_children'] ?? false,
+                FILTER_VALIDATE_BOOLEAN
+            );
+
+            $children = $ticket['children'] ?? [];
+
+            if (!is_array($children)) {
+                throw ValidationException::withMessages([
+                    "ticket.$ticketKey.children" => 'Invalid children information submitted.',
+                ]);
+            }
+
+            if (!$hasChildren && count($children) > 0) {
+                throw ValidationException::withMessages([
+                    "ticket.$ticketKey.children" => 'Children information is not allowed unless the children option is selected.',
+                ]);
+            }
+
+            if (!$hasChildren) {
+                continue;
+            }
+
+            if (!$event->allow_child_under13) {
+                throw ValidationException::withMessages([
+                    "ticket.$ticketKey.children" => 'This event does not allow children below 13 years.',
+                ]);
+            }
+
+            if (!empty($ticket['is_under_18'])) {
+                throw ValidationException::withMessages([
+                    "ticket.$ticketKey.children" => 'An attendee under 18 years of age cannot be registered with children.',
+                ]);
+            }
+
+            if (count($children) < 1 || count($children) > 4) {
+                throw ValidationException::withMessages([
+                    "ticket.$ticketKey.children" => 'Please add between 1 and 4 children.',
+                ]);
+            }
+
+            foreach ($children as $childKey => $child) {
+                $childName = trim($child['child_name'] ?? '');
+                $childAge = $child['child_age'] ?? null;
+
+                if ($childName === '') {
+                    throw ValidationException::withMessages([
+                        "ticket.$ticketKey.children.$childKey.child_name" => 'Child name is required.',
+                    ]);
+                }
+
+                if (
+                    !is_numeric($childAge) ||
+                    (int) $childAge != $childAge ||
+                    (int) $childAge < 0 ||
+                    (int) $childAge > 12
+                ) {
+                    throw ValidationException::withMessages([
+                        "ticket.$ticketKey.children.$childKey.child_age" => 'Child age must be between 0 and 12 years.',
+                    ]);
+                }
+
+                $childrenByTicket[$ticketKey][] = [
+                    'child_name' => $childName,
+                    'child_age' => (int) $childAge,
+                ];
+            }
+        }
+
+        return $childrenByTicket;
     }
 }

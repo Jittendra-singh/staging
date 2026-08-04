@@ -146,6 +146,49 @@
             width: 50%;
             vertical-align: middle;
         }
+        .children-table {
+            width: 100%;
+            margin-top: 14px;
+            border-collapse: collapse;
+            table-layout: fixed;
+            border: 1px solid #dbe4f0;
+        }
+
+        .children-table th {
+            background: #f1f5f9;
+            color: #475569;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            text-align: left;
+            padding: 11px 14px;
+            border-bottom: 1px solid #dbe4f0;
+        }
+
+        .children-table td {
+            color: #111827;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 11px 14px;
+            vertical-align: middle;
+            border-bottom: 1px solid #e8edf5;
+        }
+
+        .children-table tbody tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .children-table th:first-child,
+        .children-table td:first-child {
+            width: 75%;
+        }
+
+        .children-table th:last-child,
+        .children-table td:last-child {
+            width: 25%;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -219,6 +262,31 @@
                         </td>
                     </tr>
                 </table>
+                @if($ticket->children->isNotEmpty())
+                    <div class="section" style="margin-top: 20px;">
+                        <div class="label" style="margin-bottom: 8px;">
+                            Accompanying Children
+                        </div>
+
+                        <table class="children-table">
+                            <thead>
+                                <tr>
+                                    <th>Child Name</th>
+                                    <th>Age</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @foreach($ticket->children as $child)
+                                    <tr>
+                                        <td>{{ $child->child_name }}</td>
+                                        <td>{{ $child->child_age }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
             </div>
 
             <div class="ticket-footer">

@@ -796,6 +796,28 @@ function populateOrderDetails(targetButton) {
 		$('#registrationDetails .waiver_handled_by').text(registration.waiver_filled_at ? ticketUserName : 'Not signed yet');
 	}
 
+
+	const children = registration && Array.isArray(registration.children)
+    ? registration.children
+    : [];
+
+	const $childrenSection = $('#registrationDetails .registration-children-section');
+	const $childrenList = $('#registrationDetails .registration-children-list');
+
+	$childrenList.empty();
+
+	if (children.length > 0) {
+		children.forEach(function (child) {
+			$('<li>')
+				.text(`${child.child_name} — Age ${child.child_age}`)
+				.appendTo($childrenList);
+		});
+
+		$childrenSection.removeClass('d-none');
+	} else {
+		$childrenSection.addClass('d-none');
+	}
+
 }
 function populateNotesData(targetButton) {
 	let ticket = $(targetButton).data('ticket');
@@ -1624,7 +1646,11 @@ $(document).ready(function () {
 			method: "POST",
 			success: function (result) {
 				if (!control.hasClass('billing-email')) {
-					$(parent_section).find('input').not('.email_address, .ticket_id, .is_under_18').val('').removeAttr('readonly').attr('required', true);
+					$(parent_section).find('input')
+					.not('.email_address, .ticket_id, .is_under_18, .has-children-checkbox')
+					.val('')
+					.removeAttr('readonly')
+					.attr('required', true);
 					$('[name="phone"]').attr('required', false);
 					if (control.hasClass('attendee-email')) {
 						$(parent_section).find('.phone').attr('placeholder', '');
@@ -1648,7 +1674,11 @@ $(document).ready(function () {
 											$(parent_section).find(`.${key}`).attr('required', true).removeAttr('placeholder').removeAttr('readonly').val('');
 										}
 									} else {
-										$(parent_section).find(`.${key}`).not('.email_address, .ticket_id, .is_under_18').val(user[key]).attr('readonly', true).removeAttr('required');
+										$(parent_section).find(`.${key}`)
+										.not('.email_address, .ticket_id, .is_under_18, .has-children-checkbox')
+										.val(user[key])
+										.attr('readonly', true)
+										.removeAttr('required');
 										if (control.hasClass('attendee-email')) {
 											$(parent_section).find('.first_name').attr('required', false).attr('readonly', true);
 											$(parent_section).find('.last_name').attr('required', false).attr('readonly', true);

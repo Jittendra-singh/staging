@@ -205,6 +205,32 @@
 									<div class="info-label">Guardian Details</div>
 									<div class="info-value">{{ $ticket->waiver_handler_name }} ({{ $ticket->waiver_handler_email }})</div>
                                     @endif
+
+									@if($ticket->children->isNotEmpty())
+									<div class="info-label mt-3">Accompanying Children</div>
+
+									<div class="info-value">
+										<div class="table-responsive">
+											<table class="table table-sm table-bordered mb-0">
+												<thead>
+													<tr>
+														<th class="p-2">Child Name</th>
+														<th class="p-2">Age</th>
+													</tr>
+												</thead>
+												<tbody>
+													@foreach($ticket->children as $child)
+														<tr>
+															<td class="p-2">{{ $child->child_name }}</td>
+															<td class="p-2">{{ $child->child_age }}</td>
+														</tr>
+													@endforeach
+												</tbody>
+											</table>
+										</div>
+									</div>
+								@endif
+
 								</div>
 							</div>
                             @endforeach

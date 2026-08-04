@@ -14,6 +14,17 @@ class RegistrationExport implements FromCollection, WithHeadings
     public function collection()
     {
         $organising_events = auth()->guard('front')->user()->allControlEvents();
+        $childrenSummary = \DB::table('event_order_ticket_childs')
+            ->selectRaw("
+                event_order_ticket_id,
+                COUNT(*) as children_count,
+                GROUP_CONCAT(
+                    CONCAT(child_name, ' (Age ', child_age, ')')
+                    ORDER BY id
+                    SEPARATOR ', '
+                ) as children_details
+            ")
+            ->groupBy('event_order_ticket_id');
         
         $registration_builder = EventOrderTicket::
                                     selectRaw(
@@ -24,6 +35,8 @@ class RegistrationExport implements FromCollection, WithHeadings
                                         event_order_tickets.waiver_filled_at,
                                         CONCAT(buyers.first_name, ' ' , buyers.last_name) AS buyer_first_name,
                                         buyers.email_address AS buyer_email_address,
+                                        COALESCE(children.children_count, 0) as children_count,
+                                        COALESCE(children.children_details, '') as children_details,
                                         event_tickets.ticket_name AS ticket_name,
                                         CONCAT('#',event_order_tickets.ticket_number) as ticket_number,
                                         event_order_tickets.created_at,
@@ -36,6 +49,17 @@ class RegistrationExport implements FromCollection, WithHeadings
                                     ->join('volunteers', 'event_order_tickets.volunteer_id', '=', 'volunteers.id')
                                     ->join('event_orders', 'event_order_tickets.order_id', '=', 'event_orders.id')
                                     ->join('volunteers AS buyers', 'event_orders.creator_id', '=', 'buyers.id')
+                                    ->leftJoinSub(
+                                        $childrenSummary,
+                                        'children',
+                                        function ($join) {
+                                            $join->on(
+                                                'children.event_order_ticket_id',
+                                                '=',
+                                                'event_order_tickets.id'
+                                            );
+                                        }
+                                    )
                                     ->where(function($query) use($organising_events){
                                         $query->whereIn('event_order_tickets.event_id', $organising_events->pluck('id'))
                                         ->getVolunteerRegistrationLists();
@@ -61,6 +85,8 @@ class RegistrationExport implements FromCollection, WithHeadings
             'Waiver Signed?', 
             'Buyer\'s Name', 
             'Buyer\'s Email', 
+            'Accompanying Children Count',
+            'Accompanying Children Details',
             'Ticket Name', 
             'Registration id', 
             'Registration date', 

@@ -20,7 +20,8 @@ $user = auth()->guard('front')->check() ? auth()->guard('front')->user()->load([
     .select2-container--default .select2-selection--single .select2-selection__rendered {
         line-height: 50px;
     }
-    .form-check-input.waiver_check_age{
+    .form-check-input.waiver_check_age, 
+    .form-check-input.has-children-checkbox{
         border-color: black;
         margin: 2px;
     }
@@ -272,5 +273,164 @@ $user = auth()->guard('front')->check() ? auth()->guard('front')->user()->load([
             }
         }
     });
+</script>
+<script>
+$(document).ready(function () {
+    const maxChildren = 4;
+
+    function childRow(ticketIndex, childIndex) {
+        return `
+            <div class="row child-row align-items-start mb-3" data-child-index="${childIndex}">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Child Name*</label>
+                        <input type="text"
+                            class="form-control"
+                            name="ticket[${ticketIndex}][children][${childIndex}][child_name]"
+                            placeholder="Enter child name"
+                            required>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Child Age*</label>
+                        <input type="number"
+                            class="form-control"
+                            name="ticket[${ticketIndex}][children][${childIndex}][child_age]"
+                            min="0"
+                            max="12"
+                            step="1"
+                            placeholder="Enter age"
+                            required>
+                    </div>
+                </div>
+
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label class="form-label invisible">Remove</label>
+                        <button type="button"
+                            class="btn btn-outline-danger remove-child-row w-100">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function refreshChildRows($parent) {
+        const count = $parent.find('.child-row').length;
+
+        $parent.find('.add-child-row').prop('disabled', count >= maxChildren);
+        $parent.find('.remove-child-row').toggle(count > 1);
+    }
+
+    function addChild($parent) {
+        const $rows = $parent.find('.children-rows');
+
+        if ($rows.find('.child-row').length >= maxChildren) {
+            return;
+        }
+
+        const ticketIndex = $parent.data('ticket-index');
+        const nextIndex = $rows.find('.child-row').length;
+
+        $rows.append(childRow(ticketIndex, nextIndex));
+        refreshChildRows($parent);
+    }
+
+    function clearChildren($parent) {
+        $parent.find('.children-rows').empty();
+        $parent.find('.children-fields-container').addClass('d-none');
+        refreshChildRows($parent);
+    }
+
+    $(document).on('change', '.has-children-checkbox', function () {
+        const $parent = $(this).closest('.parent-container');
+        const $under18 = $parent.find('.is_under_18').first();
+        const $under18Option = $parent.find('.under-18-option');
+        const $guardians = $parent.find('.waiver-guardian');
+
+        if ($(this).is(':checked')) {
+            $under18.prop('checked', false).prop('disabled', true).trigger('change');
+            $under18Option.addClass('d-none');
+
+            $guardians.addClass('d-none');
+            $guardians.find('input').prop('disabled', true).removeAttr('required');
+
+            $parent.find('.children-fields-container').removeClass('d-none');
+
+            if ($parent.find('.child-row').length === 0) {
+                addChild($parent);
+            }
+        } else {
+            $under18.prop('disabled', false);
+            $under18Option.removeClass('d-none');
+
+            clearChildren($parent);
+        }
+    });
+
+    $(document).on('change', '.is_under_18', function () {
+        const $parent = $(this).closest('.parent-container');
+        const $childrenCheckbox = $parent.find('.has-children-checkbox');
+        const $childrenOption = $parent.find('.child-option');
+        const $guardians = $parent.find('.waiver-guardian');
+        const $guardianInputs = $guardians.find('input');
+
+        if ($(this).is(':checked')) {
+            // Show guardian fields for an under-18 attendee.
+            $guardians.removeClass('d-none');
+            $guardianInputs
+                .prop('disabled', false)
+                .attr('required', true);
+
+            // An under-18 attendee cannot have accompanying children.
+            $childrenCheckbox
+                .prop('checked', false)
+                .prop('disabled', true);
+
+            $childrenOption.addClass('d-none');
+            clearChildren($parent);
+        } else {
+            // Hide and clear guardian information when the attendee is not under 18.
+            $guardians.addClass('d-none');
+            $guardianInputs
+                .prop('disabled', true)
+                .removeAttr('required')
+                .val('');
+
+            $childrenCheckbox.prop('disabled', false);
+            $childrenOption.removeClass('d-none');
+        }
+    });
+
+    $(document).on('click', '.add-child-row', function () {
+        addChild($(this).closest('.parent-container'));
+    });
+
+    $(document).on('click', '.remove-child-row', function () {
+        const $parent = $(this).closest('.parent-container');
+
+        $(this).closest('.child-row').remove();
+
+        $parent.find('.child-row').each(function (index) {
+            const ticketIndex = $parent.data('ticket-index');
+
+            $(this).attr('data-child-index', index);
+            $(this).find('input[name*="[child_name]"]').attr(
+                'name',
+                `ticket[${ticketIndex}][children][${index}][child_name]`
+            );
+            $(this).find('input[name*="[child_age]"]').attr(
+                'name',
+                `ticket[${ticketIndex}][children][${index}][child_age]`
+            );
+        });
+
+        refreshChildRows($parent);
+    });
+});
 </script>
 @endpush

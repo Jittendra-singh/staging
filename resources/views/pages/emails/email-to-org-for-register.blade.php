@@ -31,6 +31,7 @@
         <ul>
             <li><strong>Total Attendees:</strong> {{ $total_tickets??'-' }}</li>
             <li><strong>Under 18 Attendees:</strong> {{ $total_18_tickets??'-' }}</li>
+            <li><strong>Accompanying Children:</strong> {{ $total_children ?? 0 }}</li>
         </ul><br/>
         <hr>
         <p><strong>Tickets Registered:</strong></p>

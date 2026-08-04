@@ -249,7 +249,17 @@ class FrontController extends Controller
                                         }
                                     }
                                 })->latest()->paginate()->withQueryString();
+        $ticketIds = $attending_events->getCollection()
+            ->pluck('pivot.id')
+            ->filter()
+            ->values();
+
+        $childrenByTicket = EventOrderTicket::with('children')
+            ->whereIn('id', $ticketIds)
+            ->get()
+            ->keyBy('id');
         return view('pages.frontend.cleanup-attending' , [
+            'childrenByTicket' => $childrenByTicket,
             'attending_events' => $attending_events , 
             'seo_details'      => (object)['title' => 'Attending Events'] ,
         ]);
@@ -1421,6 +1431,7 @@ class FrontController extends Controller
             'show_ticket_description'     => 'nullable|boolean',
             'show_remaining_tickets'      => 'nullable|boolean',
             'allow_donations'      => 'nullable|boolean',
+            'allow_child_under13'      => 'nullable|boolean',
             'sell_tickets_individually'   => 'nullable|boolean',
 
             'waiver_form_type' => 'nullable',
@@ -1508,6 +1519,7 @@ class FrontController extends Controller
             $event->show_ticket_description = $request->has('show_ticket_description') ? 1 : 0;
             $event->show_remaining_tickets = $request->has('show_remaining_tickets') ? 1 : 0;
             $event->allow_donations = $request->has('allow_donations') ? 1 : 0;
+            $event->allow_child_under13 = $request->has('allow_child_under13') ? 1 : 0;
             /* $event->allow_refund = $request->has('allow_refund') ? 1 : 0;
             $event->charge_bear_by = $request->charge_bear_by ?? 0;  */
             if (!$hasRegisteredVolunteers) {
@@ -2518,13 +2530,29 @@ class FrontController extends Controller
             if(request()->end_date)
                 $q->whereDate("created_at" , "<=" , request()->end_date);
         });
-        $orders = $orders->where('creator_id',auth()->guard('front')->user()->id)->latest()->get();
-        //$orders = EventOrder::where('creator_id',auth()->guard('front')->user()->id)->latest()->get();
+        $orders = $orders
+        ->with(['event', 'tickets.children'])
+        ->where('creator_id', auth()->guard('front')->user()->id)
+        ->latest()
+        ->get();
         return view('pages.frontend.orders', ['events'=>$events,'orders' => $orders , 'seo_details' => (object)['title' => 'Orders']]);
     }
-    public function orderDetails($placeholder){
-        $order = EventOrder::findOrFail(decrypt($placeholder));
-        return view('pages.frontend.order-details', ['order' => $order, 'seo_details' => (object)['title' => 'Order Details']]);
+    public function orderDetails($placeholder)
+    {
+        $order = EventOrder::with([
+            'event',
+            'tickets.children',
+            'tickets.volunteer',
+            'tickets.ticket',
+        ])
+        ->where('id', decrypt($placeholder))
+        ->where('creator_id', auth()->guard('front')->id())
+        ->firstOrFail();
+
+        return view('pages.frontend.order-details', [
+            'order' => $order,
+            'seo_details' => (object)['title' => 'Order Details'],
+        ]);
     }
     public function exportRegistration(){
         $fileName = 'Registrations.csv';
@@ -2575,14 +2603,14 @@ class FrontController extends Controller
     public function registrationList(){
         $organising_events = auth()->guard('front')->user()->allControlEvents();
         
-        $registration_builder = EventOrderTicket::where(function($query) use($organising_events){
-                                    $query->whereIn('event_id', $organising_events->pluck('id'))
-                                    ->getVolunteerRegistrationLists();
-                                });
-        $registration_builder_p = EventOrderTicket::join('events', 'events.id', '=', 'event_order_tickets.event_id')->select('event_order_tickets.*')->where(function($query) use($organising_events){
-                                    $query->whereIn('event_id', $organising_events->pluck('id'))
-                                    ->getVolunteerRegistrationLists();
-                                });
+        $registration_builder = EventOrderTicket::with(['children', 'volunteer', 'ticket', 'event'])->where(function($query) use($organising_events){
+            $query->whereIn('event_id', $organising_events->pluck('id'))
+            ->getVolunteerRegistrationLists();
+        });
+        $registration_builder_p = EventOrderTicket::with(['children', 'volunteer', 'ticket', 'event'])->join('events', 'events.id', '=', 'event_order_tickets.event_id')->select('event_order_tickets.*')->where(function($query) use($organising_events){
+            $query->whereIn('event_id', $organising_events->pluck('id'))
+            ->getVolunteerRegistrationLists();
+        });
         
         if (request()->filter === 'oldest') {
             //$registrations = (clone $registration_builder)->get();

@@ -92,7 +92,13 @@ class OrderController extends Controller
     }
     public function viewOrderDetails($placeholder)
     {
-        $order = EventOrder::findOrFail(decrypt($placeholder));
+        $order = EventOrder::with([
+            'event',
+            'creator',
+            'tickets.children',
+            'tickets.ticket',
+            'tickets.volunteer',
+        ])->findOrFail(decrypt($placeholder));
         return view($this->viewDirectory.'details', [
             'order' => $order ,
             'module' => $this->gateHandler ,

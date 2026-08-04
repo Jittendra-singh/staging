@@ -446,7 +446,7 @@ $icalStrData = getiCalData($event);
                                     </div>
                                     @endforeach
 
-                                    @if(!empty($upcomingDate))
+                                    @if(!empty($upcomingDate) && $totalTicketCount <=0)
                                         @if(auth()->guard('front')->user() && isset(auth()->guard('front')->user()->id))
                                             @php 
                                             

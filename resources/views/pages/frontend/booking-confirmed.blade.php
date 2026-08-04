@@ -51,6 +51,18 @@ $icalStrData = getiCalData($event);
 												<i class="fa-solid fa-ticket rotate-icon"></i>
 												<span class="booking-count-tickets mx-2">{{$order->total_tickets}}</span>x Ticket
 											</div>
+											@php
+												$childrenCount = $order->tickets()
+													->withCount('children')
+													->get()
+													->sum('children_count');
+											@endphp
+											@if($childrenCount > 0)
+												<div class="booking-total-tickets">
+													<i class="fa-solid fa-children"></i>
+													<span class="booking-count-tickets mx-2">{{ $childrenCount }}</span> accompanying child{{ $childrenCount > 1 ? 'ren' : '' }}
+												</div>
+											@endif
 											<div class="booking-total-grand">
 												Total : <span>${{$order->grand_total}}</span>
 											</div>

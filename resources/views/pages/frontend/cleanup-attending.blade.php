@@ -110,6 +110,8 @@
 
 											$icalStrData = getiCalData($event);
 											$registration = $event->pivot;
+											$ticketWithChildren = $childrenByTicket->get($registration->id);
+											$children = $ticketWithChildren ? $ticketWithChildren->children : collect();
 											$ticket = $event->pivot->ticket;
 											$volunteer = $event->pivot->volunteer; 
 											$order = $event->pivot->eventOrder;
@@ -121,6 +123,14 @@
 											if(isset($registration->waiver_filled_at)){
 												$data_registration['waiver_filled_at_formated'] = !empty($registration->waiver_filled_at)?$registration->waiver_filled_at->format(config('app.dateTimeFormat')):null;
 											}
+											$data_registration['children'] = $children
+											->map(function ($child) {
+												return [
+													'child_name' => $child->child_name,
+													'child_age' => $child->child_age,
+												];
+											})
+											->values();
 											$data_order 		= $order ? $order->only('order_number','grand_total','total_tickets') : collect([]); 
 											$data_volunteer 	= $volunteer ? $volunteer->only('first_name','last_name','email_address','phone') : collect([]);
 											$data_ticket 		= $ticket ? $ticket->only('ticket_type','ticket_name','email_address','phone') : collect([]);
@@ -136,14 +146,20 @@
 														<div class="card-event-dt">
 															<h5 class="m-0">{{ $event->event_name }}</h5>
 															<p class="m-0">{{ $event->fullAddress }}</p>
+															@if($children->isNotEmpty())
+																<small class="text-primary d-block">
+																	Ticket with {{ $children->count() }} accompanying
+																	{{ $children->count() === 1 ? 'child' : 'children' }}
+																</small>
+															@endif
 															@if($event->is_active!=1)
-															<h6 class="coupon-status">
+															<h6 class="coupon-status mt-2">
 																<span class="badge custom-badge-danger 1">Not Active</span>
 															</h6>
 															@endif
 															@if(!empty($event->cancelled_at))
-															<h6 class="coupon-status">
-																<span data-bs-toggle="tooltip" data-bs-original-title="This event has been cancelled at {{ date(config('app.dateTimeFormat'),strtotime($event->cancelled_at)) }}" class="badge custom-badge-danger 1">Not Cancelled</span>
+															<h6 class="coupon-status mt-2">
+																<span data-bs-toggle="tooltip" data-bs-original-title="This event has been cancelled at {{ date(config('app.dateTimeFormat'),strtotime($event->cancelled_at)) }}" class="badge custom-badge-danger 1">Cancelled</span>
 															</h6>
 															@endif
 														</div>

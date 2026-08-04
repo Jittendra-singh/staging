@@ -114,6 +114,9 @@ class EventOrderTicket extends Pivot
     public function resendWaiverLogs(){
         return $this->hasMany(TicketResendWaiverLog::class, 'ticket_id');
     }
+    public function children(){
+        return $this->hasMany(EventOrderTicketChild::class, 'event_order_ticket_id');
+    }
     /**attributes */
     public function communityFormPdf() : Attribute{
         return new Attribute(
