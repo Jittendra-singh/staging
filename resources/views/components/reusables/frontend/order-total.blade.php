@@ -10,9 +10,36 @@
             <div class="order-number mb-0"><small style="font-weight: 100;font-size: 13px;">{{config('app.currency')}}{{formatAmt($ticket['base_price'])}}</small></div>
         </div>
         @endif
-        <div class="order-total-dt mb-3">
+        <!-- <div class="order-total-dt mb-3">
             <div class="order-text mb-1"><small style="font-weight: 100;font-size: 13px;">Platform Fee ({{$setting->event_commission}}%)</small></div>
             <div class="order-number mb-1"><small style="font-weight: 100;font-size: 13px;">{{config('app.currency')}}{{formatAmt(($ticket['base_price']*$setting->event_commission)/100)}}</small></div>
+        </div> -->
+        <div class="order-total-dt">
+            <div class="order-text mb-0">
+                <small style="font-weight:100;font-size:13px;">
+                    Platform Fee ({{ $setting->event_commission }}%)
+                    {{ $buyer_pays_fees ? '' : 'Included' }}
+                </small>
+            </div>
+            <div class="order-number mb-0">
+                <small style="font-weight:100;font-size:13px;">
+                    {{ config('app.currency') }}{{ formatAmt($ticket['platform_fee'] * $ticket['count']) }}
+                </small>
+            </div>
+        </div>
+
+        <div class="order-total-dt mb-3">
+            <div class="order-text mb-0">
+                <small style="font-weight:100;font-size:13px;">
+                    Processing Fee ({{ $processing_fee_per }}%)
+                    {{ $buyer_pays_fees ? '' : 'Included' }}
+                </small>
+            </div>
+            <div class="order-number mb-0">
+                <small style="font-weight:100;font-size:13px;">
+                    {{ config('app.currency') }}{{ formatAmt($ticket['processing_fee'] * $ticket['count']) }}
+                </small>
+            </div>
         </div>
     @endforeach
     @if($event->allow_donations==1 && !empty($event->creator->stripe_email) && !empty($event->creator->stripe_account_id))
@@ -56,6 +83,15 @@
                         name="donation_amount"
                         placeholder="Enter an amount of $1.00 or more">
                 </div>
+                <!-- <div class="order-total-dt donation-processing-row" style="display:none;">
+                    <div class="order-text">
+                        Processing Fee on Donation
+                        ({{ $processing_fee_per }}%)
+                    </div>
+                    <div class="order-number">
+                        {{ config('app.currency') }}<span id="donation-processing-fee"></span>
+                    </div>
+                </div> -->
             </div>
         </div>
     </div>
@@ -64,22 +100,70 @@
         <div class="order-text mb-3">Sub Total</div>
         <div class="order-number mb-3">{{config('app.currency')}}<span id="f-sub-total">{{ formatAmt($sub_total) }}</span></div>
     </div>
+
     <div class="order-total-dt mb-2">
-        <div class="order-text mb-2"><h6>Platform Fee Included ({{$setting->event_commission}}%)</h6></div>
-        <div class="order-number mb-2" ticketfee="{{ $ticket_fees }}"><h6>{{config('app.currency')}}{{ formatAmt($ticket_fees) }}</h6></div>
+        <div class="order-text mb-2">
+            <h6>
+                Platform Fee ({{ $setting->event_commission }}%)
+                {{ $buyer_pays_fees ? '' : 'Included' }}
+            </h6>
+        </div>
+        <div class="order-number mb-2">
+            <h6>{{ config('app.currency') }}{{ formatAmt($platform_fee_total) }}</h6>
+        </div>
     </div>
+    @if((float) $processing_fee_per > 0)
+        <div class="order-total-dt mb-2">
+            <div class="order-text mb-2">
+                <h6>
+                    Processing Fee ({{ $processing_fee_per }}%)
+                    {{ $buyer_pays_fees ? '' : 'Included' }}
+                </h6>
+            </div>
+            <div class="order-number mb-2">
+                <h6>{{ config('app.currency') }}{{ formatAmt($processing_fee_total) }}</h6>
+            </div>
+        </div>
+    @endif
+
+
     <div class="order-total-dt donation-total-div" style="display:none;">
         <div class="order-text">Donation</div>
         <div class="order-number">{{config('app.currency')}}<span id="donation-total"></span></div>
     </div>
+    <div class="order-total-dt mb-2 donation-processing-row" style="display:none;">
+        <div class="order-text mb-2">
+            <h6>
+                Processing Fee on Donation ({{ $processing_fee_per }}%)
+            </h6>
+        </div>
+        <div class="order-number mb-2">
+            <h6>{{ config('app.currency') }}<span id="donation-processing-fee"></span></h6>
+        </div>
+    </div>
+
     <div class="divider-line"></div>
     <div class="order-total-dt">
         <div class="order-text">Total</div>
         <div class="order-number ttl-clr">{{config('app.currency')}}<span id="f-grand-total">{{ formatAmt($final_total) }}</span></div>
     </div>
-    <div class="order-total-dt">
+    <!-- <div class="order-total-dt">
         <div class="order-text mb-1"><small style="font-weight: 100;" class="m-0">Processing fees are estimated (~3% + $0.30) and may vary based on payment method and card type. The final amount is determined by Stripe.</small></div>
-    </div>
+    </div> -->
+    <!-- <div class="order-total-dt">
+        <div class="order-text mb-1">
+            <small style="font-weight:100;" class="m-0">
+                Processing fee is calculated at {{ $processing_fee_per }}%.
+            </small>
+        </div>
+    </div> -->
+
+    <input
+        type="hidden"
+        id="checkout-fee-config"
+        data-processing-percent="{{ $processing_fee_per }}"
+        data-buyer-pays="{{ $buyer_pays_fees ? 1 : 0 }}"
+    >
 </div>
 <style>
 .support-cause-box {

@@ -2,6 +2,28 @@
     $pageName = 'Orders Details';
     $parentRoute = route('index-orders');
     $parentPageName = $module;
+
+    $hasProcessingFee = !is_null($order->processing_fee_per)
+        && (float) $order->processing_fee_per > 0;
+
+    $ticketPlatformFeeTotal = (float) $order->tickets->sum('ticket_platform_fee');
+
+    $ticketProcessingFeeTotal = $hasProcessingFee
+        ? (float) $order->tickets->sum('ticket_processing_fee')
+        : 0;
+
+    $donationProcessingFee = $hasProcessingFee && (float) $order->donation_amount > 0
+        ? round(
+            ((float) $order->donation_amount * (float) $order->processing_fee_per) / 100,
+            2
+        )
+        : 0;
+
+    $totalProcessingFee = $ticketProcessingFeeTotal + $donationProcessingFee;
+
+    $totalApplicationFee = $ticketPlatformFeeTotal + $totalProcessingFee;
+
+    $organizerPayout = (float) $order->grand_total - $totalApplicationFee;
 @endphp
 @extends('layouts.backend_new', ['pageName' => $pageName, 'parentPageName' => $parentPageName, 'parentRoute' => $parentRoute,'breadcrumb' => [
     ['name' => 'Orders', 'route' => route('index-orders')],
@@ -185,6 +207,30 @@
                                     <th class="text-end p-2">Donation</th>
                                     <td class="text-end p-2 text-primary">${{ number_format($order->donation_amount, 2) }}</td>
                                 </tr>
+                                <tr>
+                                    <th class="text-end p-2">Platform Fee</th>
+                                    <td class="text-end p-2">
+                                        ${{ number_format($ticketPlatformFeeTotal, 2) }}
+                                    </td>
+                                </tr>
+
+                                @if($hasProcessingFee)
+                                    <tr>
+                                        <th class="text-end p-2">
+                                            Processing Fee ({{ number_format($order->processing_fee_per, 2) }}%)
+                                        </th>
+                                        <td class="text-end p-2">
+                                            ${{ number_format($totalProcessingFee, 2) }}
+                                        </td>
+                                    </tr>
+                                @endif
+
+                                <tr>
+                                    <th class="text-end p-2">Organizer Payout</th>
+                                    <td class="text-end p-2">
+                                        ${{ number_format($organizerPayout, 2) }}
+                                    </td>
+                                </tr>
                                 <!-- <tr>
                                     <th class="text-end p-2">Discount ({{ $order->discount_pert }}%)</th>
                                     <td class="text-end p-2 text-danger">-${{ number_format($order->discount_amount, 2) }}</td>
@@ -230,7 +276,15 @@
                             <th>#</th>
                             <th>Ticket Number</th>
                             <th>Type</th>
-                            <th>Price</th>
+
+                            <th>Amount Paid</th>
+                            <th>Base Price</th>
+                            <th>Platform Fee</th>
+                            @if($hasProcessingFee)
+                                <th>Processing Fee</th>
+                            @endif
+                            <th>Organizer Payout</th>
+
                             <th>Volunteer</th>
                             <th>Accompanying Children</th>
                             <th>Email</th>
@@ -255,7 +309,15 @@
                                     @endif
                                 </td>
                                 <td>{{ $ticket->ticket->ticket_type }}</td>
+                                
                                 <td>${{ $ticket->price }}</td>
+                                <td>${{ number_format($ticket->ticket_base_price, 2) }}</td>
+                                <td>${{ number_format($ticket->ticket_platform_fee, 2) }}</td>
+                                @if($hasProcessingFee)
+                                    <td>${{ number_format($ticket->ticket_processing_fee ?? 0, 2) }}</td>
+                                @endif
+                                <td>${{ number_format($ticket->tikcet_org_payout, 2) }}</td>
+
                                 <td>{{ $ticket->volunteer->name ?? '-' }}</td>
                                 <td>
                                     @if($ticket->children->isNotEmpty())

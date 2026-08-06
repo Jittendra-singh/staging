@@ -119,16 +119,29 @@
                         </div>
                     </div> -->
                     @php 
-                        $total_amt_all = 0;
+                        /* $total_amt_all = 0;
                         $total_fee_all = 0;
+                        $total_donation = 0; */
+
+                        $total_amt_all = 0;
+                        $total_platform_fee_all = 0;
+                        $total_processing_fee_all = 0;
                         $total_donation = 0;
+                        $has_old_or_zero_processing_orders = false;
                         if($orders->count()>0){
                             foreach ($orders as $order){
                                 $total_donation += $order->donation_amount>0?$order->donation_amount:0;
                                 foreach($order->tickets as $ticket){
                                     if($ticket->rsvp_confirmation==1){
                                         $total_amt_all += $ticket->price;
-                                        $total_fee_all += $ticket->ticket_platform_fee;
+                                        //$total_fee_all += $ticket->ticket_platform_fee;
+
+                                        $total_platform_fee_all += (float) $ticket->ticket_platform_fee;
+                                        if (!is_null($order->processing_fee_per) && (float) $order->processing_fee_per > 0) {
+                                            $total_processing_fee_all += (float) ($ticket->ticket_processing_fee ?? 0);
+                                        } else {
+                                            $has_old_or_zero_processing_orders = true;
+                                        }
                                     }
                                 }
                             }
@@ -168,8 +181,8 @@
                                         <div class="dashboard-report-card info">
                                             <div class="card-content">
                                                 <div class="card-content">
-                                                    <span class="card-title fs-6">Total Platf. Fee</span>
-                                                    <span class="card-sub-title fs-3">${{round($total_fee_all,2)}}</span>
+                                                    <span class="card-title fs-6">Total Fee</span>
+                                                    <span class="card-sub-title fs-3">${{ round($total_platform_fee_all+$total_processing_fee_all, 2) }}</span>
                                                 </div>
                                                 <div class="card-media">
                                                     <i class="fa-solid fa-eye"></i>
@@ -206,11 +219,11 @@
                                                         <th scope="col">Order Number</th>
                                                         <th scope="col">Donation</th>
                                                         <th scope="col">Order Amount</th>
-                                                        <th scope="col">Platform Fee</th>
+                                                        <th scope="col">Platform / Processing Fee</th>
                                                         <th scope="col">Returned Order Amount</th>
-                                                        <th scope="col">Returned Platform Fee</th>
+                                                        <th scope="col">Returned Platform / Processing Fee</th>
                                                         <th scope="col">Actual Order Amount</th>
-                                                        <th scope="col">Actual Platform Fee</th>
+                                                        <th scope="col">Actual Platform / Processing Fee</th>
                                                         <th scope="col">Ordered At</th>
                                                     </tr>
                                                 </thead>
@@ -221,13 +234,36 @@
                                                         $total_amt = 0;
                                                         $re_total_amt = 0;
                                                         $a_total_amt = 0;
-                                                        $total_fee = 0;
+                                                        /* $total_fee = 0;
                                                         $re_total_fee = 0;
-                                                        $a_total_fee = 0;
+                                                        $a_total_fee = 0; */
+                                                        $total_platform_fee = 0;
+                                                        $total_processing_fee = 0;
+
+                                                        $returned_platform_fee = 0;
+                                                        $returned_processing_fee = 0;
+
+                                                        $actual_platform_fee = 0;
+                                                        $actual_processing_fee = 0;
+
+                                                        $hasProcessingFee = !is_null($order->processing_fee_per)
+                                                            && (float) $order->processing_fee_per > 0;
                                                         foreach($order->tickets as $ticket){
                                                             $total_amt += $ticket->price;
-                                                            $total_fee += $ticket->ticket_platform_fee;
+                                                            //$total_fee += $ticket->ticket_platform_fee;
+                                                            $total_platform_fee += (float) $ticket->ticket_platform_fee;
+                                                            if ($hasProcessingFee) {
+                                                                $total_processing_fee += (float) ($ticket->ticket_processing_fee ?? 0);
+                                                            }
                                                         }
+                                                        $donationProcessingFee = $hasProcessingFee && (float) $order->donation_amount > 0
+                                                            ? round(
+                                                                ((float) $order->donation_amount * (float) $order->processing_fee_per) / 100,
+                                                                2
+                                                            )
+                                                            : 0;
+
+                                                        $total_processing_fee += $donationProcessingFee;
                                                         @endphp 
                                                         @if($total_amt<=0 && $order->donation_amount<=0)
                                                             @continue;
@@ -236,21 +272,62 @@
                                                         foreach($order->tickets as $ticket){
                                                             if($ticket->rsvp_confirmation!=1){
                                                                 $re_total_amt += $ticket->price;
-                                                                $re_total_fee += $ticket->ticket_platform_fee;
+                                                                //$re_total_fee += $ticket->ticket_platform_fee;
+                                                                $returned_platform_fee += (float) $ticket->ticket_platform_fee;
+                                                                if ($hasProcessingFee) {
+                                                                    $returned_processing_fee += (float) ($ticket->ticket_processing_fee ?? 0);
+                                                                }
                                                             }
                                                         }
+                                                        $actual_platform_fee = $total_platform_fee - $returned_platform_fee;
+                                                        $actual_processing_fee = $hasProcessingFee
+                                                            ? $total_processing_fee - $returned_processing_fee
+                                                            : 0;
                                                         $a_total_amt = $total_amt - $re_total_amt;
-                                                        $a_total_fee = $total_fee - $re_total_fee;
+                                                        //$a_total_fee = $total_fee - $re_total_fee;
                                                         @endphp 
                                                     <tr>
                                                         <td><a href="{{route('front-order-details',[encrypt($order->id)])  }}" target="_blank">{{$order->order_number}}</a></td>
                                                         <td>{{config('app.currency').formatAmt($order->donation_amount)}}</td>
                                                         <td>{{config('app.currency').formatAmt($total_amt)}}</td>
-                                                        <td>{{config('app.currency').formatAmt($total_fee)}}</td>
+                                                        
+                                                        <td>
+                                                            <small>
+                                                            Platform Fee: {{ config('app.currency') }}{{ formatAmt($total_platform_fee) }} 
+                                                            @if($hasProcessingFee)
+                                                                <br/>
+                                                                Processing Fee: {{ config('app.currency') }}{{ formatAmt($total_processing_fee) }} <br/>
+                                                                Total Fees: {{ config('app.currency') }}{{ formatAmt($total_platform_fee + $total_processing_fee) }}
+                                                            @endif
+                                                            </small>
+                                                        </td>
+
                                                         <td>{{config('app.currency').formatAmt($re_total_amt)}}</td>
-                                                        <td>{{config('app.currency').formatAmt($re_total_fee)}}</td>
+                                                        
+                                                        <td>
+                                                            <small>
+                                                            Return Platform Fee : {{ config('app.currency') }}{{ formatAmt($returned_platform_fee) }}
+                                                            @if($hasProcessingFee)
+                                                                <br/>
+                                                                Return Processing Fee : {{ config('app.currency') }}{{ formatAmt($returned_processing_fee) }} <br/>
+                                                                Return Total Fees : {{ config('app.currency') }}{{ formatAmt($returned_platform_fee + $returned_processing_fee) }}
+                                                            @endif
+                                                            </small>
+                                                        </td>
+
                                                         <td>{{config('app.currency').formatAmt($a_total_amt)}}</td>
-                                                        <td>{{config('app.currency').formatAmt(round($a_total_fee,2))}}</td>
+                                                        
+                                                        <td>
+                                                            <small>
+                                                            Actual Platform Fee: {{ config('app.currency') }}{{ formatAmt($actual_platform_fee) }}
+                                                            @if($hasProcessingFee)
+                                                                <br/>
+                                                                Actual Processing Fee: {{ config('app.currency') }}{{ formatAmt($actual_processing_fee) }} <br/>
+                                                                Total Actual Fees: {{ config('app.currency') }}{{ formatAmt($actual_platform_fee + $actual_processing_fee) }}
+                                                            @endif
+                                                            </small>
+                                                        </td>
+
                                                         <td>{{$order->createdDateTime}}</td>
                                                     </tr>
                                                     @endforeach

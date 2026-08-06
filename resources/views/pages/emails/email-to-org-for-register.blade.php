@@ -43,12 +43,36 @@
         <hr>
         <p><strong>Payment Summary:</strong></p>
         <ul>
-            <li><strong>Gross Amount Paid:</strong> ${{ round($order->grand_total,2) }}</li>
-            <li><strong>Platform Fees:</strong> ${{ round($platform_fee,2) }}</li>
-            <li><strong>Net Amount Credited:</strong> ${{ round($order->grand_total-$platform_fee, 2) }}</li>
+            <li>
+                <strong>Gross Amount Paid:</strong>
+                ${{ round($order->grand_total, 2) }}
+            </li>
+
+            <li>
+                <strong>Platform Fees:</strong>
+                ${{ round($platform_fee, 2) }}
+            </li>
+
+            @if($has_processing_fee)
+                <li>
+                    <strong>Processing Fees:</strong>
+                    ${{ round($processing_fee, 2) }}
+                    ({{ round($order->processing_fee_per, 2) }}%)
+                </li>
+            @endif
+
+            <li>
+                <strong>Total Fees:</strong>
+                ${{ round($total_application_fee, 2) }}
+            </li>
+
+            <li>
+                <strong>Net Amount Credited:</strong>
+                ${{ round($organizer_payout, 2) }}
+            </li>
         </ul><br/>
         <hr>
-        <p>Funds (minus processing and platform fees) have been deposited into your connected account.</p>
+        <p>Your organizer payout reflects the platform and processing fees saved for this order.</p>
         <p>You can view full details in your <a href="{{$cleanup_hosting_link}}">Event Dashboard</a>.</p>
         <p>View full attendee details in your registration list : <a href="{{$registration_list_link}}">Registration List</a>.</p>
         <p>Warm regards,<br/><strong><a href="{{ config('app.frontsite') }}">{{ APPNAMEEMAIL }}</a></strong></p>

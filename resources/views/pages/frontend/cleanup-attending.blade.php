@@ -119,7 +119,27 @@
 											/**data sets*/
 											$data_event 		= $event ? $event->only('event_name', 'venue', 'start_datetime', 'end_datetime', 'waiver_form_type', 'ticket_questions') : collect([]);
 											$data_event['start_datetime'] = $event->startTimeAndEndTime;
-											$data_registration 	= $registration ? $registration->only('ticket_number', 'price', 'waiver_handler_name', 'waiver_handler_email', 'waiver_filled_at', 'ticket_answer','is_under_18') : collect([]);
+											$data_registration = $registration ? $registration->only(
+												'ticket_number',
+												'price',
+												'ticket_base_price',
+												'ticket_platform_fee',
+												'ticket_processing_fee',
+												'tikcet_org_payout',
+												'waiver_handler_name',
+												'waiver_handler_email',
+												'waiver_filled_at',
+												'ticket_answer',
+												'is_under_18'
+											) : collect([]);
+
+											$data_order = $order ? $order->only(
+												'order_number',
+												'grand_total',
+												'total_tickets',
+												'processing_fee_per'
+											) : collect([]);
+											//$data_registration 	= $registration ? $registration->only('ticket_number', 'price', 'waiver_handler_name', 'waiver_handler_email', 'waiver_filled_at', 'ticket_answer','is_under_18') : collect([]);
 											if(isset($registration->waiver_filled_at)){
 												$data_registration['waiver_filled_at_formated'] = !empty($registration->waiver_filled_at)?$registration->waiver_filled_at->format(config('app.dateTimeFormat')):null;
 											}
@@ -131,7 +151,7 @@
 												];
 											})
 											->values();
-											$data_order 		= $order ? $order->only('order_number','grand_total','total_tickets') : collect([]); 
+											//$data_order 		= $order ? $order->only('order_number','grand_total','total_tickets') : collect([]); 
 											$data_volunteer 	= $volunteer ? $volunteer->only('first_name','last_name','email_address','phone') : collect([]);
 											$data_ticket 		= $ticket ? $ticket->only('ticket_type','ticket_name','email_address','phone') : collect([]);
 											$data_creator 		= $order->creator ? $order->creator->only('first_name', 'last_name') : collect([]);

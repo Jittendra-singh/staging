@@ -16,6 +16,7 @@ use App\Models\OrderHelper;
 use App\Models\CityStateZip;
 use App\Models\VolunteerAlert;
 use App\Models\VolunteerWidgetLog;
+use App\Support\TicketFeeCalculator;
 use App\Exceptions\CustomException;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Controllers\StripeController;
@@ -65,13 +66,25 @@ class FrontOrderController extends Controller
                     $ticket_price  = $all_price['ticket_price'] ;
                     $subtotal      = $subtotal + ($ticket_price * $ticket_count) ;
                     $total_tickets = $total_tickets + $ticket_count;
+                    /* $ticket_booking[] = [
+                        'id'    => $ticket_id, 
+                        'count' => $event->sell_tickets_individually ? 1 : $ticket_count , 
+                        'name'  => $ticket_obj->ticket_name ,
+                        'price' => $ticket_price , 
+                        'base_price' => $all_price['ticket_base_price'] , 
+                    ]; */
                     $ticket_booking[] = [
-                                            'id'    => $ticket_id, 
-                                            'count' => $event->sell_tickets_individually ? 1 : $ticket_count , 
-                                            'name'  => $ticket_obj->ticket_name ,
-                                            'price' => $ticket_price , 
-                                            'base_price' => $all_price['ticket_base_price'] , 
-                                        ];
+                        'id'                    => $ticket_id,
+                        'count'                 => $event->sell_tickets_individually ? 1 : $ticket_count,
+                        'name'                  => $ticket_obj->ticket_name,
+                        'price'                 => $all_price['ticket_price'],
+                        'base_price'            => $all_price['ticket_base_price'],
+                        'platform_fee'          => $all_price['ticket_platform_fee'],
+                        'processing_fee'        => $all_price['ticket_processing_fee'],
+                        'application_fee'       => $all_price['ticket_total_application_fee'],
+                        'organizer_payout'      => $all_price['tikcet_org_payout'],
+                    ];
+                
                 }else{
                     throw new \Exception("Opps! {$ticket_obj->ticket_name} ticket has only {$remaining_tickets} allocations left.", 408);
                 }
@@ -90,12 +103,20 @@ class FrontOrderController extends Controller
         
         /**check user availablity */
         /**check book the ticket */
-        
+        $setting = Setting::firstOrFail();
         Session::put('checkout_event', $event);
-        Session::put('checkout_order_details', [
+        /* Session::put('checkout_order_details', [
                                         'sub_total' => $subtotal , 
                                         'final_total' => $finaltotal , 
                                         'total_ticket' => $totalticket 
+        ]); */
+        Session::put('checkout_order_details', [
+            'sub_total'            => $subtotal,
+            'final_total'          => $finaltotal,
+            'total_ticket'         => $totalticket,
+            'platform_fee_per'     => (float) $setting->event_commission,
+            'processing_fee_per'   => (float) $setting->payment_processing_fee_per,
+            'buyer_pays_fees'      => (int) $event->charge_bear_by === 1,
         ]);
         return redirect()->route('front-checkout');
         
@@ -108,7 +129,7 @@ class FrontOrderController extends Controller
         $ticket_booking = session()->get('ticket_booking');
         $setting = Setting::first();
 
-        $feeAmt = 0;
+        /* $feeAmt = 0;
         if($ticket_booking){
             foreach ($ticket_booking as $key => $ticekt) {
                 $eTicket = EventTicket::where('id',$ticekt['id'])->first();
@@ -117,6 +138,15 @@ class FrontOrderController extends Controller
                     $feeAmt += $allPrice['ticket_platform_fee']*$ticekt['count'];
                 }
             }
+        } */
+        $platformFeeAmt = 0;
+        $processingFeeAmt = 0;
+
+        foreach ($ticket_booking ?? [] as $ticket) {
+            $quantity = (int) ($ticket['count'] ?? 1);
+
+            $platformFeeAmt += ((float) ($ticket['platform_fee'] ?? 0)) * $quantity;
+            $processingFeeAmt += ((float) ($ticket['processing_fee'] ?? 0)) * $quantity;
         }
          
         if(!$event || !$order_total_details ){
@@ -125,14 +155,19 @@ class FrontOrderController extends Controller
         }
 
         $order_total_view = view('components.reusables.frontend.order-total', [
-                                'setting' => $setting,
-                                'event' => $event , 
-                                'ticket_fees' => $feeAmt , 
-                                'ticket_booking' => $ticket_booking , 
-                                'sub_total' => $order_total_details['sub_total'] , 
-                                'final_total' => $order_total_details['final_total'] , 
-                                'total_ticket' => $order_total_details['total_ticket'] , 
-                            ])->render();
+            'setting' => $setting,
+            'event' => $event , 
+            //'ticket_fees' => $feeAmt , 
+            'ticket_booking' => $ticket_booking , 
+            'sub_total' => $order_total_details['sub_total'] , 
+            'final_total' => $order_total_details['final_total'] , 
+            'total_ticket' => $order_total_details['total_ticket'] , 
+
+            'platform_fee_total' => round($platformFeeAmt, 2),
+            'processing_fee_total' => round($processingFeeAmt, 2),
+            'processing_fee_per' => $order_total_details['processing_fee_per'] ?? $setting->payment_processing_fee_per,
+            'buyer_pays_fees' => (bool) ($order_total_details['buyer_pays_fees'] ?? false),
+        ])->render();
 
         return view('pages.frontend.checkout' , [
             'seo_details' => (object) ['title' => 'Ticket Checkout'],
@@ -378,7 +413,22 @@ class FrontOrderController extends Controller
                 if(request()->has('donation_amount')){
                     $donation_amount = floatval(preg_replace('/[^\d.]/', '', request()->donation_amount));
                 }
-                $grand_total = round($order_total_details['final_total'] + $donation_amount, 2);
+                //$grand_total = round($order_total_details['final_total'] + $donation_amount, 2);
+
+                // <newCalcBlock>
+                $buyerPaysFees = (bool) ($order_total_details['buyer_pays_fees'] ?? false);
+                $processingFeePer = (float) ($order_total_details['processing_fee_per'] ?? 0);
+
+                $donationPricing = TicketFeeCalculator::donation(
+                    $donation_amount,
+                    $processingFeePer,
+                    $buyerPaysFees
+                );
+                $grand_total = round(
+                    (float) $order_total_details['final_total'] + (float) $donationPricing['attendee_total'],
+                    2
+                );
+                // </newCalcBlock>
 
                 // call stripe api to take payment before creating the order
                 if($grand_total>0 && $cart_id==null){
@@ -394,7 +444,12 @@ class FrontOrderController extends Controller
                         'customer_first_name' => request()->checkout_first_name,
                         'customer_last_name' => request()->checkout_last_name,
                     ];
-                    $stripeRes = $stripeController->createCheckout($customerData, $grand_total,$donation_amount,$cart->id);
+                    //$stripeRes = $stripeController->createCheckout($customerData, $grand_total,$donation_amount,$cart->id);
+                    $stripeRes = $stripeController->createCheckout(
+                        $customerData,
+                        $donationPricing,
+                        $cart->id
+                    );
                     //echo '<pre>';print_r($stripeRes);die();
                     if($stripeRes['status']==true){
                         $cart->stripe_session_id = $stripeRes['data']['id'];
@@ -415,12 +470,17 @@ class FrontOrderController extends Controller
                 $order_object->discount_pert    = 0;
                 $order_object->discount_amount  = 0;
                 $order_object->sub_total        = $order_total_details['sub_total'];
-                $order_object->donation_amount  = $donation_amount;
+                //$order_object->donation_amount  = $donation_amount;
+
+                $order_object->donation_amount    = $donationPricing['donation_amount'];
+                $order_object->processing_fee_per = $processingFeePer;
+                $order_object->platform_fee_per   = (float) ($order_total_details['platform_fee_per'] ?? 0);
+
                 $order_object->payment_intent  = $s_payment_intent_id;
                 $order_object->payment_session_id  = $s_session_id;
                 //$order_object->grand_total      = $order_total_details['final_total'];
                 $order_object->grand_total      = $grand_total;
-                $order_object->platform_fee_per = $setting->event_commission;
+                //$order_object->platform_fee_per = $setting->event_commission;
                 $order_object->charge_bear_by = $event->charge_bear_by;
                 $order_object->payment_type     = 'stripe';
                 $order_object->payment_status   = !empty($s_session_id)?'paid':'pending';
@@ -454,6 +514,7 @@ class FrontOrderController extends Controller
                 $waiver_people_array = [];
                 // dd(request()->ticket);
                 $total_18_tickets = 0;
+                $bookedTicketsById = collect($ticket_booking)->keyBy('id');
                 foreach (request()->ticket as $ticket_key => $ticket_arr) {
                     if(in_array($ticket_arr['id'], $available_ticket_array)){
                         $ticket_volunteer = Volunteer::where('email_address', $ticket_arr['email_address'])->first();
@@ -479,27 +540,41 @@ class FrontOrderController extends Controller
                         $waiver_handler_email = @$ticket_arr['waiver_handler_email'] ? : $ticket_volunteer->email_address;
                         $is_under_18 = isset($ticket_arr['is_under_18']) ? 1 : 0;
                         $total_18_tickets = isset($ticket_arr['is_under_18'])?$total_18_tickets+1:$total_18_tickets;
-                        $allPrice = $t_obj->all_price;
-                        $total_platform_fee += $allPrice['ticket_platform_fee'];
+                        //$allPrice = $t_obj->all_price;
+                        //$total_platform_fee += $allPrice['ticket_platform_fee'];
+
+                        $savedPricing = $bookedTicketsById->get($ticket_arr['id']);
+                        if (!$savedPricing) {
+                            throw new CustomException('Ticket pricing data is missing. Please restart checkout.');
+                        }
+                        $total_platform_fee += (float) $savedPricing['platform_fee'];
+
                         $event_order_ticket_obj = EventOrderTicket::create([
-                                                    'order_id'       => $order_object->id , 
-                                                    'volunteer_id'   => $ticket_volunteer->id , 
-                                                    'event_id'       => $event->id , 
-                                                    'ticket_id'      => $ticket_arr['id'] , 
-                                                    'price'          => $allPrice['ticket_price'], 
-                                                    'ticket_base_price' => $allPrice['ticket_base_price'], 
-                                                    'ticket_platform_fee' => $allPrice['ticket_platform_fee'], 
-                                                    'tikcet_org_payout' => $allPrice['tikcet_org_payout'], 
-                                                    //'price'          => $t_obj->ticket_type == 'free' ? 0 : $t_obj->ticket_price , 
-                                                    'ticket_number'  => $this->generateRandomTicketNumber() , 
-                                                    'ticket_status'  => 'approved' , /**ideally it should be pending */ 
-                                                    'ticket_answer'  => @$ticket_arr['answer'] ,
-                                                    'is_under_18'    => $is_under_18 , 
-                                                    'waiver_handler_name'  => $waiver_handler_name  ,
-                                                    'waiver_handler_email' => $waiver_handler_email ,
-                                                    'rsvp_confirmation'    => 1, // RSVP values added here after RSVP Waiver flow changes 
-                                                    'rsvp_filled_at'    => now(), 
-                                                ]);
+                            'order_id'       => $order_object->id , 
+                            'volunteer_id'   => $ticket_volunteer->id , 
+                            'event_id'       => $event->id , 
+                            'ticket_id'      => $ticket_arr['id'] , 
+                            /* 'price'          => $allPrice['ticket_price'], 
+                            'ticket_base_price' => $allPrice['ticket_base_price'], 
+                            'ticket_platform_fee' => $allPrice['ticket_platform_fee'], 
+                            'tikcet_org_payout' => $allPrice['tikcet_org_payout'],  */
+
+                            'price'                  => $savedPricing['price'],
+                            'ticket_base_price'      => $savedPricing['base_price'],
+                            'ticket_platform_fee'    => $savedPricing['platform_fee'],
+                            'ticket_processing_fee'  => $savedPricing['processing_fee'],
+                            'tikcet_org_payout'      => $savedPricing['organizer_payout'],
+
+                            //'price'          => $t_obj->ticket_type == 'free' ? 0 : $t_obj->ticket_price , 
+                            'ticket_number'  => $this->generateRandomTicketNumber() , 
+                            'ticket_status'  => 'approved' , /**ideally it should be pending */ 
+                            'ticket_answer'  => @$ticket_arr['answer'] ,
+                            'is_under_18'    => $is_under_18 , 
+                            'waiver_handler_name'  => $waiver_handler_name  ,
+                            'waiver_handler_email' => $waiver_handler_email ,
+                            'rsvp_confirmation'    => 1, // RSVP values added here after RSVP Waiver flow changes 
+                            'rsvp_filled_at'    => now(), 
+                        ]);
 
                         foreach ($childrenByTicket[$ticket_key] ?? [] as $child) {
                             $event_order_ticket_obj->children()->create([
@@ -603,6 +678,28 @@ class FrontOrderController extends Controller
             $totalChildren = collect($childrenByTicket)->flatten(1)->count();
             $this->setFlashSession(true, "Great! we have created order.");
             if(SEND_MAIL){
+                $hasProcessingFee = !is_null($order_object->processing_fee_per)
+                    && (float) $order_object->processing_fee_per > 0;
+
+                $ticketProcessingFee = $hasProcessingFee
+                    ? (float) $order_object->tickets->sum('ticket_processing_fee')
+                    : 0;
+
+                $donationProcessingFee = $hasProcessingFee
+                    ? round(
+                        ((float) $order_object->donation_amount * (float) $order_object->processing_fee_per) / 100,
+                        2
+                    )
+                    : 0;
+
+                $totalProcessingFee = $ticketProcessingFee + $donationProcessingFee;
+
+                $totalApplicationFee = $total_platform_fee + $totalProcessingFee;
+
+                $organizerPayout = round(
+                    (float) $order_object->grand_total - $totalApplicationFee,
+                    2
+                );
                 // send email to organizer 
                 $emailData = [
                     'org_name'=>$event->creator->first_name.' '.$event->creator->last_name,
@@ -621,6 +718,10 @@ class FrontOrderController extends Controller
                     //'event_location'=>$event->fullAddress,
                     'event_tickets'=>$ticket_booking,
                     'platform_fee'=>$total_platform_fee,
+                    'processing_fee' => $totalProcessingFee,
+                    'total_application_fee' => $totalApplicationFee,
+                    'organizer_payout' => $organizerPayout,
+                    'has_processing_fee' => $hasProcessingFee,
                     'total_tickets'=>count(request()->ticket),
                     'total_18_tickets'=>$total_18_tickets,
                     'cleanup_hosting_link'=>$this->mailUrl('front-cleanup-hosting',['type'=>'organizer']),
@@ -980,7 +1081,8 @@ class FrontOrderController extends Controller
                 abort(404);
             $order = $orderTicket->eventOrder;
             $total_amount = $orderTicket->price;
-            $total_fee = $orderTicket->ticket_platform_fee;
+            //$total_fee = $orderTicket->ticket_platform_fee;
+            $total_fee = (float) $orderTicket->ticket_platform_fee + (float) $orderTicket->ticket_processing_fee;
             
             if($total_amount<=0){                
                 $orderTicket->update(['rsvp_confirmation' => 0,'refund_status' => 3,'cancelled_at'=>date('Y-m-d H:i:s')]);
@@ -1057,7 +1159,8 @@ class FrontOrderController extends Controller
                 }
                 $total_fee += $fee; */
                 $total_amount += $amount;
-                $total_fee += $orderTicket->ticket_platform_fee;
+                //$total_fee += $orderTicket->ticket_platform_fee;
+                $total_fee += (float) $orderTicket->ticket_platform_fee + (float) $orderTicket->ticket_processing_fee;
             }
             /* $orderTicket = EventOrderTicket::find(decrypt($request->ticket));
             if(!$orderTicket) 

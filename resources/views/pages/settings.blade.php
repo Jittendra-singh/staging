@@ -1,6 +1,7 @@
 @php
     $action_url       = route("update_settings");
     $event_commission = old('event_commission', $formData->event_commission ?? '');
+    $payment_processing_fee_per = old('payment_processing_fee_per', $formData->payment_processing_fee_per ?? '');
     $waiver_text      = old('waiver_text', $formData->waiver_text ?? '');
     $logo             = $formData->logo ?? '';
     $pageName         = "Manage Settings";
@@ -25,6 +26,10 @@
                         <div class="col-sm-4">
                             <label for="event_commission" class="form-label">Platform Fees <span class="text-danger">*</span></label>
                             <input class="form-control" type="number" value="{{$event_commission}}" name="event_commission" id="event_commission" required>
+                        </div>
+                        <div class="col-sm-4">
+                            <label for="payment_processing_fee_per" class="form-label">Payment Processing Fee (%) <span class="text-danger">*</span></label>
+                            <input class="form-control" type="number" step="0.01" min="0" value="{{$payment_processing_fee_per}}" name="payment_processing_fee_per" id="payment_processing_fee_per" required>
                         </div>
                         <div class="col-12 mt-3">
                             <label for="" class="form-label">Waiver Content</label>

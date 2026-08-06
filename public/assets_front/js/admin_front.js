@@ -42,7 +42,43 @@ function populateOrderDetails(targetButton){
 	}
 	if(registration){
 		$('#registrationDetails .registration-ticket-qty').text(registration.ticket_number ? '#'+registration.ticket_number : '');
-		$('#registrationDetails .registration-ticket-subtotal').text(registration.price ? registration.price : '');
+		//$('#registrationDetails .registration-ticket-subtotal').text(registration.price ? registration.price : '');
+		
+		/* <newCodeBlock> */
+		const money = (value) => Number(value || 0).toFixed(2);
+
+		const hasProcessingFee =
+			order &&
+			order.processing_fee_per !== null &&
+			Number(order.processing_fee_per) > 0;
+
+		$('#registrationDetails .registration-ticket-subtotal').text(
+			money(registration.price)
+		);
+
+		$('#registrationDetails .registration-ticket-base-price').text(
+			money(registration.ticket_base_price)
+		);
+
+		$('#registrationDetails .registration-ticket-platform-fee').text(
+			money(registration.ticket_platform_fee)
+		);
+
+		$('#registrationDetails .registration-ticket-organizer-payout').text(
+			money(registration.tikcet_org_payout)
+		);
+
+		if (hasProcessingFee) {
+			$('#registrationDetails .registration-ticket-processing-fee').text(
+				money(registration.ticket_processing_fee)
+			);
+
+			$('#registrationDetails .registration-processing-fee-row').show();
+		} else {
+			$('#registrationDetails .registration-ticket-processing-fee').text('');
+			$('#registrationDetails .registration-processing-fee-row').hide();
+		}
+		/* </newCodeBlock> */
 	}
 
 }

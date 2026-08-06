@@ -5,6 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Traits\HelperTrait;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use App\Models\Setting;
+use App\Support\TicketFeeCalculator;
 
 
 class EventTicket extends Model
@@ -35,7 +36,7 @@ class EventTicket extends Model
             get : fn($value) => $this->ticket_type  == 'paid' ?  $value : 0 , 
         );
     }
-    public function payablePrice(): Attribute
+    /* public function payablePrice(): Attribute
     {
         return Attribute::make(
             get: function () {
@@ -102,6 +103,57 @@ class EventTicket extends Model
                     'tikcet_org_payout' => $basePriceR,
                 ];
                 return $re;
+            }
+        );
+    } */
+    public function payablePrice(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if ($this->ticket_type !== 'paid') {
+                    return 0;
+                }
+
+                return $this->all_price['ticket_price'];
+            }
+        );
+    }
+
+    public function allPrice(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if ($this->ticket_type !== 'paid') {
+                    return [
+                        'ticket_price'                 => 0,
+                        'ticket_base_price'            => 0,
+                        'ticket_platform_fee'          => 0,
+                        'ticket_processing_fee'        => 0,
+                        'ticket_total_application_fee' => 0,
+                        'tikcet_org_payout'            => 0,
+                    ];
+                }
+
+                $setting = Setting::first();
+
+                $basePrice = (float) $this->getRawOriginal('ticket_price');
+                $buyerPaysFees = (int) ($this->event?->charge_bear_by ?? 0) === 1;
+
+                $pricing = TicketFeeCalculator::ticket(
+                    $basePrice,
+                    (float) ($setting->event_commission ?? 0),
+                    (float) ($setting->payment_processing_fee_per ?? 0),
+                    $buyerPaysFees
+                );
+
+                return [
+                    'ticket_price'                 => $pricing['attendee_total'],
+                    'ticket_base_price'            => $pricing['base_price'],
+                    'ticket_platform_fee'          => $pricing['platform_fee'],
+                    'ticket_processing_fee'        => $pricing['processing_fee'],
+                    'ticket_total_application_fee' => $pricing['application_fee'],
+                    'tikcet_org_payout'            => $pricing['organizer_payout'],
+                ];
             }
         );
     }

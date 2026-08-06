@@ -55,6 +55,31 @@
 								<p class="mb-0 opacity-75">Order #{{$order->order_number}}</p>
 							</div>
 							@php 
+								/* <newCodeBlock> */
+								$hasProcessingFee = !is_null($order->processing_fee_per)
+									&& (float) $order->processing_fee_per > 0;
+
+								$ticketPlatformFeeTotal = (float) $order->tickets->sum('ticket_platform_fee');
+
+								$ticketProcessingFeeTotal = $hasProcessingFee
+									? (float) $order->tickets->sum('ticket_processing_fee')
+									: 0;
+
+								$donationProcessingFee = $hasProcessingFee && (float) $order->donation_amount > 0
+									? round(
+										((float) $order->donation_amount * (float) $order->processing_fee_per) / 100,
+										2
+									)
+									: 0;
+
+								$totalProcessingFee = $ticketProcessingFeeTotal + $donationProcessingFee;
+
+								$totalApplicationFee = $ticketPlatformFeeTotal + $totalProcessingFee;
+
+								$organizerPayout = (float) $order->grand_total - $totalApplicationFee;
+								/* </newCodeBlock> */
+
+
 								$totalTickets = count($order->tickets);
 								$cancelledTickets = 0;
 								foreach ($order->tickets as $key => $ticket){
@@ -151,6 +176,21 @@
 									</tr>
 									@endif 
 									<tr>
+										<th>Platform Fee</th>
+										<td>
+											{{ config('app.currency') }}{{ formatAmt($ticketPlatformFeeTotal) }}
+										</td>
+									</tr>
+
+									@if($hasProcessingFee)
+										<tr>
+											<th>Processing Fee ({{ formatAmt($order->processing_fee_per) }}%)</th>
+											<td>
+												{{ config('app.currency') }}{{ formatAmt($totalProcessingFee) }}
+											</td>
+										</tr>
+									@endif
+									<tr>
 										<th>Grand Total</th>
 										<td>{{config('app.currency').formatAmt($order->grand_total)}}</td>
 									</tr>
@@ -189,8 +229,27 @@
 									<div class="info-label">Phone Number</div>
 									<div class="info-value">{{ $ticket->volunteer->phone }}</div>
 
-									<div class="info-label">Ticket Price</div>
-									<div class="info-value">{{config('app.currency').formatAmt($ticket->price)}}</div>
+									<div class="info-label">Amount Paid for Ticket</div>
+									<div class="info-value">
+										{{ config('app.currency') }}{{ formatAmt($ticket->price) }}
+									</div>
+
+									<div class="info-label">Base Ticket Price</div>
+									<div class="info-value">
+										{{ config('app.currency') }}{{ formatAmt($ticket->ticket_base_price) }}
+									</div>
+
+									<div class="info-label">Platform Fee</div>
+									<div class="info-value">
+										{{ config('app.currency') }}{{ formatAmt($ticket->ticket_platform_fee) }}
+									</div>
+
+									@if($hasProcessingFee)
+										<div class="info-label">Processing Fee</div>
+										<div class="info-value">
+											{{ config('app.currency') }}{{ formatAmt($ticket->ticket_processing_fee ?? 0) }}
+										</div>
+									@endif
 
 									<div class="info-label">Age Category</div>
 									<div class="info-value">

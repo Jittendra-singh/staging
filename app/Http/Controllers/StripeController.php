@@ -12,6 +12,7 @@ use App\Models\StripeLog;
 use App\Models\EventOrder;
 use App\Exceptions\CustomException;
 use App\Http\Controllers\FrontOrderController;
+use App\Support\TicketFeeCalculator;
 
 class StripeController extends Controller
 {
@@ -220,12 +221,13 @@ class StripeController extends Controller
             'paymentIntent' => $pi
         ]); */
     }
-    public function createCheckout($customerData, $grand_total,$donation_amount,$cart_id) // Request $req
+    //public function createCheckout($customerData, $grand_total,$donation_amount,$cart_id) // Request $req
+    public function createCheckout(array $customerData, array $donationPricing, int $cart_id)
     {
         $event               = session()->get('checkout_event');
         $order_total_details = session()->get('checkout_order_details');
         $ticket_booking      = session()->get('ticket_booking');
-        $setting = Setting::first();
+        //$setting = Setting::first();
        /*  echo '<pre>';
         print_r($order_total_details);
         print_r($ticket_booking);
@@ -247,7 +249,7 @@ class StripeController extends Controller
             return response()->json(['error' => 'organizer_account and items required'], 400);
         }
 
-        // Build line_items for Checkout Session as form-encoded fields
+        /* // Build line_items for Checkout Session as form-encoded fields
         // Also compute total to calculate application_fee_amount (0.6%)
         $totalCentsBase = 0;
         $totalCents = 0;
@@ -276,13 +278,64 @@ class StripeController extends Controller
             $postFields["line_items[{$liIndex}][quantity]"] = 1;
             $totalCents += $donation_amount;
             $totalCentsBase += $donation_amount;
+        } */
+       // <newCodeBlock>
+        $totalCents = 0;
+        $applicationFeeCents = 0;
+        $postFields = [];
+        $liIndex = 0;
+
+        foreach ($items as $it) {
+            $quantity = max(1, (int) ($it['count'] ?? 1));
+            $unitCents = (int) round(((float) $it['price']) * 100);
+
+            $postFields["line_items[{$liIndex}][price_data][currency]"] = $currency;
+            $postFields["line_items[{$liIndex}][price_data][product_data][name]"] = $it['name'].' ('.$it['id'].')';
+            $postFields["line_items[{$liIndex}][price_data][unit_amount]"] = $unitCents;
+            $postFields["line_items[{$liIndex}][quantity]"] = $quantity;
+
+            $totalCents += $unitCents * $quantity;
+
+            $applicationFeeCents += (int) round(
+                (
+                    (float) ($it['platform_fee'] ?? 0) +
+                    (float) ($it['processing_fee'] ?? 0)
+                ) * 100
+            ) * $quantity;
+
+            $liIndex++;
         }
+
+        $donationAmountCents = (int) ($donationPricing['donation_cents'] ?? 0);
+        $donationProcessingCents = (int) ($donationPricing['processing_fee_cents'] ?? 0);
+        $buyerPaysFees = (bool) ($event->charge_bear_by ?? false);
+
+        if ($donationAmountCents > 0) {
+            $postFields["line_items[{$liIndex}][price_data][currency]"] = $currency;
+            $postFields["line_items[{$liIndex}][price_data][product_data][name]"] = 'DONATION';
+            $postFields["line_items[{$liIndex}][price_data][unit_amount]"] = $donationAmountCents;
+            $postFields["line_items[{$liIndex}][quantity]"] = 1;
+
+            $totalCents += $donationAmountCents;
+            $applicationFeeCents += $donationProcessingCents;
+            $liIndex++;
+
+            if ($buyerPaysFees && $donationProcessingCents > 0) {
+                $postFields["line_items[{$liIndex}][price_data][currency]"] = $currency;
+                $postFields["line_items[{$liIndex}][price_data][product_data][name]"] = 'Donation Processing Fee';
+                $postFields["line_items[{$liIndex}][price_data][unit_amount]"] = $donationProcessingCents;
+                $postFields["line_items[{$liIndex}][quantity]"] = 1;
+
+                $totalCents += $donationProcessingCents;
+                $liIndex++;
+            }
+        }
+        // </newCodeBlock>
 
         // Platform fee: 0.6% => 0.006
         //$platformFee = (int) round($totalCents * 0.006);
-        $platformFrePer = $setting->event_commission/100;
-        //$platformFee = (int) round($totalCents * $platformFrePer);
-        $platformFee = (int) round($totalCentsBase * $platformFrePer);
+        //$platformFrePer = $setting->event_commission/100;
+        //$platformFee = (int) round($totalCentsBase * $platformFrePer);
 
         // Prepare other session fields
         $postFields['mode'] = 'payment';
@@ -290,7 +343,8 @@ class StripeController extends Controller
         $postFields['success_url'] = $successUrl . '?session_id={CHECKOUT_SESSION_ID}';
         $postFields['cancel_url'] = $cancelUrl;
         // pass application_fee_amount inside payment_intent_data
-        $postFields['payment_intent_data[application_fee_amount]'] = $platformFee;
+        //$postFields['payment_intent_data[application_fee_amount]'] = $platformFee;
+        $postFields['payment_intent_data[application_fee_amount]'] = $applicationFeeCents;
         $postFields['payment_intent_data[transfer_data][destination]'] = $connectedAccount;
         $postFields['customer_email'] = $customerData['customer_email'];
 
@@ -688,7 +742,7 @@ class StripeController extends Controller
         curl_close($ch);
 
         $pi = json_decode($response, true);
-        echo '<pre>';
+        //echo '<pre>';
         //print_r($pi);
         //die();
         $chargeId = $pi['latest_charge'];
@@ -708,9 +762,14 @@ class StripeController extends Controller
         }
 
         // 1) Create refund for the charge (this refunds money to the customer)
-        $post = [
+        /* $post = [
             'charge' => $chargeId,
             'amount' => round($amount*100)
+        ]; */
+        $post = [
+            'charge' => $chargeId,
+            'amount' => (int) round($amount * 100),
+            'reverse_transfer' => 'true',
         ];
         /* if ($refundApplicationFee) {
             // This tells Stripe to refund proportional application fee (if any)

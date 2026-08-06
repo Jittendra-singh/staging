@@ -127,6 +127,33 @@
                                     <div class="col-md-3 fw-semibold text-muted">Ticket Price :</div>
                                     <div class="col-md-9">{{config('app.currency')}}<span class="registration-ticket-subtotal"></span></div>
                                 </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-3 fw-semibold text-muted">Base Ticket Price :</div>
+                                    <div class="col-md-9">
+                                        {{ config('app.currency') }}<span class="registration-ticket-base-price"></span>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-2">
+                                    <div class="col-md-3 fw-semibold text-muted">Platform Fee :</div>
+                                    <div class="col-md-9">
+                                        {{ config('app.currency') }}<span class="registration-ticket-platform-fee"></span>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-2 registration-processing-fee-row">
+                                    <div class="col-md-3 fw-semibold text-muted">Processing Fee :</div>
+                                    <div class="col-md-9">
+                                        {{ config('app.currency') }}<span class="registration-ticket-processing-fee"></span>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-2">
+                                    <div class="col-md-3 fw-semibold text-muted">Organizer Payout :</div>
+                                    <div class="col-md-9">
+                                        {{ config('app.currency') }}<span class="registration-ticket-organizer-payout"></span>
+                                    </div>
+                                </div>
                                 <div class="row mb-2 ticket_question_div">
                                     <div class="col-md-3 fw-semibold text-muted "><span class="ticket_questions"></span> :</div>
                                     <div class="col-md-9 ticket_answer"></div>

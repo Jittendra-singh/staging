@@ -150,11 +150,13 @@ class UserController extends Controller
     public function update_settings()
     {
         request()->validate([
+            'payment_processing_fee_per' => 'required',
             'event_commission' => 'required',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
         Gate::authorize('update', 'settings');
         $data = Setting::findOrFail(1);
+        $data->payment_processing_fee_per = request()->payment_processing_fee_per;
         $data->event_commission = request()->event_commission;
         $data->waiver_text = request()->waiver_text;
         // if(request()->hasFile('logo')){

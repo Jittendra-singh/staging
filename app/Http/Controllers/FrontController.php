@@ -34,6 +34,7 @@ use App\Models\EventFinalizeEmailLog;
 use App\Models\EventRescheduleLog;
 use App\Models\TicketResendWaiverLog;
 use App\Models\ReleaseNote;
+use App\Support\TicketFeeCalculator;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 class FrontController extends Controller
 {
@@ -331,11 +332,11 @@ class FrontController extends Controller
                 $q->whereNull('cancelled_at');
             })
             ->when($tab == 'upcoming', function ($q) use ($now) {
-                $q->where('start_datetime', '>', $now);
+                $q->where('start_datetime', '>', $now)->where('is_completed', '!=', 1)->whereNull('cancelled_at');
             })
             ->when($tab == 'ongoing', function ($q) use ($now) {
                 $q->where('start_datetime', '<=', $now)
-                ->where('end_datetime', '>=', $now);
+                ->where('end_datetime', '>=', $now)->where('is_completed', '!=', 1)->whereNull('cancelled_at');
             })
             ->when($tab == 'ended', function ($q) use ($now) {
                 $q->where('end_datetime', '<', $now)
@@ -710,6 +711,7 @@ class FrontController extends Controller
         $charge_bear_by = $event->charge_bear_by;
         $fee = 0;
         $est_fee = 0;
+        $processingFee = 0;
         $b_total = 0;
         $b_fee_text = 'Platform Fee Included';
         $net_org_total = 0;
@@ -726,11 +728,24 @@ class FrontController extends Controller
                 $sell_end_time = $eventTicket->sell_end_time;
                 $pass_code = $eventTicket->pass_code;
                 $ticket_description = $eventTicket->ticket_description;
-                $fee = formatAmt(($eventTicket->ticket_price*$setting->event_commission)/100);
-                $est_fee = formatAmt((($eventTicket->ticket_price*3)/100)+0.3);
-                $b_total = $charge_bear_by==1?(formatAmt($eventTicket->ticket_price+$fee)):formatAmt($eventTicket->ticket_price);
+                /* $fee = formatAmt(($eventTicket->ticket_price*$setting->event_commission)/100);
+                $est_fee = formatAmt((($eventTicket->ticket_price*3)/100)+0.3); */
+                $pricing = TicketFeeCalculator::ticket(
+                    $eventTicket->ticket_price,
+                    $setting->event_commission,
+                    $setting->payment_processing_fee_per,
+                    (int) $charge_bear_by === 1
+                );
+
+                $fee = formatAmt($pricing['platform_fee']);
+                $processingFee = formatAmt($pricing['processing_fee']);
+                $b_total = formatAmt($pricing['attendee_total']);
+                $net_org_total = formatAmt($pricing['organizer_payout']);
+
+                
+                //$b_total = $charge_bear_by==1?(formatAmt($eventTicket->ticket_price+$fee)):formatAmt($eventTicket->ticket_price);
                 $b_fee_text = $charge_bear_by==1?'Platform Fee':'Platform Fee Included';
-                $net_org_total = $charge_bear_by==1?(formatAmt($eventTicket->ticket_price)):formatAmt($eventTicket->ticket_price-$fee);
+                //$net_org_total = $charge_bear_by==1?(formatAmt($eventTicket->ticket_price)):formatAmt($eventTicket->ticket_price-$fee);
             }
         }
         $allowPaidTickets = true;
@@ -755,6 +770,7 @@ class FrontController extends Controller
             <input type="hidden" id="p_charge_bear_by" name="p_charge_bear_by" value="'.$charge_bear_by.'">
             <input type="hidden" id="p_fee_per" name="p_fee_per" value="'.$setting->event_commission.'">
             <input type="hidden" class="ticket_event_start_date" value="'.(!empty($event->start_datetime) ? Carbon::parse($event->start_datetime)->format('Y-m-d') : '').'">
+            <input type="hidden" id="p_processing_fee_per" value="'.$setting->payment_processing_fee_per.'">
             <div class="col-md-8">
                 <div class="form-group">
                     <div class="row mb-2">
@@ -833,13 +849,30 @@ class FrontController extends Controller
                         <h6 class="mb-3">Price Breakdown</h6>
                         <p class="mb-2"><small>Base price</small> <small class="float-end">$<span name="pb_base_price_" id="pb_base_price" class="form-ele">'.$ticket_price.'</span></small></p>
                         <p><small><span name="pb_fee_text_" id="pb_fee_text">'.$b_fee_text.'</span> ('.$setting->event_commission.'%)</small> <small class="float-end">$<span name="pb_platform_fee_" id="pb_platform_fee" class="form-ele">'.$fee.'</span></small></p>
-                        <p><small>Estimated Processing Fee<br/>(~3% + $0.30)</small> <small class="float-end">$<span name="pb_est_fee_" id="pb_est_fee" class="form-ele">'.$est_fee.'</span></small></p>
+                        <!--<p><small>Estimated Processing Fee<br/>(~3% + $0.30)</small> <small class="float-end">$<span name="pb_est_fee_" id="pb_est_fee" class="form-ele">'.$est_fee.'</span></small></p>-->
+                        <p>
+                            <small>
+                                <span id="pb_processing_fee_text">Processing Fee</span>
+                                ('.$setting->payment_processing_fee_per.'%)
+                            </small>
+                            <small class="float-end">
+                                $<span id="pb_processing_fee" class="form-ele">'.$processingFee.'</span>
+                            </small>
+                        </p>
                         <hr class="my-2" />
                         <h6 class="mt-3 mb-3"><span>Total to Attendee</h6span> <span class="float-end h5 text-primary">$<span name="pb_final_price_" id="pb_final_price" class="form-ele">'.$b_total.'</span></span></h6>
-                        <p class="mb-3" style="color: #717171;font-style: italic;">Net to Organizer: $<span id="pb_net_org_price">'.$net_org_total.'</span> (after platform fee)</p>
+                        <!--<p class="mb-3" style="color: #717171;font-style: italic;">Net to Organizer: $<span id="pb_net_org_price">'.$net_org_total.'</span> (after platform fee)</p>-->
+                        <p class="mb-3" style="color: #717171;font-style: italic;">
+                            Net to Organizer:
+                            $<span id="pb_net_org_price">'.$net_org_total.'</span>
+                            (after platform and processing fees)
+                        </p>
                         <p class="breackdown_info_text_free" style="color: #717171;font-style: italic;">No payment processing or platform fees apply to this ticket. Registrations will be recorded automatically and appear in your Registration List.</p>
-                        <p class="breackdown_info_text" style="color: #717171;font-style: italic;">Processing fees is estimated (~3% + $0.30) and may vary based on payment method and card type. Final amount is determined by Stripe.</p>
-                        <small class="breackdown_info_text" style="color: #717171;font-style: italic;">Ticket totals are calculated based on your current fee settings. You can change who pays the processing fees in Ticket Settings.</small>
+                        <p class="breackdown_info_text" style="color:#717171;font-style:italic;">
+                            Processing fees are calculated at '.$setting->payment_processing_fee_per.'%.
+                            The final Stripe processing charge can vary by payment method.
+                        </p>
+                        <small class="breackdown_info_text" style="color: #717171;font-style: italic;">Ticket totals are calculated based on your current fee settings. You can change who pays the platform and processing fees in Ticket Settings.</small>
                     </div>
                 </div>
             </div>
@@ -5215,7 +5248,8 @@ class FrontController extends Controller
             // Previously cancelled tickets are excluded automatically
             // so this total is correct for partial refund on the order
             $total_amount = $tickets->sum('price');
-            $total_fee    = $tickets->sum('ticket_platform_fee');
+            //$total_fee = $tickets->sum('ticket_platform_fee');
+            $total_fee = (float) $tickets->sum('ticket_platform_fee') + (float) $tickets->sum('ticket_processing_fee');
 
             try {
                 if ($total_amount <= 0) {

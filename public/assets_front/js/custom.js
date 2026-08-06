@@ -784,7 +784,37 @@ function populateOrderDetails(targetButton) {
 	}
 	if (registration) {
 		$('#registrationDetails .registration-ticket-qty').text(registration.ticket_number ? '#' + registration.ticket_number : '');
-		$('#registrationDetails .registration-ticket-subtotal').text(registration.price ? registration.price : '');
+
+		/* <newCodeBlock> */
+		const money = (value) => Number(value || 0).toFixed(2);
+		const hasProcessingFee =
+			order &&
+			order.processing_fee_per !== null &&
+			Number(order.processing_fee_per) > 0;
+		$('#registrationDetails .registration-ticket-subtotal').text(
+			money(registration.price)
+		);
+		$('#registrationDetails .registration-ticket-base-price').text(
+			money(registration.ticket_base_price)
+		);
+		$('#registrationDetails .registration-ticket-platform-fee').text(
+			money(registration.ticket_platform_fee)
+		);
+		$('#registrationDetails .registration-ticket-organizer-payout').text(
+			money(registration.tikcet_org_payout)
+		);
+		if (hasProcessingFee) {
+			$('#registrationDetails .registration-ticket-processing-fee').text(
+				money(registration.ticket_processing_fee)
+			);
+
+			$('#registrationDetails .registration-processing-fee-row').show();
+		} else {
+			$('#registrationDetails .registration-ticket-processing-fee').text('');
+			$('#registrationDetails .registration-processing-fee-row').hide();
+		}
+		/* </newCodeBlock> */
+
 		//$('#registrationDetails .waiver_filled_at').text(registration.waiver_filled_at ? registration.waiver_filled_at_formated : 'Pending');
 		//$('#registrationDetails .waiver_handled_by').text(registration.waiver_handler_email != '' ? registration.waiver_handler_name + ' (' + registration.waiver_handler_email + ')' : '');
 		$('#registrationDetails .waiver_filled_at').text(registration.waiver_filled_at ? registration.waiver_filled_at_formated : '-');
@@ -3184,8 +3214,38 @@ function calcPriceBreakdown() {
 		})
 	} */
 }
-
 function pCalcPriceBreakdown() {
+    const buyerPaysFees = Number($(document).find('#p_charge_bear_by').val()) === 1;
+    const platformPercent = Number($(document).find('#p_fee_per').val()) || 0;
+    const processingPercent = Number($(document).find('#p_processing_fee_per').val()) || 0;
+    const basePrice = Number($(document).find('#p_ticket_price').val()) || 0;
+
+    const platformFee = +(basePrice * platformPercent / 100).toFixed(2);
+    const processingFee = +(basePrice * processingPercent / 100).toFixed(2);
+
+    const attendeeTotal = buyerPaysFees
+        ? basePrice + platformFee + processingFee
+        : basePrice;
+
+    const organizerPayout = buyerPaysFees
+        ? basePrice
+        : basePrice - platformFee - processingFee;
+
+    $(document).find('#pb_base_price').text(basePrice.toFixed(2));
+    $(document).find('#pb_platform_fee').text(platformFee.toFixed(2));
+    $(document).find('#pb_processing_fee').text(processingFee.toFixed(2));
+    $(document).find('#pb_final_price').text(attendeeTotal.toFixed(2));
+    $(document).find('#pb_net_org_price').text(Math.max(0, organizerPayout).toFixed(2));
+
+    $(document).find('#pb_fee_text').text(
+        buyerPaysFees ? 'Platform Fee' : 'Platform Fee Included'
+    );
+
+    $(document).find('#pb_processing_fee_text').text(
+        buyerPaysFees ? 'Processing Fee' : 'Processing Fee Included'
+    );
+}
+/* function pCalcPriceBreakdown() {
 	var isOrgPayFee = $(document).find('#p_charge_bear_by').val();
 	var feePer = $(document).find('#p_fee_per').val();
 	var val = $(document).find('#p_ticket_price').val();
@@ -3212,7 +3272,7 @@ function pCalcPriceBreakdown() {
 		$(document).find('#pb_est_fee').text(0);
 		$(document).find('#pb_net_org_price').text(0);
 	}
-}
+} */
 
 function disconnectStripeAccount(control) {
 	var url = $(control).attr('url');
@@ -3253,11 +3313,43 @@ function disconnectStripeAccount(control) {
 let showAlert = show_alert || '';
 showError(showAlert.message, showAlert.class);
 
-function calGrandTotal() {
+/* function calGrandTotal() {
 	var donation_amt = $('[name="donation_amount"]').length ? parseFloat(sanitizeDonation($('[name="donation_amount"]').val())) || 0 : 0;
 	var subtotal = parseFloat($('#f-sub-total').text()) || 0;
 	var grand_total = donation_amt + subtotal;
 	$('#f-grand-total').text(grand_total.toFixed(2));
+} */
+function calGrandTotal() {
+    const donationAmount = $('[name="donation_amount"]').length
+        ? parseFloat(sanitizeDonation($('[name="donation_amount"]').val())) || 0
+        : 0;
+
+    const subtotal = parseFloat($('#f-sub-total').text()) || 0;
+
+    const config = $('#checkout-fee-config');
+    const processingPercent = parseFloat(config.data('processing-percent')) || 0;
+    const buyerPaysFees = Number(config.data('buyer-pays')) === 1;
+
+    const donationProcessingFee = +(donationAmount * processingPercent / 100).toFixed(2);
+
+    const grandTotal = subtotal + donationAmount
+        + (buyerPaysFees ? donationProcessingFee : 0);
+
+    $('#donation-total').text(donationAmount.toFixed(2));
+    $('#donation-processing-fee').text(donationProcessingFee.toFixed(2));
+
+	if (donationAmount > 0) {
+		$('.donation-total-div').show();
+	} else {
+		$('.donation-total-div').hide();
+	}
+	if (donationAmount > 0 && buyerPaysFees && donationProcessingFee > 0) {
+		$('.donation-processing-row').show();
+	} else {
+		$('.donation-processing-row').hide();
+	}
+
+    $('#f-grand-total').text(grandTotal.toFixed(2));
 }
 function sanitizeDonation(value) {
 	// Remove everything except digits and dots
