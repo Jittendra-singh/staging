@@ -196,6 +196,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::get('cancel-event/{id}', 'cancelEvent')->name('front-cancel-event');
         Route::get('ticket-convert-to-donation/{id}', 'ticketConvertToDonation')->name('front-ticket-convert-to-donation');
         Route::get('cleanup-detail/{id}', 'cleanupDetail')->name('front-cleanup-detail'); 
+        Route::post('co-host-organizers/search', 'searchCoHostOrganizers')->name('front-search-cohost-organizers');
 
         Route::get('certificates/my-requests', 'certificateRequests')->name('front-certificate-my-requests');
         Route::get('certificate-request-detail/{id}', 'certificateRequestDetail')->name('front-certificate-request-detail');

@@ -230,7 +230,8 @@
                                         </div>
                                     </div>
                                     <h3 class="empty-widget-text">
-                                        Stay Informed on Upcoming Events
+                                        <!-- Stay Informed on Upcoming Events -->
+                                        No cleanups found right now
                                     </h3>
 
                                     <p class="widget-empty-description">

@@ -3908,8 +3908,12 @@ class FrontController extends Controller
         } */
         $widget->save();
 
+        $embedCode = '<iframe style="width:100%; height:80vh; min-height:650px; border:0; display:block;" loading="lazy" src="' . route('front-show-widget', ['id' => encrypt($widget->id)]) . '" ></iframe>';
+
+        //$this->setFlashSession(true, 'Embedded widget saved successfully. The embed code has been copied to your clipboard.');
+        //return redirect()->route('front-embedded-widget');
         $this->setFlashSession(true, 'Embedded widget created successfully. You can copy the embed code from the “View Code & Details” button.');
-        return redirect()->route('front-embedded-widget');
+        return redirect()->route('front-embedded-widget')->with('clipboard_embed_code', $embedCode);
     }
     public function previewWidget($id){
         $widget = VolunteerWidget::find(decrypt($id));
@@ -5566,6 +5570,34 @@ class FrontController extends Controller
             'response_code'     => $response_code,
             'request_data'      => json_encode($log_arr),
             'request_data_size' => $postDataSizeMB,
+        ]);
+    }
+    public function searchCoHostOrganizers()
+    {
+        $search = trim((string) request('search'));
+
+        if (mb_strlen($search) < 2) {
+            return response()->json(['results' => []]);
+        }
+
+        $organizers = Volunteer::query()
+            ->where('status', 1)
+            ->where('is_organiser', 1)
+            ->where('email_address', 'like', '%' . $search . '%')
+            ->orderBy('email_address')
+            ->limit(8)
+            ->get();
+
+        return response()->json([
+            'results' => $organizers->map(function ($organizer) {
+                return [
+                    'id'           => $organizer->id,
+                    'name'         => trim($organizer->first_name . ' ' . $organizer->last_name),
+                    'email'        => $organizer->email_address,
+                    'organization' => $organizer->organisation_name,
+                    'member_since' => $organizer->createdMonthTime,
+                ];
+            })->values(),
         ]);
     }
     public function cronEventFinalize(){

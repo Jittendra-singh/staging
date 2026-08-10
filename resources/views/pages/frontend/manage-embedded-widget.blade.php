@@ -657,11 +657,11 @@ $(document).ready(function () {
                 }
 
                 Swal.fire({
-                    title: 'Widget Event Availability',
+                    title: 'Event Availability Status',
                     html: response.message,
                     icon: alertIcon,
                     showCancelButton: true,
-                    confirmButtonText: 'Save',
+                    confirmButtonText: 'Save & Copy Code',
                     cancelButtonText: 'Close',
                     confirmButtonColor: '#16c784',
                     cancelButtonColor: '#6c757d',

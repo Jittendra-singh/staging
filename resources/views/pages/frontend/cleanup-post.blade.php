@@ -557,6 +557,93 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
 .seo-info-trigger:focus-visible {
     box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
 }
+
+/* error box */
+.donation-warning-box {
+    border-left: 4px solid #dc3545;
+    background: #fff1f2;
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+
+.donation-warning-text {
+    font-size: 12px;
+    line-height: 1.45;
+    color: #b42318;
+    font-weight: 500;
+}
+
+.donation-warning-link {
+    display: inline-block;
+    margin-top: 2px;
+    color: #dc3545!important;
+    font-weight: 700;
+    text-decoration: underline!important;
+}
+</style>
+<style>
+    .co-host-organizer-results {
+        position: fixed;
+        z-index: 1065; /* Above Bootstrap modal (1055) */
+        max-height: 300px;
+        overflow-y: auto;
+        margin-top: 6px;
+        background: #fff;
+        border: 1px solid #e4e7ec;
+        border-radius: 8px;
+        box-shadow: 0 8px 20px rgba(16, 24, 40, .12);
+    }
+
+    .co-host-organizer-option {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 12px 14px;
+        border: 0;
+        border-bottom: 1px solid #edf0f2;
+        background: #fff;
+        color: inherit;
+        text-align: left;
+    }
+
+    .co-host-organizer-option:last-child {
+        border-bottom: 0;
+    }
+
+    .co-host-organizer-option:hover,
+    .co-host-organizer-option:focus {
+        background: #f5f8fa;
+    }
+
+    .co-host-organizer-avatar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        flex: 0 0 36px;
+        border-radius: 50%;
+        background: #e8f1ff;
+        color: #3478e5;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .co-host-organizer-name {
+        display: block;
+        font-weight: 700;
+        font-size: 14px;
+        line-height: 1.25;
+    }
+
+    .co-host-organizer-meta {
+        display: block;
+        margin-top: 2px;
+        color: #6b7280;
+        font-size: 12px;
+        line-height: 1.35;
+    }
 </style>
 @endpush
 @section('content')
@@ -1402,6 +1489,16 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                                                 <small class="fs-14 d-block m-0">Enable an additional open donation field</small>
                                                                             </div>
                                                                         </div>
+                                                                        @if(!(!empty(auth()->guard('front')->user()->stripe_email) && !empty(auth()->guard('front')->user()->stripe_account_id)))
+                                                                        <div class="donation-warning-box mt-2">
+                                                                            <div class="donation-warning-text">
+                                                                                You must connect a Stripe account to accept donations.
+                                                                                <a href="{{ route('front-stripe-connect') }}" class="donation-warning-link">
+                                                                                    Click here to connect now.
+                                                                                </a>
+                                                                            </div>
+                                                                        </div>
+                                                                        @endif
                                                                     </div>
                                                                     <div class="setting-item col-sm-6 mt-4">
                                                                         <div class="d-flex align-items-start">
@@ -2218,13 +2315,21 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                             <div class="col-lg-6 col-md-6">
                                 <div class="form-group mt-4">
                                     <label class="form-label">Name*</label>
-                                    <input class="form-control h_40" required type="text" name="first_name" id="co_host_name">						
+                                    <input class="form-control h_40" required type="text" name="name" id="co_host_name">
                                 </div>
                             </div>
+
                             <div class="col-lg-6 col-md-6">
-                                <div class="form-group mt-4">
+                                <div class="form-group mt-4 position-relative">
                                     <label class="form-label">Email*</label>
-                                    <input class="form-control h_40" required type="email" name="email" id="co_host_email">							
+                                    <input
+                                        class="form-control h_40"
+                                        required
+                                        type="email"
+                                        name="email"
+                                        id="co_host_email"
+                                        autocomplete="off"
+                                    >
                                 </div>
                             </div>
                             <div class="col-lg-12 col-md-12">
@@ -2253,6 +2358,7 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
 			</div>
 		</div>
 	</div>
+    <div id="co-host-organizer-results" class="co-host-organizer-results d-none"></div>
     <div class="modal fade" id="manage-ticket-popup" tabindex="-1" aria-labelledby="manage-ticket-popupPopupLabel" aria-hidden="false">
 		<div class="modal-dialog modal-medium-2 modal-dialog-centered modal-sm-height modal-lg">
 			<div class="modal-content modal-dialog-scrollable">
@@ -2761,4 +2867,141 @@ document.addEventListener('click', function (event) {
     }
 });
     </script>
+<script>
+    $(function () {
+        let searchTimer;
+        let searchRequest;
+
+        const $email = $('#co_host_email');
+        const $name = $('#co_host_name');
+        const $results = $('#co-host-organizer-results');
+
+        $(window).on('resize scroll', positionResults);
+
+        $('#add-co-host-popup .modal-body').on('scroll', positionResults);
+
+        $('#add-co-host-popup').on('hidden.bs.modal', function () {
+            hideResults();
+        });
+
+        function hideResults() {
+            $results.empty().addClass('d-none');
+        }
+
+        function getInitials(name) {
+            return (name || '')
+                .split(' ')
+                .filter(Boolean)
+                .slice(0, 2)
+                .map(function (part) {
+                    return part.charAt(0).toUpperCase();
+                })
+                .join('');
+        }
+        function positionResults() {
+            if ($results.hasClass('d-none')) {
+                return;
+            }
+
+            const inputPosition = $email[0].getBoundingClientRect();
+
+            $results.css({
+                top: inputPosition.bottom + 6,
+                left: inputPosition.left,
+                width: inputPosition.width
+            });
+        }
+
+        function renderResults(organizers) {
+            $results.empty();
+
+            organizers.forEach(function (organizer) {
+                const $option = $('<button>', {
+                    type: 'button',
+                    class: 'co-host-organizer-option'
+                });
+
+                const meta = [organizer.member_since ? 'Member since ' + organizer.member_since : null,
+                    organizer.organization
+                ].filter(Boolean).join(' • ');
+
+                $('<span>', {
+                    class: 'co-host-organizer-avatar',
+                    text: getInitials(organizer.name)
+                }).appendTo($option);
+
+                const $content = $('<span>').appendTo($option);
+
+                $('<span>', {
+                    class: 'co-host-organizer-name',
+                    text: organizer.name
+                }).appendTo($content);
+
+                $('<span>', {
+                    class: 'co-host-organizer-meta',
+                    text: meta
+                }).appendTo($content);
+
+                $option.on('click', function () {
+                    $email.val(organizer.email);
+                    $name.val(organizer.name);
+                    hideResults();
+                });
+
+                $results.append($option);
+            });
+
+            $results.toggleClass('d-none', organizers.length === 0);
+
+            if (organizers.length) {
+                positionResults();
+            }
+        }
+
+        $email.on('input', function () {
+            const query = $.trim($(this).val());
+
+            clearTimeout(searchTimer);
+
+            if (searchRequest) {
+                searchRequest.abort();
+            }
+
+            // Crucial: do not clear the typed email when no record exists.
+            if (query.length < 2) {
+                hideResults();
+                return;
+            }
+
+            searchTimer = setTimeout(function () {
+                searchRequest = $.ajax({
+                    url: "{{ route('front-search-cohost-organizers') }}",
+                    type: 'POST',
+                    data: {
+                        search: query,
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function (response) {
+                        renderResults(response.results || []);
+                    },
+                    error: function (xhr, status) {
+                        if (status !== 'abort') {
+                            hideResults();
+                        }
+                    }
+                });
+            }, 300);
+        });
+
+        $(document).on('click', function (event) {
+            if (!$(event.target).closest('.form-group').find('#co_host_email, #co-host-organizer-results').length) {
+                hideResults();
+            }
+        });
+
+        $('#add-co-host-popup').on('hidden.bs.modal', function () {
+            hideResults();
+        });
+    });
+</script>
 @endpush

@@ -112,11 +112,6 @@
     <div class="wrapper wrapper-body">
         <div class="dashboard-body">
             <div class="container-fluid"> 
-                <!-- <div class="text-center mb-4">
-                    <h1 class="d-main-title">Upcoming Feature</h1>
-                    <p class="mb-0">This feature is under development as we will launch this feature soon.</p>
-                </div> -->
-                @if(true)
                 <div class="row">
                     <div class="col-md-12 d-flex justify-content-between">
                         <div class="d-main-title">
@@ -127,7 +122,8 @@
                                         'name' => 'Embedded Widget', 
                                         'url' => route('front-embedded-widget')
                                     ],
-                                ]
+                                ];
+                                $embedCode = session()->pull('clipboard_embed_code');
                             @endphp     
                             <x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs"/>
                             <!-- <p class="mb-0 mt-3">You can send a message to your RSVP’s in the ‘Registration List’.</p> --> 
@@ -208,7 +204,6 @@
                         </div>							
                     </div>
                 </div>
-                @endif
             </div>
         </div>
     </div>
@@ -279,5 +274,21 @@ $(document).ready(function () {
     });
 });
 </script>
+@if($embedCode)
+    <textarea id="embedCode" style="position:absolute; left:-9999px;">{{ $embedCode }}</textarea>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const code = document.getElementById('embedCode').value;
 
+            navigator.clipboard.writeText(code).then(function () {
+                console.log('Embed code copied');
+
+                // optional success toast
+                // alert('Embed code copied to clipboard');
+            }).catch(function (err) {
+                console.error('Copy failed:', err);
+            });
+        });
+    </script>
+@endif
 @endpush
