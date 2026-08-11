@@ -2,8 +2,15 @@
     @foreach ($ticket_booking as $ticket)
         <div class="order-total-dt">
             <div class="order-text mb-0"><h6 class="mb-1"><b>{{$ticket['count']}}x</b> {{$ticket['name']}}</h6></div>
-            <div class="order-number mb-0"><h6 class="mb-1">{{config('app.currency')}}{{formatAmt($ticket['price'])}}</h6></div>
+            <div class="order-number mb-0">
+                @if($ticket['price'] > 0)
+                <h6 class="mb-1">{{config('app.currency')}}{{formatAmt($ticket['price'])}}</h6>
+                @else
+                <h6 class="mb-1">Free</h6>
+                @endif
+            </div>
         </div>
+        @if($ticket['price'] > 0)
         @if($event->charge_bear_by==1)
         <div class="order-total-dt">
             <div class="order-text mb-0"><small style="font-weight: 100;font-size: 13px;">Base Ticket Price</small></div>
@@ -41,6 +48,7 @@
                 </small>
             </div>
         </div>
+        @endif
     @endforeach
     @if($event->allow_donations==1 && !empty($event->creator->stripe_email) && !empty($event->creator->stripe_account_id))
     <div class="support-cause-box mt-3" >
