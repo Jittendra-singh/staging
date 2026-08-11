@@ -148,7 +148,7 @@ class UserController extends Controller
         ]);
     }
     public function update_settings()
-    {
+    { 
         request()->validate([
             'payment_processing_fee_per' => 'required',
             'event_commission' => 'required',
