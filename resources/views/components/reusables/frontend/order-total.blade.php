@@ -48,6 +48,8 @@
                 </small>
             </div>
         </div>
+        @else 
+        <div class="order-total-dt mb-3"></div>
         @endif
     @endforeach
     @if($event->allow_donations==1 && !empty($event->creator->stripe_email) && !empty($event->creator->stripe_account_id))
