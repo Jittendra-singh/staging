@@ -92,7 +92,7 @@
                         <div class="col-lg-4 col-md-4 waiver-guardian d-none">
                             <div class="form-group mt-4">
                                 <label class="form-label">Guardian Name*</label>
-                                <input class="form-control guardian_name is_under_18"
+                                <input class="form-control guardian_name"
                                     name="ticket[{{$name_counter}}][waiver_handler_name]"
                                     type="text"
                                     placeholder="Enter guardian name">
@@ -102,7 +102,7 @@
                         <div class="col-lg-4 col-md-4 waiver-guardian d-none">
                             <div class="form-group mt-4">
                                 <label class="form-label">Guardian Email*</label>
-                                <input class="form-control guardian_email is_under_18"
+                                <input class="form-control guardian_email"
                                     name="ticket[{{$name_counter}}][waiver_handler_email]"
                                     type="text"
                                     placeholder="Enter guardian email">

@@ -447,15 +447,15 @@ $icalStrData = getiCalData($event);
                                     @endforeach
 
                                     @if(!empty($upcomingDate) && $totalTicketCount <=0)
+                                        @php 
+                                        $now = \Carbon\Carbon::now();
+                                        $upcomingTickets = $eventAllTickets->filter(function ($ticket) use ($now) {
+                                            return $ticket->sell_start_time > $now;
+                                        });
+                                        $nextTicket = $upcomingTickets->sortBy('sell_start_time')->first();
+                                        @endphp 
                                         @if(auth()->guard('front')->user() && isset(auth()->guard('front')->user()->id))
                                             @php 
-                                            
-                                            $now = \Carbon\Carbon::now();
-                                            $upcomingTickets = $eventAllTickets->filter(function ($ticket) use ($now) {
-                                                return $ticket->sell_start_time > $now;
-                                            });
-                                            $nextTicket = $upcomingTickets->sortBy('sell_start_time')->first();
-
                                             $ticketNotifications = auth()->guard('front')->user()->ticketNotifications()->where('is_sent', 0)->get();
                                             @endphp 
                                             @if($ticketNotifications->contains('ticket_id', $nextTicket->id))
@@ -466,9 +466,12 @@ $icalStrData = getiCalData($event);
                                                 </a>
                                             @endif 
                                         @else 
-                                        <a href="{{ route('front-login',['redirect_to'=>request()->fullUrl()]) }}" class="primary-btn w-100">
+                                        <!-- <a href="{{ route('front-login',['redirect_to'=>request()->fullUrl()]) }}" class="primary-btn w-100">
                                             Notify Me for upcoming ticket
-                                        </a>
+                                        </a> -->
+                                        <button type="button" class="primary-btn w-100" data-bs-toggle="modal" data-bs-target="#ticketNotificationModal">
+                                            Notify Me for upcoming ticket
+                                        </button>
                                         @endif 
                                     @else 
                                     <button class="primary-btn w-100" id="proceed_checkout_btn" type="submit">
@@ -779,6 +782,58 @@ $icalStrData = getiCalData($event);
 </main>
 </div>
 <!-- Body End-->
+ <div class="modal fade" id="ticketNotificationModal" tabindex="-1"
+    aria-labelledby="ticketNotificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4">
+            <div class="modal-header border-0 pb-0 pt-4 mb-3" style=" flex-direction: column; align-items: center;    border-bottom: 1px solid #e1e1e1 !important;">
+                <h3 class="fw-bold w-100 text-center" id="ticketNotificationModalLabel">
+                    Get Ticket Alerts
+                </h3>
+                <p class="text-center text-muted">
+                    Enter your email address and we'll notify you when registration opens.
+                </p>
+            </div>
+
+            <form method="POST" action="{{ route('save-ticket-notify-guest') }}">
+                @csrf
+
+                <div class="modal-body px-4 px-md-5 pt-2 pb-4">
+
+                    <input type="hidden" name="ticket" value="{{ isset($nextTicket)?encrypt($nextTicket->id):0 }}">
+
+                    <div class="mb-3">
+                        <label for="ticket_notification_email" class="form-label fw-semibold">
+                            Email Address
+                        </label>
+                        <input
+                            type="email"
+                            class="form-control form-control-lg @error('email') is-invalid @enderror"
+                            id="ticket_notification_email"
+                            name="email"
+                            value="{{ old('email') }}"
+                            placeholder="Enter your email"
+                            required
+                        >
+
+                        @error('email')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 px-4 px-md-5 pb-4 pt-0 d-flex gap-3">
+                    <button type="button" class="secondary-btn flex-fill" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="submit" class="primary-btn flex-fill">
+                        Submit
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 <x-reusables.frontend.organiser-contact :organiser="$event->creator_id" />
 @endsection
 @push('script')

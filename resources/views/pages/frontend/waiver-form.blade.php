@@ -10,7 +10,7 @@
     <div class="wrapper">
         <main class="main">
             <div class="container">
-                @if($event->waiverFormContentFilter())
+                @if($event->waiverFormContentFilter() && false)
                 <div class="content-grid mt-5">
                     <div class="waiver-form">
                     <x-reusables.frontend.alert />
@@ -128,6 +128,26 @@
                         });
                     </script> -->
                     @endpush
+                </div>
+                @else 
+                
+                <div class="container py-5 my-5">
+                    <div class="row justify-content-center">
+                        <div class="col-md-8 col-lg-6">
+                            <div class="card border-0 shadow-sm rounded-4">
+                                <div class="card-body text-center p-5">
+                                    <div class="text-danger mb-3" style="font-size: 48px;">
+                                        <i class="fa-solid fa-circle-xmark"></i>
+                                    </div>
+
+                                        <h2 class="fw-bold">No Waiver Content Found</h2>
+                                        <!-- <p class="text-muted mb-0">
+                                            No waiver content found for the event.
+                                        </p> -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 @endif
             </div>

@@ -105,6 +105,8 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
     Route::get('confirmed-unsubscribe-alert/{user}/{alert?}', 'confirmedUnsubscribeAlert')->name('confirmed-unsubscribe-alert');
     Route::get('show-community-service-pdf/{ticket}', 'showCommunityServicePdf')->name('show-community-service-pdf');
     Route::get('front-save-ticket-notify/{ticket}', 'saveTicketNotify')->name('save-ticket-notify');
+    Route::post('front-save-ticket-notify-guest', 'saveGuestTicketNotify')->name('save-ticket-notify-guest');
+    Route::get('verify-ticket-notification-email/{notification}', 'verifyGuestTicketNotification')->middleware('signed')->name('verify-ticket-notify-email');
 
     Route::get('sync-all-organizer', 'syncAllOrganizer')->name('sync-all-organizer');
 

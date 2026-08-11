@@ -36,6 +36,7 @@ use App\Models\TicketResendWaiverLog;
 use App\Models\ReleaseNote;
 use App\Support\TicketFeeCalculator;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Illuminate\Support\Facades\URL;
 class FrontController extends Controller
 {
     public function viewEvents(){
@@ -178,7 +179,7 @@ class FrontController extends Controller
             return $this->generateJsonResponse(false,'Pass code not matched.');
         }
     }
-    public function saveTicketNotify($ticket){
+    /* public function saveTicketNotify($ticket){
         if(auth()->guard('front')->user() && isset(auth()->guard('front')->user()->id)){
             $ticket = EventTicket::where('id', decrypt($ticket))->first();
             if(isset($ticket->id)){
@@ -201,6 +202,148 @@ class FrontController extends Controller
             $this->setFlashSession(false , 'Please login to add notify request.');
             return redirect()->back();
         }
+    } */
+    public function saveTicketNotify($ticket)
+    {
+        $user = auth()->guard('front')->user();
+
+        if (!$user || !isset($user->id)) {
+            $this->setFlashSession(false, 'Please login to add notify request.');
+            return redirect()->back();
+        }
+
+        try {
+            $ticket = EventTicket::find(decrypt($ticket));
+        } catch (\Throwable $e) {
+            $ticket = null;
+        }
+
+        if (!$ticket) {
+            $this->setFlashSession(false, 'Ticket not found.');
+            return redirect()->back();
+        }
+
+        $exists = $user->ticketNotifications()
+            ->where('ticket_id', $ticket->id)
+            ->exists();
+
+        if ($exists) {
+            $this->setFlashSession(false, 'You have already requested notification for this ticket.');
+            return redirect()->back();
+        }
+
+        $user->ticketNotifications()->create([
+            'ticket_id'         => $ticket->id,
+            'email'             => trim($user->email_address),
+            'is_email_verified' => 1,
+        ]);
+
+        $this->setFlashSession(true, 'Notify request added successfully.');
+        return redirect()->back();
+    }
+
+    public function saveGuestTicketNotify(Request $request)
+    {
+        $validated = $request->validate([
+            'ticket' => ['required'],
+            'email'  => ['required', 'email', 'max:255'],
+        ]);
+
+        try {
+            $ticket = EventTicket::find(decrypt($validated['ticket']));
+        } catch (\Throwable $e) {
+            $ticket = null;
+        }
+
+        if (!$ticket) {
+            $this->setFlashSession(false, 'Ticket not found.');
+            return redirect()->back();
+        }
+
+        $email = strtolower(trim($validated['email']));
+
+        $volunteer = Volunteer::where('email_address', $email)->first();
+
+        $existingRequest = EventTicketNotification::where('ticket_id', $ticket->id)
+            ->where(function ($query) use ($email, $volunteer) {
+                $query->where('email', $email);
+
+                if ($volunteer) {
+                    $query->orWhere('volunteer_id', $volunteer->id);
+                }
+            })
+            ->first();
+
+        if ($existingRequest) {
+            if (!$volunteer && (int) $existingRequest->is_email_verified === 0) {
+                $this->sendTicketNotificationVerificationEmail($existingRequest);
+
+                $this->setFlashSession(
+                    true,
+                    'A verification email has been sent again. Please verify your email to receive ticket notifications.'
+                );
+            } else {
+                $this->setFlashSession(false, 'A notification request already exists for this ticket.');
+            }
+
+            return redirect()->back();
+        }
+
+        $notification = EventTicketNotification::create([
+            'ticket_id'         => $ticket->id,
+            'volunteer_id'      => $volunteer ? $volunteer->id : null,
+            'email'             => $volunteer ? trim($volunteer->email_address) : $email,
+            'is_email_verified' => $volunteer ? 1 : 0,
+        ]);
+
+        if ($volunteer) {
+            $this->setFlashSession(true, 'Notify request added successfully.');
+            return redirect()->back();
+        }
+
+        $this->sendTicketNotificationVerificationEmail($notification);
+
+        $this->setFlashSession(
+            true,
+            'A verification email has been sent. Please verify your email to receive ticket notifications.'
+        );
+
+        return redirect()->back();
+    }
+
+    public function verifyGuestTicketNotification(EventTicketNotification $notification)
+    {
+        if ((int) $notification->is_email_verified === 1) {
+            return view('pages.frontend.ticket-notification-email-verified', [
+                'alreadyVerified' => true,
+            ]);
+        }
+
+        $notification->update([
+            'is_email_verified' => 1,
+        ]);
+
+        return view('pages.frontend.ticket-notification-email-verified', [
+            'alreadyVerified' => false,
+        ]);
+    }
+
+    private function sendTicketNotificationVerificationEmail(EventTicketNotification $notification)
+    {
+        $verificationLink = URL::temporarySignedRoute(
+            'verify-ticket-notify-email',
+            now()->addHours(24),
+            ['notification' => $notification->id]
+        );
+
+        $this->sendEmail(
+            $notification->email,
+            'Verify your ticket notification email address',
+            [
+                'verification_link' => $verificationLink,
+            ],
+            'verify-ticket-notification-email'
+        );
     }
     public function dashboard(){
         $data['seo_details'] = (object)['title' => 'Dashboard'];
@@ -554,10 +697,22 @@ class FrontController extends Controller
 
             $qrCheckinToken = encrypt('volunteer_checkin_qr:'.$orderTicket->id);
 
-            $waiverUrl = route('view-waiver-form', [
-                'ticket' => encrypt($orderTicket->id),
-                'qr_checkin' => $qrCheckinToken,
-            ]);
+            if($orderTicket->event->waiver_form_type=='external_link'){
+                if(!empty($orderTicket->event->waiver_form_content)){
+                    $waiverUrl = $orderTicket->event->waiver_form_content;
+                } else {
+                    return response()->json($this->generateResponse(false, 'waiver external link not available.'), 403);
+                }
+            } else {
+                
+                if(($orderTicket->event->waiver_form_type=='default' || $orderTicket->event->waiver_form_type=='text' || $orderTicket->event->waiver_form_type=='pdf') && empty($orderTicket->event->waiver_form_content)){
+                    return response()->json($this->generateResponse(false, 'waiver form not available.'), 403);
+                }
+                $waiverUrl = route('view-waiver-form', [
+                    'ticket' => encrypt($orderTicket->id),
+                    'qr_checkin' => $qrCheckinToken,
+                ]);
+            }
 
             $qrHtml = QrCode::size(280)
                 ->margin(2)
@@ -1467,8 +1622,10 @@ class FrontController extends Controller
             'allow_child_under13'      => 'nullable|boolean',
             'sell_tickets_individually'   => 'nullable|boolean',
 
-            'waiver_form_type' => 'nullable',
+            //'waiver_form_type' => 'nullable',
+            'waiver_form_type' => 'nullable|in:text,external_link,pdf,default',
             'waiver_form_content' => ['nullable',
+                'required_if:waiver_form_type,text,external_link,pdf',
                 function($attribute, $value, $fail) use ($request, $obj) {
                     
                     $type = $request->waiver_form_type;
@@ -1479,7 +1636,7 @@ class FrontController extends Controller
                     }
                     if ($type === 'external_link') {
                         if (empty($value) || !filter_var($value, FILTER_VALIDATE_URL)) {
-                            $fail('The waiver form content must be a valid URL when waiver form type is external_link.');
+                            $fail('The waiver form content must be a valid URL when waiver form type is external waiver link.');
                         }
                     }
                     if ($type === 'pdf') {
@@ -1507,6 +1664,9 @@ class FrontController extends Controller
                     }
                 }
             ],
+        ],
+        [
+            'waiver_form_content.required_if' => 'Please provide valid waiver information.',
         ]);
 
         try {
@@ -5804,7 +5964,7 @@ class FrontController extends Controller
         set_time_limit(0);
         ini_set('max_execution_time', 0);
         $request = request();
-        $records = EventTicketNotification::with(['volunteer:id,first_name,last_name,email_address','ticket:id,event_id,ticket_name,ticket_type,ticket_price,sell_start_time,sell_end_time','ticket.event:id,event_name,slug,creator_id,start_datetime,end_datetime,charge_bear_by,venue,pincode'])->where('is_sent', 0)->whereHas('ticket', function ($q) {
+        $records = EventTicketNotification::with(['volunteer:id,first_name,last_name,email_address','ticket:id,event_id,ticket_name,ticket_type,ticket_price,sell_start_time,sell_end_time','ticket.event:id,event_name,slug,creator_id,start_datetime,end_datetime,charge_bear_by,venue,pincode'])->where('is_email_verified', 1)->where('is_sent', 0)->whereHas('ticket', function ($q) {
             $q->whereDate('sell_start_time', date('Y-m-d'));
         })->get();
         //echo '<pre>';
@@ -5821,29 +5981,39 @@ class FrontController extends Controller
                 if(isset($value1[0]->ticket) && isset($value1[0]->ticket->id)){
                     $ticket = $value1[0]->ticket;
                     foreach ($value1 as $key => $value) {
-                        if(isset($value->volunteer) && isset($value->volunteer->email_address) && !empty(trim($value->volunteer->email_address))){
-                            //print_r($value->toArray());
+
+                        $recipientEmail = trim((string) $value->email);
+                        if (empty($recipientEmail) && isset($value->volunteer) && !empty($value->volunteer->email_address)) {
+                            $recipientEmail = trim($value->volunteer->email_address);
+                        }
+                        if (!empty($recipientEmail)) {
+                            $volunteerName = 'Volunteer';
+
+                            if (isset($value->volunteer) && isset($value->volunteer->id)) {
+                                $volunteerName = trim($value->volunteer->first_name . ' ' . $value->volunteer->last_name);
+                            }
+
                             $updateIds[] = $value->id;
-                            $to_arr[] = 
-                            [
+
+                            $to_arr[] = [
                                 "to" => [
-                                    ["email" => trim($value->volunteer->email_address)]
-                                    //["email" => 'learningdcm@gmail.com']
+                                    ["email" => $recipientEmail]
                                 ],
                                 "dynamic_template_data" => [
-                                    "volunteer_name" => $value->volunteer->first_name.' '.$value->volunteer->last_name,
-                                    "event_url" => $this->mailUrl('view-event-details',['slug'=>$ticket->event->slug]),
-                                    "event_name" =>  $ticket->event->event_name,
-                                    "event_date" =>  $ticket->event->startTimeAndEndTime,
-                                    "event_location" =>  $ticket->event->fullAddress,
-                                    "organizer" =>  $ticket->event->creator->first_name.' '.$ticket->event->creator->last_name,
+                                    "volunteer_name" => $volunteerName,
+                                    "event_url" => $this->mailUrl('view-event-details', ['slug' => $ticket->event->slug]),
+                                    "event_name" => $ticket->event->event_name,
+                                    "event_date" => $ticket->event->startTimeAndEndTime,
+                                    "event_location" => $ticket->event->fullAddress,
+                                    "organizer" => $ticket->event->creator->first_name . ' ' . $ticket->event->creator->last_name,
                                 ],
                             ];
+
                             $log_arr[] = [
                                 "id" => $value->id,
                                 "ticket_id" => $value->ticket_id,
                                 "volunteer_id" => $value->volunteer_id,
-                                "email" => trim($value->volunteer->email_address)
+                                "email" => $recipientEmail
                             ];
                         }
                     }

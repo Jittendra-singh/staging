@@ -1297,7 +1297,7 @@ $(document).ready(function () {
 
 		const formData = new FormData(currentForm);
 
-		$('.ckeditor').each(function () {
+		/* $('.ckeditor').each(function () {
 			const editor = $(this).data('ckeditorInstance');
 			if (editor) {
 				const content = editor.getData();
@@ -1307,6 +1307,12 @@ $(document).ready(function () {
 				formData.append(fieldName, content);
 			} else {
 				console.warn('CKEditor instance not found for:', this.name);
+			}
+		}); */
+		$(currentForm).find('.ckeditor').each(function () {
+			const editor = $(this).data('ckeditorInstance');
+			if (editor) {
+				formData.set(this.name, editor.getData());
 			}
 		});
 
@@ -1676,6 +1682,9 @@ $(document).ready(function () {
 			method: "POST",
 			success: function (result) {
 				if (!control.hasClass('billing-email')) {
+					if($('#copy_buyer_info_to_attendee').length > 0 && $('#copy_buyer_info_to_attendee').is(':checked') && control.attr('name')=='ticket[1][email_address]' && $('[name="checkout_email_address"]').val()==control.val()){
+						return false;
+					}
 					$(parent_section).find('input')
 					.not('.email_address, .ticket_id, .is_under_18, .has-children-checkbox')
 					.val('')
