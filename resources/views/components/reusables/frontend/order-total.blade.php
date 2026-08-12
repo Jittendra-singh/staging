@@ -48,7 +48,7 @@
                 </small>
             </div>
         </div>
-        @else 
+        @else
         <div class="order-total-dt mb-3"></div>
         @endif
     @endforeach
@@ -83,13 +83,13 @@
                         <span>Custom</span>
                     </label>
                 </div>
-                
+
                 <div class="mt-2" id="donation-price" style="display: none;">
                     <input inputmode="decimal" autocomplete="off" id="donation_price_field"
                         type="number"
                         min="1"
-                        step="1"
-                        class="form-control form-control-sm integeronly"
+                        step="0.01"
+                        class="form-control form-control-sm decimalonly"
                         name="donation_amount"
                         placeholder="Enter an amount of $1.00 or more">
                 </div>
