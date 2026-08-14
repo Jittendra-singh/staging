@@ -10,7 +10,7 @@
     <div class="wrapper">
         <main class="main">
             <div class="container">
-                @if($event->waiverFormContentFilter() && false)
+                @if($event->waiverFormContentFilter())
                 <div class="content-grid mt-5">
                     <div class="waiver-form">
                     <x-reusables.frontend.alert />
