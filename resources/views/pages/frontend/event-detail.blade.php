@@ -413,7 +413,7 @@ $icalStrData = getiCalData($event);
                                             @if(empty($upcomingDate))
                                             @if($curAvailTickets <= 0 && $event->enable_waitlist)
                                                 <div class="w-auto">
-                                                    <button type="button" class="btn bg-white fw-bold shadow-sm" style="border: 1px solid #e5e7eb; color: #374151; border-radius: 6px; padding: 6px 14px; font-size: 14px;">Join Waitlist</button>
+                                                    <button type="button" data-bs-toggle="modal" data-bs-target="#join-waitlist-modal" class="btn bg-white fw-bold shadow-sm" style="border: 1px solid #e5e7eb; color: #374151; border-radius: 6px; padding: 6px 14px; font-size: 14px;">Join Waitlist</button>
                                                 </div>
                                             @else
                                                 @if($event->sell_tickets_individually)
@@ -847,6 +847,39 @@ $icalStrData = getiCalData($event);
         </div>
     </div>
 </div>
+<!-- Join Waitlist Modal -->
+<div class="modal fade" id="join-waitlist-modal" tabindex="-1" aria-labelledby="joinWaitlistModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="joinWaitlistModalLabel">Enter details</h5>
+                <button type="button" class="close-model-btn" data-bs-dismiss="modal" aria-label="Close"><i class="fa fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="model-content main-form">
+                    <form id="joinWaitlistForm">
+                        <div class="form-group mb-3">
+                            <label class="form-label">First Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="first_name" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="last_name" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="form-label">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="primary-btn w-fit" onclick="alert('Submit clicked! Data saving will be built next.');">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <x-reusables.frontend.organiser-contact :organiser="$event->creator_id" />
 @endsection
 @push('script')
