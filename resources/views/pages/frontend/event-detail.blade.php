@@ -411,8 +411,13 @@ $icalStrData = getiCalData($event);
                                                 <!-- <div class="price-label">{{$eticket->ticket_name}}</div> -->
                                             </div>
                                             @if(empty($upcomingDate))
-                                            @if($event->sell_tickets_individually)
-                                            <div class=" w-auto">
+                                            @if($curAvailTickets <= 0 && $event->enable_waitlist)
+                                                <div class="w-auto">
+                                                    <button type="button" class="btn bg-white fw-bold shadow-sm" style="border: 1px solid #e5e7eb; color: #374151; border-radius: 6px; padding: 6px 14px; font-size: 14px;">Join Waitlist</button>
+                                                </div>
+                                            @else
+                                                @if($event->sell_tickets_individually)
+                                                <div class=" w-auto">
                                                 <label for="order_ticket_{{$eticket->id}}">
                                                     <input id="order_ticket_{{$eticket->id}}" class="checkout-ticket-checkbox"
                                                         onchange="$(this).is(':checked') ? $('.checkout-ticket-checkbox').not(this).prop('checked', false): true"
@@ -442,7 +447,15 @@ $icalStrData = getiCalData($event);
                                                 </div>
                                             @endif
                                             @endif
+                                            @endif
                                         </div>
+
+                                        @if($curAvailTickets <= 0 && $event->enable_waitlist)
+                                        <div class="col-sm-12 px-3 pt-2 pb-2 text-muted" style="font-size: 13px; color: #6b7280;">
+                                            Join our waitlist to be notified if spots become available for this tier.
+                                        </div>
+                                        @endif
+
                                     </div>
                                     @endforeach
 
