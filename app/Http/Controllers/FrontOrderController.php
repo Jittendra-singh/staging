@@ -1078,7 +1078,6 @@ class FrontOrderController extends Controller
                 
             $orderTicket->update(['rsvp_confirmation' => 0,'refund_status' => 4,'cancelled_at'=>date('Y-m-d H:i:s')]);
             $this->sendRSVPCancelledMail($orderTicket);
-            $this->notifyWaitlistWhenAvailable($orderTicket);
             if($is_ajax!=1){
                 return redirect()->back();
             }
@@ -1095,7 +1094,6 @@ class FrontOrderController extends Controller
             if($total_amount<=0){                
                 $orderTicket->update(['rsvp_confirmation' => 0,'refund_status' => 3,'cancelled_at'=>date('Y-m-d H:i:s')]);
                 $this->sendRSVPCancelledMail($orderTicket);
-                $this->notifyWaitlistWhenAvailable($orderTicket);
                 if($is_ajax!=1){
                     return redirect()->back();
                 }
@@ -1383,6 +1381,8 @@ class FrontOrderController extends Controller
             $subject = "Your cancellation for ".$event->event_name." is confirmed";
             $this->sendEmail($orderTicket->eventOrder->creator->email_address, $subject, $emailData, "email-to-buyer-for-cancel");
         }
+        
+        $this->notifyWaitlistWhenAvailable($orderTicket);
     }
     public function sendRSVPandWaiverMail($orderTicket){
         // send mail
@@ -1716,10 +1716,10 @@ END:VCALENDAR"; */
         foreach ($waitlistedUsers as $user) {
             $mail_content = [
                 'waitlist_name' => $user->first_name,
-                'eventTitle' => $event->title,
+                'eventTitle' => $event->event_name,
                 'link' => route('view-event-details', $event->slug)
             ];
-            $subject = 'A ticket is now available! - ' . $event->title;
+            $subject = 'A ticket is now available! - ' . $event->event_name;
             
             $this->sendEmail($user->email, $subject, $mail_content, "ticket-available");
         }
