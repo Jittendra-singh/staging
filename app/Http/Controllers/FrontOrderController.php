@@ -1078,6 +1078,7 @@ class FrontOrderController extends Controller
                 
             $orderTicket->update(['rsvp_confirmation' => 0,'refund_status' => 4,'cancelled_at'=>date('Y-m-d H:i:s')]);
             $this->sendRSVPCancelledMail($orderTicket);
+            $this->notifyWaitlistWhenAvailable($orderTicket);
             if($is_ajax!=1){
                 return redirect()->back();
             }
@@ -1094,6 +1095,7 @@ class FrontOrderController extends Controller
             if($total_amount<=0){                
                 $orderTicket->update(['rsvp_confirmation' => 0,'refund_status' => 3,'cancelled_at'=>date('Y-m-d H:i:s')]);
                 $this->sendRSVPCancelledMail($orderTicket);
+                $this->notifyWaitlistWhenAvailable($orderTicket);
                 if($is_ajax!=1){
                     return redirect()->back();
                 }
@@ -1694,5 +1696,32 @@ END:VCALENDAR"; */
         }
 
         return $childrenByTicket;
+    }
+
+    protected function notifyWaitlistWhenAvailable($orderTicket)
+    {
+        // Get all people waiting for this specific ticket
+        $waitlistedUsers = \App\Models\EventWaitlist::where('event_id', $orderTicket->event_id)
+            ->where('ticket_id', $orderTicket->ticket_id)
+            ->where('status', 'waiting')
+            ->get();
+
+        if ($waitlistedUsers->isEmpty()) {
+            return;
+        }
+
+        $event = \App\Models\Event::find($orderTicket->event_id);
+
+        // Send the email using the central helper method
+        foreach ($waitlistedUsers as $user) {
+            $mail_content = [
+                'waitlist_name' => $user->first_name,
+                'eventTitle' => $event->title,
+                'link' => route('view-event-details', $event->slug)
+            ];
+            $subject = 'A ticket is now available! - ' . $event->title;
+            
+            $this->sendEmail($user->email, $subject, $mail_content, "ticket-available");
+        }
     }
 }
