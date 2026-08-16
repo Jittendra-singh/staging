@@ -1713,6 +1713,7 @@ class FrontController extends Controller
             $event->show_remaining_tickets = $request->has('show_remaining_tickets') ? 1 : 0;
             $event->allow_donations = $request->has('allow_donations') ? 1 : 0;
             $event->allow_child_under13 = $request->has('allow_child_under13') ? 1 : 0;
+            $event->enable_waitlist = $request->has('enable_waitlist') ? 1 : 0;
             /* $event->allow_refund = $request->has('allow_refund') ? 1 : 0;
             $event->charge_bear_by = $request->charge_bear_by ?? 0;  */
             if (!$hasRegisteredVolunteers) {
