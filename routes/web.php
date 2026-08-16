@@ -444,5 +444,6 @@ Route::controller(\App\Http\Controllers\CommonSystemController::class)->group(fu
     Route::get('cron-event-rsvp-reminder', 'cronEventRSVPReminder')->name('cron-event-rsvp-reminder');
 });
 Route::controller(\App\Http\Controllers\FrontController::class)->group(function(){
+    Route::post('/join-waitlist', 'joinWaitlist')->name('join.waitlist');
     Route::get('{slug}' , 'viewEventPage')->name('view-event-details');
 });

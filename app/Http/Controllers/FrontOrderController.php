@@ -576,6 +576,13 @@ class FrontOrderController extends Controller
                             'rsvp_filled_at'    => now(), 
                         ]);
 
+                        // Clear waitlist status if they were on it
+                        \App\Models\EventWaitlist::where('event_id', $event->id)
+                            ->where('ticket_id', $ticket_arr['id'])
+                            ->where('email', $ticket_volunteer->email_address)
+                            ->where('status', 'waiting')
+                            ->update(['status' => 'cleared']);
+
                         foreach ($childrenByTicket[$ticket_key] ?? [] as $child) {
                             $event_order_ticket_obj->children()->create([
                                 'event_id' => $event->id,

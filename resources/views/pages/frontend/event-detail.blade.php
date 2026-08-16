@@ -413,7 +413,7 @@ $icalStrData = getiCalData($event);
                                             @if(empty($upcomingDate))
                                             @if($curAvailTickets <= 0 && $event->enable_waitlist)
                                                 <div class="w-auto">
-                                                    <button type="button" data-bs-toggle="modal" data-bs-target="#join-waitlist-modal" class="btn bg-white fw-bold shadow-sm" style="border: 1px solid #e5e7eb; color: #374151; border-radius: 6px; padding: 6px 14px; font-size: 14px;">Join Waitlist</button>
+                                                    <button type="button" data-bs-toggle="modal" data-bs-target="#join-waitlist-modal" data-event-id="{{ $event->id }}" data-ticket-id="{{ $eticket->id }}" class="btn bg-white fw-bold shadow-sm join-waitlist-btn" style="border: 1px solid #e5e7eb; color: #374151; border-radius: 6px; padding: 6px 14px; font-size: 14px;">Join Waitlist</button>
                                                 </div>
                                             @else
                                                 @if($event->sell_tickets_individually)
@@ -858,6 +858,9 @@ $icalStrData = getiCalData($event);
             <div class="modal-body">
                 <div class="model-content main-form">
                     <form id="joinWaitlistForm">
+                        @csrf
+                        <input type="hidden" name="event_id" id="waitlist_event_id">
+                        <input type="hidden" name="ticket_id" id="waitlist_ticket_id">
                         <div class="form-group mb-3">
                             <label class="form-label">First Name <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" name="first_name" required>
@@ -874,7 +877,7 @@ $icalStrData = getiCalData($event);
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="primary-btn w-fit" onclick="alert('Submit clicked! Data saving will be built next.');">Submit</button>
+                <button type="button" class="primary-btn w-fit" onclick="submitWaitlistForm();">Submit</button>
             </div>
         </div>
     </div>
@@ -895,5 +898,32 @@ $icalStrData = getiCalData($event);
             }
         }
     });
+    $('#join-waitlist-modal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        $('#waitlist_event_id').val(button.data('event-id'));
+        $('#waitlist_ticket_id').val(button.data('ticket-id'));
+    });
+
+    function submitWaitlistForm() {
+        var form = $('#joinWaitlistForm');
+        
+        $.ajax({
+            url: "{{ route('join.waitlist') }}",
+            type: "POST",
+            data: form.serialize(),
+            success: function(response) {
+                if(response.success) {
+                    alert(response.message);
+                    $('#join-waitlist-modal').modal('hide');
+                    form[0].reset();
+                } else {
+                    alert(response.message);
+                }
+            },
+            error: function(xhr) {
+                alert('Please fill out all required fields properly.');
+            }
+        });
+    }
 </script>
 @endpush

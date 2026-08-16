@@ -6490,4 +6490,40 @@ class FrontController extends Controller
             'email_count' => count($to_arr),
         ]));
     }
+
+    public function joinWaitlist(\Illuminate\Http\Request $request) 
+    {
+        $request->validate([
+            'event_id' => 'required',
+            'ticket_id' => 'required',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+        ]);
+
+        // Check for existing waitlist entry
+        $existingEntry = \App\Models\EventWaitlist::where('event_id', $request->event_id)
+            ->where('ticket_id', $request->ticket_id)
+            ->where('email', $request->email)
+            ->first();
+
+        if ($existingEntry) {
+            if ($existingEntry->status === 'waiting') {
+                return response()->json(['success' => false, 'message' => 'You are already on the waitlist for this ticket.']);
+            } else {
+                // Status is 'cleared', so they are re-joining the waitlist
+                $existingEntry->status = 'waiting';
+                $existingEntry->first_name = $request->first_name;
+                $existingEntry->last_name = $request->last_name;
+                $existingEntry->save();
+
+                return response()->json(['success' => true, 'message' => 'You are on the waitlist! We will email you if a ticket becomes available.']);
+            }
+        }
+
+        // If no entry exists at all, create a new one
+        \App\Models\EventWaitlist::create($request->all());
+
+        return response()->json(['success' => true, 'message' => 'You are on the waitlist! We will email you if a ticket becomes available.']);
+    }
 }
