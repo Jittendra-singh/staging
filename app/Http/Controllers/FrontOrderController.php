@@ -1382,7 +1382,7 @@ class FrontOrderController extends Controller
             $this->sendEmail($orderTicket->eventOrder->creator->email_address, $subject, $emailData, "email-to-buyer-for-cancel");
         }
         
-        $this->notifyWaitlistWhenAvailable($orderTicket);
+        $this->notifyWaitlistWhenAvailable($orderTicket->event_id, $orderTicket->ticket_id);
     }
     public function sendRSVPandWaiverMail($orderTicket){
         // send mail
@@ -1696,32 +1696,5 @@ END:VCALENDAR"; */
         }
 
         return $childrenByTicket;
-    }
-
-    protected function notifyWaitlistWhenAvailable($orderTicket)
-    {
-        // Get all people waiting for this specific ticket
-        $waitlistedUsers = \App\Models\EventWaitlist::where('event_id', $orderTicket->event_id)
-            ->where('ticket_id', $orderTicket->ticket_id)
-            ->where('status', 'waiting')
-            ->get();
-
-        if ($waitlistedUsers->isEmpty()) {
-            return;
-        }
-
-        $event = \App\Models\Event::find($orderTicket->event_id);
-
-        // Send the email using the central helper method
-        foreach ($waitlistedUsers as $user) {
-            $mail_content = [
-                'waitlist_name' => $user->first_name,
-                'eventTitle' => $event->event_name,
-                'link' => route('view-event-details', $event->slug)
-            ];
-            $subject = 'A ticket is now available! - ' . $event->event_name;
-            
-            $this->sendEmail($user->email, $subject, $mail_content, "ticket-available");
-        }
     }
 }
