@@ -1,7 +1,7 @@
 @php
     $outPages = true;
     $is_rsvp_submitted = (!empty($ticket->rsvp_confirmation) && !empty($ticket->rsvp_filled_at))?true:false;
-    $is_waiver_submitted = (!empty($ticket->waiver_filled_at) && !empty($ticket->signature))?true:false;
+    $is_waiver_submitted = (!empty($ticket->waiver_filled_at) && (!empty($ticket->signature) || $event->waiver_form_type == 'external_link'))?true:false;
     $is_event_datetime_exceed = (strtotime($event->start_datetime)<strtotime(date('Y-m-d H:i:s')))?true:false;
 @endphp
 @extends('layouts.frontend')
@@ -49,6 +49,7 @@
                             @if($is_waiver_submitted)
                                 <span class="badge text-bg-success">You have submitted the waiver form.</span>
                             @else 
+                                @if($event->waiver_form_type != 'external_link')
                                 <div class="mb-3">
                                     <label class="form-label">Signature</label>
                                     <br>
@@ -60,6 +61,7 @@
                                     <div class='js-signature' data-width="450" data-height="200"></div>
                                     <button onclick="clearSignature()" type="button" class="btn btn-secondary btn-sm mt-2" id="clear-js-signature">Clear</button>
                                 </div>
+                                @endif
                                 <button type="button" onclick="submitWaiverForm()" {{ (!$is_rsvp_submitted)?'disabled':'' }} class="btn btn-primary mb-2">Submit Waiver</button>
                             @endif
                         </form>
@@ -78,11 +80,15 @@
         $('.js-signature').jqSignature('clearCanvas');
     }
     function submitWaiverForm(){
+        @if($event->waiver_form_type != 'external_link')
         if(!is_signature_done){
             showError('Please provide your signature before submitting the form.', 'error');
         } else {
             $('#waiver-form-id').submit();
         }
+        @else
+        $('#waiver-form-id').submit();
+        @endif
     }
 </script>
 
