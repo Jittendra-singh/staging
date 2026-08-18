@@ -50,8 +50,9 @@ Route::controller(\App\Http\Controllers\StripeController::class)->group(function
     Route::post('stripe-checkout-webhook', 'stripeCheckoutWebhook')->name('stripe-checkout-webhook')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
 });
 Route::controller(\App\Http\Controllers\FrontOrderController::class)->group(function(){
+    //Route::get('import-icc-volunteer-by-script', 'importICCVolunteerByScript')->name('import-icc-volunteer-by-script');
+
     Route::post('land-checkout', 'landToCheckout')->name('land-to-checkout');
-    Route::get('/test-script', 'testScript')->name('test-script');
     Route::get('checkout', 'checkout')->name('front-checkout');
     Route::post('auto-populate-attandee', 'autoPopulateAttandee')->name('auto-populate-attandee');
     Route::post('front-create-order', 'frontCreateOrder')->name('front-create-order');

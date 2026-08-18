@@ -1709,9 +1709,9 @@ END:VCALENDAR"; */
 
 
 
-    public function testScript()
+    public function importICCVolunteerByScript()
     {
-        $tagName = 'ICC2023 - Volunteer';
+        $tagName = 'ICC2026';
 
         echo "<pre>";
 
@@ -1735,6 +1735,7 @@ END:VCALENDAR"; */
             ->pluck('event_id')
             ->unique()
             ->values();
+        echo "TOTAL EVENT FOUND : ".count($eventIds)."\n";
 
         if ($eventIds->isEmpty()) {
             echo "No events found for tag: {$tagName}\n";
@@ -1743,10 +1744,18 @@ END:VCALENDAR"; */
         }
 
 
+        $events = Event::whereIn('id', $eventIds)
+        ->skip(70)->take(5)->get();
+        
+        /* $attendeeIds = DB::table('event_order_tickets')
+            ->whereIn('event_id', $eventIds)
+            ->whereNotNull('volunteer_id')
+            ->pluck('volunteer_id')
+            ->unique()
+            ->values();
+            print_r(count($attendeeIds)); */
         //  loop events
-        foreach ($eventIds as $eventId) {
-
-            $event = Event::find($eventId);
+        foreach ($events as $event) {
 
             if (!$event) {
                 continue;
@@ -1799,35 +1808,34 @@ END:VCALENDAR"; */
                 echo "----------------------------------------\n";
 
 
-                // foreach ($attendeeChunk as $attendee) {
+                foreach ($attendeeChunk as $attendee) {
 
-                //     // Event ke saare tags attendee ke liye
-                //     $tags = $eventTags;
+                    // Event ke saare tags attendee ke liye
+                    $tags = $eventTags;
 
-                //     // Add attendee role
-                //     $tags[] = $attendee->is_organiser
-                //         ? 'Organizer'
-                //         : 'Volunteer';
+                    // Add attendee role
+                    $tags[] = $attendee->is_organiser
+                        ? 'Organizer'
+                        : 'Volunteer';
 
-                //     // Remove duplicate tags
-                //     $tags = array_values(array_unique($tags));
-
-
-                //     echo "Volunteer ID : {$attendee->id}\n";
-                //     echo "Name         : {$attendee->name}\n";
-                //     echo "Email        : {$attendee->email_address}\n";
-                //     echo "Tags         : " . implode(', ', $tags) . "\n";
+                    // Remove duplicate tags
+                    $tags = array_values(array_unique($tags));
 
 
-                //     // // WP Sync
-                //     // $this->syncVolunteerWithWP(
-                //     //     $attendee,
-                //     //     $tags
-                //     // );
+                    echo "Volunteer ID : {$attendee->id}\n";
+                    echo "Name         : {$attendee->name}\n";
+                    echo "Email        : {$attendee->email_address}\n";
+                    echo "Tags         : " . implode(', ', $tags) . "\n";
 
-                //     echo "WP Sync      : DONE\n";
-                //     echo "------------------------------\n";
-                // }
+
+                    // WP Sync
+                    /* $this->syncVolunteerWithWP(
+                        $attendee,
+                        $tags
+                    );
+                    echo "WP Sync      : DONE\n";
+                    echo "------------------------------\n"; */
+                }
 
                 echo "\n";
             }
@@ -1855,7 +1863,7 @@ END:VCALENDAR"; */
             'postal_code'         => $volunteer->pincode,
             'country'             => 'United States',
             'tags'                => $tags,
-            'fcrm_vol_newsletter' => 'Yes',
+            //'fcrm_vol_newsletter' => 'Yes',
         ];
 
         $this->callCurl('POST', $url, json_encode($data));
