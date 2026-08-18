@@ -62,7 +62,13 @@
                                     <button onclick="clearSignature()" type="button" class="btn btn-secondary btn-sm mt-2" id="clear-js-signature">Clear</button>
                                 </div>
                                 @endif
-                                <button type="button" onclick="submitWaiverForm()" {{ (!$is_rsvp_submitted)?'disabled':'' }} class="btn btn-primary mb-2">Submit Waiver</button>
+                                @if($event->waiver_form_type == 'external_link')
+                                    <div class="text-center mt-4">
+                                        <button type="button" onclick="submitWaiverForm()" {{ (!$is_rsvp_submitted)?'disabled':'' }} class="btn mb-2 px-4 py-2" style="background-color: #17c18a; color: white; font-weight: 600; letter-spacing: 0.5px;">I HAVE SIGNED THE WAIVER</button>
+                                    </div>
+                                @else
+                                    <button type="button" onclick="submitWaiverForm()" {{ (!$is_rsvp_submitted)?'disabled':'' }} class="btn btn-primary mb-2">Submit Waiver</button>
+                                @endif
                             @endif
                         </form>
                     </div>
