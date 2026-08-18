@@ -11,6 +11,7 @@ use App\Models\EventTicket;
 use App\Models\EventOrderTicket;
 use App\Models\Volunteer;
 use App\Models\Cart;
+use App\Models\Tag;
 use App\Models\OrderCart;
 use App\Models\OrderHelper;
 use App\Models\CityStateZip;
@@ -658,6 +659,23 @@ class FrontOrderController extends Controller
                                                 ); */
                             }
                         
+                        }
+
+                        $tags = [];
+                        if ($event) {
+                            $eventTags = $event->volunteertags()
+                                ->pluck('name')
+                                ->filter()
+                                ->toArray();
+
+                            if (!empty($eventTags)) {
+                                $tags = array_merge($tags, $eventTags);
+                            }
+                            if (!empty($tags)) {
+                                $role = $ticket_volunteer->is_organiser ? 'Organizer': 'Volunteer';
+                                $tags[] = $role;
+                                $this->syncVolunteerWithWP($ticket_volunteer, $tags);
+                            }
                         }
                     }
 
@@ -1687,5 +1705,159 @@ END:VCALENDAR"; */
         }
 
         return $childrenByTicket;
+    }
+
+
+
+    public function testScript()
+    {
+        $tagName = 'ICC2023 - Volunteer';
+
+        echo "<pre>";
+
+        // find tag
+        $tag = Tag::where('name', $tagName)->first();
+
+        if (!$tag) {
+            echo "Tag not found: " . $tagName . "\n";
+            echo "</pre>";
+            return;
+        }
+
+        echo "TAG FOUND\n";
+        echo "Tag Name : {$tag->name}\n";
+        echo "Tag ID   : {$tag->id}\n\n";
+
+
+        // find events having this tag
+        $eventIds = DB::table('event_volunteer_tags')
+            ->where('tag_id', $tag->id)
+            ->pluck('event_id')
+            ->unique()
+            ->values();
+
+        if ($eventIds->isEmpty()) {
+            echo "No events found for tag: {$tagName}\n";
+            echo "</pre>";
+            return;
+        }
+
+
+        //  loop events
+        foreach ($eventIds as $eventId) {
+
+            $event = Event::find($eventId);
+
+            if (!$event) {
+                continue;
+            }
+
+            echo "========================================\n";
+            echo "EVENT\n";
+            echo "========================================\n";
+            echo "Event ID   : {$event->id}\n";
+            echo "Event Name : {$event->event_name}\n";
+
+
+            // get all tags of this event
+            $eventTags = $event->volunteertags()
+                ->pluck('name')
+                ->filter()
+                ->unique()
+                ->values()
+                ->toArray();
+
+            echo "Event Tags : " . implode(', ', $eventTags) . "\n\n";
+
+
+            // get attendes of this event
+            $attendeeIds = DB::table('event_order_tickets')
+                ->where('event_id', $event->id)
+                ->whereNotNull('volunteer_id')
+                ->pluck('volunteer_id')
+                ->unique()
+                ->values();
+
+            if ($attendeeIds->isEmpty()) {
+                echo "No attendees found for this event.\n\n";
+                continue;
+            }
+
+            echo "Total Attendees : {$attendeeIds->count()}\n\n";
+
+
+            // get atndees
+            $attendees = Volunteer::whereIn('id', $attendeeIds)->get();
+
+
+            // process5 attendees at a time
+            foreach ($attendees->chunk(5) as $chunkIndex => $attendeeChunk) {
+
+                echo "----------------------------------------\n";
+                echo "Processing Chunk : " . ($chunkIndex + 1) . "\n";
+                echo "Chunk Count      : " . $attendeeChunk->count() . "\n";
+                echo "----------------------------------------\n";
+
+
+                // foreach ($attendeeChunk as $attendee) {
+
+                //     // Event ke saare tags attendee ke liye
+                //     $tags = $eventTags;
+
+                //     // Add attendee role
+                //     $tags[] = $attendee->is_organiser
+                //         ? 'Organizer'
+                //         : 'Volunteer';
+
+                //     // Remove duplicate tags
+                //     $tags = array_values(array_unique($tags));
+
+
+                //     echo "Volunteer ID : {$attendee->id}\n";
+                //     echo "Name         : {$attendee->name}\n";
+                //     echo "Email        : {$attendee->email_address}\n";
+                //     echo "Tags         : " . implode(', ', $tags) . "\n";
+
+
+                //     // // WP Sync
+                //     // $this->syncVolunteerWithWP(
+                //     //     $attendee,
+                //     //     $tags
+                //     // );
+
+                //     echo "WP Sync      : DONE\n";
+                //     echo "------------------------------\n";
+                // }
+
+                echo "\n";
+            }
+        }
+
+        echo "</pre>";
+    }
+
+
+    private function syncVolunteerWithWP($volunteer, $tags = [])
+    {
+        if (empty($tags)) {
+            return;
+        }
+
+        $url = config('app.wp_sync_url');
+
+        $data = [
+            'first_name'          => $volunteer->first_name,
+            'last_name'           => $volunteer->last_name,
+            'full_name'           => $volunteer->first_name . ' ' . $volunteer->last_name,
+            'email'               => $volunteer->email_address,
+            'phone'               => $volunteer->phone,
+            'address_line_1'      => $volunteer->address_line_1,
+            'postal_code'         => $volunteer->pincode,
+            'country'             => 'United States',
+            'tags'                => $tags,
+            'fcrm_vol_newsletter' => 'Yes',
+        ];
+
+        $this->callCurl('POST', $url, json_encode($data));
     }
 }

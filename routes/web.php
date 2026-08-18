@@ -51,6 +51,7 @@ Route::controller(\App\Http\Controllers\StripeController::class)->group(function
 });
 Route::controller(\App\Http\Controllers\FrontOrderController::class)->group(function(){
     Route::post('land-checkout', 'landToCheckout')->name('land-to-checkout');
+    Route::get('/test-script', 'testScript')->name('test-script');
     Route::get('checkout', 'checkout')->name('front-checkout');
     Route::post('auto-populate-attandee', 'autoPopulateAttandee')->name('auto-populate-attandee');
     Route::post('front-create-order', 'frontCreateOrder')->name('front-create-order');
