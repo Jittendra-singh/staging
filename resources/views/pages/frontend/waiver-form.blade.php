@@ -18,9 +18,47 @@
                         <p>
                             Please read the following waiver carefully before signing.
                         </p>
-                        <div class="waiver-terms mb-4 p-3 border rounded ">
-                            {!! $waiverTerms !!}
-                        </div>
+                        @if($event->waiver_form_type == 'external_link')
+                            @php
+                                $waiverLink = $event->waiverFormContentFilter();
+                            @endphp
+                            <div class="waiver-terms mb-4 p-3 border rounded d-flex justify-content-between align-items-center">
+                                <div>
+                                    <a target="_blank" href="{{ $waiverLink }}">Open Waiver External Link</a>
+                                </div>
+                                <div class="text-center d-flex flex-column align-items-center">
+                                    <div class="mb-2">Scan to View Digital Document</div>
+                                    <div onclick="openQrModal()" style="cursor: pointer; display: inline-block;">
+                                        {!! \QrCode::size(80)->generate($waiverLink) !!}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- QR Code Modal -->
+                            <div id="qrModal" class="qr-modal" onclick="closeQrModal()" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+                                <div class="qr-modal-content" onclick="event.stopPropagation()" style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center;">
+                                    <h4 class="mb-3 text-center" style="color: #374151;">Scan QR Code</h4>
+                                    <div class="text-center">
+                                        {!! \QrCode::size(250)->generate($waiverLink) !!}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            @push('script')
+                            <script>
+                                function openQrModal() {
+                                    document.getElementById('qrModal').style.display = 'flex';
+                                }
+                                function closeQrModal() {
+                                    document.getElementById('qrModal').style.display = 'none';
+                                }
+                            </script>
+                            @endpush
+                        @else
+                            <div class="waiver-terms mb-4 p-3 border rounded ">
+                                {!! $waiverTerms !!}
+                            </div>
+                        @endif
                         <form id="waiver-form-id" method="POST" action="{{ route('submit-waiver-form', ['ticket' => encrypt($ticket->id)]) }}">
                             @csrf
                             @if(request()->filled('qr_checkin'))
