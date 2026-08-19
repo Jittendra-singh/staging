@@ -330,30 +330,35 @@
                         <!-- Waitlist Section (Static UI) -->
                         <section class="section mt-5 mb-5">
                             
+                            @if(isset($events) && $events->count() > 0)
                             <!-- Filter Dropdown -->
                             <div class="d-flex align-items-center mb-4">
                                 <label for="eventFilter" class="me-2 fw-semibold text-secondary" style="font-size: 14px;">Filter by Event:</label>
-                                <select id="eventFilter" class="form-select w-auto shadow-sm" style="border-radius: 8px;">
-                                    <option>Park Cleanup</option>
+                                <select id="eventFilter" class="form-select w-auto shadow-sm" style="border-radius: 8px;" onchange="window.location.href='?event_id=' + this.value + (new URLSearchParams(window.location.search).get('search') ? '&search=' + new URLSearchParams(window.location.search).get('search') : '')">
+                                    @foreach($events as $event)
+                                        <option value="{{ $event->id }}" {{ $selectedEventId == $event->id ? 'selected' : '' }}>{{ $event->title }}</option>
+                                    @endforeach
                                 </select>
                             </div>
 
+                            @if(isset($waitlists))
                             <!-- Waitlist Header (Title, Search, Export) -->
                             <div class="row align-items-end mb-4">
                                 <div class="col-md-5">
-                                    <h2 class="fw-bold mb-2" style="font-size: 24px;">Waitlist: Park Cleanup</h2>
-                                    <p class="text-secondary mb-0" style="font-size: 15px;">Total people on waitlist: <strong class="text-dark">54</strong></p>
+                                    <h2 class="fw-bold mb-2" style="font-size: 24px;">Waitlist: {{ $events->where('id', $selectedEventId)->first()->title ?? 'None' }}</h2>
+                                    <p class="text-secondary mb-0" style="font-size: 15px;">Total people on waitlist: <strong class="text-dark">{{ $waitlists->total() }}</strong></p>
                                 </div>
                                 <div class="col-md-7 d-flex justify-content-end gap-3 align-items-center mt-3 mt-md-0">
                                     <!-- Search Bar -->
-                                    <div class="position-relative" style="max-width: 400px; width: 100%;">
+                                    <form method="GET" action="{{ route('front-dashboard') }}" class="position-relative" style="max-width: 400px; width: 100%;">
+                                        <input type="hidden" name="event_id" value="{{ $selectedEventId }}">
                                         <i class="fa fa-search position-absolute text-secondary" style="top: 50%; left: 16px; transform: translateY(-50%); z-index: 10;"></i>
-                                        <input type="text" class="form-control shadow-sm" style="padding-left: 42px !important; border-radius: 8px; border: 1px solid #dee2e6; position: relative; z-index: 1;" placeholder="Search volunteers by name or email...">
-                                    </div>
+                                        <input type="text" name="search" value="{{ request('search') }}" class="form-control shadow-sm" style="padding-left: 42px !important; border-radius: 8px; border: 1px solid #dee2e6; position: relative; z-index: 1;" placeholder="Search volunteers by name or email...">
+                                    </form>
                                     <!-- Export Button -->
-                                    <button class="btn text-white fw-semibold shadow-sm d-flex align-items-center gap-2" style="background-color: #3b82f6; border-radius: 8px; padding: 8px 20px;">
+                                    <a href="{{ route('export.waitlist', ['event_id' => $selectedEventId, 'search' => request('search')]) }}" class="btn text-white fw-semibold shadow-sm d-flex align-items-center gap-2" style="background-color: #3b82f6; border-radius: 8px; padding: 8px 20px; text-decoration: none;">
                                         <i class="fa fa-download" style="font-size: 13px;"></i> Export
-                                    </button>
+                                    </a>
                                 </div>
                             </div>
 
@@ -375,86 +380,53 @@
                                             </tr>
                                         </thead>
                                         <tbody class="border-top-0">
-                                            <!-- Row 1 -->
+                                            @forelse($waitlists as $entry)
                                             <tr>
                                                 <td class="px-4 py-3 border-bottom border-light">
                                                     <div class="d-flex align-items-center gap-3">
-                                                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 38px; height: 38px; background-color: #6366f1; font-size: 14px; font-weight: 600;">
-                                                            EJ
+                                                        @php
+                                                            $initials = strtoupper(substr($entry->first_name, 0, 1) . substr($entry->last_name, 0, 1));
+                                                            $colors = ['#6366f1', '#6ee7b7', '#7dd3fc', '#818cf8', '#f87171', '#fbbf24'];
+                                                            $bgColor = $colors[strlen($entry->first_name) % count($colors)];
+                                                        @endphp
+                                                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 38px; height: 38px; background-color: {{ $bgColor }}; font-size: 14px; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                                                            {{ $initials }}
                                                         </div>
-                                                        <span class="fw-medium text-dark">Emma Johnson</span>
+                                                        <span class="fw-medium text-dark">{{ $entry->first_name }} {{ $entry->last_name }}</span>
                                                     </div>
                                                 </td>
-                                                <td class="px-4 py-3 border-bottom border-light text-secondary">emma@test.com</td>
-                                                <td class="px-4 py-3 border-bottom border-light text-secondary">General Admission</td>
-                                                <td class="px-4 py-3 border-bottom border-light text-dark fw-medium">Aug 16, 10:15 AM</td>
+                                                <td class="px-4 py-3 border-bottom border-light text-secondary">{{ $entry->email }}</td>
+                                                <td class="px-4 py-3 border-bottom border-light text-secondary">{{ $entry->ticket->title ?? 'N/A' }}</td>
+                                                <td class="px-4 py-3 border-bottom border-light text-dark fw-medium">{{ \Carbon\Carbon::parse($entry->joined_at)->format('M d, g:i A') }}</td>
                                                 <td class="px-4 py-3 border-bottom border-light">
-                                                    <span class="badge rounded-pill text-secondary fw-medium" style="background-color: #e5e7eb; padding: 6px 14px; font-size: 12px;">Waiting</span>
+                                                    @if(strtolower($entry->status) == 'waiting')
+                                                        <span class="badge rounded-pill text-secondary fw-medium" style="background-color: #e5e7eb; padding: 6px 14px; font-size: 12px;">Waiting</span>
+                                                    @else
+                                                        <span class="badge rounded-pill text-success fw-medium" style="background-color: #a7f3d0; padding: 6px 14px; font-size: 12px; color: #065f46 !important;">{{ ucfirst($entry->status) }}</span>
+                                                    @endif
                                                 </td>
                                             </tr>
-                                            <!-- Row 2 -->
+                                            @empty
                                             <tr>
-                                                <td class="px-4 py-3 border-bottom border-light">
-                                                    <div class="d-flex align-items-center gap-3">
-                                                        <div class="rounded-circle d-flex align-items-center justify-content-center text-dark" style="width: 38px; height: 38px; background-color: #6ee7b7; font-size: 14px; font-weight: 600;">
-                                                            DS
-                                                        </div>
-                                                        <span class="fw-medium text-dark">Daniel Smith</span>
-                                                    </div>
-                                                </td>
-                                                <td class="px-4 py-3 border-bottom border-light text-secondary">daniel@test.com</td>
-                                                <td class="px-4 py-3 border-bottom border-light text-secondary">VIP Volunteer</td>
-                                                <td class="px-4 py-3 border-bottom border-light text-dark fw-medium">Aug 16, 10:20 AM</td>
-                                                <td class="px-4 py-3 border-bottom border-light">
-                                                    <span class="badge rounded-pill text-secondary fw-medium" style="background-color: #e5e7eb; padding: 6px 14px; font-size: 12px;">Waiting</span>
+                                                <td colspan="5" class="px-4 py-5 text-center text-secondary">
+                                                    No volunteers found on the waitlist for this event.
                                                 </td>
                                             </tr>
-                                            <!-- Row 3 -->
-                                            <tr>
-                                                <td class="px-4 py-3 border-bottom border-light">
-                                                    <div class="d-flex align-items-center gap-3">
-                                                        <div class="rounded-circle d-flex align-items-center justify-content-center text-dark" style="width: 38px; height: 38px; background-color: #7dd3fc; font-size: 14px; font-weight: 600;">
-                                                            ML
-                                                        </div>
-                                                        <span class="fw-medium text-dark">Maya Lopez</span>
-                                                    </div>
-                                                </td>
-                                                <td class="px-4 py-3 border-bottom border-light text-secondary">maya.l@example.com</td>
-                                                <td class="px-4 py-3 border-bottom border-light text-secondary">Student</td>
-                                                <td class="px-4 py-3 border-bottom border-light text-dark fw-medium">Aug 16, 10:22 AM</td>
-                                                <td class="px-4 py-3 border-bottom border-light">
-                                                    <span class="badge rounded-pill text-success fw-medium" style="background-color: #a7f3d0; padding: 6px 14px; font-size: 12px; color: #065f46 !important;">Registered</span>
-                                                </td>
-                                            </tr>
-                                            <!-- Row 4 -->
-                                            <tr>
-                                                <td class="px-4 py-3 border-0">
-                                                    <div class="d-flex align-items-center gap-3">
-                                                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 38px; height: 38px; background-color: #818cf8; font-size: 14px; font-weight: 600;">
-                                                            RK
-                                                        </div>
-                                                        <span class="fw-medium text-dark">Ryan Kapoor</span>
-                                                    </div>
-                                                </td>
-                                                <td class="px-4 py-3 border-0 text-secondary">ryan.k@example.com</td>
-                                                <td class="px-4 py-3 border-0 text-secondary">General Admission</td>
-                                                <td class="px-4 py-3 border-0 text-dark fw-medium">Aug 16, 10:24 AM</td>
-                                                <td class="px-4 py-3 border-0">
-                                                    <span class="badge rounded-pill text-secondary fw-medium" style="background-color: #e5e7eb; padding: 6px 14px; font-size: 12px;">Waiting</span>
-                                                </td>
-                                            </tr>
+                                            @endforelse
                                         </tbody>
                                     </table>
                                 </div>
                                 
                                 <!-- Table Footer -->
                                 <div class="card-footer py-3 px-4 d-flex justify-content-between align-items-center border-top" style="background-color: #f3f4f6; border-color: #e5e7eb !important;">
-                                    <span class="text-secondary" style="font-size: 14px;">Showing <strong class="text-dark">4</strong> of <strong class="text-dark">54</strong></span>
+                                    <span class="text-secondary" style="font-size: 14px;">Showing <strong class="text-dark">{{ $waitlists->firstItem() ?? 0 }}</strong> to <strong class="text-dark">{{ $waitlists->lastItem() ?? 0 }}</strong> of <strong class="text-dark">{{ $waitlists->total() }}</strong></span>
                                     <a href="#" class="text-decoration-none fw-semibold d-flex align-items-center gap-1" style="color: #4f46e5; font-size: 14px;">
                                         View Full Waitlist <i class="fa-solid fa-arrow-right-long" style="font-size: 12px;"></i>
                                     </a>
                                 </div>
                             </div>
+                            @endif
+                            @endif
                         </section>
 
                         <section class="section">

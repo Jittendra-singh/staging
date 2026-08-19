@@ -345,9 +345,85 @@ class FrontController extends Controller
             'verify-ticket-notification-email'
         );
     }
-    public function dashboard(){
+    public function dashboard(\Illuminate\Http\Request $request){
         $data['seo_details'] = (object)['title' => 'Dashboard'];
+        
+        // Fetch organiser's events
+        $user = auth()->guard('front')->user();
+        $events = \App\Models\Event::where('creator_id', $user->id)->get();
+        $selectedEventId = $request->input('event_id', $events->first()->id ?? null);
+        
+        $data['events'] = $events;
+        $data['selectedEventId'] = $selectedEventId;
+        $data['waitlists'] = null;
+        
+        if ($selectedEventId) {
+            $waitlistQuery = \App\Models\EventWaitlist::with('ticket')->where('event_id', $selectedEventId);
+            
+            if ($request->filled('search')) {
+                $search = $request->input('search');
+                $waitlistQuery->where(function($q) use ($search) {
+                    $q->where('first_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
+                });
+            }
+            
+            $data['waitlists'] = $waitlistQuery->orderBy('joined_at', 'desc')->paginate(10);
+        }
+
         return view('pages.frontend.dashboard', $data);
+    }
+
+    public function exportWaitlist(\Illuminate\Http\Request $request, $event_id)
+    {
+        $user = auth()->guard('front')->user();
+        $event = \App\Models\Event::where('id', $event_id)->where('creator_id', $user->id)->firstOrFail();
+        
+        $waitlistQuery = \App\Models\EventWaitlist::with('ticket')->where('event_id', $event_id);
+        
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $waitlistQuery->where(function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+        
+        $waitlists = $waitlistQuery->orderBy('joined_at', 'desc')->get();
+        
+        $fileName = 'waitlist_' . $event_id . '_' . date('Y-m-d') . '.csv';
+        
+        $headers = array(
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$fileName",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        );
+        
+        $columns = array('First Name', 'Last Name', 'Email', 'Ticket Type', 'Joined Date/Time', 'Status');
+        
+        $callback = function() use($waitlists, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+            
+            foreach ($waitlists as $entry) {
+                $row['First Name']  = $entry->first_name;
+                $row['Last Name']   = $entry->last_name;
+                $row['Email']       = $entry->email;
+                $row['Ticket Type'] = $entry->ticket->title ?? 'N/A';
+                $row['Joined Date/Time']  = \Carbon\Carbon::parse($entry->joined_at)->format('M d, g:i A');
+                $row['Status']      = ucfirst($entry->status);
+                
+                fputcsv($file, array($row['First Name'], $row['Last Name'], $row['Email'], $row['Ticket Type'], $row['Joined Date/Time'], $row['Status']));
+            }
+            
+            fclose($file);
+        };
+        
+        return response()->stream($callback, 200, $headers);
     }
     public function releaseNotes()
     {
