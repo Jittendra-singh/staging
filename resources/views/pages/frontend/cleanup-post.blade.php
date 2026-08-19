@@ -1528,24 +1528,24 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                                 <div class="setting-item col-sm-6 mt-4">
                                                                     <div class="d-flex align-items-start">
                                                                         <label class="btn-switch m-0 me-3">
-                                                                            <input type="checkbox" value="1" id="enable_waitlist" name="enable_waitlist" {{ old('enable_waitlist', $form_data->enable_waitlist ?? false) ? 'checked' : '' }}>
-                                                                            <span class="checkbox-slider"></span>
-                                                                        </label>
-                                                                        <div class="d-flex flex-column">
-                                                                            <label class="color-black fw-bold mb-1">Enable Waitlist</label>
-                                                                            <small class="fs-14 d-block m-0">Allow volunteers to join the waitlist when all tickets are sold out</small>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="setting-item col-sm-6 mt-4">
-                                                                    <div class="d-flex align-items-start">
-                                                                        <label class="btn-switch m-0 me-3">
                                                                             <input type="checkbox" value="1" id="allow_child_under13" name="allow_child_under13" {{ old('allow_child_under13', $form_data->allow_child_under13 ?? false) ? 'checked' : '' }}>
                                                                             <span class="checkbox-slider"></span>
                                                                         </label>
                                                                         <div class="d-flex flex-column">
                                                                             <label class="color-black fw-bold mb-1">Allow children below 13 years</label>
                                                                             <small class="fs-14 d-block m-0">Checkbox will disply under the each attendee details on Checkout Page</small>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="setting-item col-sm-6 mt-4">
+                                                                    <div class="d-flex align-items-start">
+                                                                        <label class="btn-switch m-0 me-3">
+                                                                            <input type="checkbox" value="1" id="enable_waitlist" name="enable_waitlist" {{ old('enable_waitlist', $form_data->enable_waitlist ?? false) ? 'checked' : '' }}>
+                                                                            <span class="checkbox-slider"></span>
+                                                                        </label>
+                                                                        <div class="d-flex flex-column">
+                                                                            <label class="color-black fw-bold mb-1">Enable Waitlist</label>
+                                                                            <small class="fs-14 d-block m-0">Allow volunteers to join the waitlist when all tickets are sold out</small>
                                                                         </div>
                                                                     </div>
                                                                 </div>
