@@ -24,7 +24,7 @@
                             @endphp
                             <div class="waiver-terms mb-4 p-3 rounded d-flex justify-content-between align-items-center" style="background-color: #f0fdf4; border: 1px solid #17c18a;">
                                 <div>
-                                    <a target="_blank" href="{{ $waiverLink }}" style="color: #111827; text-decoration: none; font-weight: 600; font-size: 16px;">Open Waiver External Link</a>
+                                    <a target="_blank" href="{{ $waiverLink }}" style="color: #374151; text-decoration: none; font-weight: 600; font-size: 16px;">Open Waiver External Link</a>
                                 </div>
                                 <div class="text-center d-flex flex-column align-items-center">
                                     <div style="font-size: 12px; font-weight: 600; margin-bottom: 5px; color: #374151;">Scan to View Digital Document</div>
