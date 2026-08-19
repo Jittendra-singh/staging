@@ -362,7 +362,9 @@ class FrontController extends Controller
         $data['waitlists'] = null;
         
         if ($selectedEventId) {
-            $waitlistQuery = \App\Models\EventWaitlist::with('ticket')->where('event_id', $selectedEventId);
+            $waitlistQuery = \App\Models\EventWaitlist::with('ticket')
+                ->where('event_id', $selectedEventId)
+                ->whereIn('status', ['waiting']);
             
             if ($request->filled('search')) {
                 $search = $request->input('search');
@@ -384,7 +386,9 @@ class FrontController extends Controller
         $user = auth()->guard('front')->user();
         $event = \App\Models\Event::where('id', $event_id)->where('creator_id', $user->id)->firstOrFail();
         
-        $waitlistQuery = \App\Models\EventWaitlist::with('ticket')->where('event_id', $event_id);
+        $waitlistQuery = \App\Models\EventWaitlist::with('ticket')
+            ->where('event_id', $event_id)
+            ->whereIn('status', ['waiting']);
         
         if ($request->filled('search')) {
             $search = $request->input('search');
