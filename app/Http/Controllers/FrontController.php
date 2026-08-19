@@ -6515,6 +6515,7 @@ class FrontController extends Controller
                 $existingEntry->status = 'waiting';
                 $existingEntry->first_name = $request->first_name;
                 $existingEntry->last_name = $request->last_name;
+                $existingEntry->joined_at = now();
                 $existingEntry->save();
 
                 return response()->json(['success' => true, 'message' => 'You are on the waitlist! We will email you if a ticket becomes available.']);
@@ -6522,7 +6523,9 @@ class FrontController extends Controller
         }
 
         // If no entry exists at all, create a new one
-        \App\Models\EventWaitlist::create($request->all());
+        $data = $request->all();
+        $data['joined_at'] = now();
+        \App\Models\EventWaitlist::create($data);
 
         return response()->json(['success' => true, 'message' => 'You are on the waitlist! We will email you if a ticket becomes available.']);
     }
