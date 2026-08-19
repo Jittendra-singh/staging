@@ -366,6 +366,8 @@ class FrontController extends Controller
                 ->where('event_id', $selectedEventId)
                 ->whereIn('status', ['waiting']);
             
+            $data['totalWaitlistCount'] = (clone $waitlistQuery)->count();
+            
             if ($request->filled('search')) {
                 $search = $request->input('search');
                 $waitlistQuery->where(function($q) use ($search) {

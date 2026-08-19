@@ -346,7 +346,7 @@
                             <div class="row align-items-end mb-4">
                                 <div class="col-md-5">
                                     <h2 class="fw-bold mb-2" style="font-size: 24px;">Waitlist: {{ $events->where('id', $selectedEventId)->first()->event_name ?? 'None' }}</h2>
-                                    <p class="text-secondary mb-0" style="font-size: 15px;">Total people on waitlist: <strong id="waitlist-total-count" class="text-dark">{{ $waitlists->total() }}</strong></p>
+                                    <p class="text-secondary mb-0" style="font-size: 15px;">Total people on waitlist: <strong id="waitlist-total-count" class="text-dark">{{ $totalWaitlistCount ?? 0 }}</strong></p>
                                 </div>
                                 <div class="col-md-7 d-flex justify-content-end gap-3 align-items-center mt-3 mt-md-0">
                                     <!-- Search Bar -->
@@ -436,44 +436,53 @@
                                     if (searchInput && searchForm) {
                                         let timeout = null;
                                         
+                                        function performSearch() {
+                                            const url = new URL(searchForm.action);
+                                            url.searchParams.set('event_id', searchForm.querySelector('[name="event_id"]').value);
+                                            if (searchInput.value) {
+                                                url.searchParams.set('search', searchInput.value);
+                                            }
+                                            
+                                            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                                                .then(response => response.text())
+                                                .then(html => {
+                                                    const parser = new DOMParser();
+                                                    const doc = parser.parseFromString(html, 'text/html');
+                                                    
+                                                    // Replace table card content
+                                                    const newTableCard = doc.getElementById('waitlist-table-card');
+                                                    const oldTableCard = document.getElementById('waitlist-table-card');
+                                                    if (newTableCard && oldTableCard) {
+                                                        oldTableCard.innerHTML = newTableCard.innerHTML;
+                                                    }
+                                                    
+                                                    // Update total count
+                                                    const newTotal = doc.getElementById('waitlist-total-count');
+                                                    const oldTotal = document.getElementById('waitlist-total-count');
+                                                    if (newTotal && oldTotal) {
+                                                        oldTotal.innerHTML = newTotal.innerHTML;
+                                                    }
+                                                    
+                                                    // Update export link
+                                                    const newExport = doc.getElementById('waitlist-export-btn');
+                                                    const oldExport = document.getElementById('waitlist-export-btn');
+                                                    if (newExport && oldExport) {
+                                                        oldExport.href = newExport.href;
+                                                    }
+                                                });
+                                        }
+                                        
                                         // Auto submit form with a 500ms delay when typing using AJAX
                                         searchInput.addEventListener('input', function() {
                                             clearTimeout(timeout);
-                                            timeout = setTimeout(function() {
-                                                const url = new URL(searchForm.action);
-                                                url.searchParams.set('event_id', searchForm.querySelector('[name="event_id"]').value);
-                                                if (searchInput.value) {
-                                                    url.searchParams.set('search', searchInput.value);
-                                                }
-                                                
-                                                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-                                                    .then(response => response.text())
-                                                    .then(html => {
-                                                        const parser = new DOMParser();
-                                                        const doc = parser.parseFromString(html, 'text/html');
-                                                        
-                                                        // Replace table card content
-                                                        const newTableCard = doc.getElementById('waitlist-table-card');
-                                                        const oldTableCard = document.getElementById('waitlist-table-card');
-                                                        if (newTableCard && oldTableCard) {
-                                                            oldTableCard.innerHTML = newTableCard.innerHTML;
-                                                        }
-                                                        
-                                                        // Update total count
-                                                        const newTotal = doc.getElementById('waitlist-total-count');
-                                                        const oldTotal = document.getElementById('waitlist-total-count');
-                                                        if (newTotal && oldTotal) {
-                                                            oldTotal.innerHTML = newTotal.innerHTML;
-                                                        }
-                                                        
-                                                        // Update export link
-                                                        const newExport = doc.getElementById('waitlist-export-btn');
-                                                        const oldExport = document.getElementById('waitlist-export-btn');
-                                                        if (newExport && oldExport) {
-                                                            oldExport.href = newExport.href;
-                                                        }
-                                                    });
-                                            }, 500);
+                                            timeout = setTimeout(performSearch, 500);
+                                        });
+
+                                        // Prevent full page reload on Enter
+                                        searchForm.addEventListener('submit', function(e) {
+                                            e.preventDefault();
+                                            clearTimeout(timeout);
+                                            performSearch();
                                         });
                                     }
                                 });
