@@ -421,7 +421,7 @@ class FrontController extends Controller
                 $row['First Name']  = $entry->first_name;
                 $row['Last Name']   = $entry->last_name;
                 $row['Email']       = $entry->email;
-                $row['Ticket Type'] = $entry->ticket->title ?? 'N/A';
+                $row['Ticket Type'] = $entry->ticket->ticket_name ?? 'N/A';
                 $row['Joined Date/Time']  = \Carbon\Carbon::parse($entry->joined_at)->format('M d, g:i A');
                 $row['Status']      = ucfirst($entry->status);
                 
