@@ -346,24 +346,24 @@
                             <div class="row align-items-end mb-4">
                                 <div class="col-md-5">
                                     <h2 class="fw-bold mb-2" style="font-size: 24px;">Waitlist: {{ $events->where('id', $selectedEventId)->first()->event_name ?? 'None' }}</h2>
-                                    <p class="text-secondary mb-0" style="font-size: 15px;">Total people on waitlist: <strong class="text-dark">{{ $waitlists->total() }}</strong></p>
+                                    <p class="text-secondary mb-0" style="font-size: 15px;">Total people on waitlist: <strong id="waitlist-total-count" class="text-dark">{{ $waitlists->total() }}</strong></p>
                                 </div>
                                 <div class="col-md-7 d-flex justify-content-end gap-3 align-items-center mt-3 mt-md-0">
                                     <!-- Search Bar -->
-                                    <form method="GET" action="{{ route('front-dashboard') }}" class="position-relative" style="max-width: 400px; width: 100%;">
+                                    <form id="waitlistSearchForm" method="GET" action="{{ route('front-dashboard') }}" class="position-relative" style="max-width: 400px; width: 100%;">
                                         <input type="hidden" name="event_id" value="{{ $selectedEventId }}">
                                         <i class="fa fa-search position-absolute text-secondary" style="top: 50%; left: 16px; transform: translateY(-50%); z-index: 10;"></i>
-                                        <input type="text" name="search" value="{{ request('search') }}" class="form-control shadow-sm" style="padding-left: 42px !important; border-radius: 8px; border: 1px solid #dee2e6; position: relative; z-index: 1;" placeholder="Search volunteers by name or email...">
+                                        <input type="text" id="waitlistSearchInput" name="search" value="{{ request('search') }}" class="form-control shadow-sm" style="padding-left: 42px !important; border-radius: 8px; border: 1px solid #dee2e6; position: relative; z-index: 1;" placeholder="Search volunteers by name or email...">
                                     </form>
                                     <!-- Export Button -->
-                                    <a href="{{ route('export.waitlist', ['event_id' => $selectedEventId, 'search' => request('search')]) }}" class="btn text-white fw-semibold shadow-sm d-flex align-items-center gap-2" style="background-color: #3b82f6; border-radius: 8px; padding: 8px 20px; text-decoration: none;">
+                                    <a id="waitlist-export-btn" href="{{ route('export.waitlist', ['event_id' => $selectedEventId, 'search' => request('search')]) }}" class="btn text-white fw-semibold shadow-sm d-flex align-items-center gap-2" style="background-color: #3b82f6; border-radius: 8px; padding: 8px 20px; text-decoration: none;">
                                         <i class="fa fa-download" style="font-size: 13px;"></i> Export
                                     </a>
                                 </div>
                             </div>
 
                             <!-- Waitlist Table Card -->
-                            <div class="card shadow-sm border-0" style="border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb !important;">
+                            <div id="waitlist-table-card" class="card shadow-sm border-0" style="border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb !important;">
                                 <style>
                                     .waitlist-table td { border-bottom: 2px solid #e5e7eb !important; }
                                     .waitlist-table tr:last-child td { border-bottom: none !important; }
@@ -427,6 +427,57 @@
                             </div>
                             @endif
                             @endif
+
+                            <script>
+                                document.addEventListener("DOMContentLoaded", function() {
+                                    const searchInput = document.getElementById('waitlistSearchInput');
+                                    const searchForm = document.getElementById('waitlistSearchForm');
+                                    
+                                    if (searchInput && searchForm) {
+                                        let timeout = null;
+                                        
+                                        // Auto submit form with a 500ms delay when typing using AJAX
+                                        searchInput.addEventListener('input', function() {
+                                            clearTimeout(timeout);
+                                            timeout = setTimeout(function() {
+                                                const url = new URL(searchForm.action);
+                                                url.searchParams.set('event_id', searchForm.querySelector('[name="event_id"]').value);
+                                                if (searchInput.value) {
+                                                    url.searchParams.set('search', searchInput.value);
+                                                }
+                                                
+                                                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                                                    .then(response => response.text())
+                                                    .then(html => {
+                                                        const parser = new DOMParser();
+                                                        const doc = parser.parseFromString(html, 'text/html');
+                                                        
+                                                        // Replace table card content
+                                                        const newTableCard = doc.getElementById('waitlist-table-card');
+                                                        const oldTableCard = document.getElementById('waitlist-table-card');
+                                                        if (newTableCard && oldTableCard) {
+                                                            oldTableCard.innerHTML = newTableCard.innerHTML;
+                                                        }
+                                                        
+                                                        // Update total count
+                                                        const newTotal = doc.getElementById('waitlist-total-count');
+                                                        const oldTotal = document.getElementById('waitlist-total-count');
+                                                        if (newTotal && oldTotal) {
+                                                            oldTotal.innerHTML = newTotal.innerHTML;
+                                                        }
+                                                        
+                                                        // Update export link
+                                                        const newExport = doc.getElementById('waitlist-export-btn');
+                                                        const oldExport = document.getElementById('waitlist-export-btn');
+                                                        if (newExport && oldExport) {
+                                                            oldExport.href = newExport.href;
+                                                        }
+                                                    });
+                                            }, 500);
+                                        });
+                                    }
+                                });
+                            </script>
                         </section>
 
                         <section class="section">
