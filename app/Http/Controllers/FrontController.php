@@ -353,6 +353,7 @@ class FrontController extends Controller
         $events = $user->events()
                        ->active()
                        ->where('start_datetime', '>=', now())
+                       ->orderBy('start_datetime', 'asc')
                        ->get();
         $selectedEventId = $request->input('event_id', $events->first()->id ?? null);
         
@@ -372,7 +373,7 @@ class FrontController extends Controller
                 });
             }
             
-            $data['waitlists'] = $waitlistQuery->orderBy('joined_at', 'desc')->paginate(10);
+            $data['waitlists'] = $waitlistQuery->orderBy('joined_at', 'desc')->paginate(4);
         }
 
         return view('pages.frontend.dashboard', $data);
