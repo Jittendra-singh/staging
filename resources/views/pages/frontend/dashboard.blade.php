@@ -396,7 +396,7 @@
                                                     </div>
                                                 </td>
                                                 <td class="px-4 py-3 border-bottom border-light text-secondary">{{ $entry->email }}</td>
-                                                <td class="px-4 py-3 border-bottom border-light text-secondary">{{ $entry->ticket->title ?? 'N/A' }}</td>
+                                                <td class="px-4 py-3 border-bottom border-light text-secondary">{{ $entry->ticket->ticket_name ?? 'N/A' }}</td>
                                                 <td class="px-4 py-3 border-bottom border-light text-dark fw-medium">{{ \Carbon\Carbon::parse($entry->joined_at)->format('M d, g:i A') }}</td>
                                                 <td class="px-4 py-3 border-bottom border-light">
                                                     @if(strtolower($entry->status) == 'waiting')
