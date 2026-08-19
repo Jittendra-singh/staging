@@ -22,13 +22,13 @@
                             @php
                                 $waiverLink = $event->waiverFormContentFilter();
                             @endphp
-                            <div class="waiver-terms mb-4 p-3 border rounded d-flex justify-content-between align-items-center">
+                            <div class="waiver-terms mb-4 p-3 rounded d-flex justify-content-between align-items-center" style="background-color: #f0fdf4; border: 1px solid #17c18a;">
                                 <div>
-                                    <a target="_blank" href="{{ $waiverLink }}">Open Waiver External Link</a>
+                                    <a target="_blank" href="{{ $waiverLink }}" style="color: #111827; text-decoration: none; font-weight: 600; font-size: 16px;">Open Waiver External Link</a>
                                 </div>
                                 <div class="text-center d-flex flex-column align-items-center">
-                                    <div class="mb-2">Scan to View Digital Document</div>
-                                    <div onclick="openQrModal()" style="cursor: pointer; display: inline-block;">
+                                    <div style="font-size: 12px; font-weight: 600; margin-bottom: 5px; color: #374151;">Scan to View Digital Document</div>
+                                    <div onclick="openQrModal()" style="cursor: pointer; background: #f3f4f6; padding: 10px; display: inline-block; border-radius: 4px;">
                                         {!! \QrCode::size(80)->generate($waiverLink) !!}
                                     </div>
                                 </div>
