@@ -326,6 +326,133 @@
                                 </div>
                             </div>
                         </section>
+                        
+                        <!-- Waitlist Section (Static UI) -->
+                        <section class="section mt-5 mb-5">
+                            
+                            <!-- Filter Dropdown -->
+                            <div class="d-flex align-items-center mb-4">
+                                <label for="eventFilter" class="me-2 fw-semibold text-secondary" style="font-size: 14px;">Filter by Event:</label>
+                                <select id="eventFilter" class="form-select w-auto shadow-sm" style="border-radius: 8px;">
+                                    <option>Park Cleanup</option>
+                                </select>
+                            </div>
+
+                            <!-- Waitlist Header (Title, Search, Export) -->
+                            <div class="row align-items-end mb-4">
+                                <div class="col-md-5">
+                                    <h2 class="fw-bold mb-2" style="font-size: 24px;">Waitlist: Park Cleanup</h2>
+                                    <p class="text-secondary mb-0" style="font-size: 15px;">Total people on waitlist: <strong class="text-dark">54</strong></p>
+                                </div>
+                                <div class="col-md-7 d-flex justify-content-end gap-3 align-items-center mt-3 mt-md-0">
+                                    <!-- Search Bar -->
+                                    <div class="position-relative" style="max-width: 400px; width: 100%;">
+                                        <i class="fa fa-search position-absolute text-secondary" style="top: 50%; left: 16px; transform: translateY(-50%);"></i>
+                                        <input type="text" class="form-control shadow-sm" style="padding-left: 42px; border-radius: 8px; border: 1px solid #dee2e6;" placeholder="Search volunteers by name or email...">
+                                    </div>
+                                    <!-- Export Button -->
+                                    <button class="btn text-white fw-semibold shadow-sm d-flex align-items-center gap-2" style="background-color: #3b82f6; border-radius: 8px; padding: 8px 20px;">
+                                        <i class="fa fa-download" style="font-size: 13px;"></i> Export
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Waitlist Table Card -->
+                            <div class="card shadow-sm border-0" style="border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb !important;">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead style="background-color: #f9fafb;">
+                                            <tr>
+                                                <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px;">Volunteer Name</th>
+                                                <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px;">Email</th>
+                                                <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px;">Ticket Type</th>
+                                                <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px;">Joined Date/Time</th>
+                                                <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px;">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="border-top-0">
+                                            <!-- Row 1 -->
+                                            <tr>
+                                                <td class="px-4 py-3 border-bottom border-light">
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 38px; height: 38px; background-color: #6366f1; font-size: 14px; font-weight: 600;">
+                                                            EJ
+                                                        </div>
+                                                        <span class="fw-medium text-dark">Emma Johnson</span>
+                                                    </div>
+                                                </td>
+                                                <td class="px-4 py-3 border-bottom border-light text-secondary">emma@test.com</td>
+                                                <td class="px-4 py-3 border-bottom border-light text-secondary">General Admission</td>
+                                                <td class="px-4 py-3 border-bottom border-light text-dark fw-medium">Aug 16, 10:15 AM</td>
+                                                <td class="px-4 py-3 border-bottom border-light">
+                                                    <span class="badge rounded-pill text-secondary fw-medium" style="background-color: #e5e7eb; padding: 6px 14px; font-size: 12px;">Waiting</span>
+                                                </td>
+                                            </tr>
+                                            <!-- Row 2 -->
+                                            <tr>
+                                                <td class="px-4 py-3 border-bottom border-light">
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <div class="rounded-circle d-flex align-items-center justify-content-center text-dark" style="width: 38px; height: 38px; background-color: #6ee7b7; font-size: 14px; font-weight: 600;">
+                                                            DS
+                                                        </div>
+                                                        <span class="fw-medium text-dark">Daniel Smith</span>
+                                                    </div>
+                                                </td>
+                                                <td class="px-4 py-3 border-bottom border-light text-secondary">daniel@test.com</td>
+                                                <td class="px-4 py-3 border-bottom border-light text-secondary">VIP Volunteer</td>
+                                                <td class="px-4 py-3 border-bottom border-light text-dark fw-medium">Aug 16, 10:20 AM</td>
+                                                <td class="px-4 py-3 border-bottom border-light">
+                                                    <span class="badge rounded-pill text-secondary fw-medium" style="background-color: #e5e7eb; padding: 6px 14px; font-size: 12px;">Waiting</span>
+                                                </td>
+                                            </tr>
+                                            <!-- Row 3 -->
+                                            <tr>
+                                                <td class="px-4 py-3 border-bottom border-light">
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <div class="rounded-circle d-flex align-items-center justify-content-center text-dark" style="width: 38px; height: 38px; background-color: #7dd3fc; font-size: 14px; font-weight: 600;">
+                                                            ML
+                                                        </div>
+                                                        <span class="fw-medium text-dark">Maya Lopez</span>
+                                                    </div>
+                                                </td>
+                                                <td class="px-4 py-3 border-bottom border-light text-secondary">maya.l@example.com</td>
+                                                <td class="px-4 py-3 border-bottom border-light text-secondary">Student</td>
+                                                <td class="px-4 py-3 border-bottom border-light text-dark fw-medium">Aug 16, 10:22 AM</td>
+                                                <td class="px-4 py-3 border-bottom border-light">
+                                                    <span class="badge rounded-pill text-success fw-medium" style="background-color: #a7f3d0; padding: 6px 14px; font-size: 12px; color: #065f46 !important;">Registered</span>
+                                                </td>
+                                            </tr>
+                                            <!-- Row 4 -->
+                                            <tr>
+                                                <td class="px-4 py-3 border-0">
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 38px; height: 38px; background-color: #818cf8; font-size: 14px; font-weight: 600;">
+                                                            RK
+                                                        </div>
+                                                        <span class="fw-medium text-dark">Ryan Kapoor</span>
+                                                    </div>
+                                                </td>
+                                                <td class="px-4 py-3 border-0 text-secondary">ryan.k@example.com</td>
+                                                <td class="px-4 py-3 border-0 text-secondary">General Admission</td>
+                                                <td class="px-4 py-3 border-0 text-dark fw-medium">Aug 16, 10:24 AM</td>
+                                                <td class="px-4 py-3 border-0">
+                                                    <span class="badge rounded-pill text-secondary fw-medium" style="background-color: #e5e7eb; padding: 6px 14px; font-size: 12px;">Waiting</span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <!-- Table Footer -->
+                                <div class="card-footer bg-white py-3 px-4 d-flex justify-content-between align-items-center border-top" style="border-color: #e5e7eb !important;">
+                                    <span class="text-secondary" style="font-size: 14px;">Showing <strong class="text-dark">4</strong> of <strong class="text-dark">54</strong></span>
+                                    <a href="#" class="text-decoration-none fw-semibold d-flex align-items-center gap-1" style="color: #4f46e5; font-size: 14px;">
+                                        View Full Waitlist <i class="fa-solid fa-arrow-right-long" style="font-size: 12px;"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </section>
+
                         <section class="section">
                             <div class="section-header">
                                 <div>
