@@ -347,8 +347,8 @@
                                 <div class="col-md-7 d-flex justify-content-end gap-3 align-items-center mt-3 mt-md-0">
                                     <!-- Search Bar -->
                                     <div class="position-relative" style="max-width: 400px; width: 100%;">
-                                        <i class="fa fa-search position-absolute text-secondary" style="top: 50%; left: 16px; transform: translateY(-50%);"></i>
-                                        <input type="text" class="form-control shadow-sm" style="padding-left: 42px; border-radius: 8px; border: 1px solid #dee2e6;" placeholder="Search volunteers by name or email...">
+                                        <i class="fa fa-search position-absolute text-secondary" style="top: 50%; left: 16px; transform: translateY(-50%); z-index: 10;"></i>
+                                        <input type="text" class="form-control shadow-sm" style="padding-left: 42px !important; border-radius: 8px; border: 1px solid #dee2e6; position: relative; z-index: 1;" placeholder="Search volunteers by name or email...">
                                     </div>
                                     <!-- Export Button -->
                                     <button class="btn text-white fw-semibold shadow-sm d-flex align-items-center gap-2" style="background-color: #3b82f6; border-radius: 8px; padding: 8px 20px;">
