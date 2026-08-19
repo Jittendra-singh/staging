@@ -361,7 +361,7 @@
                             <div class="card shadow-sm border-0" style="border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb !important;">
                                 <div class="table-responsive">
                                     <table class="table table-hover align-middle mb-0">
-                                        <thead style="background-color: #f9fafb;">
+                                        <thead style="background-color: #f3f4f6;">
                                             <tr>
                                                 <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px;">Volunteer Name</th>
                                                 <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px;">Email</th>
