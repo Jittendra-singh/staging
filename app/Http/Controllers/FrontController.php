@@ -350,7 +350,10 @@ class FrontController extends Controller
         
         // Fetch organiser's events
         $user = auth()->guard('front')->user();
-        $events = \App\Models\Event::where('creator_id', $user->id)->get();
+        $events = $user->events()
+                       ->active()
+                       ->where('start_datetime', '>=', now())
+                       ->get();
         $selectedEventId = $request->input('event_id', $events->first()->id ?? null);
         
         $data['events'] = $events;

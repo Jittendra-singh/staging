@@ -336,7 +336,7 @@
                                 <label for="eventFilter" class="me-2 fw-semibold text-secondary" style="font-size: 14px;">Filter by Event:</label>
                                 <select id="eventFilter" class="form-select w-auto shadow-sm" style="border-radius: 8px;" onchange="window.location.href='?event_id=' + this.value + (new URLSearchParams(window.location.search).get('search') ? '&search=' + new URLSearchParams(window.location.search).get('search') : '')">
                                     @foreach($events as $event)
-                                        <option value="{{ $event->id }}" {{ $selectedEventId == $event->id ? 'selected' : '' }}>{{ $event->title }}</option>
+                                        <option value="{{ $event->id }}" {{ $selectedEventId == $event->id ? 'selected' : '' }}>{{ $event->event_name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -345,7 +345,7 @@
                             <!-- Waitlist Header (Title, Search, Export) -->
                             <div class="row align-items-end mb-4">
                                 <div class="col-md-5">
-                                    <h2 class="fw-bold mb-2" style="font-size: 24px;">Waitlist: {{ $events->where('id', $selectedEventId)->first()->title ?? 'None' }}</h2>
+                                    <h2 class="fw-bold mb-2" style="font-size: 24px;">Waitlist: {{ $events->where('id', $selectedEventId)->first()->event_name ?? 'None' }}</h2>
                                     <p class="text-secondary mb-0" style="font-size: 15px;">Total people on waitlist: <strong class="text-dark">{{ $waitlists->total() }}</strong></p>
                                 </div>
                                 <div class="col-md-7 d-flex justify-content-end gap-3 align-items-center mt-3 mt-md-0">
