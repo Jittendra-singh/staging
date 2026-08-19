@@ -362,12 +362,12 @@
                                 <div class="table-responsive">
                                     <table class="table table-hover align-middle mb-0">
                                         <thead style="background-color: #f3f4f6;">
-                                            <tr>
-                                                <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px;">Volunteer Name</th>
-                                                <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px;">Email</th>
-                                                <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px;">Ticket Type</th>
-                                                <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px;">Joined Date/Time</th>
-                                                <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px;">Status</th>
+                                            <tr style="background-color: #f3f4f6;">
+                                                <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px; background-color: #f3f4f6 !important;">Volunteer Name</th>
+                                                <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px; background-color: #f3f4f6 !important;">Email</th>
+                                                <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px; background-color: #f3f4f6 !important;">Ticket Type</th>
+                                                <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px; background-color: #f3f4f6 !important;">Joined Date/Time</th>
+                                                <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px; background-color: #f3f4f6 !important;">Status</th>
                                             </tr>
                                         </thead>
                                         <tbody class="border-top-0">
