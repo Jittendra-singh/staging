@@ -359,8 +359,12 @@
 
                             <!-- Waitlist Table Card -->
                             <div class="card shadow-sm border-0" style="border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb !important;">
+                                <style>
+                                    .waitlist-table td { border-bottom: 2px solid #e5e7eb !important; }
+                                    .waitlist-table tr:last-child td { border-bottom: none !important; }
+                                </style>
                                 <div class="table-responsive">
-                                    <table class="table table-hover align-middle mb-0">
+                                    <table class="table table-hover align-middle mb-0 waitlist-table">
                                         <thead style="background-color: #f3f4f6;">
                                             <tr style="background-color: #f3f4f6;">
                                                 <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px; background-color: #f3f4f6 !important;">Volunteer Name</th>
@@ -444,7 +448,7 @@
                                 </div>
                                 
                                 <!-- Table Footer -->
-                                <div class="card-footer bg-white py-3 px-4 d-flex justify-content-between align-items-center border-top" style="border-color: #e5e7eb !important;">
+                                <div class="card-footer py-3 px-4 d-flex justify-content-between align-items-center border-top" style="background-color: #f3f4f6; border-color: #e5e7eb !important;">
                                     <span class="text-secondary" style="font-size: 14px;">Showing <strong class="text-dark">4</strong> of <strong class="text-dark">54</strong></span>
                                     <a href="#" class="text-decoration-none fw-semibold d-flex align-items-center gap-1" style="color: #4f46e5; font-size: 14px;">
                                         View Full Waitlist <i class="fa-solid fa-arrow-right-long" style="font-size: 12px;"></i>
