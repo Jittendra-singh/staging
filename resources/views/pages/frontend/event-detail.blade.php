@@ -411,7 +411,7 @@ $icalStrData = getiCalData($event);
                                                 <!-- <div class="price-label">{{$eticket->ticket_name}}</div> -->
                                             </div>
                                             @if(empty($upcomingDate))
-                                            @if($curAvailTickets <= 0 && $event->enable_waitlist)
+                                            @if($curAvailTickets <= 0 && $event->enable_waitlist && strtotime($eticket->sell_end_time) >= strtotime(date('Y-m-d H:i:s')) && strtotime($event->start_datetime) > strtotime(date('Y-m-d H:i:s')))
                                                 <div class="w-auto">
                                                     <button type="button" data-bs-toggle="modal" data-bs-target="#join-waitlist-modal" data-event-id="{{ $event->id }}" data-ticket-id="{{ $eticket->id }}" class="btn bg-white fw-bold shadow-sm join-waitlist-btn" style="border: 1px solid #e5e7eb; color: #374151; border-radius: 6px; padding: 6px 14px; font-size: 14px;">Join Waitlist</button>
                                                 </div>
@@ -450,7 +450,7 @@ $icalStrData = getiCalData($event);
                                             @endif
                                         </div>
 
-                                        @if($curAvailTickets <= 0 && $event->enable_waitlist)
+                                        @if($curAvailTickets <= 0 && $event->enable_waitlist && strtotime($eticket->sell_end_time) >= strtotime(date('Y-m-d H:i:s')) && strtotime($event->start_datetime) > strtotime(date('Y-m-d H:i:s')))
                                         <div class="col-sm-12 px-3 pt-2 pb-2 text-muted" style="font-size: 13px; color: #6b7280;">
                                             Join our waitlist to be notified if spots become available for this tier.
                                         </div>
