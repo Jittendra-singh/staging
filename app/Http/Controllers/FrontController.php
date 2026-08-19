@@ -401,7 +401,8 @@ class FrontController extends Controller
         
         $waitlists = $waitlistQuery->orderBy('joined_at', 'desc')->get();
         
-        $fileName = 'waitlist_' . $event_id . '_' . date('Y-m-d') . '.csv';
+        $safeEventName = \Illuminate\Support\Str::slug($event->event_name);
+        $fileName = 'waitlist_' . $safeEventName . '_' . date('Y-m-d') . '.csv';
         
         $headers = array(
             "Content-type"        => "text/csv",
