@@ -548,10 +548,13 @@ a[disabled]{
                                                     </div>
                                                 </div>
                                             </div>
-                                            @if($activeTab=='upcoming')
-                                            <a class="sign-up-btn text-white w-fit me-3" href="{{route('front-post-a-event', ['id'=> $event->encrypted_id])}}" {{ ($event->is_active!=1)?'disabled':'' }}>Edit Event</a>
+                                            @if($waitlistCount > 0)
+                                            <a class="primary-btn w-fit me-3" href="{{ route('waitlist.detail', ['event_id' => $event->id]) }}" style="background-color: #2563eb !important; border-color: #2563eb !important; text-transform: uppercase;"><i class="fa-solid fa-list-ul me-2"></i>View Waitlist</a>
                                             @endif
-                                            <a class="primary-btn w-fit" href="{{route('front-reschedule-event', ['id' => $event->encrypted_id])}}" {{ ($event->is_completed==1 || $event->is_active!=1)?'disabled':'' }}>Reschedule Event</a>
+                                            @if($activeTab=='upcoming')
+                                            <a class="sign-up-btn text-white w-fit me-3" style="text-transform: uppercase;" href="{{route('front-post-a-event', ['id'=> $event->encrypted_id])}}" {{ ($event->is_active!=1)?'disabled':'' }}>Edit Event</a>
+                                            @endif
+                                            <a class="primary-btn w-fit" style="text-transform: uppercase;" href="{{route('front-reschedule-event', ['id' => $event->encrypted_id])}}" {{ ($event->is_completed==1 || $event->is_active!=1)?'disabled':'' }}>Reschedule Event</a>
                                             @if($activeTab!='upcoming')
                                             <a class="sign-up-btn text-white w-fit ms-3" href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step5'])}}" {{ ($eventStatusClass!='action_required' || $event->is_active!=1)?'disabled':'' }}>Submit Wrap-Up Report</a>
                                             @endif
