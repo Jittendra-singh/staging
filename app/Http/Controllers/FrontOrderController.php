@@ -581,7 +581,7 @@ class FrontOrderController extends Controller
                             ->where('ticket_id', $ticket_arr['id'])
                             ->where('email', $ticket_volunteer->email_address)
                             ->where('status', 'waiting')
-                            ->update(['status' => 'cleared']);
+                            ->update(['status' => 'purchased']);
 
                         foreach ($childrenByTicket[$ticket_key] ?? [] as $child) {
                             $event_order_ticket_obj->children()->create([

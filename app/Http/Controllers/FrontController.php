@@ -363,8 +363,7 @@ class FrontController extends Controller
         
         if ($selectedEventId) {
             $waitlistQuery = \App\Models\EventWaitlist::with('ticket')
-                ->where('event_id', $selectedEventId)
-                ->whereIn('status', ['waiting']);
+                ->where('event_id', $selectedEventId);
             
             $data['totalWaitlistCount'] = (clone $waitlistQuery)->count();
             
@@ -389,8 +388,7 @@ class FrontController extends Controller
         $event = \App\Models\Event::where('id', $event_id)->where('creator_id', $user->id)->firstOrFail();
         
         $waitlistQuery = \App\Models\EventWaitlist::with('ticket')
-            ->where('event_id', $event_id)
-            ->whereIn('status', ['waiting']);
+            ->where('event_id', $event_id);
         
         if ($request->filled('search')) {
             $search = $request->input('search');
