@@ -125,6 +125,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
     * --------------------------------------------------------------------------------------- */
     Route::middleware(['auth:front'])->group(function () {
         Route::get('dashboard', 'dashboard')->name('front-dashboard');
+        Route::get('waitlist-detail/{event_id}', 'waitlistDetail')->name('waitlist.detail');
         Route::get('export-waitlist/{event_id}', 'exportWaitlist')->name('export.waitlist');
         Route::get('cleanup-attending', 'cleanupAttending')->name('front-cleanup-attending');
         Route::post('get-organizer-options' , 'getOrganizerOptions' )->name('front-get-organizer-options');

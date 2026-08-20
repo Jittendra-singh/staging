@@ -420,7 +420,7 @@
                                 <!-- Table Footer -->
                                 <div class="card-footer py-3 px-4 d-flex justify-content-between align-items-center border-top" style="background-color: #f3f4f6; border-color: #e5e7eb !important;">
                                     <span class="text-secondary" style="font-size: 14px;">Showing <strong class="text-dark">{{ $waitlists->count() }}</strong> of <strong class="text-dark">{{ $waitlists->total() }}</strong></span>
-                                    <a href="#" class="text-decoration-none fw-semibold d-flex align-items-center gap-1" style="color: #4f46e5; font-size: 14px;">
+                                    <a href="{{ route('waitlist.detail', ['event_id' => $selectedEventId]) }}" class="text-decoration-none fw-semibold d-flex align-items-center gap-1" style="color: #4f46e5; font-size: 14px;">
                                         View Full Waitlist <i class="fa-solid fa-arrow-right-long" style="font-size: 12px;"></i>
                                     </a>
                                 </div>

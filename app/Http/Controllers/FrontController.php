@@ -382,6 +382,13 @@ class FrontController extends Controller
         return view('pages.frontend.dashboard', $data);
     }
 
+    public function waitlistDetail($event_id)
+    {
+        return view('pages.frontend.waitlist-detail', [
+            'event_id' => $event_id
+        ]);
+    }
+
     public function exportWaitlist(\Illuminate\Http\Request $request, $event_id)
     {
         $user = auth()->guard('front')->user();
