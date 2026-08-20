@@ -116,7 +116,7 @@
         font-weight: 500;
         border: none;
     }
-    .btn-export {
+    .btn-export, #waitlist-export-btn {
         background-color: #1e3a8a;
         color: white !important;
         border-radius: 8px;
@@ -124,7 +124,7 @@
         font-weight: 500;
         border: none;
     }
-    .btn-export:hover, .btn-export:focus {
+    .btn-export:hover, .btn-export:focus, #waitlist-export-btn:hover, #waitlist-export-btn:focus {
         color: white !important;
         text-decoration: none;
     }
