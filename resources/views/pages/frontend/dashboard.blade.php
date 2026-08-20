@@ -356,7 +356,7 @@
                                         <input type="text" id="waitlistSearchInput" name="search" value="{{ request('search') }}" class="form-control shadow-sm" style="padding-left: 42px !important; border-radius: 8px; border: 1px solid #dee2e6; position: relative; z-index: 1;" placeholder="Search volunteers by name or email...">
                                     </form>
                                     <!-- Export Button -->
-                                    <a id="waitlist-export-btn" href="{{ route('export.waitlist', ['event_id' => $selectedEventId, 'search' => request('search')]) }}" class="btn text-white fw-semibold shadow-sm d-flex align-items-center gap-2" style="background-color: #3b82f6; border-radius: 8px; padding: 8px 20px; text-decoration: none;">
+                                    <a id="waitlist-export-btn" href="{{ route('export.waitlist', ['event_id' => $selectedEventId, 'search' => request('search')]) }}" class="btn text-white fw-semibold shadow-sm d-flex align-items-center gap-2 custom-export-btn" style="background-color: #3b82f6; border-radius: 8px; padding: 8px 20px; text-decoration: none;">
                                         <i class="fa fa-download" style="font-size: 13px;"></i> Export
                                     </a>
                                 </div>
@@ -367,6 +367,7 @@
                                 <style>
                                     .waitlist-table td { border-bottom: 2px solid #e5e7eb !important; }
                                     .waitlist-table tr:last-child td { border-bottom: none !important; }
+                                    .custom-export-btn:hover, .custom-export-btn:focus { color: white !important; }
                                 </style>
                                 <div class="table-responsive">
                                     <table class="table table-hover align-middle mb-0 waitlist-table">

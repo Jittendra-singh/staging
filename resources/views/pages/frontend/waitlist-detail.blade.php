@@ -124,6 +124,10 @@
         font-weight: 500;
         border: none;
     }
+    .btn-export:hover, .btn-export:focus {
+        color: white !important;
+        text-decoration: none;
+    }
     
     /* Table Styles */
     .table-container {
