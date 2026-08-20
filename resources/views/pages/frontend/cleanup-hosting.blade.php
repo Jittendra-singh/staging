@@ -466,9 +466,9 @@ a[disabled]{
                                                     <i class="fa-solid fa-hourglass"></i>
                                                 </span>
                                                 <p>Waitlist</p>
-                                                <h6 class="coupon-status d-flex align-items-center gap-1" style="justify-content: center;">
+                                                <h6 class="coupon-status">
                                                     {{ $waitlistCount }} 
-                                                    <span class="badge" style="background-color: #3b82f6; color: white; font-size: 10px; margin-left: 2px; line-height: 1;">WAITING</span>
+                                                    <span class="badge" style="background-color: #3b82f6; color: white; font-size: 10px; margin-left: 2px; vertical-align: middle;">WAITING</span>
                                                 </h6>
                                             </div>
                                             @endif
