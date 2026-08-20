@@ -435,11 +435,8 @@
                             });
                     }
                     
-                    // Auto submit form with a 500ms delay when typing
-                    searchInput.addEventListener('input', function() {
-                        clearTimeout(timeout);
-                        timeout = setTimeout(performSearch, 500);
-                    });
+                    // Remove the auto-submit 'input' listener
+                    // Search will only trigger on form submission (pressing Enter or clicking the Search button)
 
                     // Trigger search on ticket filter change
                     if (ticketFilter) {
