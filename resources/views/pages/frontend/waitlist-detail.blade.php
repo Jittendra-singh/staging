@@ -309,7 +309,7 @@
                                 <input type="text" id="waitlistDetailSearchInput" name="search" value="{{ request('search') }}" class="form-control form-control-custom w-100" placeholder="Search Volunteers by name or email id">
                             </div>
                             <div class="col-md-4">
-                                <select class="form-select form-select-custom w-100" onchange="window.location.href='{{ url('dashboard/waitlist-detail') }}/' + this.value">
+                                <select class="form-select form-select-custom w-100" onchange="window.location.href='{{ route('waitlist.detail', ['event_id' => ':id']) }}'.replace(':id', this.value)">
                                     @foreach($events as $ev)
                                         <option value="{{ $ev->id }}" {{ $selectedEventId == $ev->id ? 'selected' : '' }}>{{ $ev->event_name }}</option>
                                     @endforeach
