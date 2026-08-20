@@ -118,7 +118,7 @@
     }
     .btn-export {
         background-color: #1e3a8a;
-        color: white;
+        color: white !important;
         border-radius: 8px;
         padding: 8px 20px;
         font-weight: 500;
@@ -271,7 +271,7 @@
             <div class="page-subtitle">{{ $event->event_name ?? 'None' }}</div>
             <div class="breadcrumb-text">
                 <a href="{{ route('front-dashboard') }}">Dashboard</a> <span>&gt;</span>
-                <a href="#">Cleanups I'm Hosting</a> <span>&gt;</span>
+                <a href="{{ route('front-cleanup-hosting', 'organizer') }}">Cleanups I'm Hosting</a> <span>&gt;</span>
                 <span class="active">Waitlist Management</span>
             </div>
         </div>
