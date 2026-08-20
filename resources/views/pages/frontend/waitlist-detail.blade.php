@@ -258,8 +258,11 @@
 @endpush
 
 @section('content')
-<div class="waitlist-page-container pt-5 mt-5">
-    <div class="container pt-3">
+<div class="wrapper wrapper-body">
+    <div class="dashboard-body">
+        <div class="container-fluid">
+            <div class="waitlist-page-container pt-4">
+                <div class="container">
         
         <!-- Header Section -->
         <div class="mb-4">
@@ -481,6 +484,9 @@
             </div>
         </div>
         
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 @endsection
