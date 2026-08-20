@@ -9,6 +9,7 @@
         min-height: 100vh;
         padding-top: 30px;
         padding-bottom: 60px;
+        border-radius: 12px;
     }
     .page-title {
         color: #1e3a8a; /* dark blue */
@@ -267,7 +268,7 @@
         <!-- Header Section -->
         <div class="mb-4">
             <h1 class="page-title">Waitlist Management</h1>
-            <div class="page-subtitle">Annual Beach Cleanup</div>
+            <div class="page-subtitle">{{ $event->event_name ?? 'None' }}</div>
             <div class="breadcrumb-text">
                 <a href="{{ route('front-dashboard') }}">Dashboard</a> <span>&gt;</span>
                 <a href="#">Cleanups I'm Hosting</a> <span>&gt;</span>
@@ -285,11 +286,11 @@
                     </div>
                     <div class="capacity-stat">
                         <span>Registered</span>
-                        <span class="value">150 / 150</span>
+                        <span class="value">{{ $registeredCount }} / {{ $totalCapacity }}</span>
                     </div>
                     <div class="capacity-divider"></div>
                     <div class="waitlist-stat">
-                        <i class="fa-solid fa-hourglass-half"></i> <span><strong style="color: #ef4444;">42</strong> volunteers on waitlist</span>
+                        <i class="fa-solid fa-hourglass-half"></i> <span><strong style="color: #ef4444;">{{ $totalWaitlistCount }}</strong> volunteers on waitlist</span>
                     </div>
                 </div>
             </div>
@@ -297,31 +298,39 @@
             <!-- Filters Card -->
             <div class="col-md-8">
                 <div class="card-custom filter-card">
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-5">
-                            <input type="text" class="form-control form-control-custom w-100" placeholder="Search Volunteers by name or email id">
+                    <form id="waitlistDetailSearchForm" method="GET" action="{{ route('waitlist.detail', ['event_id' => $selectedEventId]) }}">
+                        <input type="hidden" name="event_id" value="{{ $selectedEventId }}">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-5">
+                                <input type="text" id="waitlistDetailSearchInput" name="search" value="{{ request('search') }}" class="form-control form-control-custom w-100" placeholder="Search Volunteers by name or email id">
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select form-select-custom w-100" onchange="window.location.href='{{ url('dashboard/waitlist-detail') }}/' + this.value">
+                                    @foreach($events as $ev)
+                                        <option value="{{ $ev->id }}" {{ $selectedEventId == $ev->id ? 'selected' : '' }}>{{ $ev->event_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select id="ticketFilter" name="ticket_id" class="form-select form-select-custom w-100">
+                                    <option value="all">All Ticket Types</option>
+                                    @foreach($tickets as $ticket)
+                                        <option value="{{ $ticket->id }}" {{ request('ticket_id') == $ticket->id ? 'selected' : '' }}>{{ $ticket->ticket_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <select class="form-select form-select-custom w-100">
-                                <option>Annual Beach Clean...</option>
-                            </select>
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="submit" class="btn-search"><i class="fa-solid fa-search me-1"></i> Search</button>
+                            <a id="waitlist-export-btn" href="{{ route('export.waitlist', ['event_id' => $selectedEventId, 'search' => request('search')]) }}" class="btn-export text-decoration-none d-inline-flex align-items-center"><i class="fa-solid fa-download me-1"></i> Export CSV</a>
                         </div>
-                        <div class="col-md-3">
-                            <select class="form-select form-select-custom w-100">
-                                <option>All Ticket Types</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-end gap-2">
-                        <button class="btn-search"><i class="fa-solid fa-search me-1"></i> Search</button>
-                        <button class="btn-export"><i class="fa-solid fa-download me-1"></i> Export CSV</button>
-                    </div>
+                    </form>
                 </div>
             </div>
         </div>
         
         <!-- Table Card -->
-        <div class="card-custom table-container">
+        <div id="waitlist-table-card" class="card-custom table-container">
             <div class="table-responsive">
                 <table class="table-custom">
                     <thead>
@@ -334,156 +343,118 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Row 1 -->
+                        @forelse($waitlists as $entry)
                         <tr>
                             <td>
                                 <div class="volunteer-cell">
-                                    <img src="https://i.pravatar.cc/150?img=5" class="avatar" style="object-fit: cover;">
-                                    <span class="volunteer-name">Sarah Jenkins</span>
+                                    @php
+                                        $initials = strtoupper(substr($entry->first_name, 0, 1) . substr($entry->last_name, 0, 1));
+                                        $colors = ['#6366f1', '#6ee7b7', '#7dd3fc', '#818cf8', '#f87171', '#fbbf24'];
+                                        $bgColor = $colors[strlen($entry->first_name) % count($colors)];
+                                    @endphp
+                                    <div class="avatar" style="background-color: {{ $bgColor }};">{{ $initials }}</div>
+                                    <span class="volunteer-name">{{ $entry->first_name }} {{ $entry->last_name }}</span>
                                 </div>
                             </td>
-                            <td>sarah.j@example.com</td>
-                            <td><span class="badge-ticket">General Admission</span></td>
-                            <td><span class="badge-status waiting">Waiting</span></td>
-                            <td>Oct 12, 2023 - 09:15 AM</td>
-                        </tr>
-                        <!-- Row 2 -->
-                        <tr>
+                            <td>{{ $entry->email }}</td>
                             <td>
-                                <div class="volunteer-cell">
-                                    <div class="avatar" style="background-color: #bfdbfe; color: #1e3a8a;">MR</div>
-                                    <span class="volunteer-name">Marcus Rodriguez</span>
-                                </div>
+                                <span class="badge-ticket {{ strtolower($entry->ticket->ticket_name ?? '') == 'vip' ? 'student' : '' }}" {!! strtolower($entry->ticket->ticket_name ?? '') == 'vip' ? 'style="background-color: #e0e7ff; color: #4338ca;"' : '' !!}>
+                                    {{ $entry->ticket->ticket_name ?? 'N/A' }}
+                                </span>
                             </td>
-                            <td>m.rod@example.com</td>
-                            <td><span class="badge-ticket student">Student</span></td>
-                            <td><span class="badge-status waiting">Waiting</span></td>
-                            <td>Oct 12, 2023 - 10:30 AM</td>
-                        </tr>
-                        <!-- Row 3 -->
-                        <tr>
                             <td>
-                                <div class="volunteer-cell">
-                                    <div class="avatar" style="background-color: #f1f5f9; color: #64748b;"><i class="fa-regular fa-user"></i></div>
-                                    <span class="volunteer-name">David Chen</span>
-                                </div>
+                                @if(strtolower($entry->status) == 'waiting')
+                                    <span class="badge-status waiting">Waiting</span>
+                                @else
+                                    <span class="badge-status registered">{{ ucfirst($entry->status) }}</span>
+                                @endif
                             </td>
-                            <td>dchen.design@example.com</td>
-                            <td><span class="badge-ticket student" style="background-color: #e0e7ff; color: #4338ca;">VIP</span></td>
-                            <td><span class="badge-status waiting">Waiting</span></td>
-                            <td>Oct 12, 2023 - 11:45 AM</td>
+                            <td>{{ \Carbon\Carbon::parse($entry->joined_at)->format('M d, Y - h:i A') }}</td>
                         </tr>
-                        <!-- Row 4 -->
+                        @empty
                         <tr>
-                            <td>
-                                <div class="volunteer-cell">
-                                    <div class="avatar" style="background-color: #bbf7d0; color: #166534;">AL</div>
-                                    <span class="volunteer-name">Amanda Lewis</span>
-                                </div>
-                            </td>
-                            <td>amanda.l@example.com</td>
-                            <td><span class="badge-ticket">General Admission</span></td>
-                            <td><span class="badge-status registered">Registered</span></td>
-                            <td>Oct 12, 2023 - 01:20 PM</td>
+                            <td colspan="5" class="text-center py-5">No volunteers found on the waitlist.</td>
                         </tr>
-                        <!-- Row 5 -->
-                        <tr>
-                            <td>
-                                <div class="volunteer-cell">
-                                    <div class="avatar" style="background-color: #f1f5f9; color: #475569;">MS</div>
-                                    <span class="volunteer-name">Michael Scott</span>
-                                </div>
-                            </td>
-                            <td>m.scott@dundermifflin.com</td>
-                            <td><span class="badge-ticket">General Admission</span></td>
-                            <td><span class="badge-status waiting">Waiting</span></td>
-                            <td>Oct 12, 2023 - 02:10 PM</td>
-                        </tr>
-                        <!-- Row 6 -->
-                        <tr>
-                            <td>
-                                <div class="volunteer-cell">
-                                    <div class="avatar" style="background-color: #fbcfe8; color: #9d174d;">PB</div>
-                                    <span class="volunteer-name">Pam Beesly</span>
-                                </div>
-                            </td>
-                            <td>p.beesly@dundermifflin.com</td>
-                            <td><span class="badge-ticket">General Admission</span></td>
-                            <td><span class="badge-status waiting">Waiting</span></td>
-                            <td>Oct 12, 2023 - 02:45 PM</td>
-                        </tr>
-                        <!-- Row 7 -->
-                        <tr>
-                            <td>
-                                <div class="volunteer-cell">
-                                    <div class="avatar" style="background-color: #bfdbfe; color: #1e3a8a;">JH</div>
-                                    <span class="volunteer-name">Jim Halpert</span>
-                                </div>
-                            </td>
-                            <td>j.halpert@dundermifflin.com</td>
-                            <td><span class="badge-ticket student" style="background-color: #e0e7ff; color: #4338ca;">VIP</span></td>
-                            <td><span class="badge-status waiting">Waiting</span></td>
-                            <td>Oct 12, 2023 - 03:00 PM</td>
-                        </tr>
-                        <!-- Row 8 -->
-                        <tr>
-                            <td>
-                                <div class="volunteer-cell">
-                                    <div class="avatar" style="background-color: #f1f5f9; color: #475569;">DS</div>
-                                    <span class="volunteer-name">Dwight Schrute</span>
-                                </div>
-                            </td>
-                            <td>d.schrute@dundermifflin.com</td>
-                            <td><span class="badge-ticket">General Admission</span></td>
-                            <td><span class="badge-status waiting">Waiting</span></td>
-                            <td>Oct 12, 2023 - 03:15 PM</td>
-                        </tr>
-                        <!-- Row 9 -->
-                        <tr>
-                            <td>
-                                <div class="volunteer-cell">
-                                    <div class="avatar" style="background-color: #bfdbfe; color: #1e3a8a;">AH</div>
-                                    <span class="volunteer-name">Andy Bernard</span>
-                                </div>
-                            </td>
-                            <td>a.bernard@cornell.edu</td>
-                            <td><span class="badge-ticket student">Student</span></td>
-                            <td><span class="badge-status waiting">Waiting</span></td>
-                            <td>Oct 12, 2023 - 03:45 PM</td>
-                        </tr>
-                        <!-- Row 10 -->
-                        <tr>
-                            <td>
-                                <div class="volunteer-cell">
-                                    <div class="avatar" style="background-color: #e2e8f0; color: #334155;">AM</div>
-                                    <span class="volunteer-name">Angela Martin</span>
-                                </div>
-                            </td>
-                            <td>a.martin@dundermifflin.com</td>
-                            <td><span class="badge-ticket">General Admission</span></td>
-                            <td><span class="badge-status waiting">Waiting</span></td>
-                            <td>Oct 12, 2023 - 04:00 PM</td>
-                        </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
             <!-- Pagination Footer -->
+            @if($waitlists->hasPages() || $waitlists->total() > 0)
             <div class="pagination-footer">
                 <div class="pagination-text">
-                    Showing <strong>1</strong> to <strong>10</strong> of <strong>42</strong> volunteers
+                    Showing <strong>{{ $waitlists->firstItem() ?? 0 }}</strong> to <strong>{{ $waitlists->lastItem() ?? 0 }}</strong> of <strong>{{ $waitlists->total() }}</strong> volunteers
                 </div>
                 <div class="pagination-controls">
-                    <a href="#" class="page-btn"><i class="fa-solid fa-chevron-left" style="font-size: 10px;"></i></a>
-                    <a href="#" class="page-btn active">1</a>
-                    <a href="#" class="page-btn">2</a>
-                    <a href="#" class="page-btn">3</a>
-                    <a href="#" class="page-btn border-0">...</a>
-                    <a href="#" class="page-btn">5</a>
-                    <a href="#" class="page-btn"><i class="fa-solid fa-chevron-right" style="font-size: 10px;"></i></a>
+                    {{ $waitlists->links('pagination::bootstrap-4') }}
                 </div>
             </div>
+            @endif
         </div>
         
+        
+        <!-- AJAX Script for filtering -->
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const searchInput = document.getElementById('waitlistDetailSearchInput');
+                const searchForm = document.getElementById('waitlistDetailSearchForm');
+                const ticketFilter = document.getElementById('ticketFilter');
+                
+                if (searchInput && searchForm) {
+                    let timeout = null;
+                    
+                    function performSearch() {
+                        const url = new URL(searchForm.action);
+                        url.searchParams.set('event_id', searchForm.querySelector('[name="event_id"]').value);
+                        if (searchInput.value) {
+                            url.searchParams.set('search', searchInput.value);
+                        }
+                        if (ticketFilter && ticketFilter.value && ticketFilter.value !== 'all') {
+                            url.searchParams.set('ticket_id', ticketFilter.value);
+                        }
+                        
+                        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                            .then(response => response.text())
+                            .then(html => {
+                                const parser = new DOMParser();
+                                const doc = parser.parseFromString(html, 'text/html');
+                                
+                                // Replace table card content
+                                const newTableCard = doc.getElementById('waitlist-table-card');
+                                const oldTableCard = document.getElementById('waitlist-table-card');
+                                if (newTableCard && oldTableCard) {
+                                    oldTableCard.innerHTML = newTableCard.innerHTML;
+                                }
+                                
+                                // Update export link
+                                const newExport = doc.getElementById('waitlist-export-btn');
+                                const oldExport = document.getElementById('waitlist-export-btn');
+                                if (newExport && oldExport) {
+                                    oldExport.href = newExport.href;
+                                }
+                            });
+                    }
+                    
+                    // Auto submit form with a 500ms delay when typing
+                    searchInput.addEventListener('input', function() {
+                        clearTimeout(timeout);
+                        timeout = setTimeout(performSearch, 500);
+                    });
+
+                    // Trigger search on ticket filter change
+                    if (ticketFilter) {
+                        ticketFilter.addEventListener('change', performSearch);
+                    }
+
+                    // Prevent full page reload on Enter
+                    searchForm.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        clearTimeout(timeout);
+                        performSearch();
+                    });
+                }
+            });
+        </script>
                 </div>
             </div>
         </div>

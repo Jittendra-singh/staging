@@ -382,11 +382,60 @@ class FrontController extends Controller
         return view('pages.frontend.dashboard', $data);
     }
 
-    public function waitlistDetail($event_id)
+    public function waitlistDetail(\Illuminate\Http\Request $request, $event_id)
     {
-        return view('pages.frontend.waitlist-detail', [
-            'event_id' => $event_id
-        ]);
+        $user = auth()->guard('front')->user();
+        
+        // 1. Fetch Event
+        $event = \App\Models\Event::where('id', $event_id)->where('creator_id', $user->id)->firstOrFail();
+
+        // 2. Fetch all user's active events for dropdown
+        $events = $user->events()
+                       ->active()
+                       ->where('start_datetime', '>=', now())
+                       ->orderBy('start_datetime', 'asc')
+                       ->get();
+
+        // 3. Fetch tickets for this event for Ticket Type dropdown
+        $tickets = \App\Models\EventTicket::where('event_id', $event_id)->where('is_active', 1)->get();
+
+        // 4. Calculate Capacity Stats
+        $totalCapacity = \App\Models\EventTicket::where('event_id', $event_id)->where('is_active', 1)->sum('available_quantity');
+        $registeredCount = \App\Models\EventOrderTicket::where('event_id', $event_id)->active()->count();
+        
+        // 5. Query Waitlist with filters
+        $waitlistQuery = \App\Models\EventWaitlist::with('ticket')->where('event_id', $event_id);
+        
+        $totalWaitlistCount = (clone $waitlistQuery)->count(); // absolute total for this event
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $waitlistQuery->where(function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+        
+        if ($request->filled('ticket_id') && $request->input('ticket_id') != 'all') {
+            $waitlistQuery->where('ticket_id', $request->input('ticket_id'));
+        }
+
+        $waitlists = $waitlistQuery->orderBy('joined_at', 'desc')->paginate(10);
+        $waitlists->appends($request->all());
+
+        $data = [
+            'event' => $event,
+            'events' => $events,
+            'tickets' => $tickets,
+            'totalCapacity' => $totalCapacity,
+            'registeredCount' => $registeredCount,
+            'totalWaitlistCount' => $totalWaitlistCount,
+            'waitlists' => $waitlists,
+            'selectedEventId' => $event_id,
+        ];
+
+        return view('pages.frontend.waitlist-detail', $data);
     }
 
     public function exportWaitlist(\Illuminate\Http\Request $request, $event_id)
