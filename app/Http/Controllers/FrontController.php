@@ -1570,10 +1570,14 @@ class FrontController extends Controller
                 // dd($tools);
                 $event->tools()->sync($tools);
 
-                $event->volunteertags()->sync($validated['volunteer_tags'] ?? []);
+                if (request()->has('volunteer_tags')) {
+                    $event->volunteertags()->sync($validated['volunteer_tags'] ?? []);
+                }
                 
-                $event->tags()->sync($validated['tags'] ?? []);
-                
+                if (request()->has('tags')) {
+                    $event->tags()->sync($validated['tags'] ?? []);
+                }
+
             } catch (\Exception $e) {
 
                 dd($e);
