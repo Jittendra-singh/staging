@@ -623,21 +623,6 @@ $is_session = session()->get('checkout_event');
                     </li>
                     @endif
 
-                    <li class="menu--item">
-                        <a href="{{ route('front-profile') }}" class="menu--link {{ url()->current() == route('front-profile') ? 'active' : '' }}"
-                            title="Manage Profile" data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-user menu--icon"></i>
-                            <span class="menu--label">Manage Profile</span>
-                        </a>
-                    </li>
-                    <!-- <li class="menu--item">
-                        <a href="{{ route('front-certificate-my-requests') }}"
-                            class="menu--link {{ url()->current() == route('front-certificate-my-requests') ? 'active' : '' }}"
-                            title="Certificate Requests" data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-vcard menu--icon"></i>
-                            <span class="menu--label">Certificate Requests</span>
-                        </a>
-                    </li> -->
                     @if($adminUser->is_organiser == '1')
                     <!-- <li class="menu--item">
                         <a href="{{ route('front-certificate-volunteer-requests') }}"
@@ -686,6 +671,22 @@ $is_session = session()->get('checkout_event');
                         </a>
                     </li>
                     @endif
+
+                    <li class="menu--item">
+                        <a href="{{ route('front-profile') }}" class="menu--link {{ url()->current() == route('front-profile') ? 'active' : '' }}"
+                            title="Manage Profile" data-bs-toggle="tooltip" data-bs-placement="right">
+                            <i class="fa-solid fa-user menu--icon"></i>
+                            <span class="menu--label">Manage Profile</span>
+                        </a>
+                    </li>
+                    <!-- <li class="menu--item">
+                        <a href="{{ route('front-certificate-my-requests') }}"
+                            class="menu--link {{ url()->current() == route('front-certificate-my-requests') ? 'active' : '' }}"
+                            title="Certificate Requests" data-bs-toggle="tooltip" data-bs-placement="right">
+                            <i class="fa-solid fa-vcard menu--icon"></i>
+                            <span class="menu--label">Certificate Requests</span>
+                        </a>
+                    </li> -->
 
                     <li class="menu--item">
                         <a href="{{ route('front-embedded-widget') }}" class="menu--link {{ url()->current() == route('front-embedded-widget') ? 'active' : '' }}" title="Embedded Widget"
