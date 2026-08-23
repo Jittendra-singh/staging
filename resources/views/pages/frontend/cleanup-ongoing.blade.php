@@ -131,13 +131,13 @@
                 <div class="row">
                     <div class="col-md-12">
                         <div class="d-main-title ongoing-cleanup-title">
-                            <h3><i class="fa-solid fa-calendar-days me-3 mb-3"></i>Ongoing Cleanups</h3>
-                            <p class="mb-2">Check-in volunteers for ongoing and published events.</p>
+                            <h3><i class="fa-solid fa-calendar-days me-3 mb-3"></i>In-progress Cleanups</h3>
+                            <p class="mb-2">Check-in volunteers for in-progress and published events.</p>
 
                             @php
                                 $breadcrumbs = [
                                     [
-                                        'name' => 'Ongoing Cleanups',
+                                        'name' => 'In-progress Cleanups',
                                         'url' => route('front-cleanup-ongoing'),
                                     ],
                                 ];
@@ -195,7 +195,7 @@
                                                 <div class="empty-icon-wrap mx-auto mb-3">
                                                     <i class="fa-regular fa-image fa-2x text-muted"></i>
                                                 </div>
-                                                <h5 class="fw-semibold mb-2">No ongoing cleanup found</h5>
+                                                <h5 class="fw-semibold mb-2">No in-progress cleanup found</h5>
                                                 <p class="text-muted small mb-0">There are no active in-progress host or co-host cleanups right now.</p>
                                             </div>
                                         </div>
