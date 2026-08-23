@@ -687,12 +687,16 @@ $is_session = session()->get('checkout_event');
                         </ul>
                     </li>
 
-                    <li class="menu--item">
-                        <a href="{{ route('front-profile') }}" class="menu--link {{ url()->current() == route('front-profile') ? 'active' : '' }}"
-                            title="Manage Profile" data-bs-toggle="tooltip" data-bs-placement="right">
+                    <li class="menu--item menu--item__has_sub_menu {{ url()->current() == route('front-profile') ? 'menu--subitens__opened' : '' }}">
+                        <a class="menu--link">
                             <i class="fa-solid fa-user menu--icon"></i>
-                            <span class="menu--label">Manage Profile</span>
+                            <span class="menu--label">Account</span>
                         </a>
+                        <ul class="sub_menu mt-0">
+                            <li>
+                                <a href="{{ route('front-profile') }}" class="sub_menu--link {{ url()->current() == route('front-profile') ? 'active' : '' }}" title="Manage Profile" data-bs-toggle="tooltip" data-bs-placement="right">Manage Profile</a>
+                            </li>
+                        </ul>
                     </li>
                     <!-- <li class="menu--item">
                         <a href="{{ route('front-certificate-my-requests') }}"
