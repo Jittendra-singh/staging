@@ -123,8 +123,8 @@
                                             <form method="POST" action="{{ route('front-volunteer-sign-and-check-in', ['id' => $registration->encrypted_id]) }}" class="volunteer-sign-checkin-form">
                                                 @csrf
                                                 <div class="d-flex justify-content-between align-items-center mb-2">
-                                                    <label class="form-label fw-semibold mb-0">{{ __('messages.front_volunteer_signature') }}</label>
-                                                    <a href="javascript:void(0);" class="text-decoration-none" style="color: #0d6efd; font-size: 14px; font-weight: 500;">View Waiver</a>
+                                                <label class="form-label fw-semibold mb-0">{{ __('messages.front_volunteer_signature') }}</label>
+                                                <a href="{{ route('view-waiver-pdf', ['ticket' => encrypt($registration->id)]) }}" target="_blank" class="text-decoration-none" style="color: #0d6efd; font-size: 14px; font-weight: 500;">View Waiver</a>
                                                 </div>
                                                 <input type="hidden" name="signature" id="{{ $signatureInputId }}">
                                                 <div class="volunteer-sign-pad js-signature" id="{{ $signatureId }}" data-input="#{{ $signatureInputId }}" data-width="420" data-height="115"></div>
