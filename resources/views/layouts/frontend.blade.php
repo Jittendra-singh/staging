@@ -523,31 +523,45 @@ $is_session = session()->get('checkout_event');
                             <span class="menu--label">Dashboard</span>
                         </a>
                     </li>
-                    <li class="menu--item">
-                        <a href="{{ route('front-cleanup-attending') }}"
-                            class="menu--link {{ url()->current() == route('front-cleanup-attending') ? 'active' : '' }}"
-                            title="Attending" data-bs-toggle="tooltip" data-bs-placement="right">
+                    <li class="menu--item menu--item__has_sub_menu {{ url()->current() == route('front-cleanup-attending') || request()->routeIs('front-cleanup-hosting') || url()->current() == route('front-post-a-event') || url()->current() == route('front-registration-list') ? 'menu--subitens__opened' : '' }}">
+                        <a class="menu--link">
                             <i class="fa-solid fa-calendar-days menu--icon"></i>
-                            <span class="menu--label">Cleanups I'm Attending</span>
+                            <span class="menu--label">Events</span>
                         </a>
-                    </li>
-                    @if($adminUser->is_organiser == '1')
-                    <li class="menu--item">
-                        <a href="{{ route('front-cleanup-hosting', ['type' => 'organizer']) }}"
-                            class="menu--link {{ request()->routeIs('front-cleanup-hosting',['type' => request()->segment(2) ?? 'organizer']) ? 'active' : '' }}"
-                            title="Cleanups I’m Hosting" data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-clock-rotate-left menu--icon"></i>
-                            <span class="menu--label">Cleanups I’m Hosting</span>
-                        </a>
-                    </li>
-                    @endif
-                    <li class="menu--item">
-                        <a href="{{ route('front-post-a-event') }}"
-                            class="menu--link {{ url()->current() == route('front-post-a-event') ? 'active' : '' }}"
-                            title="Post a New Cleanup" data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-paper-plane menu--icon"></i>
-                            <span class="menu--label">Post a New Cleanup</span>
-                        </a>
+                        <ul class="sub_menu mt-0">
+                            <li>
+                                <a href="{{ route('front-post-a-event') }}"
+                                    class="sub_menu--link {{ url()->current() == route('front-post-a-event') ? 'active' : '' }}"
+                                    title="Post a New Cleanup" data-bs-toggle="tooltip" data-bs-placement="right">
+                                    Post a New Cleanup
+                                </a>
+                            </li>
+                            @if($adminUser->is_organiser == '1')
+                            <li>
+                                <a href="{{ route('front-cleanup-hosting', ['type' => 'organizer']) }}"
+                                    class="sub_menu--link {{ request()->routeIs('front-cleanup-hosting',['type' => request()->segment(2) ?? 'organizer']) ? 'active' : '' }}"
+                                    title="Cleanups I’m Hosting" data-bs-toggle="tooltip" data-bs-placement="right">
+                                    Cleanups I’m Hosting
+                                </a>
+                            </li>
+                            @endif
+                            <li>
+                                <a href="{{ route('front-cleanup-attending') }}"
+                                    class="sub_menu--link {{ url()->current() == route('front-cleanup-attending') ? 'active' : '' }}"
+                                    title="Attending" data-bs-toggle="tooltip" data-bs-placement="right">
+                                    Cleanups I'm Attending
+                                </a>
+                            </li>
+                            @if($adminUser->is_organiser == '1')
+                            <li>
+                                <a href="{{ route('front-registration-list') }}"
+                                    class="sub_menu--link {{ url()->current() == route('front-registration-list') ? 'active' : '' }}"
+                                    title="Registration Lists" data-bs-toggle="tooltip" data-bs-placement="right">
+                                    Registration Lists
+                                </a>
+                            </li>
+                            @endif
+                        </ul>
                     </li>
                     <li class="menu--item">
                         <a href="{{ route('front-profile') }}" class="menu--link {{ url()->current() == route('front-profile') ? 'active' : '' }}"
@@ -618,14 +632,7 @@ $is_session = session()->get('checkout_event');
                         </a>
                     </li> -->
 
-                    <li class="menu--item">
-                        <a href="{{ route('front-registration-list') }}"
-                            class="menu--link {{ url()->current() == route('front-registration-list') ? 'active' : '' }}"
-                            title="Registration Lists" data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-list menu--icon"></i>
-                            <span class="menu--label">Registration Lists</span>
-                        </a>
-                    </li>
+
                     <!-- <li class="menu--item">
                         <a href="{{ route('front-sales-report') }}"
                             class="menu--link {{ url()->current() == route('front-sales-report') ? 'active' : '' }}"
