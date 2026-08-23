@@ -563,19 +563,35 @@ $is_session = session()->get('checkout_event');
                             @endif
                         </ul>
                     </li>
+                    <li class="menu--item menu--item__has_sub_menu {{ url()->current() == route('contact-lists') || url()->current() == route('front-email-alerts') ? 'menu--subitens__opened' : '' }}">
+                        <a class="menu--link">
+                            <i class="fa-solid fa-envelope menu--icon"></i>
+                            <span class="menu--label">Communication</span>
+                        </a>
+                        <ul class="sub_menu mt-0">
+                            @if($adminUser->is_organiser == '1')
+                            <li>
+                                <a href="{{ route('contact-lists') }}"
+                                    class="sub_menu--link {{ url()->current() == route('contact-lists') ? 'active' : '' }}"
+                                    title="Inbox" data-bs-toggle="tooltip" data-bs-placement="right">
+                                    Inbox
+                                </a>
+                            </li>
+                            @endif
+                            <li>
+                                <a href="{{ route('front-email-alerts') }}"
+                                    class="sub_menu--link {{ url()->current() == route('front-email-alerts') ? 'active' : '' }}"
+                                    title="Weekly Email Alerts" data-bs-toggle="tooltip" data-bs-placement="right">
+                                    Weekly Email Alerts
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
                     <li class="menu--item">
                         <a href="{{ route('front-profile') }}" class="menu--link {{ url()->current() == route('front-profile') ? 'active' : '' }}"
                             title="Manage Profile" data-bs-toggle="tooltip" data-bs-placement="right">
                             <i class="fa-solid fa-user menu--icon"></i>
                             <span class="menu--label">Manage Profile</span>
-                        </a>
-                    </li>
-                    <li class="menu--item">
-                        <a href="{{ route('front-email-alerts') }}"
-                            class="menu--link {{ url()->current() == route('front-email-alerts') ? 'active' : '' }}"
-                            title="Weekly Email Alerts" data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-bell menu--icon"></i>
-                            <span class="menu--label">Weekly Email Alerts</span>
                         </a>
                     </li>
 
@@ -641,14 +657,7 @@ $is_session = session()->get('checkout_event');
                             <span class="menu--label">Sales Report</span>
                         </a>
                     </li> -->
-                    <li class="menu--item">
-                        <a href="{{ route('contact-lists') }}"
-                            class="menu--link {{ url()->current() == route('contact-lists') ? 'active' : '' }}"
-                            title="Inbox" data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-list-alt menu--icon"></i>
-                            <span class="menu--label">Inbox</span>
-                        </a>
-                    </li>
+
                     <li class="menu--item menu--item__has_sub_menu {{ request()->routeIs('front-sales-report') || request()->routeIs('front-orders') || request()->routeIs('front-order-details') || request()->routeIs('front-stripe-connect') ? 'menu--subitens__opened' : '' }}">
                         <a class="menu--link">
                             <i class="menu--icon fa fa-dollar"></i>
