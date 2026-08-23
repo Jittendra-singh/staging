@@ -706,16 +706,25 @@ $is_session = session()->get('checkout_event');
                             <span class="menu--label">Certificate Requests</span>
                         </a>
                     </li> -->
-                    <li class="menu--item">
-                        <a href="{{ route('front-release-notes') }}" class="menu--link {{ url()->current() == route('front-release-notes') ? 'active' : '' }}" title="Release Notes"
-                            data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-bullhorn menu--icon"></i>
-                            <span class="menu--label">Release Notes
+                    <li class="menu--item menu--item__has_sub_menu {{ url()->current() == route('front-release-notes') ? 'menu--subitens__opened' : '' }}">
+                        <a class="menu--link">
+                            <i class="fa-solid fa-life-ring menu--icon"></i>
+                            <span class="menu--label">Support
                                 @if(!empty($hasNewReleaseNotes))
                                     <span class="badge bg-danger ms-2">New</span>
                                 @endif
                             </span>
                         </a>
+                        <ul class="sub_menu mt-0">
+                            <li>
+                                <a href="{{ route('front-release-notes') }}" class="sub_menu--link {{ url()->current() == route('front-release-notes') ? 'active' : '' }}" title="Release Notes" data-bs-toggle="tooltip" data-bs-placement="right">
+                                    Release Notes
+                                    @if(!empty($hasNewReleaseNotes))
+                                        <span class="badge bg-danger ms-2">New</span>
+                                    @endif
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                 </ul>
             </div>
