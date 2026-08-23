@@ -672,6 +672,21 @@ $is_session = session()->get('checkout_event');
                     </li>
                     @endif
 
+                    <li class="menu--item menu--item__has_sub_menu {{ url()->current() == route('front-embedded-widget') || url()->current() == route('front-embedded-widget-report') ? 'menu--subitens__opened' : '' }}">
+                        <a class="menu--link">
+                            <i class="fa-solid fa-globe menu--icon"></i>
+                            <span class="menu--label">Website & Widgets</span>
+                        </a>
+                        <ul class="sub_menu mt-0">
+                            <li>
+                                <a href="{{ route('front-embedded-widget') }}" class="sub_menu--link {{ url()->current() == route('front-embedded-widget') ? 'active' : '' }}" title="Embedded Widget" data-bs-toggle="tooltip" data-bs-placement="right">Embedded Widget</a>
+                            </li>
+                            <li>
+                                <a href="{{ route('front-embedded-widget-report') }}" class="sub_menu--link {{ url()->current() == route('front-embedded-widget-report') ? 'active' : '' }}" title="Widget Report" data-bs-toggle="tooltip" data-bs-placement="right">Widget Report</a>
+                            </li>
+                        </ul>
+                    </li>
+
                     <li class="menu--item">
                         <a href="{{ route('front-profile') }}" class="menu--link {{ url()->current() == route('front-profile') ? 'active' : '' }}"
                             title="Manage Profile" data-bs-toggle="tooltip" data-bs-placement="right">
@@ -687,22 +702,6 @@ $is_session = session()->get('checkout_event');
                             <span class="menu--label">Certificate Requests</span>
                         </a>
                     </li> -->
-
-                    <li class="menu--item">
-                        <a href="{{ route('front-embedded-widget') }}" class="menu--link {{ url()->current() == route('front-embedded-widget') ? 'active' : '' }}" title="Embedded Widget"
-                            data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-file-code menu--icon"></i>
-                            <span class="menu--label">Embedded Widget</span>
-                        </a>
-                    </li>
-
-                    <li class="menu--item">
-                        <a href="{{ route('front-embedded-widget-report') }}" class="menu--link {{ url()->current() == route('front-embedded-widget-report') ? 'active' : '' }}" title="Embedded Widget Report"
-                            data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-server menu--icon"></i>
-                            <span class="menu--label">Widget Report</span>
-                        </a>
-                    </li>
                     <li class="menu--item">
                         <a href="{{ route('front-release-notes') }}" class="menu--link {{ url()->current() == route('front-release-notes') ? 'active' : '' }}" title="Release Notes"
                             data-bs-toggle="tooltip" data-bs-placement="right">
