@@ -105,7 +105,7 @@
                                                     @else
                                                         <span class="badge custom-badge-danger">Unsigned</span>
                                                     @endif
-                                                @else 
+                                                @else
                                                     <span class="badge custom-badge-success">No Waiver</span>
                                                 @endif
 
@@ -122,7 +122,10 @@
                                         @if((!empty($event->waiver_form_type) && !$isSigned && !$isCheckedIn) || (empty($event->waiver_form_type) && !$isCheckedIn))
                                             <form method="POST" action="{{ route('front-volunteer-sign-and-check-in', ['id' => $registration->encrypted_id]) }}" class="volunteer-sign-checkin-form">
                                                 @csrf
-                                                <label class="form-label fw-semibold">{{ __('messages.front_volunteer_signature') }}</label>
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <label class="form-label fw-semibold mb-0">{{ __('messages.front_volunteer_signature') }}</label>
+                                                    <a href="javascript:void(0);" class="text-decoration-none" style="color: #0d6efd; font-size: 14px; font-weight: 500;">View Waiver</a>
+                                                </div>
                                                 <input type="hidden" name="signature" id="{{ $signatureInputId }}">
                                                 <div class="volunteer-sign-pad js-signature" id="{{ $signatureId }}" data-input="#{{ $signatureInputId }}" data-width="420" data-height="115"></div>
 
@@ -153,7 +156,7 @@
                                                     <span>Waiver Signed</span>
                                                     @if(!empty($event->waiver_form_type))
                                                     <strong>{{ date(config('app.dateTimeFormat'), strtotime($registration->waiver_filled_at)) }}</strong>
-                                                    @else 
+                                                    @else
                                                     <strong>No Waiver</strong>
                                                     @endif
                                                 </div>
@@ -167,7 +170,7 @@
                                                     <span>Waiver Signed</span>
                                                     @if(!empty($event->waiver_form_type))
                                                     <strong>{{ date(config('app.dateTimeFormat'), strtotime($registration->waiver_filled_at)) }}</strong>
-                                                    @else 
+                                                    @else
                                                     <strong>No Waiver</strong>
                                                     @endif
                                                 </div>
