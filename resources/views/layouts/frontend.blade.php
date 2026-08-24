@@ -64,6 +64,12 @@ $is_session = session()->get('checkout_event');
         font-family: inherit;
         font-weight: inherit;
         }
+        .sub_menu--link {
+            color: #000 !important;
+        }
+        .sub_menu--link:hover, .sub_menu--link.active {
+            color: #007bff !important;
+        }
     </style>
     @stack('style')
     <script>
