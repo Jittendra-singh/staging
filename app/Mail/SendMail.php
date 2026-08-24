@@ -3,6 +3,7 @@ namespace App\Mail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -17,11 +18,13 @@ class SendMail extends Mailable
     public $data;
     public $subject;
     public $view;
-    public function __construct($subject, $view, $data )
+    public $replyToAddress;
+    public function __construct($subject, $view, $data, $replyToAddress = null)
     {
         $this->subject = $subject;
         $this->view = $view;
         $this->data = $data;
+        $this->replyToAddress = $replyToAddress;
     }
     /**
      * Get the message envelope.
@@ -33,6 +36,7 @@ class SendMail extends Mailable
         return new Envelope(
             //subject: 'Forgot Password',
             subject: $this->subject,
+            replyTo: $this->replyToAddress ? [new Address($this->replyToAddress)] : [],
         );
     }
     /**

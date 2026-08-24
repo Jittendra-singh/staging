@@ -33,4 +33,8 @@ return [
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
     ],
+    'messaging' => [
+        'inbound_secret' => env('INBOUND_EMAIL_WEBHOOK_SECRET'),
+        'reply_domain' => env('MESSAGING_REPLY_DOMAIN'),
+    ],
 ];

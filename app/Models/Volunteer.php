@@ -45,6 +45,20 @@ class Volunteer extends Authenticatable
         return $this->hasMany(VolunteerWidget::class, 'volunteer_id' );
     }
 
+    public function conversationParticipants(){
+        return $this->hasMany(ConversationParticipant::class, 'volunteer_id');
+    }
+
+    public function conversations(){
+        return $this->belongsToMany(Conversation::class, 'conversation_participants', 'volunteer_id', 'conversation_id')
+            ->withPivot(['role', 'last_read_message_id', 'last_read_at', 'archived_at', 'muted_until', 'notification_preference'])
+            ->withTimestamps();
+    }
+
+    public function conversationNotificationPreference(){
+        return $this->hasOne(ConversationNotificationPreference::class, 'volunteer_id');
+    }
+
     public function state(){
         return $this->hasOneThrough(
             State::class,   // Final model

@@ -2240,12 +2240,8 @@ class FrontController extends Controller
         return $this->generateJsonResponse(true, 'Event ticket status updated successfully.');
     }
 
-    public function contactLists(){
-        $leads = OrganiserLead::where('organiser_id',auth()->guard('front')->user()->id)->latest()->get();
-        return view('pages.frontend.contact-lists', [
-                                                        'leads' => $leads , 
-                                                        'seo_details' => (object)['title' => 'Contact List'] 
-                                                    ]);
+    public function contactLists(Request $request){
+        return app(MessagingController::class)->index($request);
     }
     public function orders(){
         $orderEvents = EventOrder::where('creator_id',auth()->guard('front')->user()->id)->latest()->get();
@@ -3745,7 +3741,7 @@ class FrontController extends Controller
         ]);
     }
 
-    public function saveOrganizerLead(){
+    public function saveOrganizerLead(\App\Services\Messaging\ConversationService $conversationService){
         $request = request();
 
         $validated = $request->validate([
@@ -3759,18 +3755,14 @@ class FrontController extends Controller
         $validated['phone'] = formatPhoneNumber($validated['phone']);
         \App\Models\OrganiserLead::create($validated);
 
-        $organiser = Volunteer::find($validated['organiser_id']);
-        $mail_content = [
-            'org_name'         => $organiser->first_name.' '.$organiser->last_name,
-            'c_volunteer'         => $validated['name'],
-            'c_email'             => $validated['email'],
-            'c_phone'             => $validated['phone'],
-            'c_message'             => $validated['message']
-        ];
-        
-        $this->sendEmail($organiser->email_address, CONTACT_ORG_MAIL_SUB, $mail_content, "contact-organizer");
-        
-        $this->setFlashSession(true, "Thank you for contacting the organizer. We will get back to you soon.");
+        $result = $conversationService->startContactRequest($validated);
+
+        if ($result['status'] === 'delivered') {
+            $this->setFlashSession(true, "Your message has been sent.");
+            return redirect()->route('messaging.conversations.show', $result['conversation']);
+        }
+
+        $this->setFlashSession(true, "Please check your email to verify this message. It will be delivered to the organizer after verification.");
         return redirect()->back();
     }
     public function waiverForm($ticket){

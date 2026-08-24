@@ -674,7 +674,7 @@ $is_session = session()->get('checkout_event');
                     </li> -->
                     <li class="menu--item">
                         <a href="{{ route('contact-lists') }}"
-                            class="menu--link {{ url()->current() == route('contact-lists') ? 'active' : '' }}"
+                            class="menu--link {{ request()->routeIs('contact-lists') || request()->routeIs('messaging.conversations.show') ? 'active' : '' }}"
                             title="{{ __('messages.inbox_title') }}" data-bs-toggle="tooltip" data-bs-placement="right">
                             <i class="fa-solid fa-list-alt menu--icon"></i>
                             <span class="menu--label">{{ __('messages.inbox_title') }}</span>
@@ -699,6 +699,14 @@ $is_session = session()->get('checkout_event');
                         </ul>
                     </li>
                     @else 
+                    <li class="menu--item">
+                        <a href="{{ route('contact-lists') }}"
+                            class="menu--link {{ request()->routeIs('contact-lists') || request()->routeIs('messaging.conversations.show') ? 'active' : '' }}"
+                            title="{{ __('messages.inbox_title') }}" data-bs-toggle="tooltip" data-bs-placement="right">
+                            <i class="fa-solid fa-list-alt menu--icon"></i>
+                            <span class="menu--label">{{ __('messages.inbox_title') }}</span>
+                        </a>
+                    </li>
                     <li class="menu--item">
                         <a href="{{ route('front-orders') }}"
                         class="menu--link {{ request()->routeIs('front-orders') || request()->routeIs('front-order-details') ? 'active' : '' }}"

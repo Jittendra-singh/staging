@@ -39,6 +39,11 @@ View::composer(['layouts.frontend', 'pages.frontend.dashboard'], function ($view
     $view->with('hasNewReleaseNotes', $hasNewReleaseNotes);
 });
 
+Route::post('messaging/inbound-email', [\App\Http\Controllers\InboundEmailController::class, 'store'])
+    ->name('messaging.inbound-email')
+    ->middleware('throttle:60,1')
+    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+
 Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => ['localeSessionRedirect', 'localizationRedirect', 'localeViewPath']], function () {
 
 Route::get('home', function () {return redirect()->route('view-events');})->name('home');
@@ -104,7 +109,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
     //Route::get('event/{slug}' , 'viewEventPage')->name('view-event-details');
     Route::post('verify-ticket-passcode/{ticket}' , 'verifyTicketPasscode')->name('verify-ticket-passcode');
     Route::get('organizer-detail/{slug?}' , 'organizerDetail')->name('organizer-detail');
-    Route::post('save-organizer-lead' , 'saveOrganizerLead')->name('save-organizer-lead');
+    Route::post('save-organizer-lead' , 'saveOrganizerLead')->name('save-organizer-lead')->middleware('throttle:10,1');
     Route::get('download-registration-calendar/{slug}', 'generateIcs')->name('front-registration-calendar');
     Route::get('booking-confirmed/{order}', 'bookingConfirmed')->name('front-booking-confirmed');
     Route::get('rsvp-confirmation/{id}', 'rsvpWaiverConfirmed')->name('front-rsvp-confirmation');
@@ -237,6 +242,16 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::get('order-details/{placeholder}', 'orderDetails')->name('front-order-details');
 
     });
+});
+Route::get('contact-message/verify/{token}', [\App\Http\Controllers\MessagingController::class, 'verifyPendingContact'])->name('messaging.pending.verify')->middleware('throttle:20,1');
+Route::get('cron-conversation-digests', [\App\Http\Controllers\MessagingController::class, 'sendDigests'])->name('messaging.digest.cron');
+Route::middleware(['auth:front', 'restrict.during.impersonation'])->group(function () {
+    Route::get('inbox/{conversation}', [\App\Http\Controllers\MessagingController::class, 'show'])->name('messaging.conversations.show');
+    Route::post('inbox/{conversation}/messages', [\App\Http\Controllers\MessagingController::class, 'store'])->name('messaging.messages.store');
+    Route::post('inbox/{conversation}/archive', [\App\Http\Controllers\MessagingController::class, 'archive'])->name('messaging.conversations.archive');
+    Route::post('inbox/{conversation}/unarchive', [\App\Http\Controllers\MessagingController::class, 'unarchive'])->name('messaging.conversations.unarchive');
+    Route::post('inbox/{conversation}/notifications', [\App\Http\Controllers\MessagingController::class, 'updateThreadPreference'])->name('messaging.conversations.notifications');
+    Route::post('inbox/preferences', [\App\Http\Controllers\MessagingController::class, 'updateGlobalPreference'])->name('messaging.preferences.update');
 });
 Route::controller(\App\Http\Controllers\FrontAuthController::class)->group(function(){
     //Route::get('api/auth-status' , 'checkAuthStatus')->name('front-check-auto-status');
