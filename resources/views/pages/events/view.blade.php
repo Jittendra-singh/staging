@@ -119,7 +119,7 @@
                                     <option value="">All</option>
                                     <option value="1" {{ request('event_type') == 1 ? 'selected' : '' }}>Upcoming</option>
                                     <option value="2" {{ request('event_type') == 2 ? 'selected' : '' }}>In-Progress </option>
-                                    <option value="3" {{ request('event_type') == 3 ? 'selected' : '' }}>Action Required </option>
+                                    <option value="3" {{ request('event_type') == 3 ? 'selected' : '' }}>Pending Completion </option>
                                     <option value="4" {{ request('event_type') == 4 ? 'selected' : '' }}>Past </option>
                                 </select>
                             </div>
