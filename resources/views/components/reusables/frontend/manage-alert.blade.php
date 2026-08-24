@@ -29,7 +29,7 @@
 				<form action="{{route('front-save-email-alerts')}}" method="POST">
 					@csrf
 					<div class="modal-header">
-						<h5 class="modal-title" id="manageAlertsLabel">Manage Weekly Alert</h5>
+						<h5 class="modal-title" id="manageAlertsLabel">{{ __('messages.front_manage_weekly_alert') }}</h5>
 						<button type="button" class="close-model-btn" data-bs-dismiss="modal" aria-label="Close"><i class="uil uil-multiply"></i></button>
 					</div>
 					<div class="modal-body">
@@ -37,29 +37,29 @@
 							<div class="row">
 								<div class="col-lg-12 col-md-12">
 									<div class="form-group mt-4">
-										<label class="form-label">Alert Name*</label>
-										<input class="form-control h_40" type="text" placeholder="" name="alert_name"  required>																								
+										<label class="form-label">{{ __('messages.front_alert_name') }}*</label>
+										<input class="form-control h_40" type="text" placeholder="" name="alert_name"  required>
 									</div>
 								</div>
 								<div class="col-lg-12 col-md-12">
 									<div class="form-group mt-4">
-										<label class="form-label">Zipcode</label>					
+										<label class="form-label">{{ __('messages.front_zipcode') }}</label>
 										<select datatype="pincode" class="form-control form-select select2ajax" id="city_id" name="city_id">
-										</select>		
+										</select>
 									</div>
 								</div>
 								<div class="col-lg-12 col-md-12">
 									<div class="form-group mt-4">
-										<label class="form-label">Email Frequency</label>
-										<input class="form-control h_40" type="tel" placeholder="1245124541" value="Weekly" disabled>																								
+										<label class="form-label">{{ __('messages.front_email_frequency') }}</label>
+										<input class="form-control h_40" type="tel" placeholder="1245124541" value="{{ __('messages.front_weekly') }}" disabled>
 									</div>
 								</div>
 							</div>
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button type="button" class="primary-btn w-fit" data-bs-target="#aboutModal" data-bs-toggle="modal" data-bs-dismiss="modal">Cancel</button>
-						<button type="submit" class="primary-btn w-fit">Create</button>
+						<button type="button" class="primary-btn w-fit" data-bs-target="#aboutModal" data-bs-toggle="modal" data-bs-dismiss="modal">{{ __('messages.front_cancel') }}</button>
+						<button type="submit" class="primary-btn w-fit">{{ __('messages.front_create') }}</button>
 					</div>
 				</form>
 			</div>

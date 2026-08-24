@@ -1,5 +1,5 @@
 <div class="breadcrumb-div">
-    <a href="{{route('front-dashboard')}}" class="back-link fw-bold">Dashboard</a>
+    <a href="{{route('front-dashboard')}}" class="back-link fw-bold">{{ __('messages.dashboard') }}</a>
     @if(isset($breadcrumbs) && is_array($breadcrumbs))
         @foreach ($breadcrumbs as $breadcrumb)
             <span class="fw-bold px-2">/</span>

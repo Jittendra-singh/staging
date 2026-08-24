@@ -1,5 +1,6 @@
 <?php
 use Illuminate\Support\Facades\Route;
+use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -12,13 +13,17 @@ use Illuminate\Support\Facades\Route;
 */
 /**View Composer */
 View::composer('*', function ($view) {
-    $settings = \App\Models\Setting::first();
+    $settings = \App\Models\Setting::first() ?: new \App\Models\Setting([
+        'logo' => 'assets_front/images/logo.webp',
+        'online_payment_percentage' => 0,
+    ]);
+
     $view->with('settings', $settings);
 });
 View::composer(['layouts.frontend', 'pages.frontend.dashboard'], function ($view) {
     $hasNewReleaseNotes = false;
 
-    if (auth()->guard('front')->check()) {
+    if (auth()->guard('front')->check() && \Illuminate\Support\Facades\Schema::hasTable('release_notes')) {
         $volunteer = auth()->guard('front')->user();
 
         $latestPublishedAt = \App\Models\ReleaseNote::where('status', 1)
@@ -33,6 +38,8 @@ View::composer(['layouts.frontend', 'pages.frontend.dashboard'], function ($view
 
     $view->with('hasNewReleaseNotes', $hasNewReleaseNotes);
 });
+
+Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => ['localeSessionRedirect', 'localizationRedirect', 'localeViewPath']], function () {
 
 Route::get('home', function () {return redirect()->route('view-events');})->name('home');
 Route::get('/', function () {return redirect()->route('view-events');});
@@ -125,7 +132,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
     /*--------------------------------------------------------------------------------------- *
     *Volunteer/Organisation Portal 
     * --------------------------------------------------------------------------------------- */
-    Route::middleware(['auth:front'])->group(function () {
+    Route::middleware(['auth:front', 'restrict.during.impersonation'])->group(function () {
         Route::get('dashboard', 'dashboard')->name('front-dashboard');
         Route::get('cleanup-attending', 'cleanupAttending')->name('front-cleanup-attending');
         Route::post('get-organizer-options' , 'getOrganizerOptions' )->name('front-get-organizer-options');
@@ -267,6 +274,7 @@ Route::controller(\App\Http\Controllers\FrontAuthController::class)->group(funct
     });
 
 });
+});
 
 /**
  * -------------------------------------------------------------------
@@ -276,6 +284,7 @@ Route::controller(\App\Http\Controllers\FrontAuthController::class)->group(funct
 Route::prefix(config('app.admin_prefix'))->group(function () {
     Route::get('/welcome', function () {return redirect()->route('dashboard');})->name('welcome');
     Route::middleware(['auth:web', 'shareview'])->group(function () {
+        Route::post('impersonate/take/{user}', [\App\Http\Controllers\Admin\ImpersonationController::class, 'take'])->name('admin.impersonate.take')->middleware('superadmin');
         Route::get('/', function () {
             return redirect()->route('dashboard');
         });
@@ -439,12 +448,15 @@ Route::prefix(config('app.admin_prefix'))->group(function () {
     });
 });
 /**common controller for website and backend */
-Route::controller(\App\Http\Controllers\CommonSystemController::class)->group(function () {
-    Route::get('respond-cohost-invitation/{response}/{event}/{volunteer}' , 'RespondCohostInvitationLink')->name('response.cohost.invitaion')->where('response', 'accept|cancel');
-    Route::post('get-ajax-slug/{type}', 'getAjaxSlug')->name('get-ajax-slug');
-    // cron 
-    Route::get('cron-event-rsvp-reminder', 'cronEventRSVPReminder')->name('cron-event-rsvp-reminder');
-});
-Route::controller(\App\Http\Controllers\FrontController::class)->group(function(){
-    Route::get('{slug}' , 'viewEventPage')->name('view-event-details');
+Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => ['localeSessionRedirect', 'localizationRedirect', 'localeViewPath']], function () {
+    Route::controller(\App\Http\Controllers\CommonSystemController::class)->group(function () {
+        Route::get('respond-cohost-invitation/{response}/{event}/{volunteer}' , 'RespondCohostInvitationLink')->name('response.cohost.invitaion')->where('response', 'accept|cancel');
+        Route::post('get-ajax-slug/{type}', 'getAjaxSlug')->name('get-ajax-slug');
+        // cron
+        Route::get('cron-event-rsvp-reminder', 'cronEventRSVPReminder')->name('cron-event-rsvp-reminder');
+    });
+    Route::controller(\App\Http\Controllers\FrontController::class)->group(function(){
+        Route::get('{slug}' , 'viewEventPage')->name('view-event-details');
+    });
+    Route::post('impersonate/leave', [\App\Http\Controllers\Admin\ImpersonationController::class, 'leave'])->name('admin.impersonate.leave');
 });

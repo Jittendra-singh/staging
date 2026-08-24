@@ -43,11 +43,17 @@ class FrontController extends Controller
         $events = Event::with('category')->listactive()->where('is_private',0)->paginate(21)->withQueryString();
         //echo '<pre>';print_r($events->toArray());die();
         //$events_clone = clone collect($events->items());
+        $categories = EventCategory::all();
+
+        $translationService = app(\App\Services\TranslationService::class);
+        $translationService->preload($events, ['event_name', 'description', 'venue']);
+        $translationService->preload($categories, ['name']);
 
         $mapEvents = Event::listactive()
         ->where('is_private', 0)
         //->select('id', 'event_name', 'latitude', 'longitude', 'start_datetime', 'end_datetime', 'venue')
         ->get();
+        $translationService->preload($mapEvents, ['event_name', 'venue']);
         //echo '<pre>';
         //print_r($mapEvents->toArray());die();
         
@@ -59,7 +65,7 @@ class FrontController extends Controller
                             return [
                                 'lat' => (float) $event->latitude,
                                 'lng' => (float) $event->longitude,
-                                'title' => '<b>Name:</b> '.$event->event_name.'<br/><b>Date Time:</b> '.$event->startTimeAndEndTime.'<br/><b>Address:</b> '.$event->venue.'<br/><b>Link:</b> <a target="_blank" href="'.route('view-event-details', ['slug' => $event->slug]).'">View Event</a>',
+                                'title' => '<b>Name:</b> '.$event->translated_event_name.'<br/><b>Date Time:</b> '.$event->startTimeAndEndTime.'<br/><b>Address:</b> '.$event->translated_venue.'<br/><b>Link:</b> <a target="_blank" href="'.route('view-event-details', ['slug' => $event->slug]).'">View Event</a>',
                             ];
                         })->filter()->values()->all();
 
@@ -69,7 +75,7 @@ class FrontController extends Controller
             'timezonescode'     => config('app.timezonescode'),
             'events'            => $events,
             'location_array'    => $location_array ,
-            'categories'        => EventCategory::all(),
+            'categories'        => $categories,
             'seo_details'       => (object)[
                                     'title' => 'Upcoming Events',
                                     'description' => 'Browse the list of upcoming volunteer events and opportunities.',
@@ -83,10 +89,17 @@ class FrontController extends Controller
         }
         $events = Event::with('category')->listactive()->where('is_private',0)->paginate(21)->withQueryString();
         //$events_clone = clone collect($events->items());
+        $categories = EventCategory::all();
+
+        $translationService = app(\App\Services\TranslationService::class);
+        $translationService->preload($events, ['event_name', 'description', 'venue']);
+        $translationService->preload($categories, ['name']);
+
         $mapEvents = Event::listactive()
         ->where('is_private', 0)
         ->select('id', 'event_name', 'latitude', 'longitude', 'start_datetime', 'end_datetime', 'venue')
         ->get();
+        $translationService->preload($mapEvents, ['event_name', 'venue']);
         
         //$location_array = $events_clone->map(function ($event) {
         $location_array = $mapEvents->map(function ($event) {
@@ -96,7 +109,7 @@ class FrontController extends Controller
                             return [
                                 'lat' => (float) $event->latitude,
                                 'lng' => (float) $event->longitude,
-                                'title' => '<b>Name:</b> '.$event->event_name.'<br/><b>Date Time:</b> '.$event->start_datetime->format(config('app.dateTimeFormat')).' - '.$event->end_datetime->format(config('app.dateTimeFormat')).'<br/><b>Address:</b> '.$event->venue,
+                                'title' => '<b>Name:</b> '.$event->translated_event_name.'<br/><b>Date Time:</b> '.$event->start_datetime->format(config('app.dateTimeFormat')).' - '.$event->end_datetime->format(config('app.dateTimeFormat')).'<br/><b>Address:</b> '.$event->translated_venue,
                             ];
                         })->filter()->values()->all();
 
@@ -106,7 +119,7 @@ class FrontController extends Controller
             'timezonescode'     => config('app.timezonescode'),
             'events'            => $events,
             'location_array'    => $location_array ,
-            'categories'        => EventCategory::all(),
+            'categories'        => $categories,
             'seo_details'       => (object)[
                                     'title' => 'International Events',
                                     'description' => 'Browse the list of international events and opportunities.',
@@ -152,8 +165,8 @@ class FrontController extends Controller
         // EVENT COUNTER
         $event->click_views = $event->click_views + 1; 
         $seo_details = (object)[
-            'title'       => $event->meta_title ? :  $event->event_name ,
-            'description' => $event->meta_description ? :  strip_tags($event->description),
+            'title'       => $event->meta_title ?: $event->translated_event_name,
+            'description' => $event->meta_description ?: strip_tags($event->translated_description),
             'keywords'    => $event->meta_focus_keyword ?? '',
         ];
         //print_r($event->toArray());

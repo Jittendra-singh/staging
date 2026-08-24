@@ -146,16 +146,16 @@ $outPages = true;
                                 <div class="col-sm-5">
                                     <div class="row">
                                         <div class="col-lg-8">
-                                            <label>Location</label>
-                                            <input type="text" id="autocomplete" class="text form-control h_50" name="location" placeholder="Location" value="{{request()->location}}">
+                                            <label>{{ __('messages.location_label') }}</label>
+                                            <input type="text" id="autocomplete" class="text form-control h_50" name="location" placeholder="{{ __('messages.location_label') }}" value="{{request()->location}}">
 
                                             <input type="hidden" id="latitude" name="latitude" value="{{request()->latitude}}">
                                             <input type="hidden" id="longitude" name="longitude" value="{{request()->longitude}}">
                                             <div id="results"></div>
                                         </div>
                                         <div class="col-lg-4">
-                                            <label>Distance (Miles)</label>
-                                            <select class="selectpicker" id="distance" name="distance" title="Within">
+                                            <label>{{ __('messages.distance_label') }}</label>
+                                            <select class="selectpicker" id="distance" name="distance" title="{{ __('messages.within_label') }}">
                                                 <option @selected(request()->distance == 5) value="5">5</option>
                                                 <option @selected(request()->distance == 10) value="10">10</option>
                                                 <option @selected(request()->distance == 15  || !request()->has('distance')) value="15">15</option>
@@ -175,24 +175,24 @@ $outPages = true;
                                     </div>
                                     <div class="row">
                                         <!-- <div class="col-lg-12"><small class="text-primary">Location filtering requires both Distance and Unit (Miles) to be specified.</small></div> -->
-                                        <div class="col-lg-12"><small class="text-primary">Location filtering requires Distance (Miles) to be specified.</small></div>
+                                        <div class="col-lg-12"><small class="text-primary">{{ __('messages.distance_filter_note') }}</small></div>
                                     </div>
                                 </div>
                                 <div class="col-sm-3">
                                     <div class="row">
                                         <div class="col-sm-6">
                                             <div class="from-date">
-                                                <label>From</label>
+                                                <label>{{ __('messages.from_label') }}</label>
                                                 <div class="loc-group position-relative">
-                                                    <input class="form-control h_50 datepicker-here-p" name="start_date" data-language="en" type="date" placeholder="From" value="{{request()->start_date}}" autocomplete="off">
+                                                    <input class="form-control h_50 datepicker-here-p" name="start_date" data-language="{{ app()->getLocale() }}" type="date" placeholder="{{ __('messages.from_label') }}" value="{{request()->start_date}}" autocomplete="off">
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-sm-6">
                                             <div class="to-date">
-                                                <label>To</label>
+                                                <label>{{ __('messages.to_label') }}</label>
                                                 <div class="loc-group position-relative">
-                                                    <input class="form-control h_50 datepicker-here-p" name="end_date" data-language="en" type="date" placeholder="To" value="{{request()->end_date}}" autocomplete="off">
+                                                    <input class="form-control h_50 datepicker-here-p" name="end_date" data-language="{{ app()->getLocale() }}" type="date" placeholder="{{ __('messages.to_label') }}" value="{{request()->end_date}}" autocomplete="off">
                                                 </div>
                                             </div>
                                         </div>
@@ -201,30 +201,30 @@ $outPages = true;
                                 <div class="col-sm-4">
                                     <div class="row">
                                         <div class="col-lg-6">
-                                            <label>Category</label>
+                                            <label>{{ __('messages.category_label') }}</label>
                                             <div class="loc-group position-relative">
-                                                <select class="selectpicker" name="event_category_id" title="Choose Categories"
+                                                <select class="selectpicker" name="event_category_id" title="{{ __('messages.choose_categories') }}"
                                                     data-selected-text-format="count > 1" data-size="5" multiple=""
                                                     data-live-search="true">
                                                     @foreach ($categories as $category)
                                                     <option
                                                         @selected($category->id == request()->event_category_id)
-                                                        value="{{ $category->id }}">{{ $category->name }}</option>
+                                                        value="{{ $category->id }}">{{ $category->translated_name }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
                                         </div>
                                         <div class="col-lg-6">
-                                            <label>Keywords</label>
+                                            <label>{{ __('messages.keywords_label') }}</label>
                                             <input type="text" name="search" value="{{request()->search}}" class="text form-control h_50"
-                                                placeholder="Keywords">
+                                                placeholder="{{ __('messages.keywords_label') }}">
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="d-flex justify-content-end gap-2 pt-2">
-                                <a href="{{route('view-international-events')}}" class="primary-btn outlined">Reset</a>
-                                <button type="button" onclick="checkEventListForm()" class="primary-btn">Find Event</button>
+                                <a href="{{route('view-international-events')}}" class="primary-btn outlined">{{ __('messages.reset_btn') }}</a>
+                                <button type="button" onclick="checkEventListForm()" class="primary-btn">{{ __('messages.find_event_btn') }}</button>
                             </div>
                         </form>
                     </div>
@@ -247,14 +247,14 @@ $outPages = true;
         <div class="row" data-aos="fade-up">
             <div class="row search-map py-4"> </div>
             <div class="col-lg-4 text-left mb-4">
-                <h2>All Events</h2>
+                <h2>{{ __('messages.all_events_title') }}</h2>
             </div>
             <div class="col-lg-8">
                 <div class="col-sm-3 offset-sm-9 mb-3">
-                    <label>Sort By Date</label>
-                    <select class="form-control" id="select_sort_by_date" name="select_sort_by_date" title="Sort By Date">
-                        <option @selected(request()->sort_by_date == 1  || !request()->has('sort_by_date')) value="1">Ascending</option>
-                        <option @selected(request()->sort_by_date == 2) value="2">Descending</option>
+                    <label>{{ __('messages.sort_by_date_label') }}</label>
+                    <select class="form-control" id="select_sort_by_date" name="select_sort_by_date" title="{{ __('messages.sort_by_date_label') }}">
+                        <option @selected(request()->sort_by_date == 1  || !request()->has('sort_by_date')) value="1">{{ __('messages.ascending') }}</option>
+                        <option @selected(request()->sort_by_date == 2) value="2">{{ __('messages.descending') }}</option>
                     </select>
                 </div>
             </div>

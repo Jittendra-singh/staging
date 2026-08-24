@@ -14,7 +14,7 @@
                 <div class="d-flex flex-column h-100">
                     <div class="mb-3 mb-md-5 text-center">
                         <a href="{{route('home')}}" class="d-block auth-logo">
-                            <img src="{{asset($settings->logo)}}" alt="" height="70" width="auto">
+                            <img src="{{asset($settings->logo ?? 'assets_front/images/logo.webp')}}" alt="" height="70" width="auto">
                         </a>
                     </div>
                     <div class="auth-content my-auto">

@@ -669,11 +669,11 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                     ]
                                 @endphp     
                             @else 
-                                <h3><i class="fa-solid fa-square-plus me-3 mb-3"></i>Post A New Cleanup</h3>
+                                <h3><i class="fa-solid fa-square-plus me-3 mb-3"></i>{{ __('messages.post_new_cleanup') }}</h3>
                                 @php
                                     $breadcrumbs = [
                                         [
-                                            'name' => 'Post A New Cleanup', 
+                                            'name' => __('messages.post_new_cleanup'),
                                             'url' => route('front-post-a-event')
                                         ],
                                     ]
@@ -770,7 +770,7 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                                         @foreach ($categories as $category)
                                                                             <option value="{{ $category->id }}"  data-default-banner="{{ $category->formattedDefaultBannerImg() }}"
                                                                                 @selected(old('event_category_id', $form_data->event_category_id ?? 0) == $category->id)>
-                                                                                {{ $category->name }}</option>
+                                                                                {{ $category->translated_name }}</option>
                                                                         @endforeach
                                                                     </select>
                                                                 </div>
@@ -1224,7 +1224,7 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                                                     <option value="{{ $tool->id }}"
                                                                                         @disabled(in_array($tool->id, $provided_tool_obj)) 
                                                                                         @selected(collect($bring_tool_obj)->contains($tool->id))>
-                                                                                        {{ $tool->name }}
+                                                                                        {{ $tool->translated_name }}
                                                                                     </option>
                                                                                 @endforeach
                                                                             </select>
@@ -1242,7 +1242,7 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                                                     <option value="{{ $tool->id }}"
                                                                                         @disabled(in_array($tool->id, $bring_tool_obj))
                                                                                         @selected(collect($provided_tool_obj)->contains($tool->id))>
-                                                                                        {{ $tool->name }}</option>
+                                                                                        {{ $tool->translated_name }}</option>
                                                                                 @endforeach
                                                                             </select>
                                                                         </div>
@@ -2203,12 +2203,12 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                     var wrapper = $('#waiver_form_content_wrapper');
                     wrapper.html('');
                     if (type === 'external_link') {
-                        wrapper.html(`<input type="url" class="form-control" name="waiver_form_content" id="waiver_form_content" placeholder="Enter external link" value="{{ old('waiver_form_content', $formData->waiver_form_content ?? '') }}">`);
+                        wrapper.html(`<input type="url" class="form-control" name="waiver_form_content" id="waiver_form_content" placeholder="Enter external link" value="{{ old('waiver_form_content', data_get($form_data ?? null, 'waiver_form_content', '')) }}">`);
                     } else if (type === 'pdf') {
                         wrapper.html(`<input type="file" class="form-control" name="waiver_form_content" id="waiver_form_content" accept="application/pdf">`);
                     } else if (type === 'text' ) {
                         wrapper.html(`<textarea class="form-control waiver_form_content_editor ckeditor" name="waiver_form_content" id="waiver_form_content" rows="4" placeholder="Enter custom waiver content">
-                            {{ old('waiver_form_content', $formData->waiver_form_content ?? $setting->waiver_text) }}
+                            {{ old('waiver_form_content', data_get($form_data ?? null, 'waiver_form_content') ?? ($setting->waiver_text ?? '')) }}
                              </textarea>`);
                     } else if (type === 'default' ) {
                         wrapper.html(`<textarea disabled class="form-control waiver_form_content_editor ckeditor" name="waiver_form_content" id="waiver_form_content" rows="4" placeholder="Default waiver content">

@@ -300,11 +300,11 @@
                             
                             @if($authUser->id==$ticket->volunteer_id)
                             <a href="{{ route('front-certificate-my-requests') }}" class="cert-back-link float-end">
-                                <i class="fa fa-arrow-left"></i> Back to Certificates
+                                <i class="fa fa-arrow-left"></i> {{ __('messages.front_back_to_certificates') }}
                             </a>
                             @else 
                             <a href="{{ route('front-certificate-volunteer-requests') }}" class="cert-back-link float-end">
-                                <i class="fa fa-arrow-left"></i> Back to Certificates
+                                <i class="fa fa-arrow-left"></i> {{ __('messages.front_back_to_certificates') }}
                             </a>
                             @endif
                             <!-- @if($ticket->community_form_status == 'approved')
@@ -329,12 +329,12 @@
                                 : route('front-certificate-volunteer-requests');
 
                             $certificateParentLabel = $isMyCertificateRequest
-                                ? 'My Requests'
-                                : 'Volunteer Requests';
+                                ? __('messages.my_requests')
+                                : __('messages.volunteer_requests');
 
                             $breadcrumbs = [
                                 ['name' => $certificateParentLabel, 'url' => $certificateParentRoute],
-                                ['name' => 'Request Details', 'url' => '#'],
+                                ['name' => __('messages.front_request_details'), 'url' => '#'],
                             ];
                         @endphp
 

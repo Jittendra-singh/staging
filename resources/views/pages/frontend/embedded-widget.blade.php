@@ -111,24 +111,29 @@
 @section('content')
     <div class="wrapper wrapper-body">
         <div class="dashboard-body">
-            <div class="container-fluid"> 
+            <div class="container-fluid">
+                <!-- <div class="text-center mb-4">
+                    <h1 class="d-main-title">Upcoming Feature</h1>
+                    <p class="mb-0">This feature is under development as we will launch this feature soon.</p>
+                </div> -->
+                @if(true)
                 <div class="row">
                     <div class="col-md-12 d-flex justify-content-between">
                         <div class="d-main-title">
-                            <h3><i class="fa-solid fa-calendar-days me-3 mb-3"></i>Embedded Widget</h3>
+                            <h3><i class="fa-solid fa-calendar-days me-3 mb-3"></i>{{ __('messages.embedded_widget') }}</h3>
                             @php
-                                $breadcrumbs = [ 
+                                $breadcrumbs = [
                                     [
-                                        'name' => 'Embedded Widget', 
+                                        'name' => __('messages.embedded_widget'),
                                         'url' => route('front-embedded-widget')
                                     ],
                                 ];
                                 $embedCode = session()->pull('clipboard_embed_code');
                             @endphp     
                             <x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs"/>
-                            <!-- <p class="mb-0 mt-3">You can send a message to your RSVP’s in the ‘Registration List’.</p> --> 
+                            <!-- <p class="mb-0 mt-3">You can send a message to your RSVP’s in the ‘Registration List’.</p> -->
                         </div>
-                        <a class="primary-btn w-fits" href="{{route('front-manage-widget')}}">Create Widget</a>
+                        <a class="primary-btn w-fits" href="{{route('front-manage-widget')}}">{{ __('messages.front_create_widget') }}</a>
                     </div>
                 </div>
                 <x-reusables.frontend.alert />
@@ -138,33 +143,33 @@
                             <div class="dashboard-wrap-content p-4">
                                 <div class="table-card mt-4">
                                     <div class="main-table">
-                                        <div class="table-responsive"> 
+                                        <div class="table-responsive">
                                             <table class="table">
                                                 <thead class="thead-dark">
                                                     <tr>
                                                         <th scope="col">ID</th>
-                                                        <th scope="col">Widget Title</th>
-                                                        <th scope="col">Display Style</th>
-                                                        <th scope="col">Location</th>
-                                                        <th scope="col">Created At</th>
-                                                        <th scope="col">Status</th>
-                                                        <th>Action</th>
+                                                        <th scope="col">{{ __('messages.front_widget_title') }}</th>
+                                                        <th scope="col">{{ __('messages.front_display_style') }}</th>
+                                                        <th scope="col">{{ __('messages.front_location') }}</th>
+                                                        <th scope="col">{{ __('messages.front_created_at') }}</th>
+                                                        <th scope="col">{{ __('messages.front_status') }}</th>
+                                                        <th>{{ __('messages.front_action') }}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     @foreach ($listing_data as $data)
-                                                        
-                                                    <tr class="single-tr">										
-                                                        <td>{{$data->wid_number}}</td>								
-                                                        <td>{{$data->title}}</td>	
-                                                        <td>{{$data->type==1?'List View':'Map View'}}</td>	
-                                                        <td>{{$data->location??'N/A'}}</td>	
+
+                                                    <tr class="single-tr">
+                                                        <td>{{$data->wid_number}}</td>
+                                                        <td>{{$data->title}}</td>
+                                                        <td>{{ $data->type==1 ? __('messages.front_list_view') : __('messages.front_map_view') }}</td>
+                                                        <td>{{$data->location??'N/A'}}</td>
                                                         <td>{{$data->created_at}}</td>
                                                         <td>
                                                             @if($data->is_active)
-                                                                <span class="text-success">Active</span>
+                                                                <span class="text-success">{{ __('messages.front_active') }}</span>
                                                             @else
-                                                                <span class="text-danger">Inactive</span>
+                                                                <span class="text-danger">{{ __('messages.front_inactive') }}</span>
                                                             @endif
                                                         </td>
                                                         <td>
@@ -172,18 +177,18 @@
                                                                 <button class="option-btn" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
                                                                 <div class="dropdown-menu dropdown-menu-right" data-popper-placement="top-end">
                                                                     <a href="{{route('front-manage-widget', ['id'=> encrypt($data->id)])}}" class="dropdown-item">
-                                                                        <i class="fa-solid fa-gear me-3"></i>Edit</a>
+                                                                        <i class="fa-solid fa-gear me-3"></i>{{ __('messages.front_edit') }}</a>
                                                                     <a class="dropdown-item showWidgetDetailBtn" href="javascript:void(0);" url="{{route('front-view-widget-detail', ['id' => encrypt($data->id)])}}">
-                                                                        <i class="fa-solid fa-eye"></i> View Code & Detail
+                                                                        <i class="fa-solid fa-eye"></i> {{ __('messages.front_view_code_detail') }}
                                                                     </a>
                                                                     <a class="dropdown-item showWidgetPreviewBtn" href="javascript:void(0);" url="{{route('front-preview-widget', ['id' => encrypt($data->id)])}}">
-                                                                        <i class="fa-solid fa-eye"></i> Preview Widget
+                                                                        <i class="fa-solid fa-eye"></i> {{ __('messages.front_preview_widget') }}
                                                                     </a>
                                                                     <a class="dropdown-item" href="{{route('front-active-inactive-widget', ['id' => encrypt($data->id)])}}">
-                                                                        <i class="fa-solid fa-ban"></i> {{$data->is_active==1 ? 'Deactivate Now' : 'Activate Now'}}
+                                                                        <i class="fa-solid fa-ban"></i> {{ $data->is_active==1 ? __('messages.front_deactivate_now') : __('messages.front_activate_now') }}
                                                                     </a>
                                                                     <a class="dropdown-item delete-record" data-url="{{route('front-delete-widget', ['id' => encrypt($data->id)])}}" href="javascript:void(0);">
-                                                                        <i class="fa-solid fa-trash-can"></i> Delete
+                                                                        <i class="fa-solid fa-trash-can"></i> {{ __('messages.front_delete') }}
                                                                     </a>
                                                                 </div>
                                                             </div>
@@ -192,36 +197,36 @@
                                                     @endforeach
                                                     @if($listing_data->isEmpty())
                                                     <tr>
-                                                        <td colspan="6" class="text-center">No widget found.</td>
+                                                        <td colspan="6" class="text-center">{{ __('messages.front_no_widget_found') }}</td>
                                                     </tr>
                                                     @endif
-                                                </tbody>									
+                                                </tbody>
                                             </table>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>							
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 <div class="modal fade" id="showWidgetDetail" tabindex="-1" aria-labelledby="showWidgetDetailsLabel"
-    aria-modal="true" role="dialog"> 
+    aria-modal="true" role="dialog">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="showWidgetDetailLabel">Embedded Widget Details</h5>
+                <h5 class="modal-title" id="showWidgetDetailLabel">{{ __('messages.front_embedded_widget_details') }}</h5>
                 <button type="button" class="close-model-btn" data-bs-dismiss="modal" aria-label="Close"><i
                         class="uil uil-multiply"></i></button>
             </div>
             <div class="modal-body" id="showWidgetDetailBody">
             </div>
             <div class="modal-footer">
-                <button type="button" class="primary-btn w-fit" id="copyWidgetCode">Copy Code</button>
+                <button type="button" class="primary-btn w-fit" id="copyWidgetCode">{{ __('messages.front_copy_code') }}</button>
                 <button type="button" class="primary-btn w-fit"
-                    data-bs-dismiss="modal">Close</button>
+                    data-bs-dismiss="modal">{{ __('messages.front_close') }}</button>
             </div>
         </div>
     </div>

@@ -40,6 +40,10 @@ class AuthServiceProvider extends ServiceProvider
     }
     private function isAuthozied($user , $action , $module){
         $menu   = Menu::where('menu_name' , $module)->first();
+        if (!$menu || !is_array($menu->menu_permissions)) {
+            return false;
+        }
+
         if(!in_array($action , $menu->menu_permissions) ){
             return false;
         }

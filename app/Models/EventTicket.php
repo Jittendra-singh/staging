@@ -6,11 +6,15 @@ use App\Models\Traits\HelperTrait;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use App\Models\Setting;
 use App\Support\TicketFeeCalculator;
+use App\Traits\HasTranslations;
 
 
 class EventTicket extends Model
 {
-    use HasFactory, HelperTrait;
+    use HasFactory, HelperTrait, HasTranslations;
+
+    protected $translatable = ['ticket_name', 'ticket_description'];
+
     protected $guarded = ['id'];
 
     public function soldTickets(){
@@ -30,7 +34,7 @@ class EventTicket extends Model
         return $remainingTickets;
     }
 
-    public function ticketPrice():Attriubte
+    public function ticketPrice(): Attribute
     {
         return Attribute::make(
             get : fn($value) => $this->ticket_type  == 'paid' ?  $value : 0 , 

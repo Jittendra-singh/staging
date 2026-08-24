@@ -164,12 +164,12 @@
             <div class="row">
                 <div class="col-md-12 d-flex justify-content-between">
                     <div class="d-main-title">
-                        <h3><i class="fa-solid fa-bullhorn me-3 mb-3"></i>What's New</h3>
-                        <p class="mb-2">Stay up to date with the latest features, enhancements, and bug fixes on the VolunteerCleanup platform.</p>
+                        <h3><i class="fa-solid fa-bullhorn me-3 mb-3"></i>{{ __('messages.front_whats_new') }}</h3>
+                        <p class="mb-2">{{ __('messages.front_release_notes_desc') }}</p>
                         @php
                             $breadcrumbs = [
                                 [
-                                    'name' => 'Release Notes',
+                                    'name' => __('messages.release_notes'),
                                     'url' => route('front-release-notes')
                                 ],
                             ];
@@ -182,15 +182,15 @@
                                 <i class="fa fa-search"></i>
                             </span>
 
-                            <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search release notes...">
+                            <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="{{ __('messages.front_search_release_notes') }}">
 
                             @if(request('search'))
-                                <a href="{{ route('front-release-notes') }}" class="btn btn-reset-search d-inline-flex align-items-center justify-content-center" title="Reset Search">
+                                <a href="{{ route('front-release-notes') }}" class="btn btn-reset-search d-inline-flex align-items-center justify-content-center" title="{{ __('messages.front_reset_search') }}">
                                     <i class="fa fa-rotate-left"></i>
                                 </a>
                             @endif
 
-                            <button class="btn btn-primary btn-search-submit" type="submit">Search</button>
+                            <button class="btn btn-primary btn-search-submit" type="submit">{{ __('messages.front_search') }}</button>
                         </div>
                     </form>
                 </div>
@@ -205,9 +205,9 @@
                                 @forelse($releaseNotes as $releaseNote)
                                     @php
                                         $typeLabels = [
-                                            1 => 'Feature',
-                                            2 => 'Improvement',
-                                            3 => 'Maintenance',
+                                            1 => __('messages.front_feature'),
+                                            2 => __('messages.front_improvement'),
+                                            3 => __('messages.front_maintenance'),
                                         ];
 
                                         $typeClasses = [
@@ -226,7 +226,7 @@
                                                 {{ $releaseNote->release_date ? \Carbon\Carbon::parse($releaseNote->release_date)->format('F d, Y') : '' }}
                                             </span>
                                             <span class="release-type {{ $typeClasses[$releaseNote->type] ?? 'release-type-feature' }}">
-                                                {{ $typeLabels[$releaseNote->type] ?? 'Feature' }}
+                                                {{ $typeLabels[$releaseNote->type] ?? __('messages.front_feature') }}
                                             </span>
                                         </div>
 
@@ -241,12 +241,12 @@
                                         <div class="mb-3">
                                             <i class="fa-solid fa-bullhorn fa-2x text-muted"></i>
                                         </div>
-                                        <h4>No release notes found</h4>
+                                        <h4>{{ __('messages.front_no_release_notes_found') }}</h4>
                                         <p class="text-muted mb-0">
                                             @if(request('search'))
-                                                Try another search keyword.
+                                                {{ __('messages.front_try_another_search') }}
                                             @else
-                                                Published updates will appear here.
+                                                {{ __('messages.front_published_updates_empty') }}
                                             @endif
                                         </p>
                                     </div>
