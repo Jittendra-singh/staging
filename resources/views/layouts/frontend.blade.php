@@ -523,7 +523,7 @@ $is_session = session()->get('checkout_event');
                             <span class="menu--label">Dashboard</span>
                         </a>
                     </li>
-                    <li class="menu--item menu--item__has_sub_menu {{ url()->current() == route('front-cleanup-attending') || request()->routeIs('front-cleanup-hosting') || url()->current() == route('front-post-a-event') || url()->current() == route('front-registration-list') ? 'menu--subitens__opened' : '' }}">
+                    <li class="menu--item menu--item__has_sub_menu menu--subitens__opened">
                         <a class="menu--link">
                             <i class="fa-solid fa-calendar-days menu--icon"></i>
                             <span class="menu--label">Events</span>
