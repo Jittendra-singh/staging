@@ -86,7 +86,7 @@
                                 $signatureInputId = 'signature_input_'.$registration->id;
                             @endphp
 
-                            <div class="main-card volunteer-checkin-card mb-3">
+                            <div class="main-card volunteer-checkin-card mb-3" id="volunteer-card-{{$registration->id}}">
                                 <div class="volunteer-checkin-card-body">
                                     <div class="volunteer-checkin-main">
                                         <img class="volunteer-checkin-avatar" src="{{ $volunteer->formattedImage('profile_picture') }}" alt="{{ $volunteer->name }}">
@@ -286,6 +286,37 @@
                 $('#waiverQrLoader').text('Unable to generate QR code.');
             }
         });
+    });
+
+    // Listen for waiver signed events from other tabs
+    window.addEventListener('storage', function(e) {
+        // e.newValue ensures we only react to the key being added/updated, not when it's deleted during cleanup
+        if (e.key && e.key.startsWith('waiver_signed_update_') && e.newValue) {
+            const ticketId = e.key.split('waiver_signed_update_')[1];
+            
+            // Fetch the current page in the background (preserves search/filters in URL)
+            fetch(window.location.href)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    // Find the updated card in the response and the old card on the screen
+                    const oldCard = document.getElementById('volunteer-card-' + ticketId);
+                    const newCard = doc.getElementById('volunteer-card-' + ticketId);
+                    
+                    // Swap them seamlessly
+                    if (oldCard && newCard) {
+                        oldCard.innerHTML = newCard.innerHTML;
+                    }
+                    
+                    // Clean up localStorage to prevent keys from accumulating forever
+                    try {
+                        localStorage.removeItem(e.key);
+                    } catch (err) {}
+                })
+                .catch(err => console.error('Error fetching updated volunteer card:', err));
+        }
     });
 </script>
 @endpush

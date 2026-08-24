@@ -101,3 +101,14 @@ $icalStrData = getiCalData($event);
 </div>
 <!-- Body End-->
 @endsection
+
+@push('script')
+<script>
+    try {
+        // Dispatch an event so the check-in tab knows a waiver was just signed
+        localStorage.setItem('waiver_signed_update_{{ (int)$ticket->id }}', Date.now());
+    } catch (e) {
+        console.error('Could not write to localStorage:', e);
+    }
+</script>
+@endpush
