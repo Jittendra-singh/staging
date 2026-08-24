@@ -13,7 +13,7 @@ use App\Models\Setting;
 use App\Models\EventTicket;
 use App\Models\CityStateZip;
 use App\Http\Controllers\FrontOrderController;
-
+use Carbon\Carbon;
 class EventController extends Controller
 {
     private $gateHandler = 'events';
@@ -238,7 +238,7 @@ class EventController extends Controller
                 },
             ], */
             'ticket_questions' => 'nullable|string|max:1000',
-            'ticket.*.ticket_name' => 'required|string|max:255',
+            /* 'ticket.*.ticket_name' => 'required|string|max:255',
             'ticket.*.ticket_type' => 'required|string',
             'ticket.*.sell_start_time' => [
                 'required',
@@ -261,7 +261,91 @@ class EventController extends Controller
             'ticket.*.ticket_price' => 'required_if:ticket.*.ticket_type,paid|numeric|min:0',
             'ticket.*.available_quantity' => 'required|integer|min:1',
             //'ticket.*.minimum_quantity_to_sell' => 'required|integer|min:1',
-            'ticket.*.ticket_description' => 'nullable|string',
+            'ticket.*.ticket_description' => 'nullable|string', */
+            'ticket' => [
+                'required_if:participation_type,1',
+                'array',
+                'min:1',
+
+                function ($attribute, $value, $fail) use ($request) {
+
+                    if ($request->participation_type != 1) {
+                        return;
+                    }
+
+                    foreach ($value ?? [] as $index => $ticket) {
+
+                        $sellStart = $ticket['sell_start_time'] ?? null;
+                        $sellEnd   = $ticket['sell_end_time'] ?? null;
+
+                        if (!$sellStart || !$sellEnd) {
+                            continue;
+                        }
+
+                        $ticketStart = Carbon::parse($sellStart);
+                        $ticketEnd   = Carbon::parse($sellEnd);
+
+                        if ($ticketEnd->lessThan($ticketStart)) {
+                            $fail(
+                                'The ticket sell end date must be after or equal to the ticket sell start date.'
+                            );
+
+                            return;
+                        }
+
+                    if ($request->start_datetime) {
+
+                        $eventStart = Carbon::parse($request->start_datetime);
+
+                        if ($ticketEnd->greaterThan($eventStart)) {
+                            $fail(
+                                'The ticket sell end date/time must be before or equal to the event start date/time.'
+                            );
+
+                                return;
+                        }
+                    }
+                    }
+                },
+            ],
+
+            'ticket.*.ticket_name' => [
+                'required_if:participation_type,1',
+                'string',
+                'max:255',
+            ],
+
+            'ticket.*.ticket_type' => [
+                'required_if:participation_type,1',
+                'string',
+            ],
+
+            'ticket.*.sell_start_time' => [
+                'required_if:participation_type,1',
+                'date',
+            ],
+
+            'ticket.*.sell_end_time' => [
+                'required_if:participation_type,1',
+                'date',
+            ],
+
+            'ticket.*.ticket_price' => [
+                'required_if:ticket.*.ticket_type,paid',
+                'numeric',
+                'min:0',
+            ],
+
+            'ticket.*.available_quantity' => [
+                'required_if:participation_type,1',
+                'integer',
+                'min:1',
+            ],
+
+            'ticket.*.ticket_description' => [
+                'nullable',
+                'string',
+            ],
             /** Waiver form validation */
             'waiver_form_type' => 'nullable',
             'waiver_form_content' => ['nullable',
