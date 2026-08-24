@@ -64,10 +64,10 @@ $is_session = session()->get('checkout_event');
         font-family: inherit;
         font-weight: inherit;
         }
-        .sub_menu--link {
+        .sub_menu--link, .profile-link .link-item {
             color: #000 !important;
         }
-        .sub_menu--link:hover, .sub_menu--link.active {
+        .sub_menu--link:hover, .sub_menu--link.active, .profile-link .link-item:hover, .profile-link .link-item.active {
             color: #007bff !important;
         }
     </style>
