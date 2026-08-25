@@ -222,7 +222,7 @@
                     {{-- <img src="images/sign-logo.svg" alt=""> --}}
                 </div>
                 <div class="sign_sidebar_text">
-                    <h1>The Easiest Way to Create Events and Sell More Tickets Online</h1>
+                    <h1>{{ __('messages.front_register_sidebar_tagline') }}</h1>
                 </div>
             </div>
             <div class="app-form-content justify-content-center">
@@ -234,39 +234,39 @@
                                     @csrf
 
                                     <div class="register-panel-heading">
-                                        <h1>Register To Events</h1>
-                                        <p>Once you create your account and confirm your email address, you will be able to:</p>
+                                        <h1>{{ __('messages.front_register_to_events') }}</h1>
+                                        <p>{{ __('messages.front_register_subheading') }}</p>
                                     </div>
 
                                     <ul class="register-benefits-list">
-                                        <li>Setup weekly alerts of upcoming cleanups near you</li>
-                                        <li>Manage cleanup events you are attending or organizing via your dashboard</li>
-                                        <li>Post Cleanups and Recruit Volunteers</li>
+                                        <li>{{ __('messages.front_benefit_weekly_alerts') }}</li>
+                                        <li>{{ __('messages.front_benefit_manage_events') }}</li>
+                                        <li>{{ __('messages.front_benefit_post_cleanups') }}</li>
                                     </ul>
 
                                     <x-reusables.frontend.alert />
 
                                     <div class="register-form-grid">
                                         <div class="form-group">
-                                            <label class="form-label">First Name*</label>
-                                            <input class="form-control h_50" name="first_name" type="text" placeholder="Enter your first name" required />
+                                            <label class="form-label">{{ __('messages.first_name') }}*</label>
+                                            <input class="form-control h_50" name="first_name" type="text" placeholder="{{ __('messages.enter_first_name') }}" required />
                                         </div>
 
                                         <div class="form-group">
-                                            <label class="form-label">Last Name*</label>
-                                            <input class="form-control h_50" name="last_name" type="text" placeholder="Enter your last name" required />
+                                            <label class="form-label">{{ __('messages.last_name') }}*</label>
+                                            <input class="form-control h_50" name="last_name" type="text" placeholder="{{ __('messages.enter_last_name') }}" required />
                                         </div>
                                     </div>
 
                                     <div class="form-group register-form-group">
-                                        <label class="form-label">Email*</label>
-                                        <input class="form-control h_50" name="email_address" type="email" placeholder="Enter your email" required />
+                                        <label class="form-label">{{ __('messages.front_your_email') }}*</label>
+                                        <input class="form-control h_50" name="email_address" type="email" placeholder="{{ __('messages.front_enter_your_email') }}" required />
                                     </div>
 
                                     <div class="form-group register-form-group">
-                                        <label class="form-label">Password*</label>
+                                        <label class="form-label">{{ __('messages.front_password') }}*</label>
                                         <div class="loc-group position-relative">
-                                            <input class="form-control h_50" name="password" type="password" placeholder="Enter your password" minlength="4" required />
+                                            <input class="form-control h_50" name="password" type="password" placeholder="{{ __('messages.front_enter_your_password') }}" minlength="4" required />
                                             <span class="pass-show-eye"><i class="fas fa-eye-slash"></i></span>
                                         </div>
                                     </div>
@@ -277,30 +277,30 @@
                                         <div class="form-group">
                                             <label for="is_newsletter" class="register-checkbox-label">
                                                 <input value="1" name="is_newsletter" type="checkbox" id="is_newsletter" />
-                                                <span>Receive Our Quarterly Newsletter</span>
+                                                <span>{{ __('messages.front_receive_quarterly_newsletter') }}</span>
                                             </label>
                                         </div>
 
                                         <div class="form-group">
                                             <label for="weekly_alerts" class="register-checkbox-label">
                                                 <input value="1" name="weekly_alerts" type="checkbox" id="weekly_alerts" />
-                                                <span>Receive Our Weekly Alerts</span>
+                                                <span>{{ __('messages.front_receive_weekly_alerts') }}</span>
                                             </label>
                                         </div>
 
                                         <div class="register_pincode_div" style="display:none;">
                                             <div class="form-group mt-2">
-                                                <label class="form-label">Zip/Post Code*</label>
+                                                <label class="form-label">{{ __('messages.front_zip_post_code') }}*</label>
                                                 <select datatype="pincode" class="form-select select2ajax city_state_zip" id="pincode" name="register_pincode"></select>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <button class="primary-btn register-submit-btn mt-4" type="submit">Create My Account</button>
+                                    <button class="primary-btn register-submit-btn mt-4" type="submit">{{ __('messages.front_create_my_account') }}</button>
 
                                     <div class="register-login-text">
-                                        Already have an account?
-                                        <a href="{{ route('front-login') }}">Login</a>
+                                        {{ __('messages.front_already_have_account') }}
+                                        <a href="{{ route('front-login') }}">{{ __('messages.login') }}</a>
                                     </div>
                                 </form>
                             </div>

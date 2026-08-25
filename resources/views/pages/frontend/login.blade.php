@@ -27,35 +27,35 @@
                                         <input type="hidden" name="redirect_to" value="{{ request('redirect_to') }}">
                                     @endif
                                     <div class="login-panel-heading">
-                                        <h2 class="registration-title">Welcome back</h2>
-                                        <p>Please enter your details to sign in.</p>
+                                        <h2 class="registration-title">{{ __('messages.front_welcome_back') }}</h2>
+                                        <p>{{ __('messages.front_enter_details_to_signin') }}</p>
                                     </div>
 
                                     <x-reusables.frontend.alert />
 
                                     <div class="form-group login-form-group">
-                                        <label class="form-label">Your Email</label>
-                                        <input class="form-control h_50" type="email" name="email" placeholder="Enter your email" required />
+                                        <label class="form-label">{{ __('messages.front_your_email') }}</label>
+                                        <input class="form-control h_50" type="email" name="email" placeholder="{{ __('messages.front_enter_your_email') }}" required />
                                     </div>
 
                                     <div class="form-group login-form-group">
                                         <div class="field-password">
-                                            <label class="form-label">Password</label>
-                                            <a class="forgot-pass-link" href="{{ route('front-forgot-password') }}">Forgot Password?</a>
+                                            <label class="form-label">{{ __('messages.front_password') }}</label>
+                                            <a class="forgot-pass-link" href="{{ route('front-forgot-password') }}">{{ __('messages.front_forgot_password_q') }}</a>
                                         </div>
 
                                         <div class="loc-group position-relative">
-                                            <input class="form-control h_50" type="password" name="password" placeholder="Enter your password" required />
+                                            <input class="form-control h_50" type="password" name="password" placeholder="{{ __('messages.front_enter_your_password') }}" required />
                                             <span class="pass-show-eye"><i class="fas fa-eye-slash"></i></span>
                                         </div>
                                     </div>
 
                                     <button class="primary-btn login-submit-btn mt-4" type="submit">
-                                        SIGN IN <i class="fas fa-arrow-right"></i>
+                                        {{ __('messages.front_sign_in') }} <i class="fas fa-arrow-right"></i>
                                     </button>
 
                                     <div class="login-divider">
-                                        <span>OR CONTINUE WITH</span>
+                                        <span>{{ __('messages.front_or_continue_with') }}</span>
                                     </div>
 
                                     <div class="social-login-options">
@@ -70,13 +70,13 @@
 
                                         <a href="javascript:void(0);" class="social-login-btn magic-login-btn" data-bs-toggle="modal" data-bs-target="#magicLinkLoginModal">
                                             <i class="far fa-envelope social-icon"></i>
-                                            <span>Magic Link</span>
+                                            <span>{{ __('messages.front_magic_link') }}</span>
                                         </a>
                                     </div>
 
                                     <div class="login-register-text">
-                                        Don't have an account?
-                                        <a href="{{ route('front-register') }}">Register</a>
+                                        {{ __('messages.front_dont_have_account') }}
+                                        <a href="{{ route('front-register') }}">{{ __('messages.front_register') }}</a>
                                     </div>
 
                                     <!-- <div class="login-migration-notice">
@@ -112,7 +112,7 @@
                 @csrf
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="magicLinkLoginModalLabel">Login with Magic Link</h5>
+                        <h5 class="modal-title" id="magicLinkLoginModalLabel">{{ __('messages.front_login_with_magic_link') }}</h5>
                         <button type="button" class="close-model-btn" data-bs-dismiss="modal" aria-label="Close">
                             <i class="uil uil-multiply"></i>
                         </button>
@@ -149,8 +149,8 @@
                             <div class="row">
                                 <div class="col-lg-12 col-md-12">
                                     <div class="form-group mt-4">
-                                        <label class="form-label">Email*</label>
-                                        <input class="form-control h_50" type="email" name="email_address" placeholder="Enter your email" required>
+                                        <label class="form-label">{{ __('messages.front_your_email') }}*</label>
+                                        <input class="form-control h_50" type="email" name="email_address" placeholder="{{ __('messages.front_enter_your_email') }}" required>
                                     </div>
                                 </div>
                             </div>
@@ -158,8 +158,8 @@
                     </div>
 
                     <div class="modal-footer">
-                        <button type="button" class="primary-btn w-fit" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" form="magicLinkLoginForm" class="primary-btn w-fit">Get Magic Link</button>
+                        <button type="button" class="primary-btn w-fit" data-bs-dismiss="modal">{{ __('messages.front_cancel') }}</button>
+                        <button type="submit" form="magicLinkLoginForm" class="primary-btn w-fit">{{ __('messages.front_get_magic_link') }}</button>
                     </div>
                 </div>
             </form>
