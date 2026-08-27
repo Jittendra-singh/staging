@@ -294,7 +294,8 @@
                             </div>
                         </section>
                         <section class="section">
-
+                            <div class="main-card mt-4">
+                                <div class="dashboard-wrap-content p-4">
                             <div class="help-cards">
                                 <div class="help-card" onclick="window.location.href='{{route('front-post-a-event')}}'">
                                     <input type="radio" name="help-option" id="creating-event" value="Creating an event" hidden>
@@ -325,11 +326,14 @@
                                     </label>
                                 </div>
                             </div>
+                                </div>
+                            </div>
                         </section>
                         
                         <!-- Waitlist Section (Static UI) -->
                         <section class="section mt-5 mb-5">
-                            
+                            <div class="main-card mt-4">
+                                <div class="dashboard-wrap-content p-4">
                             @if(isset($events) && $events->count() > 0)
                             <!-- Filter Dropdown -->
                             <div class="d-flex align-items-center mb-4">
@@ -488,9 +492,13 @@
                                     }
                                 });
                             </script>
+                                </div>
+                            </div>
                         </section>
 
                         <section class="section">
+                            <div class="main-card mt-4">
+                                <div class="dashboard-wrap-content p-4">
                             <div class="section-header">
                                 <div>
                                     <h2 class="section-title">Your checklist</h2>
@@ -568,6 +576,8 @@
                                         </svg>
                                         Connect Stripe
                                     </a>
+                                </div>
+                            </div>
                                 </div>
                             </div>
                         </section>
