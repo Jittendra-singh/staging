@@ -335,8 +335,8 @@
                             <div class="main-card mt-4">
                                 <div class="dashboard-wrap-content p-4">
                             @if(isset($events) && $events->count() > 0)
-                            <p class="text-uppercase text-secondary mb-1" style="font-size: 12px; font-weight: 600; letter-spacing: 1px;">WAITLIST</p>
-                            <h2 class="fw-bold mb-4" style="font-size: 24px;">{{ $events->where('id', $selectedEventId)->first()->event_name ?? 'None' }}</h2>
+                            <h2 class="section-title mb-1">Waitlist</h2>
+                            <p class="text-secondary fw-semibold mb-4" style="font-size: 15px;">{{ $events->where('id', $selectedEventId)->first()->event_name ?? 'None' }}</p>
 
                             @if(isset($waitlists))
                             <!-- Controls Row: Filter, Search, Export -->
@@ -360,7 +360,7 @@
                                 </div>
                                 <div class="col-md-3 d-flex justify-content-md-end justify-content-start mt-3 mt-md-0">
                                     <!-- Export Button -->
-                                    <a id="waitlist-export-btn" href="{{ route('export.waitlist', ['event_id' => $selectedEventId, 'search' => request('search')]) }}" class="btn text-white fw-semibold shadow-sm d-flex align-items-center gap-2 custom-export-btn" style="background-color: #0ea5e9; border-radius: 8px; padding: 8px 20px; text-decoration: none;">
+                                    <a id="waitlist-export-btn" href="{{ route('export.waitlist', ['event_id' => $selectedEventId, 'search' => request('search')]) }}" class="start-btn text-white fw-semibold shadow-sm d-flex align-items-center gap-2 custom-export-btn" style="border-radius: 8px; padding: 8px 20px; text-decoration: none;">
                                         <i class="fa fa-download" style="font-size: 13px;"></i> Export Waitlist
                                     </a>
                                 </div>
