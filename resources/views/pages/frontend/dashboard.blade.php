@@ -335,33 +335,33 @@
                             <div class="main-card mt-4">
                                 <div class="dashboard-wrap-content p-4">
                             @if(isset($events) && $events->count() > 0)
-                            <!-- Filter Dropdown -->
-                            <div class="d-flex align-items-center mb-4">
-                                <label for="eventFilter" class="me-2 fw-semibold text-secondary" style="font-size: 14px;">Filter by Event:</label>
-                                <select id="eventFilter" class="form-select w-auto shadow-sm" style="border-radius: 8px;" onchange="window.location.href='?event_id=' + this.value + (new URLSearchParams(window.location.search).get('search') ? '&search=' + new URLSearchParams(window.location.search).get('search') : '')">
-                                    @foreach($events as $event)
-                                        <option value="{{ $event->id }}" {{ $selectedEventId == $event->id ? 'selected' : '' }}>{{ $event->event_name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
+                            <p class="text-uppercase text-secondary mb-1" style="font-size: 12px; font-weight: 600; letter-spacing: 1px;">WAITLIST</p>
+                            <h2 class="fw-bold mb-4" style="font-size: 24px;">{{ $events->where('id', $selectedEventId)->first()->event_name ?? 'None' }}</h2>
 
                             @if(isset($waitlists))
-                            <!-- Waitlist Header (Title, Search, Export) -->
-                            <div class="row align-items-end mb-4">
-                                <div class="col-md-5">
-                                    <h2 class="fw-bold mb-2" style="font-size: 24px;">Waitlist: {{ $events->where('id', $selectedEventId)->first()->event_name ?? 'None' }}</h2>
-                                    <p class="text-secondary mb-0" style="font-size: 15px;">Total people on waitlist: <strong id="waitlist-total-count" class="text-dark">{{ $totalWaitlistCount ?? 0 }}</strong></p>
-                                </div>
-                                <div class="col-md-7 d-flex justify-content-end gap-3 align-items-center mt-3 mt-md-0">
+                            <!-- Controls Row: Filter, Search, Export -->
+                            <div class="row align-items-center mb-4">
+                                <div class="col-md-9 d-flex flex-wrap align-items-center gap-3">
+                                    <!-- Filter Dropdown -->
+                                    <div class="d-flex align-items-center">
+                                        <label for="eventFilter" class="me-2 fw-semibold text-secondary text-nowrap" style="font-size: 14px;">Filter by Event:</label>
+                                        <select id="eventFilter" class="form-select shadow-sm" style="border-radius: 8px; min-width: 150px; max-width: 200px;" onchange="window.location.href='?event_id=' + this.value + (new URLSearchParams(window.location.search).get('search') ? '&search=' + new URLSearchParams(window.location.search).get('search') : '')">
+                                            @foreach($events as $event)
+                                                <option value="{{ $event->id }}" {{ $selectedEventId == $event->id ? 'selected' : '' }}>{{ $event->event_name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
                                     <!-- Search Bar -->
-                                    <form id="waitlistSearchForm" method="GET" action="{{ route('front-dashboard') }}" class="position-relative" style="max-width: 400px; width: 100%;">
+                                    <form id="waitlistSearchForm" method="GET" action="{{ route('front-dashboard') }}" class="position-relative flex-grow-1" style="max-width: 400px; min-width: 250px;">
                                         <input type="hidden" name="event_id" value="{{ $selectedEventId }}">
                                         <i class="fa fa-search position-absolute text-secondary" style="top: 50%; left: 16px; transform: translateY(-50%); z-index: 10;"></i>
                                         <input type="text" id="waitlistSearchInput" name="search" value="{{ request('search') }}" class="form-control shadow-sm" style="padding-left: 42px !important; border-radius: 8px; border: 1px solid #dee2e6; position: relative; z-index: 1;" placeholder="Search volunteers by name or email...">
                                     </form>
+                                </div>
+                                <div class="col-md-3 d-flex justify-content-md-end justify-content-start mt-3 mt-md-0">
                                     <!-- Export Button -->
-                                    <a id="waitlist-export-btn" href="{{ route('export.waitlist', ['event_id' => $selectedEventId, 'search' => request('search')]) }}" class="btn text-white fw-semibold shadow-sm d-flex align-items-center gap-2 custom-export-btn" style="background-color: #3b82f6; border-radius: 8px; padding: 8px 20px; text-decoration: none;">
-                                        <i class="fa fa-download" style="font-size: 13px;"></i> Export
+                                    <a id="waitlist-export-btn" href="{{ route('export.waitlist', ['event_id' => $selectedEventId, 'search' => request('search')]) }}" class="btn text-white fw-semibold shadow-sm d-flex align-items-center gap-2 custom-export-btn" style="background-color: #0ea5e9; border-radius: 8px; padding: 8px 20px; text-decoration: none;">
+                                        <i class="fa fa-download" style="font-size: 13px;"></i> Export Waitlist
                                     </a>
                                 </div>
                             </div>
