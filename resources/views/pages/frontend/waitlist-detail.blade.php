@@ -309,24 +309,30 @@
                                 <input type="text" id="waitlistDetailSearchInput" name="search" value="{{ request('search') }}" class="form-control form-control-custom w-100" placeholder="Search Volunteers by name or email id">
                             </div>
                             <div class="col-md-4">
-                                <select class="form-select form-select-custom w-100" onchange="window.location.href='{{ route('waitlist.detail', ['event_id' => ':id']) }}'.replace(':id', this.value)">
-                                    @foreach($events as $ev)
-                                        <option value="{{ $ev->id }}" {{ $selectedEventId == $ev->id ? 'selected' : '' }}>{{ $ev->event_name }}</option>
-                                    @endforeach
-                                </select>
+                                <div class="loc-group position-relative w-100">
+                                    <select class="selectpicker" data-width="100%" onchange="window.location.href='{{ route('waitlist.detail', ['event_id' => ':id']) }}'.replace(':id', this.value)">
+                                        @foreach($events as $ev)
+                                            <option value="{{ $ev->id }}" {{ $selectedEventId == $ev->id ? 'selected' : '' }}>{{ $ev->event_name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
                             </div>
                             <div class="col-md-3">
-                                <select id="ticketFilter" name="ticket_id" class="form-select form-select-custom w-100">
-                                    <option value="all">All Ticket Types</option>
-                                    @foreach($tickets as $ticket)
-                                        <option value="{{ $ticket->id }}" {{ request('ticket_id') == $ticket->id ? 'selected' : '' }}>{{ $ticket->ticket_name }}</option>
-                                    @endforeach
-                                </select>
+                                <div class="loc-group position-relative w-100">
+                                    <select id="ticketFilter" name="ticket_id" class="selectpicker" data-width="100%">
+                                        <option value="all">All Ticket Types</option>
+                                        @foreach($tickets as $ticket)
+                                            <option value="{{ $ticket->id }}" {{ request('ticket_id') == $ticket->id ? 'selected' : '' }}>{{ $ticket->ticket_name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
                             </div>
                         </div>
                         <div class="d-flex justify-content-end gap-2">
                             <button type="submit" class="btn-search"><i class="fa-solid fa-search me-1"></i> Search</button>
-                            <a id="waitlist-export-btn" href="{{ route('export.waitlist', ['event_id' => $selectedEventId, 'search' => request('search')]) }}" class="btn-export text-decoration-none d-inline-flex align-items-center"><i class="fa-solid fa-download me-1"></i> Export CSV</a>
+                            <a id="waitlist-export-btn" href="{{ route('export.waitlist', ['event_id' => $selectedEventId, 'search' => request('search')]) }}" class="start-btn text-white fw-semibold shadow-sm d-inline-flex align-items-center gap-2 custom-export-btn" style="border-radius: 8px; padding: 8px 20px; text-decoration: none;">
+                                <i class="fa-solid fa-download" style="font-size: 13px;"></i> Export Waitlist
+                            </a>
                         </div>
                     </form>
                 </div>
