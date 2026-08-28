@@ -549,7 +549,7 @@ a[disabled]{
                                                 </div>
                                             </div>
                                             @if($waitlistCount > 0)
-                                            <a class="primary-btn w-fit me-3" href="{{ route('waitlist.detail', ['event_id' => $event->id]) }}" style="background-color: #2563eb !important; border-color: #2563eb !important; text-transform: uppercase;"><i class="fa-solid fa-list-ul me-2"></i>View Waitlist</a>
+                                            <a class="primary-btn w-fit me-3" href="{{ route('waitlist.detail', ['event_id' => $event->id]) }}" style="text-transform: uppercase;"><i class="fa-solid fa-list-ul me-2"></i>View Waitlist</a>
                                             @endif
                                             @if($activeTab=='upcoming')
                                             <a class="sign-up-btn text-white w-fit me-3" style="text-transform: uppercase;" href="{{route('front-post-a-event', ['id'=> $event->encrypted_id])}}" {{ ($event->is_active!=1)?'disabled':'' }}>Edit Event</a>
