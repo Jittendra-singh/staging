@@ -423,9 +423,6 @@
                                                             </div>
                                                             <h4 class="fw-bold mb-2" style="color: #1f2937; font-size: 20px;">No volunteers found</h4>
                                                             <p class="text-muted" style="font-size: 14px; max-width: 400px; margin: 0 auto 15px auto;">We couldn't find any volunteers matching your search. Try adjusting your search criteria.</p>
-                                                            <a href="?event_id={{ $selectedEventId }}" class="btn btn-outline-secondary" style="border-radius: 6px;">
-                                                                <i class="fa fa-filter me-2"></i>Clear search
-                                                            </a>
                                                         @else
                                                             <div class="empty-state-icon mb-3">
                                                                 <i class="fa-solid fa-user-plus" style="font-size: 64px; color: #9ca3af;"></i>
