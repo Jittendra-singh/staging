@@ -913,15 +913,30 @@ $icalStrData = getiCalData($event);
             data: form.serialize(),
             success: function(response) {
                 if(response.success) {
-                    alert(response.message);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: response.message,
+                        confirmButtonColor: '#3085d6'
+                    });
                     $('#join-waitlist-modal').modal('hide');
                     form[0].reset();
                 } else {
-                    alert(response.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: response.message,
+                        confirmButtonColor: '#d33'
+                    });
                 }
             },
             error: function(xhr) {
-                alert('Please fill out all required fields properly.');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'Please fill out all required fields properly.',
+                    confirmButtonColor: '#d33'
+                });
             }
         });
     }
