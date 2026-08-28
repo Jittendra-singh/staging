@@ -344,12 +344,14 @@
                                 <div class="col-md-9 d-flex flex-wrap align-items-center gap-3">
                                     <!-- Filter Dropdown -->
                                     <div class="d-flex align-items-center">
-                                        <label for="eventFilter" class="me-2 fw-semibold text-secondary text-nowrap" style="font-size: 14px;">Filter by Event:</label>
-                                        <select id="eventFilter" class="form-select shadow-sm" style="border-radius: 8px; min-width: 150px; max-width: 200px;" onchange="window.location.href='?event_id=' + this.value + (new URLSearchParams(window.location.search).get('search') ? '&search=' + new URLSearchParams(window.location.search).get('search') : '')">
-                                            @foreach($events as $event)
-                                                <option value="{{ $event->id }}" {{ $selectedEventId == $event->id ? 'selected' : '' }}>{{ $event->event_name }}</option>
-                                            @endforeach
-                                        </select>
+                                        <label for="eventFilter" class="form-label fs-6 me-2 mb-0 text-nowrap">Filter by Event:</label>
+                                        <div class="loc-group position-relative flex-grow-1">
+                                            <select id="eventFilter" class="selectpicker" onchange="window.location.href='?event_id=' + this.value + (new URLSearchParams(window.location.search).get('search') ? '&search=' + new URLSearchParams(window.location.search).get('search') : '')">
+                                                @foreach($events as $event)
+                                                    <option value="{{ $event->id }}" {{ $selectedEventId == $event->id ? 'selected' : '' }}>{{ $event->event_name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                     </div>
                                     <!-- Search Bar -->
                                     <form id="waitlistSearchForm" method="GET" action="{{ route('front-dashboard') }}" class="position-relative flex-grow-1" style="max-width: 400px; min-width: 250px;">
