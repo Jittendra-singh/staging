@@ -415,8 +415,31 @@
                                             </tr>
                                             @empty
                                             <tr>
-                                                <td colspan="5" class="px-4 py-5 text-center text-secondary">
-                                                    No volunteers found on the waitlist for this event.
+                                                <td colspan="5" class="text-center py-5" style="border-bottom: none; background-color: #f8fafc;">
+                                                    <div class="empty-state d-flex flex-column align-items-center justify-content-center" style="padding: 40px 20px;">
+                                                        @if(request()->filled('search'))
+                                                            <div class="empty-state-icon mb-3">
+                                                                <i class="fa-solid fa-magnifying-glass" style="font-size: 56px; color: #9ca3af;"></i>
+                                                            </div>
+                                                            <h4 class="fw-bold mb-2" style="color: #1f2937; font-size: 20px;">No volunteers found</h4>
+                                                            <p class="text-muted" style="font-size: 14px; max-width: 400px; margin: 0 auto 15px auto;">We couldn't find any volunteers matching your search. Try adjusting your search criteria.</p>
+                                                            <a href="?event_id={{ $selectedEventId }}" class="btn btn-outline-secondary" style="border-radius: 6px;">
+                                                                <i class="fa fa-filter me-2"></i>Clear search
+                                                            </a>
+                                                        @else
+                                                            <div class="empty-state-icon mb-3">
+                                                                <i class="fa-solid fa-user-plus" style="font-size: 64px; color: #9ca3af;"></i>
+                                                            </div>
+                                                            @php $activeEvent = isset($events) ? $events->where('id', $selectedEventId)->first() : null; @endphp
+                                                            @if($activeEvent && !$activeEvent->enable_waitlist)
+                                                                <h4 class="fw-bold mb-2" style="color: #1f2937; font-size: 20px;">Waitlist is not enabled for this event</h4>
+                                                                <p class="text-muted" style="font-size: 14px;">Enable the waitlist in your event settings to allow volunteers to join.</p>
+                                                            @else
+                                                                <h4 class="fw-bold mb-2" style="color: #1f2937; font-size: 20px;">No volunteers on this event's waitlist yet</h4>
+                                                                <p class="text-muted" style="font-size: 14px;">When people join your event's waitlist, they will appear here.</p>
+                                                            @endif
+                                                        @endif
+                                                    </div>
                                                 </td>
                                             </tr>
                                             @endforelse
