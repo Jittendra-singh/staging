@@ -119,7 +119,7 @@
                                     </div>
 
                                     <div class="volunteer-checkin-action">
-                                        @if((!empty($event->waiver_form_type) && !$isSigned && !$isCheckedIn) || (empty($event->waiver_form_type) && !$isCheckedIn))
+                                        @if(!empty($event->waiver_form_type) && !$isSigned && !$isCheckedIn)
                                             <form method="POST" action="{{ route('front-volunteer-sign-and-check-in', ['id' => $registration->encrypted_id]) }}" class="volunteer-sign-checkin-form">
                                                 @csrf
                                                 <label class="form-label fw-semibold">Volunteer Signature</label>
