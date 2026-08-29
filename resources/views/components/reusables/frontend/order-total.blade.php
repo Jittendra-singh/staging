@@ -13,7 +13,7 @@
         @if($ticket['price'] > 0)
         @if($event->charge_bear_by==1)
         <div class="order-total-dt">
-            <div class="order-text mb-0 ms-3"><small style="font-weight: 100;font-size: 13px;"><i class="uil uil-corner-down-right"></i> Base Ticket Price ({{$ticket['count']}}x {{config('app.currency')}}{{formatAmt($ticket['base_price'])}})</small></div>
+            <div class="order-text mb-0 ms-3"><small style="font-weight: 100;font-size: 13px;">Base Ticket Price ({{$ticket['count']}}x {{config('app.currency')}}{{formatAmt($ticket['base_price'])}})</small></div>
             <div class="order-number mb-0"><small style="font-weight: 100;font-size: 13px;">{{config('app.currency')}}{{formatAmt($ticket['base_price'] * $ticket['count'])}}</small></div>
         </div>
         @endif
@@ -24,12 +24,10 @@
         <div class="order-total-dt mb-3">
             <div class="order-text mb-0 ms-3">
                 <small style="font-weight:100;font-size:13px;">
-                    <i class="uil uil-corner-down-right"></i> Processing Fee 
-                    <i class="uil uil-info-circle ms-1 text-muted" 
-                       data-bs-toggle="tooltip" 
-                       data-bs-placement="top" 
-                       data-bs-html="true"
-                       title="Platform Fee ({{ $setting->event_commission }}%): {{ config('app.currency') }}{{ formatAmt($ticket['platform_fee'] * $ticket['count']) }}<br>Payment Fee ({{ $processing_fee_per }}%): {{ config('app.currency') }}{{ formatAmt($ticket['processing_fee'] * $ticket['count']) }}"></i>
+                    Processing Fee 
+                    <i class="fa-solid fa-circle-info ms-1 text-muted" 
+                       title="Platform Fee ({{ $setting->event_commission }}%): {{ config('app.currency') }}{{ formatAmt($ticket['platform_fee'] * $ticket['count']) }}&#10;Payment Fee ({{ $processing_fee_per }}%): {{ config('app.currency') }}{{ formatAmt($ticket['processing_fee'] * $ticket['count']) }}"
+                       style="cursor: help;"></i>
                     {{ $buyer_pays_fees ? '' : 'Included' }}
                 </small>
             </div>
