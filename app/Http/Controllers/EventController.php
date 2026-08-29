@@ -1145,7 +1145,7 @@ class EventController extends Controller
                 'event'            => $event,
                 'volunteerName'    => $volunteer->name,
                 //'hours'            => $orderTicket->hours_completed,
-                'hours'            => $event->volunteer_hours,
+                'hours'            => ($event->start_datetime && $event->end_datetime) ? round($event->start_datetime->diffInMinutes($event->end_datetime) / 60, 2) : 0,
                 'organization_name'   => $event->creator->organisation_name,
                 'organizer_name'   => $event->creator->first_name.' '.$event->creator->last_name,
                 'organization_email'   => $event->creator->email_address,
