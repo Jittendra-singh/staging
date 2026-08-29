@@ -27,7 +27,7 @@
                     Processing Fee 
                     <i class="fa-solid fa-circle-info ms-1 text-muted" 
                        title="Platform Fee ({{ $setting->event_commission }}%): {{ config('app.currency') }}{{ formatAmt($ticket['platform_fee'] * $ticket['count']) }}&#10;Payment Fee ({{ $processing_fee_per }}%): {{ config('app.currency') }}{{ formatAmt($ticket['processing_fee'] * $ticket['count']) }}"
-                       style="cursor: help;"></i>
+                       style="cursor: pointer;"></i>
                     {{ $buyer_pays_fees ? '' : 'Included' }}
                 </small>
             </div>
