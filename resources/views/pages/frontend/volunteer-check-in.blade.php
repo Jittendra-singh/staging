@@ -12,7 +12,7 @@
 
                         @php
                             $breadcrumbs = [
-                                ['name' => 'Ongoing Cleanups', 'url' => route('front-cleanup-ongoing')],
+                                ['name' => 'In-progress Cleanups', 'url' => route('front-cleanup-ongoing')],
                                 ['name' => $event->event_name, 'url' => route('front-registration-list', ['event' => decrypt($event_id)])],
                             ];
                         @endphp
@@ -26,7 +26,7 @@
 
                         @php
                             $breadcrumbs = [
-                                ['name' => 'Ongoing Cleanups', 'url' => route('front-cleanup-ongoing')],
+                                ['name' => 'In-progress Cleanups', 'url' => route('front-cleanup-ongoing')],
                                 ['name' => 'Volunteer Check-in', 'url' => route('front-volunteer-check-in', ['id' => $event_id])],
                             ];
                         @endphp
