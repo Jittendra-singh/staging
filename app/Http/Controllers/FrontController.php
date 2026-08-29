@@ -598,14 +598,16 @@ class FrontController extends Controller
         $cohostEventCount = $user->cohostingEvents()->count();
         $hostingEventCount = $user->events()->count();
 
-        $startDateSort = request('start_date_sort', 'desc');
-        if (!in_array($startDateSort, ['asc', 'desc'])) {
-            $startDateSort = 'desc';
-        }
-
         $tab = request('tabs', 'upcoming');
         if (!in_array($tab, ['upcoming', 'ongoing', 'ended', 'cancelled', 'action_required'])) {
             $tab = 'upcoming';
+        }
+
+        $defaultSort = in_array($tab, ['upcoming', 'ongoing']) ? 'asc' : 'desc';
+
+        $startDateSort = request('start_date_sort', $defaultSort);
+        if (!in_array($startDateSort, ['asc', 'desc'])) {
+            $startDateSort = $defaultSort;
         }
 
         $now = now();
