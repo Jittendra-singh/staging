@@ -1041,7 +1041,7 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                                                 </label>
                                                                             </div>
 
-                                                                            <div class="col-md-6">
+                                                                            <div class="col-md-6 d-none">
                                                                                 <label class="fee-option">
                                                                                     <input type="radio" value="3" id="participation_type3" name="participation_type" {{ old('participation_type', $form_data->participation_type ?? 1) == 3 ? 'checked' : '' }}>
                                                                                     <div class="fee-card">
