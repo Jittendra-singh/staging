@@ -1457,16 +1457,7 @@ $(document).ready(function () {
 			$('#waste_collected').focus();
 			return false;
 		}
-		if($('#area_cleaned').val()==''){
-			showError('Please enter the area cleaned value', 'error');
-			$('#area_cleaned').focus();
-			return false;
-		}
-		if($('#volunteer_hours').val()==''){
-			showError('Please enter the total volunteer hours', 'error');
-			$('#volunteer_hours').focus();
-			return false;
-		}
+
 		if($('#post_event_notes').val()==''){
 			showError('Please enter the post event notes', 'error');
 			$('#post_event_notes').focus();

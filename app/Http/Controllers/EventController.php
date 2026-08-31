@@ -982,13 +982,13 @@ class EventController extends Controller
             'waste_collected' => 'required|string|max:255',
 
             //'team_name' => 'nullable|string|max:1000',
-            'volunteer_hours' => 'required|numeric|min:0',
+
             'post_event_notes' => 'nullable|string|max:1000',
         ]);
         $event->waste_collected     = $validated['waste_collected'] ?? null;
 
         //$event->team_name           = $validated['team_name'] ?? null;
-        $event->volunteer_hours     = isset($validated['volunteer_hours']) ? ceil($validated['volunteer_hours']) : null;
+
         $event->post_event_notes    = $validated['post_event_notes'] ?? null;
         if (request()->hasFile('after_event_images')) {
             $files = request()->file('after_event_images');
@@ -1237,8 +1237,8 @@ class EventController extends Controller
             $this->setFlashSession(false,'Event is already marked as completed and wrap-up email has been sent.');
             return redirect()->route('post-event-action', ['placeholder' => $id]);
         }
-        if(empty($event->waste_collected) || empty($event->volunteer_hours)){
-            $this->setFlashSession(false,'Waste Collected and Volunteer Hours should be saved before sending the email.');
+        if(empty($event->waste_collected)){
+            $this->setFlashSession(false,'Waste Collected should be saved before sending the email.');
             return redirect()->route('post-event-action', ['placeholder' => $id]);
         }
         $event->is_completed = 1;

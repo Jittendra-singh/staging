@@ -33,6 +33,22 @@ class Event extends Model
             get: fn () => ($this->end_datetime ? $this->end_datetime->format(config('app.eventDateTimeFormat')).' '.$timezoneCode : null),
         );
     }
+    public function volunteerHours():Attribute{
+        return Attribute::make(
+            get: function ($value) {
+                if ($this->start_datetime && $this->end_datetime) {
+                    $hours = $this->start_datetime->diffInMinutes($this->end_datetime) / 60;
+                    if ($this->relationLoaded('tickets')) {
+                        $checkedInCount = $this->tickets->where('checkin', 1)->count();
+                    } else {
+                        $checkedInCount = $this->tickets()->where('checkin', 1)->count();
+                    }
+                    return $checkedInCount * $hours;
+                }
+                return 0;
+            }
+        );
+    }
     public function waiverFormContentFilter(){
         $content = "";
         if($this->waiver_form_content){

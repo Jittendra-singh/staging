@@ -2058,8 +2058,8 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                         </div>
                                                         <div class="col-sm-4">
                                                             <div class="form-group">
-                                                                <label class="form-label fs-6">Total Volunteer Hours*</label>
-                                                                <input id="volunteer_hours" class="form-control h_50" type="number" step="0.01" min="0" value="{{ old('volunteer_hours', $form_data->volunteer_hours ?? '') }}" name="volunteer_hours" placeholder="" required>
+                                                                <label class="form-label fs-6">Total Volunteer Hours (Auto-calculated)</label>
+                                                                <input id="volunteer_hours" class="form-control h_50" type="number" step="0.01" min="0" value="{{ $form_data->volunteer_hours ?? 0 }}" name="volunteer_hours" placeholder="" readonly>
                                                             </div>
                                                             <small>Sum of hours contributed by all participants.</small>
                                                         </div>

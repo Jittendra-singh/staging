@@ -372,8 +372,8 @@
                             </div> -->
                             <div class="col-md-6 mb-2">
                                 <div class="form-group">
-                                    <label for="">Total Volunteer Hours</label>
-                                    <input type="number" step="0.01" min="0" value="{{ $event->volunteer_hours }}" class="form-control" required name="volunteer_hours" placeholder="Total Volunteer Hours" />
+                                    <label for="">Total Volunteer Hours (Auto-calculated)</label>
+                                    <input type="number" step="0.01" min="0" value="{{ $event->volunteer_hours }}" class="form-control" readonly name="volunteer_hours" placeholder="Total Volunteer Hours" />
                                 </div>
                             </div>
                             <div class="col-md-6 mb-2">

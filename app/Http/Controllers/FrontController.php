@@ -2307,7 +2307,7 @@ class FrontController extends Controller
             'waste_collected'    => 'required|max:255',
 
             //'team_name'          => 'required|string',
-            'volunteer_hours'    => 'required|numeric|min:0',
+
             'post_event_notes'   => 'required|string',
             'volunteer_registered_from_other_sites' => 'nullable|numeric|min:0',
         ]);
@@ -2317,7 +2317,7 @@ class FrontController extends Controller
             $event->waste_collected = $validated['waste_collected'];
 
             //$event->team_name = $validated['team_name'];
-            $event->volunteer_hours = ceil($validated['volunteer_hours']);
+
             $event->post_event_notes = $validated['post_event_notes'];
             $event->volunteer_registered_from_other_sites = $validated['volunteer_registered_from_other_sites'] ?? 0;
             if (request()->hasFile('after_event_images')) {
@@ -2629,8 +2629,8 @@ class FrontController extends Controller
         if($event->is_completed==1){
             return $this->generateJsonResponse(false, 'Event is already marked as completed and wrap-up email has been sent.');
         }
-        if(empty($event->waste_collected) || empty($event->volunteer_hours)){
-            return $this->generateJsonResponse(false, 'Waste Collected and Volunteer Hours should be saved before sending the email.');
+        if(empty($event->waste_collected)){
+            return $this->generateJsonResponse(false, 'Waste Collected should be saved before sending the email.');
         }
         $event->is_completed = 1;
         $event->wrapup_email_sent_by = auth()->guard('front')->user()->id;
@@ -2749,8 +2749,8 @@ class FrontController extends Controller
         ]);
 
         $event = Event::with('creator')->findOrFail(decrypt($validated['event_id']));
-        if(empty($event->waste_collected) || empty($event->volunteer_hours)){
-            return $this->generateJsonResponse(false, 'Waste Collected and Volunteer Hours should be saved before sending the email.');
+        if(empty($event->waste_collected)){
+            return $this->generateJsonResponse(false, 'Waste Collected should be saved before sending the email.');
         }
         $tickets = $event->tickets()->where('checkin', 1)->where('community_form_status', 'pending')->get();
         if($tickets->count() == 0){
