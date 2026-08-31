@@ -16,7 +16,6 @@
     $hasImages = !empty($images);
 
     $wasteCollected = !empty($event->waste_collected) ? $event->waste_collected . ' lbs' : '-- lbs';
-    $areaCleaned = !empty($event->area_cleaned) ? $event->area_cleaned . ' yards' : '-- yards';
     $volunteerHours = !empty($event->volunteer_hours) ? $event->volunteer_hours . ' hrs' : '-- hrs';
 @endphp
 
@@ -389,15 +388,6 @@
                                     </div>
                                 </div>
 
-                                <div class="cleanup-stat-card">
-                                    <div class="cleanup-stat-icon">
-                                        <i class="fa-solid fa-grip-lines"></i>
-                                    </div>
-                                    <div>
-                                        <p class="cleanup-stat-label">Area Cleaned</p>
-                                        <h4 class="cleanup-stat-value">{{ $areaCleaned }}</h4>
-                                    </div>
-                                </div>
 
                                 <div class="cleanup-stat-card">
                                     <div class="cleanup-stat-icon">

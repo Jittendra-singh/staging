@@ -187,7 +187,7 @@ class Event extends Model
         $query->detailactive()->where('start_datetime', '>', now());
     }
     public function afterActionDone(){
-        return $this->area_cleaned && $this->waste_collected;
+        return $this->waste_collected;
     }
     public function creator(){
         //return $this->morphTo();

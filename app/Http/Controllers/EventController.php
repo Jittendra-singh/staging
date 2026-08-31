@@ -841,7 +841,7 @@ class EventController extends Controller
         $new_event->updated_at  = $today_dt;
         $new_event->status  = 'draft';
         $new_event->waste_collected  = null;
-        $new_event->area_cleaned  = null;
+
         //$new_event->team_name  = null;
         $new_event->volunteer_hours  = null;
         $new_event->post_event_notes  = null;
@@ -980,13 +980,13 @@ class EventController extends Controller
         $request = request();
         $validated = $request->validate([
             'waste_collected' => 'required|string|max:255',
-            'area_cleaned' => 'required|string|max:255',
+
             //'team_name' => 'nullable|string|max:1000',
             'volunteer_hours' => 'required|numeric|min:0',
             'post_event_notes' => 'nullable|string|max:1000',
         ]);
         $event->waste_collected     = $validated['waste_collected'] ?? null;
-        $event->area_cleaned        = $validated['area_cleaned'] ?? null;
+
         //$event->team_name           = $validated['team_name'] ?? null;
         $event->volunteer_hours     = isset($validated['volunteer_hours']) ? ceil($validated['volunteer_hours']) : null;
         $event->post_event_notes    = $validated['post_event_notes'] ?? null;
@@ -1237,8 +1237,8 @@ class EventController extends Controller
             $this->setFlashSession(false,'Event is already marked as completed and wrap-up email has been sent.');
             return redirect()->route('post-event-action', ['placeholder' => $id]);
         }
-        if(empty($event->waste_collected) || empty($event->area_cleaned) || empty($event->volunteer_hours)){
-            $this->setFlashSession(false,'Waste Collected, Area Cleaned, and Volunteer Hours should be saved before sending the email.');
+        if(empty($event->waste_collected) || empty($event->volunteer_hours)){
+            $this->setFlashSession(false,'Waste Collected and Volunteer Hours should be saved before sending the email.');
             return redirect()->route('post-event-action', ['placeholder' => $id]);
         }
         $event->is_completed = 1;
@@ -1277,7 +1277,7 @@ class EventController extends Controller
                             "organizer_name" => $event->creator->first_name.' '.$event->creator->last_name,
                             "total_volunteers" => $tickets->count(),
                             "waste_collected" => $event->waste_collected,
-                            "area_cleaned" => $event->area_cleaned,
+
                             "service_hours" => $event->volunteer_hours ?? 'N/A',
                             'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
                             'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]),
@@ -1341,7 +1341,7 @@ class EventController extends Controller
                     'date' => $event->start_datetime->format(config('app.dateTimeFormat')),
                     'volunteersCount' => $event->tickets()->where('checkin', 1)->count(),
                     'wasteCollected' => $event->waste_collected ?? 'N/A',
-                    'areaCleaned' => $event->area_cleaned ?? 'N/A',
+
                     'volunteerHours' => $event->volunteer_hours ?? 'N/A',
                     'communityServiceFormLink' => $event->allow_community_service_form ? route('community-form', ['placeholder' => $event->encrypted_id]) : null,
                     'feedbackFormLink' => route('event-feedback', ['placeholder' => $event->encrypted_id]),

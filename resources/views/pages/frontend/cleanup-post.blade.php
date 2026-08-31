@@ -2058,17 +2058,6 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                         </div>
                                                         <div class="col-sm-4">
                                                             <div class="form-group">
-                                                                <label class="form-label fs-6">Area Cleaned*</label>
-                                                                <!-- <input id="area_cleaned" class="form-control h_50" type="text" value="{{ old('area_cleaned', $form_data->area_cleaned ?? '') }}" name="area_cleaned" placeholder="" value="" required> -->
-                                                                <div class="input-group">
-                                                                    <input autocomplete="off" step="0.01" min="0.01" id="area_cleaned" type="number" class="form-control decimalonly h_50" placeholder="" name="area_cleaned" required value="{{ old('area_cleaned', $form_data->area_cleaned ?? '') }}">
-                                                                    <div class="input-group-text">Yards</div>
-                                                                </div>
-                                                                <small>Estimated size of the cleanup site.</small>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-sm-4">
-                                                            <div class="form-group">
                                                                 <label class="form-label fs-6">Total Volunteer Hours*</label>
                                                                 <input id="volunteer_hours" class="form-control h_50" type="number" step="0.01" min="0" value="{{ old('volunteer_hours', $form_data->volunteer_hours ?? '') }}" name="volunteer_hours" placeholder="" required>
                                                             </div>

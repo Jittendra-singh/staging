@@ -362,18 +362,7 @@
                                     <div class="input-group-text">Pound (lb)</div>
                                 </div>
                             </div>
-                            <div class="col-md-6 mb-2">
-                                <!-- <div class="form-group">
-                                    <label for="">Area Cleaned*</label>
-                                    <input type="text" value="{{ $event->area_cleaned }}" class="form-control"
-                                        name="area_cleaned" placeholder="Area Cleaned" required />
-                                </div> -->
-                                <label for="">Area Cleaned*</label>
-                                <div class="input-group">
-                                    <input id="area_cleaned" type="number" class="form-control" placeholder="Area Cleaned" name="area_cleaned" required value="{{ $event->area_cleaned }}">
-                                    <div class="input-group-text">Yards</div>
-                                </div>
-                            </div>
+
                             <!-- <div class="col-md-6 mb-2">
                                 <div class="form-group">
                                     <label for="">Team Name</label>

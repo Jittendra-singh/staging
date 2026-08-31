@@ -331,10 +331,10 @@
                         </section>
                         
                         <!-- Waitlist Section (Static UI) -->
+                        @if(isset($events) && $events->count() > 0)
                         <section class="section mt-5 mb-5">
                             <div class="main-card mt-4">
                                 <div class="dashboard-wrap-content p-4">
-                            @if(isset($events) && $events->count() > 0)
                             <h2 class="section-title mb-1">Waitlist</h2>
                             <p class="text-secondary fw-semibold mb-4" style="font-size: 15px;">{{ $events->where('id', $selectedEventId)->first()->event_name ?? 'None' }}</p>
 
@@ -453,7 +453,6 @@
                                 </div>
                             </div>
                             @endif
-                            @endif
 
                             <script>
                                 document.addEventListener("DOMContentLoaded", function() {
@@ -517,6 +516,7 @@
                                 </div>
                             </div>
                         </section>
+                        @endif
 
                         <section class="section">
                             <div class="main-card mt-4">

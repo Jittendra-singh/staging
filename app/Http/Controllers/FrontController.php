@@ -1305,7 +1305,7 @@ class FrontController extends Controller
         $new_event->is_active  = 1;
         $new_event->cancelled_at  = null;
         $new_event->waste_collected  = null;
-        $new_event->area_cleaned  = null;
+
         $new_event->volunteer_registered_from_other_sites  = null;
         $new_event->team_name  = null;
         $new_event->volunteer_hours  = null;
@@ -1476,7 +1476,7 @@ class FrontController extends Controller
                 $newEvent->cancelled_at = null;
                 $newEvent->is_completed = 0;
                 $newEvent->waste_collected = null;
-                $newEvent->area_cleaned = null;
+
                 $newEvent->volunteer_hours = null;
                 $newEvent->post_event_notes = null;
                 $newEvent->click_views = 0;
@@ -2305,7 +2305,7 @@ class FrontController extends Controller
         $validated = $request->validate([
             'event_id'           => 'required',
             'waste_collected'    => 'required|max:255',
-            'area_cleaned'       => 'required|max:255',
+
             //'team_name'          => 'required|string',
             'volunteer_hours'    => 'required|numeric|min:0',
             'post_event_notes'   => 'required|string',
@@ -2315,7 +2315,7 @@ class FrontController extends Controller
         try {
             $event = \App\Models\Event::findOrFail(decrypt($validated['event_id']));
             $event->waste_collected = $validated['waste_collected'];
-            $event->area_cleaned = $validated['area_cleaned'];
+
             //$event->team_name = $validated['team_name'];
             $event->volunteer_hours = ceil($validated['volunteer_hours']);
             $event->post_event_notes = $validated['post_event_notes'];
@@ -2629,8 +2629,8 @@ class FrontController extends Controller
         if($event->is_completed==1){
             return $this->generateJsonResponse(false, 'Event is already marked as completed and wrap-up email has been sent.');
         }
-        if(empty($event->waste_collected) || empty($event->area_cleaned) || empty($event->volunteer_hours)){
-            return $this->generateJsonResponse(false, 'Waste Collected, Area Cleaned, and Volunteer Hours should be saved before sending the email.');
+        if(empty($event->waste_collected) || empty($event->volunteer_hours)){
+            return $this->generateJsonResponse(false, 'Waste Collected and Volunteer Hours should be saved before sending the email.');
         }
         $event->is_completed = 1;
         $event->wrapup_email_sent_by = auth()->guard('front')->user()->id;
@@ -2686,7 +2686,7 @@ class FrontController extends Controller
                             "total_registered_volunteers" => $registered_tickets->count(),
                             "volunteer_registered_from_other_sites" => $event->volunteer_registered_from_other_sites,
                             "waste_collected" => $event->waste_collected,
-                            "area_cleaned" => $event->area_cleaned,
+
                             "service_hours" => $event->volunteer_hours ?? 'N/A',
                             'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
                             'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]),
@@ -2749,8 +2749,8 @@ class FrontController extends Controller
         ]);
 
         $event = Event::with('creator')->findOrFail(decrypt($validated['event_id']));
-        if(empty($event->waste_collected) || empty($event->area_cleaned) || empty($event->volunteer_hours)){
-            return $this->generateJsonResponse(false, 'Waste Collected, Area Cleaned, and Volunteer Hours should be saved before sending the email.');
+        if(empty($event->waste_collected) || empty($event->volunteer_hours)){
+            return $this->generateJsonResponse(false, 'Waste Collected and Volunteer Hours should be saved before sending the email.');
         }
         $tickets = $event->tickets()->where('checkin', 1)->where('community_form_status', 'pending')->get();
         if($tickets->count() == 0){
@@ -2763,7 +2763,7 @@ class FrontController extends Controller
                     'date' => $event->start_datetime->format(config('app.dateTimeFormat')),
                     'volunteersCount' => $event->tickets()->where('checkin', 1)->count(),
                     'wasteCollected' => $event->waste_collected ?? 'N/A',
-                    'areaCleaned' => $event->area_cleaned ?? 'N/A',
+
                     'communityServiceFormLink' => $event->allow_community_service_form ? $this->mailUrl('community-form', ['placeholder' => $event->encrypted_id]) : null,
                     //'feedbackFormLink' => route('event-feedback', ['placeholder' => $event->encrypted_id]),
                     'feedbackFormLink' => $this->mailUrl('event-feedback', ['placeholder' => $event->encrypted_id]),
@@ -3280,7 +3280,7 @@ class FrontController extends Controller
                                         "organizer_name" => $event->creator->first_name.' '.$event->creator->last_name,
                                         "total_volunteers" => $tickets->count(),
                                         "waste_collected" => $event->waste_collected,
-                                        "area_cleaned" => $event->area_cleaned,
+
                                         "service_hours" => $event->volunteer_hours ?? 'N/A',
                                         'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
                                         'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($orderTicket->id)]),
@@ -3774,7 +3774,7 @@ class FrontController extends Controller
                                     "organizer_name" => $event->creator->first_name.' '.$event->creator->last_name,
                                     "total_volunteers" => $tickets->count(),
                                     "waste_collected" => $event->waste_collected,
-                                    "area_cleaned" => $event->area_cleaned,
+
                                     "service_hours" => $event->volunteer_hours ?? 'N/A',
                                     'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
                                     'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($orderTicket->id)]),
