@@ -196,11 +196,11 @@ class Event extends Model
         $query->detailactive()->where('end_datetime', '<', now());
     }
     public function scopePresent($query){
-        $query->detailactive()->where('start_datetime', '<=', now())
+        $query->detailactive()->where('start_datetime', '<=', now()->addHours(3))
               ->where('end_datetime', '>=', now());
     }
     public function scopeFuture($query){
-        $query->detailactive()->where('start_datetime', '>', now());
+        $query->detailactive()->where('start_datetime', '>', now()->addHours(3));
     }
     public function afterActionDone(){
         return $this->waste_collected;
