@@ -101,7 +101,7 @@ a[disabled]{
                                             </a>
                                             <a href="javascript:void(0);" onclick="showHostingEvent('action_required',this)" hosting-event-val="action_required"
                                                 class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'action_required' ? 'active text-white' : '' }}">
-                                                Action Required
+                                                Pending Completion
                                             </a> -->
                                             <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'upcoming', 'start_date_sort' => request('start_date_sort', 'desc')]) }}"
                                                 class="btn btn-outline-primary px-3 py-2 {{ request('tabs', 'upcoming') == 'upcoming' ? 'active text-white' : '' }}">
@@ -115,7 +115,7 @@ a[disabled]{
 
                                             <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'action_required', 'start_date_sort' => request('start_date_sort', 'desc')]) }}"
                                                 class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'action_required' ? 'active text-white' : '' }}">
-                                                Action Required
+                                                Pending Completion
                                             </a>
 
                                             <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'ended', 'start_date_sort' => request('start_date_sort', 'desc')]) }}"
