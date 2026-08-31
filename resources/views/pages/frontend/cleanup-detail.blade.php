@@ -83,9 +83,9 @@
             $event->end_datetime
         );
     } elseif ($endDate && $endDate->isPast()) {
-        $runningStatus = 'Action Required';
+        $runningStatus = 'Pending Completion';
         $statusClass = 'danger';
-        $statusDetailLabel = 'Action Required';
+        $statusDetailLabel = 'Pending Completion';
         $statusDetailValue = 'Ended '.$formatDateTime(
             $event->end_datetime
         );

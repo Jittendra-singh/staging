@@ -294,7 +294,8 @@
                             </div>
                         </section>
                         <section class="section">
-
+                            <div class="main-card mt-4">
+                                <div class="dashboard-wrap-content p-4">
                             <div class="help-cards">
                                 <div class="help-card" onclick="window.location.href='{{route('front-post-a-event')}}'">
                                     <input type="radio" name="help-option" id="creating-event" value="Creating an event" hidden>
@@ -325,8 +326,201 @@
                                     </label>
                                 </div>
                             </div>
+                                </div>
+                            </div>
                         </section>
+                        
+                        <!-- Waitlist Section (Static UI) -->
+                        <section class="section mt-5 mb-5">
+                            <div class="main-card mt-4">
+                                <div class="dashboard-wrap-content p-4">
+                            @if(isset($events) && $events->count() > 0)
+                            <h2 class="section-title mb-1">Waitlist</h2>
+                            <p class="text-secondary fw-semibold mb-4" style="font-size: 15px;">{{ $events->where('id', $selectedEventId)->first()->event_name ?? 'None' }}</p>
+
+                            @if(isset($waitlists))
+                            <!-- Controls Row: Filter, Search, Export -->
+                            <div class="row align-items-center mb-4">
+                                <div class="col-md-9 d-flex flex-wrap align-items-center gap-3">
+                                    <!-- Filter Dropdown -->
+                                    <div class="d-flex align-items-center">
+                                        <label for="eventFilter" class="form-label fs-6 me-2 mb-0 text-nowrap">Filter by Event:</label>
+                                        <div class="loc-group position-relative flex-grow-1">
+                                            <select id="eventFilter" class="selectpicker" onchange="window.location.href='?event_id=' + this.value + (new URLSearchParams(window.location.search).get('search') ? '&search=' + new URLSearchParams(window.location.search).get('search') : '')">
+                                                @foreach($events as $event)
+                                                    <option value="{{ $event->id }}" {{ $selectedEventId == $event->id ? 'selected' : '' }}>{{ $event->event_name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <!-- Search Bar -->
+                                    <form id="waitlistSearchForm" method="GET" action="{{ route('front-dashboard') }}" class="position-relative flex-grow-1" style="max-width: 400px; min-width: 250px;">
+                                        <input type="hidden" name="event_id" value="{{ $selectedEventId }}">
+                                        <i class="fa fa-search position-absolute text-secondary" style="top: 50%; left: 16px; transform: translateY(-50%); z-index: 10;"></i>
+                                        <input type="text" id="waitlistSearchInput" name="search" value="{{ request('search') }}" class="form-control shadow-sm" style="padding-left: 42px !important; border-radius: 8px; border: 1px solid #dee2e6; position: relative; z-index: 1;" placeholder="Search volunteers by name or email...">
+                                    </form>
+                                </div>
+                                <div class="col-md-3 d-flex justify-content-md-end justify-content-start mt-3 mt-md-0">
+                                    <!-- Export Button -->
+                                    <a id="waitlist-export-btn" href="{{ route('export.waitlist', ['event_id' => $selectedEventId, 'search' => request('search')]) }}" class="start-btn text-white fw-semibold shadow-sm d-flex align-items-center gap-2 custom-export-btn" style="border-radius: 8px; padding: 8px 20px; text-decoration: none;">
+                                        <i class="fa fa-download" style="font-size: 13px;"></i> Export Waitlist
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Waitlist Table Card -->
+                            <div id="waitlist-table-card" class="card shadow-sm border-0" style="border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb !important;">
+                                <style>
+                                    .waitlist-table td { border-bottom: 2px solid #e5e7eb !important; }
+                                    .waitlist-table tr:last-child td { border-bottom: none !important; }
+                                    .custom-export-btn:hover, .custom-export-btn:focus { color: white !important; }
+                                </style>
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0 waitlist-table">
+                                        <thead style="background-color: #f3f4f6;">
+                                            <tr style="background-color: #f3f4f6;">
+                                                <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px; background-color: #f3f4f6 !important;">Volunteer Name</th>
+                                                <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px; background-color: #f3f4f6 !important;">Email</th>
+                                                <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px; background-color: #f3f4f6 !important;">Ticket Type</th>
+                                                <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px; background-color: #f3f4f6 !important;">Joined Date/Time</th>
+                                                <th class="py-3 px-4 fw-semibold text-secondary border-0" style="font-size: 13px; background-color: #f3f4f6 !important;">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="border-top-0">
+                                            @forelse($waitlists as $entry)
+                                            <tr>
+                                                <td class="px-4 py-3 border-bottom border-light">
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        @php
+                                                            $initials = strtoupper(substr($entry->first_name, 0, 1) . substr($entry->last_name, 0, 1));
+                                                            $colors = ['#6366f1', '#6ee7b7', '#7dd3fc', '#818cf8', '#f87171', '#fbbf24'];
+                                                            $bgColor = $colors[strlen($entry->first_name) % count($colors)];
+                                                        @endphp
+                                                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 38px; height: 38px; background-color: {{ $bgColor }}; font-size: 14px; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                                                            {{ $initials }}
+                                                        </div>
+                                                        <span class="fw-medium text-dark">{{ $entry->first_name }} {{ $entry->last_name }}</span>
+                                                    </div>
+                                                </td>
+                                                <td class="px-4 py-3 border-bottom border-light text-secondary">{{ $entry->email }}</td>
+                                                <td class="px-4 py-3 border-bottom border-light text-secondary">{{ $entry->ticket->ticket_name ?? 'N/A' }}</td>
+                                                <td class="px-4 py-3 border-bottom border-light text-dark fw-medium">{{ \Carbon\Carbon::parse($entry->joined_at)->format('M d, g:i A') }}</td>
+                                                <td class="px-4 py-3 border-bottom border-light">
+                                                    @if(strtolower($entry->status) == 'waiting')
+                                                        <span class="badge rounded-pill text-secondary fw-medium" style="background-color: #e5e7eb; padding: 6px 14px; font-size: 12px;">Waiting</span>
+                                                    @else
+                                                        <span class="badge rounded-pill text-success fw-medium" style="background-color: #a7f3d0; padding: 6px 14px; font-size: 12px; color: #065f46 !important;">{{ ucfirst($entry->status) }}</span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                            @empty
+                                            <tr>
+                                                <td colspan="5" class="text-center py-5" style="border-bottom: none; background-color: #f8fafc;">
+                                                    <div class="empty-state d-flex flex-column align-items-center justify-content-center" style="padding: 40px 20px;">
+                                                        @if(request()->filled('search'))
+                                                            <div class="empty-state-icon mb-3">
+                                                                <i class="fa-solid fa-magnifying-glass" style="font-size: 56px; color: #9ca3af;"></i>
+                                                            </div>
+                                                            <h4 class="fw-bold mb-2" style="color: #1f2937; font-size: 20px;">No volunteers found</h4>
+                                                            <p class="text-muted" style="font-size: 14px; max-width: 400px; margin: 0 auto 15px auto;">We couldn't find any volunteers matching your search. Try adjusting your search criteria.</p>
+                                                        @else
+                                                            <div class="empty-state-icon mb-3">
+                                                                <i class="fa-solid fa-user-plus" style="font-size: 64px; color: #9ca3af;"></i>
+                                                            </div>
+                                                            @php $activeEvent = isset($events) ? $events->where('id', $selectedEventId)->first() : null; @endphp
+                                                            @if($activeEvent && !$activeEvent->enable_waitlist)
+                                                                <h4 class="fw-bold mb-2" style="color: #1f2937; font-size: 20px;">Waitlist is not enabled for this event</h4>
+                                                                <p class="text-muted" style="font-size: 14px;">Enable the waitlist in your event settings to allow volunteers to join.</p>
+                                                            @else
+                                                                <h4 class="fw-bold mb-2" style="color: #1f2937; font-size: 20px;">No volunteers on this event's waitlist yet</h4>
+                                                                <p class="text-muted" style="font-size: 14px;">When people join your event's waitlist, they will appear here.</p>
+                                                            @endif
+                                                        @endif
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <!-- Table Footer -->
+                                <div class="card-footer py-3 px-4 d-flex justify-content-between align-items-center border-top" style="background-color: #f3f4f6; border-color: #e5e7eb !important;">
+                                    <span class="text-secondary" style="font-size: 14px;">Showing <strong class="text-dark">{{ $waitlists->count() }}</strong> of <strong class="text-dark">{{ $waitlists->total() }}</strong></span>
+                                    <a href="{{ route('waitlist.detail', ['event_id' => $selectedEventId]) }}" class="text-decoration-none fw-semibold d-flex align-items-center gap-1" style="color: #4f46e5; font-size: 14px;">
+                                        View Full Waitlist <i class="fa-solid fa-arrow-right-long" style="font-size: 12px;"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            @endif
+                            @endif
+
+                            <script>
+                                document.addEventListener("DOMContentLoaded", function() {
+                                    const searchInput = document.getElementById('waitlistSearchInput');
+                                    const searchForm = document.getElementById('waitlistSearchForm');
+                                    
+                                    if (searchInput && searchForm) {
+                                        let timeout = null;
+                                        
+                                        function performSearch() {
+                                            const url = new URL(searchForm.action);
+                                            url.searchParams.set('event_id', searchForm.querySelector('[name="event_id"]').value);
+                                            if (searchInput.value) {
+                                                url.searchParams.set('search', searchInput.value);
+                                            }
+                                            
+                                            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                                                .then(response => response.text())
+                                                .then(html => {
+                                                    const parser = new DOMParser();
+                                                    const doc = parser.parseFromString(html, 'text/html');
+                                                    
+                                                    // Replace table card content
+                                                    const newTableCard = doc.getElementById('waitlist-table-card');
+                                                    const oldTableCard = document.getElementById('waitlist-table-card');
+                                                    if (newTableCard && oldTableCard) {
+                                                        oldTableCard.innerHTML = newTableCard.innerHTML;
+                                                    }
+                                                    
+                                                    // Update total count
+                                                    const newTotal = doc.getElementById('waitlist-total-count');
+                                                    const oldTotal = document.getElementById('waitlist-total-count');
+                                                    if (newTotal && oldTotal) {
+                                                        oldTotal.innerHTML = newTotal.innerHTML;
+                                                    }
+                                                    
+                                                    // Update export link
+                                                    const newExport = doc.getElementById('waitlist-export-btn');
+                                                    const oldExport = document.getElementById('waitlist-export-btn');
+                                                    if (newExport && oldExport) {
+                                                        oldExport.href = newExport.href;
+                                                    }
+                                                });
+                                        }
+                                        
+                                        // Auto submit form with a 500ms delay when typing using AJAX
+                                        searchInput.addEventListener('input', function() {
+                                            clearTimeout(timeout);
+                                            timeout = setTimeout(performSearch, 500);
+                                        });
+
+                                        // Prevent full page reload on Enter
+                                        searchForm.addEventListener('submit', function(e) {
+                                            e.preventDefault();
+                                            clearTimeout(timeout);
+                                            performSearch();
+                                        });
+                                    }
+                                });
+                            </script>
+                                </div>
+                            </div>
+                        </section>
+
                         <section class="section">
+                            <div class="main-card mt-4">
+                                <div class="dashboard-wrap-content p-4">
                             <div class="section-header">
                                 <div>
                                     <h2 class="section-title">Your checklist</h2>
@@ -404,6 +598,8 @@
                                         </svg>
                                         Connect Stripe
                                     </a>
+                                </div>
+                            </div>
                                 </div>
                             </div>
                         </section>

@@ -345,9 +345,150 @@ class FrontController extends Controller
             'verify-ticket-notification-email'
         );
     }
-    public function dashboard(){
+    public function dashboard(\Illuminate\Http\Request $request){
         $data['seo_details'] = (object)['title' => 'Dashboard'];
+        
+        // Fetch organiser's events
+        $user = auth()->guard('front')->user();
+        $events = $user->events()
+                       ->active()
+                       ->where('start_datetime', '>=', now())
+                       ->orderBy('start_datetime', 'asc')
+                       ->get();
+        $selectedEventId = $request->input('event_id', $events->first()->id ?? null);
+        
+        $data['events'] = $events;
+        $data['selectedEventId'] = $selectedEventId;
+        $data['waitlists'] = null;
+        
+        if ($selectedEventId) {
+            $waitlistQuery = \App\Models\EventWaitlist::with('ticket')
+                ->where('event_id', $selectedEventId);
+            
+            $data['totalWaitlistCount'] = (clone $waitlistQuery)->count();
+            
+            if ($request->filled('search')) {
+                $search = $request->input('search');
+                $waitlistQuery->where(function($q) use ($search) {
+                    $q->where('first_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
+                });
+            }
+            
+            $data['waitlists'] = $waitlistQuery->orderBy('joined_at', 'desc')->paginate(4);
+        }
+
         return view('pages.frontend.dashboard', $data);
+    }
+
+    public function waitlistDetail(\Illuminate\Http\Request $request, $event_id)
+    {
+        $user = auth()->guard('front')->user();
+        
+        // 1. Fetch Event
+        $event = \App\Models\Event::where('id', $event_id)->where('creator_id', $user->id)->firstOrFail();
+
+        // 2. Fetch all user's active events for dropdown
+        $events = $user->events()
+                       ->active()
+                       ->where('start_datetime', '>=', now())
+                       ->orderBy('start_datetime', 'asc')
+                       ->get();
+
+        // 3. Fetch tickets for this event for Ticket Type dropdown
+        $tickets = \App\Models\EventTicket::where('event_id', $event_id)->where('is_active', 1)->get();
+
+        // 4. Calculate Capacity Stats
+        $totalCapacity = \App\Models\EventTicket::where('event_id', $event_id)->where('is_active', 1)->sum('available_quantity');
+        $registeredCount = \App\Models\EventOrderTicket::where('event_id', $event_id)->active()->count();
+        
+        // 5. Query Waitlist with filters
+        $waitlistQuery = \App\Models\EventWaitlist::with('ticket')->where('event_id', $event_id);
+        
+        $totalWaitlistCount = (clone $waitlistQuery)->count(); // absolute total for this event
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $waitlistQuery->where(function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+        
+        if ($request->filled('ticket_id') && $request->input('ticket_id') != 'all') {
+            $waitlistQuery->where('ticket_id', $request->input('ticket_id'));
+        }
+
+        $waitlists = $waitlistQuery->orderBy('joined_at', 'desc')->paginate(10);
+        $waitlists->appends($request->all());
+
+        $data = [
+            'event' => $event,
+            'events' => $events,
+            'tickets' => $tickets,
+            'totalCapacity' => $totalCapacity,
+            'registeredCount' => $registeredCount,
+            'totalWaitlistCount' => $totalWaitlistCount,
+            'waitlists' => $waitlists,
+            'selectedEventId' => $event_id,
+        ];
+
+        return view('pages.frontend.waitlist-detail', $data);
+    }
+
+    public function exportWaitlist(\Illuminate\Http\Request $request, $event_id)
+    {
+        $user = auth()->guard('front')->user();
+        $event = \App\Models\Event::where('id', $event_id)->where('creator_id', $user->id)->firstOrFail();
+        
+        $waitlistQuery = \App\Models\EventWaitlist::with('ticket')
+            ->where('event_id', $event_id);
+        
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $waitlistQuery->where(function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+        
+        $waitlists = $waitlistQuery->orderBy('joined_at', 'desc')->get();
+        
+        $safeEventName = \Illuminate\Support\Str::slug($event->event_name);
+        $fileName = 'waitlist_' . $safeEventName . '_' . date('Y-m-d') . '.csv';
+        
+        $headers = array(
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$fileName",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        );
+        
+        $columns = array('First Name', 'Last Name', 'Email', 'Ticket Type', 'Joined Date/Time', 'Status');
+        
+        $callback = function() use($waitlists, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+            
+            foreach ($waitlists as $entry) {
+                $row['First Name']  = $entry->first_name;
+                $row['Last Name']   = $entry->last_name;
+                $row['Email']       = $entry->email;
+                $row['Ticket Type'] = $entry->ticket->ticket_name ?? 'N/A';
+                $row['Joined Date/Time']  = \Carbon\Carbon::parse($entry->joined_at)->format('M d, g:i A');
+                $row['Status']      = ucfirst($entry->status);
+                
+                fputcsv($file, array($row['First Name'], $row['Last Name'], $row['Email'], $row['Ticket Type'], $row['Joined Date/Time'], $row['Status']));
+            }
+            
+            fclose($file);
+        };
+        
+        return response()->stream($callback, 200, $headers);
     }
     public function releaseNotes()
     {
@@ -457,14 +598,16 @@ class FrontController extends Controller
         $cohostEventCount = $user->cohostingEvents()->count();
         $hostingEventCount = $user->events()->count();
 
-        $startDateSort = request('start_date_sort', 'desc');
-        if (!in_array($startDateSort, ['asc', 'desc'])) {
-            $startDateSort = 'desc';
-        }
-
         $tab = request('tabs', 'upcoming');
         if (!in_array($tab, ['upcoming', 'ongoing', 'ended', 'cancelled', 'action_required'])) {
             $tab = 'upcoming';
+        }
+
+        $defaultSort = in_array($tab, ['upcoming', 'ongoing']) ? 'asc' : 'desc';
+
+        $startDateSort = request('start_date_sort', $defaultSort);
+        if (!in_array($startDateSort, ['asc', 'desc'])) {
+            $startDateSort = $defaultSort;
         }
 
         $now = now();
@@ -1717,6 +1860,7 @@ class FrontController extends Controller
             $event->show_remaining_tickets = $request->has('show_remaining_tickets') ? 1 : 0;
             $event->allow_donations = $request->has('allow_donations') ? 1 : 0;
             $event->allow_child_under13 = $request->has('allow_child_under13') ? 1 : 0;
+            $event->enable_waitlist = $request->has('enable_waitlist') ? 1 : 0;
             /* $event->allow_refund = $request->has('allow_refund') ? 1 : 0;
             $event->charge_bear_by = $request->charge_bear_by ?? 0;  */
             if (!$hasRegisteredVolunteers) {
@@ -3003,7 +3147,7 @@ class FrontController extends Controller
             'event'            => $event,
             'volunteerName'    => $volunteer->name,
             //'hours'            => $orderTicket->hours_completed,
-            'hours'            => $event->volunteer_hours,
+            'hours'            => ($event->start_datetime && $event->end_datetime) ? round($event->start_datetime->diffInMinutes($event->end_datetime) / 60, 2) : 0,
             'organization_name'   => $event->creator->organisation_name,
             'organizer_name'   => $event->creator->first_name.' '.$event->creator->last_name,
             'organization_email'   => $event->creator->email_address,
@@ -3050,7 +3194,7 @@ class FrontController extends Controller
                 'event'            => $event,
                 'volunteerName'    => $volunteer->name,
                 //'hours'            => $orderTicket->hours_completed,
-                'hours'            => $event->volunteer_hours,
+                'hours'            => ($event->start_datetime && $event->end_datetime) ? round($event->start_datetime->diffInMinutes($event->end_datetime) / 60, 2) : 0,
                 'organization_name'   => $event->creator->organisation_name,
                 'organizer_name'   => $event->creator->first_name.' '.$event->creator->last_name,
                 'organization_email'   => $event->creator->email_address,
@@ -3578,7 +3722,7 @@ class FrontController extends Controller
                     'event'            => $event,
                     'volunteerName'    => $volunteer->name,
                     //'hours'            => $orderTicket->hours_completed,
-                    'hours'            => $event->volunteer_hours,
+                    'hours'            => ($event->start_datetime && $event->end_datetime) ? round($event->start_datetime->diffInMinutes($event->end_datetime) / 60, 2) : 0,
                     'organization_name'   => $event->creator->organisation_name,
                     'organizer_name'   => $event->creator->first_name.' '.$event->creator->last_name,
                     'organization_email'   => $event->creator->email_address,
@@ -4982,7 +5126,7 @@ class FrontController extends Controller
                         'event'            => $event,
                         'volunteerName'    => $value->volunteer->first_name.' '.$value->volunteer->last_name,
                         //'hours'            => $value->hours_completed,
-                        'hours'            => $event->volunteer_hours,
+                        'hours'            => ($event->start_datetime && $event->end_datetime) ? round($event->start_datetime->diffInMinutes($event->end_datetime) / 60, 2) : 0,
                         'organization_name'   => $event->creator->organisation_name,
                         'organizer_name'   => $event->creator->first_name.' '.$event->creator->last_name,
                         'organization_email'   => $event->creator->email_address,
@@ -6492,5 +6636,44 @@ class FrontController extends Controller
         return response()->json($this->generateResponse(true, 'Event reminder cron executed successfully.', [
             'email_count' => count($to_arr),
         ]));
+    }
+
+    public function joinWaitlist(\Illuminate\Http\Request $request) 
+    {
+        $request->validate([
+            'event_id' => 'required',
+            'ticket_id' => 'required',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+        ]);
+
+        // Check for existing waitlist entry
+        $existingEntry = \App\Models\EventWaitlist::where('event_id', $request->event_id)
+            ->where('ticket_id', $request->ticket_id)
+            ->where('email', $request->email)
+            ->first();
+
+        if ($existingEntry) {
+            if ($existingEntry->status === 'waiting') {
+                return response()->json(['success' => false, 'message' => 'You are already on the waitlist for this ticket.']);
+            } else {
+                // Status is 'cleared', so they are re-joining the waitlist
+                $existingEntry->status = 'waiting';
+                $existingEntry->first_name = $request->first_name;
+                $existingEntry->last_name = $request->last_name;
+                $existingEntry->joined_at = now();
+                $existingEntry->save();
+
+                return response()->json(['success' => true, 'message' => 'You are on the waitlist! We will email you if a ticket becomes available.']);
+            }
+        }
+
+        // If no entry exists at all, create a new one
+        $data = $request->all();
+        $data['joined_at'] = now();
+        \App\Models\EventWaitlist::create($data);
+
+        return response()->json(['success' => true, 'message' => 'You are on the waitlist! We will email you if a ticket becomes available.']);
     }
 }

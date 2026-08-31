@@ -577,6 +577,13 @@ class FrontOrderController extends Controller
                             'rsvp_filled_at'    => now(), 
                         ]);
 
+                        // Clear waitlist status if they were on it
+                        \App\Models\EventWaitlist::where('event_id', $event->id)
+                            ->where('ticket_id', $ticket_arr['id'])
+                            ->where('email', $ticket_volunteer->email_address)
+                            ->where('status', 'waiting')
+                            ->update(['status' => 'purchased']);
+
                         foreach ($childrenByTicket[$ticket_key] ?? [] as $child) {
                             $event_order_ticket_obj->children()->create([
                                 'event_id' => $event->id,
@@ -1010,14 +1017,19 @@ class FrontOrderController extends Controller
         ]);
     }
     public function submitWaiverForm($ticket , Request $request){
-        $request->validate([
-            'signature' => 'required|string',
-        ]);
         $orderTicket = EventOrderTicket::with('event')->find(decrypt($ticket));
         if(!$orderTicket) 
             abort(404);
 
-        if($orderTicket->waiver_filled_at != null && !empty($orderTicket->signature))
+        $isExternalLink = $orderTicket->event->waiver_form_type === 'external_link';
+
+        if(!$isExternalLink) {
+            $request->validate([
+                'signature' => 'required|string',
+            ]);
+        }
+
+        if($orderTicket->waiver_filled_at != null && ($isExternalLink || !empty($orderTicket->signature)))
             throw new CustomException("This waiver is already filled and signed. if you have any doubt, please contact organizer.", 408);
             
         $orderTicket->update(['waiver_filled_at' => now(), 'signature' => $request->signature]);
@@ -1392,6 +1404,8 @@ class FrontOrderController extends Controller
             $subject = "Your cancellation for ".$event->event_name." is confirmed";
             $this->sendEmail($orderTicket->eventOrder->creator->email_address, $subject, $emailData, "email-to-buyer-for-cancel");
         }
+        
+        $this->notifyWaitlistWhenAvailable($orderTicket->event_id, $orderTicket->ticket_id);
     }
     public function sendRSVPandWaiverMail($orderTicket){
         // send mail

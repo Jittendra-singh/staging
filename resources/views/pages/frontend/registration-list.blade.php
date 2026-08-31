@@ -408,7 +408,7 @@
 																	<input type="checkbox" disabled {{ $registration->checkin == 1 ? 'checked' : '' }} class="ticket_checkin_toggle">
 																	<span class="checkbox-slider" url="" onclick="redirectWithMessage(this)" message="{{'You can\'t check-in before RSVP confirmation.'}}"></span>
 																</label>
-																@elseif(!empty($event->waiver_form_type) && empty($registration->waiver_filled_at))
+																@elseif(!empty($event->waiver_form_type) && $event->waiver_form_type !== 'external_link' && empty($registration->waiver_filled_at))
 																<!-- <label class="btn-switch m-0 me-3">
 																	<input type="checkbox" disabled {{ $registration->checkin == 1 ? 'checked' : '' }} class="ticket_checkin_toggle">
 																	<span class="checkbox-slider" url="" onclick="redirectWithMessage(this)" message="{{'You can\'t check-in before waiver signing.'}}"></span>

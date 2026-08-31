@@ -127,6 +127,8 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
     * --------------------------------------------------------------------------------------- */
     Route::middleware(['auth:front'])->group(function () {
         Route::get('dashboard', 'dashboard')->name('front-dashboard');
+        Route::get('waitlist-detail/{event_id}', 'waitlistDetail')->name('waitlist.detail');
+        Route::get('export-waitlist/{event_id}', 'exportWaitlist')->name('export.waitlist');
         Route::get('cleanup-attending', 'cleanupAttending')->name('front-cleanup-attending');
         Route::post('get-organizer-options' , 'getOrganizerOptions' )->name('front-get-organizer-options');
         Route::get('release-notes', 'releaseNotes')->name('front-release-notes');
@@ -446,5 +448,6 @@ Route::controller(\App\Http\Controllers\CommonSystemController::class)->group(fu
     Route::get('cron-event-rsvp-reminder', 'cronEventRSVPReminder')->name('cron-event-rsvp-reminder');
 });
 Route::controller(\App\Http\Controllers\FrontController::class)->group(function(){
+    Route::post('/join-waitlist', 'joinWaitlist')->name('join.waitlist');
     Route::get('{slug}' , 'viewEventPage')->name('view-event-details');
 });
