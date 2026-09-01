@@ -2012,8 +2012,9 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                         <div class="col-sm-4">
                                                             <div class="form-group">
                                                                 <label class="form-label fs-6">Registered Volunteers</label>
-                                                                <div class="input-group">
-                                                                    <input disabled autocomplete="off" id="registered_volunteers" type="number" class="form-control decimalonly h_50" placeholder="" name="registered_volunteers" value="{{$totalRegisteredAttendeesCount}}">
+                                                                <div class="input-group position-relative">
+                                                                    <i class="fa-solid fa-lock position-absolute" style="left: 15px; top: 50%; transform: translateY(-50%); z-index: 10; color: black;"></i>
+                                                                    <input disabled autocomplete="off" id="registered_volunteers" type="number" class="form-control decimalonly h_50" placeholder="" name="registered_volunteers" value="{{$totalRegisteredAttendeesCount}}" style="padding-left: 35px;">
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -2032,8 +2033,9 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                         <div class="col-sm-4">
                                                             <div class="form-group">
                                                                 <label class="form-label fs-6">Total Volunteers</label>
-                                                                <div class="input-group">
-                                                                    <input disabled autocomplete="off" id="total_volunteers" type="number" class="form-control decimalonly h_50" placeholder="" name="total_volunteers" value="0">
+                                                                <div class="input-group position-relative">
+                                                                    <i class="fa-solid fa-lock position-absolute" style="left: 15px; top: 50%; transform: translateY(-50%); z-index: 10; color: black;"></i>
+                                                                    <input disabled autocomplete="off" id="total_volunteers" type="number" class="form-control decimalonly h_50" placeholder="" name="total_volunteers" value="0" style="padding-left: 35px;">
                                                                 </div>
                                                                 <small>Auto-calculated. Registered + Other Sites.</small>
                                                             </div>
@@ -2062,8 +2064,9 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                         <div class="col-sm-4">
                                                             <div class="form-group">
                                                                 <label class="form-label fs-6">Total Volunteer Hours</label>
-                                                                <div class="input-group">
-                                                                    <input disabled id="volunteer_hours" class="form-control decimalonly h_50" type="number" step="0.01" min="0" value="{{ $form_data->volunteer_hours ?? 0 }}" name="volunteer_hours" placeholder="">
+                                                                <div class="input-group position-relative">
+                                                                    <i class="fa-solid fa-lock position-absolute" style="left: 15px; top: 50%; transform: translateY(-50%); z-index: 10; color: black;"></i>
+                                                                    <input disabled id="volunteer_hours" class="form-control decimalonly h_50" type="number" step="0.01" min="0" value="{{ $form_data->volunteer_hours ?? 0 }}" name="volunteer_hours" placeholder="" style="padding-left: 35px;">
                                                                 </div>
                                                                 <small>Auto-calculated. Sum of hours contributed by all participants.</small>
                                                             </div>
