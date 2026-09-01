@@ -43,7 +43,12 @@ class Event extends Model
                     } else {
                         $checkedInCount = $this->tickets()->where('checkin', 1)->count();
                     }
-                    return $checkedInCount * $hours;
+                    
+                    // Include volunteers registered from other sites
+                    $otherSitesCount = (int) $this->volunteer_registered_from_other_sites;
+                    $totalVolunteers = $checkedInCount + $otherSitesCount;
+                    
+                    return $totalVolunteers * $hours;
                 }
                 return 0;
             }

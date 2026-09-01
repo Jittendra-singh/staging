@@ -2021,7 +2021,10 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                             <div class="form-group">
                                                                 <label class="form-label fs-6">Registered From Other Sites</label>
                                                                 <div class="input-group">
-                                                                    <input autocomplete="off" id="volunteer_registered_from_other_sites" type="number" class="form-control decimalonly h_50" placeholder="" name="volunteer_registered_from_other_sites" value="{{ old('volunteer_registered_from_other_sites', $form_data->volunteer_registered_from_other_sites ?? '') }}">
+                                                                    <input autocomplete="off" id="volunteer_registered_from_other_sites" type="number" class="form-control decimalonly h_50" placeholder="" name="volunteer_registered_from_other_sites" 
+                                                                    value="{{ old('volunteer_registered_from_other_sites', $form_data->volunteer_registered_from_other_sites ?? '') }}"
+                                                                    data-hours="{{ (isset($form_data) && $form_data->start_datetime && $form_data->end_datetime) ? $form_data->start_datetime->diffInMinutes($form_data->end_datetime) / 60 : 0 }}"
+                                                                    data-checkedin="{{ (isset($form_data)) ? $form_data->tickets()->where('checkin', 1)->count() : 0 }}">
                                                                 </div>
                                                                 <small>Include volunteers who signed up via external platforms.</small>
                                                             </div>
@@ -2772,7 +2775,8 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
     $(document).ready(function() {
         function calculateTotalVolunteers() {
             var registeredVolunteers = parseInt($('#registered_volunteers').val(), 10);
-            var fromOtherSites = parseInt($('#volunteer_registered_from_other_sites').val(), 10);
+            var $otherSitesInput = $('#volunteer_registered_from_other_sites');
+            var fromOtherSites = parseInt($otherSitesInput.val(), 10);
 
             // Treat blank / invalid / negative values as 0
             if (isNaN(registeredVolunteers) || registeredVolunteers < 0) {
@@ -2784,6 +2788,12 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
 
             var total = registeredVolunteers + fromOtherSites;
             $('#total_volunteers').val(total);
+
+            // Update Total Volunteer Hours
+            var hours = parseFloat($otherSitesInput.attr('data-hours')) || 0;
+            var checkedIn = parseInt($otherSitesInput.attr('data-checkedin')) || 0;
+            var totalHours = (checkedIn + fromOtherSites) * hours;
+            $('#volunteer_hours').val(totalHours);
         }
 
         // Recalculate whenever the "from other sites" field changes
