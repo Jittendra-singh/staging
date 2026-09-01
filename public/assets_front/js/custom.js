@@ -2840,6 +2840,45 @@ $(document).ready(function () {
 			}
 		});
 	});
+	$(document).on('click', '.show-alert-check-in-signed-volunteers', function () {
+		var control = this;
+		var url = $(control).attr('url');
+		var urlRegistrationList = $(control).attr('url_registration_list');
+		var contentHtml = '<div class="alert-innter-ul p-4 text-center">'+
+                '<b class="text-center mb-2">This will automatically check in all attendees who have signed their waiver. Attendees with an unsigned or missing waiver will not be checked in.</b>'+
+                '<small class="text-center mb-2 mt-3 d-block">If you\'d prefer to review attendees individually and check them in manually, click </small>'+
+				'<a href="' + urlRegistrationList + '">Review Attendees</a>'+
+            '</div>';
+		
+		Swal.fire({
+			title: "Check in signed attendees?",
+			html: contentHtml,
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonColor: '#3085d6',
+			cancelButtonColor: '#d33',
+			confirmButtonText: 'Check In Eligible Attendees',
+			cancelButtonText: 'Cancel'
+		}).then((willDelete) => {
+			if (willDelete.isConfirmed) {
+				$(control).attr('disabled', 'disabled');
+				$.ajax({
+					url: url,
+					method: 'POST',
+					data: {},
+					success: function (response) {
+						$(control).removeAttr('disabled');
+						if (response.status) {
+							showError(response.message, 'success');
+						}
+						else {
+							showError(response.message, 'error');
+						}
+					}
+				});
+			}
+		});
+	});
 	$(document).on('click', '.show-alert-run-url', function () {
 		var control = this;
 		var message = $(control).attr('message');
