@@ -198,11 +198,11 @@ class Event extends Model
         return $this->is_active && $this->site_publish_date <= date('Y-m-d') && $this->site_depublish_date >= date('Y-m-d'); 
     }
     public function scopePast($query){
-        $query->detailactive()->where('end_datetime', '<', now());
+        $query->detailactive()->whereDate('end_datetime', '<', now());
     }
     public function scopePresent($query){
         $query->detailactive()->where('start_datetime', '<=', now()->addHours(3))
-              ->where('end_datetime', '>=', now());
+              ->whereDate('end_datetime', '>=', now());
     }
     public function scopeFuture($query){
         $query->detailactive()->where('start_datetime', '>', now()->addHours(3));
@@ -265,9 +265,9 @@ class Event extends Model
     public function runningStatus() : Attribute{
         $now = now();
         $running_status = '';
-        if ($this->start_datetime > $now) {
+        if ($this->start_datetime > $now->copy()->addHours(3)) {
             $running_status = 'Upcoming';
-        } elseif ($this->end_datetime < $now) {
+        } elseif ($this->end_datetime->copy()->endOfDay() < $now) {
             //$running_status = 'completed';
             //$running_status = 'Expired';
             $running_status = 'Ended';

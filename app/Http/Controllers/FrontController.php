@@ -622,17 +622,17 @@ class FrontController extends Controller
             })
             ->when($tab == 'ongoing', function ($q) use ($now) {
                 $q->where('start_datetime', '<=', (clone $now)->addHours(3))
-                ->where('end_datetime', '>=', $now)->where('is_completed', '!=', 1)->whereNull('cancelled_at');
+                ->whereDate('end_datetime', '>=', $now)->where('is_completed', '!=', 1)->whereNull('cancelled_at');
             })
             ->when($tab == 'ended', function ($q) use ($now) {
-                $q->where('end_datetime', '<', $now)
+                $q->whereDate('end_datetime', '<', $now)
                 ->where('is_completed', 1);
             })
             ->when($tab == 'cancelled', function ($q) {
                 $q->whereNotNull('cancelled_at');
             })
             ->when($tab == 'action_required', function ($q) use ($now) {
-                $q->where('end_datetime', '<', $now)
+                $q->whereDate('end_datetime', '<', $now)
                 ->where(function ($subQ) {
                     $subQ->whereNull('is_completed')
                         ->orWhere('is_completed', '!=', 1);
@@ -4699,7 +4699,7 @@ class FrontController extends Controller
                             'description' => $organiser->orgranisation_short_description,                
                         ];
         //$past_events = Event::where('creator_id', $organiser->id)->past()->get();
-        $past_events = Event::with('category')->where('creator_id', $organiser->id)->where('end_datetime', '<', now())
+        $past_events = Event::with('category')->where('creator_id', $organiser->id)->whereDate('end_datetime', '<', now())
             ->orderBy('start_datetime', 'desc') 
             ->orderBy('end_datetime', 'desc')
             ->orderBy('site_publish_date', 'asc')

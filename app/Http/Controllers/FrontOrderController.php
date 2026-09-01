@@ -797,7 +797,7 @@ class FrontOrderController extends Controller
                     //$sub = "🌿 You’re Invited to Join ".$event->event_name."!";
                     $sub = "You've been registerd to join the ".$event->event_name." on ".$event->eventStartDateTime;
                     if($email_address==$send_mail_object['purchase_by_email']){
-                        $sub = "🌿 Thank you for signing up for ".$event->event_name."!";
+                        $sub = "Waiver and Next Steps for ".$event->event_name." on ".$event->eventStartDateTime;
                     }
                     $this->sendEmail($email_address, $sub, $send_mail_object, "thankyou-for-order-mail");
                     /* \Mail::to($email_address) //$email_address
