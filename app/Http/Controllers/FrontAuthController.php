@@ -129,12 +129,19 @@ class FrontAuthController extends Controller
             return redirect()->back()->withInput();
         }else{
             /**send the mail here */
-            $mail_content = [
-                'volunteer'         => $volunteer->first_name . ' ' . $volunteer->last_name,
-                'email'             => $volunteer->email_address,
-                'verification_link' => $this->mailUrl('front-verify-email', ['id' => $volunteer->encrypted_id,'timestamp' => encrypt(now()->timestamp)])
+            $to_arr = [
+                [
+                    "to" => [
+                        ["email" => trim($volunteer->email_address)]
+                    ],
+                    "dynamic_template_data" => [
+                        "volunteer"         => $volunteer->first_name . ' ' . $volunteer->last_name,
+                        "email"             => $volunteer->email_address,
+                        "verification_link" => $this->mailUrl('front-verify-email', ['id' => $volunteer->encrypted_id,'timestamp' => encrypt(now()->timestamp)]),
+                    ],
+                ]
             ];
-            $this->sendEmail($volunteer->email_address, VOLUNTEER_REG_BY_FRONTEND_SUB, $mail_content, "confirm-registration");
+            $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-1a062552708345a38643150f3a3fb425");
             if(isset($request->is_newsletter) && $request->is_newsletter==1){
                 $this->syncWithWP($volunteer,'Register');
             }
@@ -209,12 +216,19 @@ class FrontAuthController extends Controller
             $this->setFlashSession(false, 'Your account has already been activated.');
             return redirect()->route('front-login');
         }
-        $mail_content = [
-            'volunteer'         => $user->first_name . ' ' . $user->last_name,
-            'email'             => $user->email_address,
-            'verification_link' => $this->mailUrl('activate-account', ['id' => encrypt($user->id),'timestamp' => encrypt(now()->timestamp)])
+        $to_arr = [
+            [
+                "to" => [
+                    ["email" => trim($user->email_address)]
+                ],
+                "dynamic_template_data" => [
+                    "volunteer"         => $user->first_name . ' ' . $user->last_name,
+                    "email"             => $user->email_address,
+                    "verification_link" => $this->mailUrl('activate-account', ['id' => encrypt($user->id),'timestamp' => encrypt(now()->timestamp)]),
+                ],
+            ]
         ];
-        $this->sendEmail($user->email_address, ACTIVATE_ACCOUNT_MAIL_SUB, $mail_content, "activate-account");
+        $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-aaa77d0abfb844c28b72b236e5ae40f3");
         if(!$useByInsideFunc){
             $this->setFlashSession(true, 'Your activation link has been sent to your email address. Please check your inbox.');
             return redirect()->route('front-login');
