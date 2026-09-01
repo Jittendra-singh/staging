@@ -2495,6 +2495,11 @@ class FrontController extends Controller
             // send email to cohost about permission update
             $event = $cohost->event;
             $volunteer = $cohost->volunteer;
+            $permission_strings = [];
+            foreach($cohost->permissions as $p) {
+                $permission_strings[] = config('app.cohost_permissions')[$p->permission] ?? $p->permission;
+            }
+
             $email_content = [
                 'is_deleted'=>false,
                 'organizer_name' => $event->creator->first_name.' '.$event->creator->last_name,
@@ -2502,10 +2507,19 @@ class FrontController extends Controller
                 'cohost_first_name' => $volunteer->first_name,
                 //'dashboardLink'=>route('front-dashboard'),
                 'dashboardLink'=>$this->mailUrl('front-dashboard'),
-                'permissions'=>$cohost->permissions
+                'permissions'=>$permission_strings
             ];
-            $sub = 'Your co-host permissions were updated for '.$email_content['event_name'];
-            $this->sendEmail($volunteer->email_address, $sub, $email_content, "cohost-update");
+            $email_content['subject'] = 'Your co-host permissions were updated for '.$email_content['event_name'];
+            
+            $to_arr = [
+                [
+                    "to" => [
+                        ["email" => trim($volunteer->email_address)]
+                    ],
+                    "dynamic_template_data" => $email_content
+                ]
+            ];
+            $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-ccfba74fdc894547a239d1e5824cbcf8");
 
             return $this->generateJsonResponse(true, 'Co-Host permissions updated successfully.');
         } catch (\Exception $e) {
@@ -2529,8 +2543,16 @@ class FrontController extends Controller
 
         $res = $cohost->delete();
 
-        $sub = 'You’ve been removed as a co-host from '.$email_content['event_name'];
-        $this->sendEmail($volunteer->email_address, $sub, $email_content, "cohost-update");
+        $email_content['subject'] = 'You’ve been removed as a co-host from '.$email_content['event_name'];
+        $to_arr = [
+            [
+                "to" => [
+                    ["email" => trim($volunteer->email_address)]
+                ],
+                "dynamic_template_data" => $email_content
+            ]
+        ];
+        $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-ccfba74fdc894547a239d1e5824cbcf8");
         return $this->generateJsonResponse(true,'Co-Host removed successfully.');
     }
     public function reinviteCoHost($id){
@@ -4721,10 +4743,19 @@ class FrontController extends Controller
             'c_volunteer'         => $validated['name'],
             'c_email'             => $validated['email'],
             'c_phone'             => $validated['phone'],
-            'c_message'             => $validated['message']
+            'c_message'             => $validated['message'],
+            'inbox_link'            => $this->mailUrl('contact-lists')
         ];
         
-        $this->sendEmail($organiser->email_address, CONTACT_ORG_MAIL_SUB, $mail_content, "contact-organizer");
+        $to_arr = [
+            [
+                "to" => [
+                    ["email" => trim($organiser->email_address)]
+                ],
+                "dynamic_template_data" => $mail_content
+            ]
+        ];
+        $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-9addd3042e0a43f7830062b695c8a4e3");
         
         $this->setFlashSession(true, "Thank you for contacting the organizer. We will get back to you soon.");
         return redirect()->back();

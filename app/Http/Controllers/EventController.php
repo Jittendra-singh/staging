@@ -824,8 +824,16 @@ class EventController extends Controller
 
         $res = $cohost->delete();
 
-        $sub = 'You’ve been removed as a co-host from '.$email_content['event_name'];
-        $this->sendEmail($volunteer->email_address, $sub, $email_content, "cohost-update");
+        $email_content['subject'] = 'You’ve been removed as a co-host from '.$email_content['event_name'];
+        $to_arr = [
+            [
+                "to" => [
+                    ["email" => trim($volunteer->email_address)]
+                ],
+                "dynamic_template_data" => $email_content
+            ]
+        ];
+        $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-ccfba74fdc894547a239d1e5824cbcf8");
         /* $this->setFlashSession(true,'Co-Host removed successfully.');
         return redirect()->back(); */
         return $this->generateJsonResponse(true,'Co-Host removed successfully.');
@@ -1097,16 +1105,23 @@ class EventController extends Controller
             }
             /**Mail The PDF */
             try{
-                $this->sendEmail($volunteer->email_address, COMM_SERVICE_FORM_SUB, ['volunteer' => $volunteer->name ,'pdfUrl' => $community_form], "community-service-form");
+                $emailData = [
+                    'volunteer' => $volunteer->first_name.' '.$volunteer->last_name,
+                    'event_title' => $event->event_name,
+                    'certificate_download_link' => url('/').'/'.$community_form,
+                    'dashboard_link' => route('front-cleanup-attending')
+                ];
+                $emailData['subject'] = 'Your Community Service Certificate for '.$event->event_name.' Is Ready';
 
-                /* $view = 'pages.emails.community-service-form'; // Define the view variable
-                \Mail::to($volunteer->email_address)
-                    ->send(new \App\Mail\SendMail("Event Volunteer - Community Service Form", $view, 
-                        [
-                            'volunteer' => $volunteer->name ,
-                            'pdfUrl'    => $community_form ,
-                        ]
-                    ));  */
+                $to_arr = [
+                    [
+                        "to" => [
+                            ["email" => trim($volunteer->email_address)]
+                        ],
+                        "dynamic_template_data" => $emailData
+                    ]
+                ];
+                $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-e24f4c705af7498db1f5fb56b53d5327");
                 $orderTicket->community_form_status = 'approved';
                 $orderTicket->save();
             }catch(\Exception $e){
@@ -1177,8 +1192,17 @@ class EventController extends Controller
                 'certificate_download_link' => $community_form,
                 'dashboard_link' => route('front-cleanup-attending')
             ];
-            $sub = 'Your Community Service Certificate for '.$event->event_name.' Is Ready';
-            $this->sendEmail($volunteer->email_address, $sub, $emailData, "community-service-form");
+            $emailData['subject'] = 'Your Community Service Certificate for '.$event->event_name.' Is Ready';
+            
+            $to_arr = [
+                [
+                    "to" => [
+                        ["email" => trim($volunteer->email_address)]
+                    ],
+                    "dynamic_template_data" => $emailData
+                ]
+            ];
+            $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-e24f4c705af7498db1f5fb56b53d5327");
             $orderTicket->community_form_status = 'approved';
             $orderTicket->checkin = 1;
             $orderTicket->save();
