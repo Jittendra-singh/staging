@@ -66,7 +66,7 @@
         $statusClass = 'success';
         $statusDetailLabel = 'Completed On';
         $statusDetailValue = $formatDateTime($event->end_datetime);
-    } elseif ($startDate && $startDate->isFuture()) {
+    } elseif ($startDate && $startDate->copy()->subHours(3)->isFuture()) {
         $runningStatus = 'Upcoming';
         $statusClass = 'primary';
         $statusDetailLabel = 'Upcoming';
@@ -74,7 +74,7 @@
     } elseif (
         $startDate &&
         $endDate &&
-        $now->between($startDate, $endDate)
+        $now->between($startDate->copy()->subHours(3), $endDate->copy()->endOfDay())
     ) {
         $runningStatus = 'In-Progress';
         $statusClass = 'warning';
@@ -82,7 +82,7 @@
         $statusDetailValue = 'Until '.$formatDateTime(
             $event->end_datetime
         );
-    } elseif ($endDate && $endDate->isPast()) {
+    } elseif ($endDate && $endDate->copy()->endOfDay()->isPast()) {
         $runningStatus = 'Pending Completion';
         $statusClass = 'danger';
         $statusDetailLabel = 'Pending Completion';
