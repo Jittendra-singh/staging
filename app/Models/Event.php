@@ -33,6 +33,27 @@ class Event extends Model
             get: fn () => ($this->end_datetime ? $this->end_datetime->format(config('app.eventDateTimeFormat')).' '.$timezoneCode : null),
         );
     }
+    public function volunteerHours():Attribute{
+        return Attribute::make(
+            get: function ($value) {
+                if ($this->start_datetime && $this->end_datetime) {
+                    $hours = $this->start_datetime->diffInMinutes($this->end_datetime) / 60;
+                    if ($this->relationLoaded('tickets')) {
+                        $checkedInCount = $this->tickets->where('checkin', 1)->count();
+                    } else {
+                        $checkedInCount = $this->tickets()->where('checkin', 1)->count();
+                    }
+                    
+                    // Include volunteers registered from other sites
+                    $otherSitesCount = (int) $this->volunteer_registered_from_other_sites;
+                    $totalVolunteers = $checkedInCount + $otherSitesCount;
+                    
+                    return $totalVolunteers * $hours;
+                }
+                return 0;
+            }
+        );
+    }
     public function waiverFormContentFilter(){
         $content = "";
         if($this->waiver_form_content){
@@ -180,14 +201,14 @@ class Event extends Model
         $query->detailactive()->where('end_datetime', '<', now());
     }
     public function scopePresent($query){
-        $query->detailactive()->where('start_datetime', '<=', now())
+        $query->detailactive()->where('start_datetime', '<=', now()->addHours(3))
               ->where('end_datetime', '>=', now());
     }
     public function scopeFuture($query){
-        $query->detailactive()->where('start_datetime', '>', now());
+        $query->detailactive()->where('start_datetime', '>', now()->addHours(3));
     }
     public function afterActionDone(){
-        return $this->area_cleaned && $this->waste_collected;
+        return $this->waste_collected;
     }
     public function creator(){
         //return $this->morphTo();

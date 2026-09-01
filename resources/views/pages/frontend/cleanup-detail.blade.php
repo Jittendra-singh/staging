@@ -2129,17 +2129,6 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-6 col-md-4 col-xl">
-                                        <div class="summary-stat">
-                                            <span class="summary-stat-label">
-                                                Area Cleaned
-                                            </span>
-                                            <span class="summary-stat-value">
-                                                {{ is_null($event->area_cleaned)
-                                                ? '-' : $event->area_cleaned .' Yards' }}
-                                            </span>
-                                        </div>
-                                    </div>
 
                                     <div class="col-6 col-md-4 col-xl">
                                         <div class="summary-stat">

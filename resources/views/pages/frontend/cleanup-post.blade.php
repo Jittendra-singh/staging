@@ -1041,7 +1041,7 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                                                 </label>
                                                                             </div>
 
-                                                                            <div class="col-md-6">
+                                                                            <div class="col-md-6 d-none">
                                                                                 <label class="fee-option">
                                                                                     <input type="radio" value="3" id="participation_type3" name="participation_type" {{ old('participation_type', $form_data->participation_type ?? 1) == 3 ? 'checked' : '' }}>
                                                                                     <div class="fee-card">
@@ -2012,8 +2012,9 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                         <div class="col-sm-4">
                                                             <div class="form-group">
                                                                 <label class="form-label fs-6">Registered Volunteers</label>
-                                                                <div class="input-group">
-                                                                    <input disabled autocomplete="off" id="registered_volunteers" type="number" class="form-control decimalonly h_50" placeholder="" name="registered_volunteers" value="{{$totalRegisteredAttendeesCount}}">
+                                                                <div class="input-group position-relative">
+                                                                    <i class="fa-solid fa-lock position-absolute" style="right: 15px; top: 50%; transform: translateY(-50%); z-index: 10; color: black;"></i>
+                                                                    <input disabled autocomplete="off" id="registered_volunteers" type="number" class="form-control decimalonly h_50" placeholder="" name="registered_volunteers" value="{{$totalRegisteredAttendeesCount}}" style="padding-right: 35px;">
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -2021,7 +2022,10 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                             <div class="form-group">
                                                                 <label class="form-label fs-6">Registered From Other Sites</label>
                                                                 <div class="input-group">
-                                                                    <input autocomplete="off" id="volunteer_registered_from_other_sites" type="number" class="form-control decimalonly h_50" placeholder="" name="volunteer_registered_from_other_sites" value="{{ old('volunteer_registered_from_other_sites', $form_data->volunteer_registered_from_other_sites ?? '') }}">
+                                                                    <input autocomplete="off" id="volunteer_registered_from_other_sites" type="number" class="form-control decimalonly h_50" placeholder="" name="volunteer_registered_from_other_sites" 
+                                                                    value="{{ old('volunteer_registered_from_other_sites', $form_data->volunteer_registered_from_other_sites ?? '') }}"
+                                                                    data-hours="{{ (isset($form_data) && $form_data->start_datetime && $form_data->end_datetime) ? $form_data->start_datetime->diffInMinutes($form_data->end_datetime) / 60 : 0 }}"
+                                                                    data-checkedin="{{ (isset($form_data)) ? $form_data->tickets()->where('checkin', 1)->count() : 0 }}">
                                                                 </div>
                                                                 <small>Include volunteers who signed up via external platforms.</small>
                                                             </div>
@@ -2029,8 +2033,9 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                         <div class="col-sm-4">
                                                             <div class="form-group">
                                                                 <label class="form-label fs-6">Total Volunteers</label>
-                                                                <div class="input-group">
-                                                                    <input disabled autocomplete="off" id="total_volunteers" type="number" class="form-control decimalonly h_50" placeholder="" name="total_volunteers" value="0">
+                                                                <div class="input-group position-relative">
+                                                                    <i class="fa-solid fa-lock position-absolute" style="right: 15px; top: 50%; transform: translateY(-50%); z-index: 10; color: black;"></i>
+                                                                    <input disabled autocomplete="off" id="total_volunteers" type="number" class="form-control decimalonly h_50" placeholder="" name="total_volunteers" value="0" style="padding-right: 35px;">
                                                                 </div>
                                                                 <small>Auto-calculated. Registered + Other Sites.</small>
                                                             </div>
@@ -2058,21 +2063,13 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                         </div>
                                                         <div class="col-sm-4">
                                                             <div class="form-group">
-                                                                <label class="form-label fs-6">Area Cleaned*</label>
-                                                                <!-- <input id="area_cleaned" class="form-control h_50" type="text" value="{{ old('area_cleaned', $form_data->area_cleaned ?? '') }}" name="area_cleaned" placeholder="" value="" required> -->
-                                                                <div class="input-group">
-                                                                    <input autocomplete="off" step="0.01" min="0.01" id="area_cleaned" type="number" class="form-control decimalonly h_50" placeholder="" name="area_cleaned" required value="{{ old('area_cleaned', $form_data->area_cleaned ?? '') }}">
-                                                                    <div class="input-group-text">Yards</div>
+                                                                <label class="form-label fs-6">Total Volunteer Hours</label>
+                                                                <div class="input-group position-relative">
+                                                                    <i class="fa-solid fa-lock position-absolute" style="right: 15px; top: 50%; transform: translateY(-50%); z-index: 10; color: black;"></i>
+                                                                    <input disabled id="volunteer_hours" class="form-control decimalonly h_50" type="number" step="0.01" min="0" value="{{ $form_data->volunteer_hours ?? 0 }}" name="volunteer_hours" placeholder="" style="padding-right: 35px;">
                                                                 </div>
-                                                                <small>Estimated size of the cleanup site.</small>
+                                                                <small>Auto-calculated. Sum of hours contributed by all participants.</small>
                                                             </div>
-                                                        </div>
-                                                        <div class="col-sm-4">
-                                                            <div class="form-group">
-                                                                <label class="form-label fs-6">Total Volunteer Hours*</label>
-                                                                <input id="volunteer_hours" class="form-control h_50" type="number" step="0.01" min="0" value="{{ old('volunteer_hours', $form_data->volunteer_hours ?? '') }}" name="volunteer_hours" placeholder="" required>
-                                                            </div>
-                                                            <small>Sum of hours contributed by all participants.</small>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -2781,7 +2778,8 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
     $(document).ready(function() {
         function calculateTotalVolunteers() {
             var registeredVolunteers = parseInt($('#registered_volunteers').val(), 10);
-            var fromOtherSites = parseInt($('#volunteer_registered_from_other_sites').val(), 10);
+            var $otherSitesInput = $('#volunteer_registered_from_other_sites');
+            var fromOtherSites = parseInt($otherSitesInput.val(), 10);
 
             // Treat blank / invalid / negative values as 0
             if (isNaN(registeredVolunteers) || registeredVolunteers < 0) {
@@ -2793,6 +2791,12 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
 
             var total = registeredVolunteers + fromOtherSites;
             $('#total_volunteers').val(total);
+
+            // Update Total Volunteer Hours
+            var hours = parseFloat($otherSitesInput.attr('data-hours')) || 0;
+            var checkedIn = parseInt($otherSitesInput.attr('data-checkedin')) || 0;
+            var totalHours = (checkedIn + fromOtherSites) * hours;
+            $('#volunteer_hours').val(totalHours);
         }
 
         // Recalculate whenever the "from other sites" field changes

@@ -824,8 +824,16 @@ class EventController extends Controller
 
         $res = $cohost->delete();
 
-        $sub = 'You’ve been removed as a co-host from '.$email_content['event_name'];
-        $this->sendEmail($volunteer->email_address, $sub, $email_content, "cohost-update");
+        $email_content['subject'] = 'You’ve been removed as a co-host from '.$email_content['event_name'];
+        $to_arr = [
+            [
+                "to" => [
+                    ["email" => trim($volunteer->email_address)]
+                ],
+                "dynamic_template_data" => $email_content
+            ]
+        ];
+        $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-ccfba74fdc894547a239d1e5824cbcf8");
         /* $this->setFlashSession(true,'Co-Host removed successfully.');
         return redirect()->back(); */
         return $this->generateJsonResponse(true,'Co-Host removed successfully.');
@@ -841,7 +849,7 @@ class EventController extends Controller
         $new_event->updated_at  = $today_dt;
         $new_event->status  = 'draft';
         $new_event->waste_collected  = null;
-        $new_event->area_cleaned  = null;
+
         //$new_event->team_name  = null;
         $new_event->volunteer_hours  = null;
         $new_event->post_event_notes  = null;
@@ -980,15 +988,15 @@ class EventController extends Controller
         $request = request();
         $validated = $request->validate([
             'waste_collected' => 'required|string|max:255',
-            'area_cleaned' => 'required|string|max:255',
+
             //'team_name' => 'nullable|string|max:1000',
-            'volunteer_hours' => 'required|numeric|min:0',
+
             'post_event_notes' => 'nullable|string|max:1000',
         ]);
         $event->waste_collected     = $validated['waste_collected'] ?? null;
-        $event->area_cleaned        = $validated['area_cleaned'] ?? null;
+
         //$event->team_name           = $validated['team_name'] ?? null;
-        $event->volunteer_hours     = isset($validated['volunteer_hours']) ? ceil($validated['volunteer_hours']) : null;
+
         $event->post_event_notes    = $validated['post_event_notes'] ?? null;
         if (request()->hasFile('after_event_images')) {
             $files = request()->file('after_event_images');
@@ -1097,16 +1105,23 @@ class EventController extends Controller
             }
             /**Mail The PDF */
             try{
-                $this->sendEmail($volunteer->email_address, COMM_SERVICE_FORM_SUB, ['volunteer' => $volunteer->name ,'pdfUrl' => $community_form], "community-service-form");
+                $emailData = [
+                    'volunteer' => $volunteer->first_name.' '.$volunteer->last_name,
+                    'event_title' => $event->event_name,
+                    'certificate_download_link' => url('/').'/'.$community_form,
+                    'dashboard_link' => route('front-cleanup-attending')
+                ];
+                $emailData['subject'] = 'Your Community Service Certificate for '.$event->event_name.' Is Ready';
 
-                /* $view = 'pages.emails.community-service-form'; // Define the view variable
-                \Mail::to($volunteer->email_address)
-                    ->send(new \App\Mail\SendMail("Event Volunteer - Community Service Form", $view, 
-                        [
-                            'volunteer' => $volunteer->name ,
-                            'pdfUrl'    => $community_form ,
-                        ]
-                    ));  */
+                $to_arr = [
+                    [
+                        "to" => [
+                            ["email" => trim($volunteer->email_address)]
+                        ],
+                        "dynamic_template_data" => $emailData
+                    ]
+                ];
+                $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-e24f4c705af7498db1f5fb56b53d5327");
                 $orderTicket->community_form_status = 'approved';
                 $orderTicket->save();
             }catch(\Exception $e){
@@ -1177,8 +1192,17 @@ class EventController extends Controller
                 'certificate_download_link' => $community_form,
                 'dashboard_link' => route('front-cleanup-attending')
             ];
-            $sub = 'Your Community Service Certificate for '.$event->event_name.' Is Ready';
-            $this->sendEmail($volunteer->email_address, $sub, $emailData, "community-service-form");
+            $emailData['subject'] = 'Your Community Service Certificate for '.$event->event_name.' Is Ready';
+            
+            $to_arr = [
+                [
+                    "to" => [
+                        ["email" => trim($volunteer->email_address)]
+                    ],
+                    "dynamic_template_data" => $emailData
+                ]
+            ];
+            $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-e24f4c705af7498db1f5fb56b53d5327");
             $orderTicket->community_form_status = 'approved';
             $orderTicket->checkin = 1;
             $orderTicket->save();
@@ -1237,8 +1261,8 @@ class EventController extends Controller
             $this->setFlashSession(false,'Event is already marked as completed and wrap-up email has been sent.');
             return redirect()->route('post-event-action', ['placeholder' => $id]);
         }
-        if(empty($event->waste_collected) || empty($event->area_cleaned) || empty($event->volunteer_hours)){
-            $this->setFlashSession(false,'Waste Collected, Area Cleaned, and Volunteer Hours should be saved before sending the email.');
+        if(empty($event->waste_collected)){
+            $this->setFlashSession(false,'Waste Collected should be saved before sending the email.');
             return redirect()->route('post-event-action', ['placeholder' => $id]);
         }
         $event->is_completed = 1;
@@ -1277,7 +1301,7 @@ class EventController extends Controller
                             "organizer_name" => $event->creator->first_name.' '.$event->creator->last_name,
                             "total_volunteers" => $tickets->count(),
                             "waste_collected" => $event->waste_collected,
-                            "area_cleaned" => $event->area_cleaned,
+
                             "service_hours" => $event->volunteer_hours ?? 'N/A',
                             'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
                             'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]),
@@ -1341,7 +1365,7 @@ class EventController extends Controller
                     'date' => $event->start_datetime->format(config('app.dateTimeFormat')),
                     'volunteersCount' => $event->tickets()->where('checkin', 1)->count(),
                     'wasteCollected' => $event->waste_collected ?? 'N/A',
-                    'areaCleaned' => $event->area_cleaned ?? 'N/A',
+
                     'volunteerHours' => $event->volunteer_hours ?? 'N/A',
                     'communityServiceFormLink' => $event->allow_community_service_form ? route('community-form', ['placeholder' => $event->encrypted_id]) : null,
                     'feedbackFormLink' => route('event-feedback', ['placeholder' => $event->encrypted_id]),

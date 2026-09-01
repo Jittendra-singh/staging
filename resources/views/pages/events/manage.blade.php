@@ -551,7 +551,7 @@ $(document).ready(function () {
                                         </label><br/>
                                         <small>Best for organizers who want everything in one place.</small>
                                     </div>
-                                    <div class="form-check mt-3">
+                                    <div class="form-check mt-3 d-none">
                                         <input class="form-check-input" type="radio" value="3" id="participation_type3" name="participation_type"
                                             {{ $participation_type==3?'checked':'' }}>
                                         <label class="form-check-label"

@@ -618,10 +618,10 @@ class FrontController extends Controller
                 $q->whereNull('cancelled_at');
             })
             ->when($tab == 'upcoming', function ($q) use ($now) {
-                $q->where('start_datetime', '>', $now)->where('is_completed', '!=', 1)->whereNull('cancelled_at');
+                $q->where('start_datetime', '>', (clone $now)->addHours(3))->where('is_completed', '!=', 1)->whereNull('cancelled_at');
             })
             ->when($tab == 'ongoing', function ($q) use ($now) {
-                $q->where('start_datetime', '<=', $now)
+                $q->where('start_datetime', '<=', (clone $now)->addHours(3))
                 ->where('end_datetime', '>=', $now)->where('is_completed', '!=', 1)->whereNull('cancelled_at');
             })
             ->when($tab == 'ended', function ($q) use ($now) {
@@ -1305,7 +1305,7 @@ class FrontController extends Controller
         $new_event->is_active  = 1;
         $new_event->cancelled_at  = null;
         $new_event->waste_collected  = null;
-        $new_event->area_cleaned  = null;
+
         $new_event->volunteer_registered_from_other_sites  = null;
         $new_event->team_name  = null;
         $new_event->volunteer_hours  = null;
@@ -1476,7 +1476,7 @@ class FrontController extends Controller
                 $newEvent->cancelled_at = null;
                 $newEvent->is_completed = 0;
                 $newEvent->waste_collected = null;
-                $newEvent->area_cleaned = null;
+
                 $newEvent->volunteer_hours = null;
                 $newEvent->post_event_notes = null;
                 $newEvent->click_views = 0;
@@ -2305,9 +2305,9 @@ class FrontController extends Controller
         $validated = $request->validate([
             'event_id'           => 'required',
             'waste_collected'    => 'required|max:255',
-            'area_cleaned'       => 'required|max:255',
+
             //'team_name'          => 'required|string',
-            'volunteer_hours'    => 'required|numeric|min:0',
+
             'post_event_notes'   => 'required|string',
             'volunteer_registered_from_other_sites' => 'nullable|numeric|min:0',
         ]);
@@ -2315,9 +2315,9 @@ class FrontController extends Controller
         try {
             $event = \App\Models\Event::findOrFail(decrypt($validated['event_id']));
             $event->waste_collected = $validated['waste_collected'];
-            $event->area_cleaned = $validated['area_cleaned'];
+
             //$event->team_name = $validated['team_name'];
-            $event->volunteer_hours = ceil($validated['volunteer_hours']);
+
             $event->post_event_notes = $validated['post_event_notes'];
             $event->volunteer_registered_from_other_sites = $validated['volunteer_registered_from_other_sites'] ?? 0;
             if (request()->hasFile('after_event_images')) {
@@ -2495,6 +2495,11 @@ class FrontController extends Controller
             // send email to cohost about permission update
             $event = $cohost->event;
             $volunteer = $cohost->volunteer;
+            $permission_strings = [];
+            foreach($cohost->permissions as $p) {
+                $permission_strings[] = config('app.cohost_permissions')[$p->permission] ?? $p->permission;
+            }
+
             $email_content = [
                 'is_deleted'=>false,
                 'organizer_name' => $event->creator->first_name.' '.$event->creator->last_name,
@@ -2502,10 +2507,19 @@ class FrontController extends Controller
                 'cohost_first_name' => $volunteer->first_name,
                 //'dashboardLink'=>route('front-dashboard'),
                 'dashboardLink'=>$this->mailUrl('front-dashboard'),
-                'permissions'=>$cohost->permissions
+                'permissions'=>$permission_strings
             ];
-            $sub = 'Your co-host permissions were updated for '.$email_content['event_name'];
-            $this->sendEmail($volunteer->email_address, $sub, $email_content, "cohost-update");
+            $email_content['subject'] = 'Your co-host permissions were updated for '.$email_content['event_name'];
+            
+            $to_arr = [
+                [
+                    "to" => [
+                        ["email" => trim($volunteer->email_address)]
+                    ],
+                    "dynamic_template_data" => $email_content
+                ]
+            ];
+            $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-ccfba74fdc894547a239d1e5824cbcf8");
 
             return $this->generateJsonResponse(true, 'Co-Host permissions updated successfully.');
         } catch (\Exception $e) {
@@ -2529,8 +2543,16 @@ class FrontController extends Controller
 
         $res = $cohost->delete();
 
-        $sub = 'You’ve been removed as a co-host from '.$email_content['event_name'];
-        $this->sendEmail($volunteer->email_address, $sub, $email_content, "cohost-update");
+        $email_content['subject'] = 'You’ve been removed as a co-host from '.$email_content['event_name'];
+        $to_arr = [
+            [
+                "to" => [
+                    ["email" => trim($volunteer->email_address)]
+                ],
+                "dynamic_template_data" => $email_content
+            ]
+        ];
+        $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-ccfba74fdc894547a239d1e5824cbcf8");
         return $this->generateJsonResponse(true,'Co-Host removed successfully.');
     }
     public function reinviteCoHost($id){
@@ -2629,8 +2651,8 @@ class FrontController extends Controller
         if($event->is_completed==1){
             return $this->generateJsonResponse(false, 'Event is already marked as completed and wrap-up email has been sent.');
         }
-        if(empty($event->waste_collected) || empty($event->area_cleaned) || empty($event->volunteer_hours)){
-            return $this->generateJsonResponse(false, 'Waste Collected, Area Cleaned, and Volunteer Hours should be saved before sending the email.');
+        if(empty($event->waste_collected)){
+            return $this->generateJsonResponse(false, 'Waste Collected should be saved before sending the email.');
         }
         $event->is_completed = 1;
         $event->wrapup_email_sent_by = auth()->guard('front')->user()->id;
@@ -2686,7 +2708,7 @@ class FrontController extends Controller
                             "total_registered_volunteers" => $registered_tickets->count(),
                             "volunteer_registered_from_other_sites" => $event->volunteer_registered_from_other_sites,
                             "waste_collected" => $event->waste_collected,
-                            "area_cleaned" => $event->area_cleaned,
+
                             "service_hours" => $event->volunteer_hours ?? 'N/A',
                             'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
                             'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]),
@@ -2749,8 +2771,8 @@ class FrontController extends Controller
         ]);
 
         $event = Event::with('creator')->findOrFail(decrypt($validated['event_id']));
-        if(empty($event->waste_collected) || empty($event->area_cleaned) || empty($event->volunteer_hours)){
-            return $this->generateJsonResponse(false, 'Waste Collected, Area Cleaned, and Volunteer Hours should be saved before sending the email.');
+        if(empty($event->waste_collected)){
+            return $this->generateJsonResponse(false, 'Waste Collected should be saved before sending the email.');
         }
         $tickets = $event->tickets()->where('checkin', 1)->where('community_form_status', 'pending')->get();
         if($tickets->count() == 0){
@@ -2763,7 +2785,7 @@ class FrontController extends Controller
                     'date' => $event->start_datetime->format(config('app.dateTimeFormat')),
                     'volunteersCount' => $event->tickets()->where('checkin', 1)->count(),
                     'wasteCollected' => $event->waste_collected ?? 'N/A',
-                    'areaCleaned' => $event->area_cleaned ?? 'N/A',
+
                     'communityServiceFormLink' => $event->allow_community_service_form ? $this->mailUrl('community-form', ['placeholder' => $event->encrypted_id]) : null,
                     //'feedbackFormLink' => route('event-feedback', ['placeholder' => $event->encrypted_id]),
                     'feedbackFormLink' => $this->mailUrl('event-feedback', ['placeholder' => $event->encrypted_id]),
@@ -3280,7 +3302,7 @@ class FrontController extends Controller
                                         "organizer_name" => $event->creator->first_name.' '.$event->creator->last_name,
                                         "total_volunteers" => $tickets->count(),
                                         "waste_collected" => $event->waste_collected,
-                                        "area_cleaned" => $event->area_cleaned,
+
                                         "service_hours" => $event->volunteer_hours ?? 'N/A',
                                         'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
                                         'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($orderTicket->id)]),
@@ -3774,7 +3796,7 @@ class FrontController extends Controller
                                     "organizer_name" => $event->creator->first_name.' '.$event->creator->last_name,
                                     "total_volunteers" => $tickets->count(),
                                     "waste_collected" => $event->waste_collected,
-                                    "area_cleaned" => $event->area_cleaned,
+
                                     "service_hours" => $event->volunteer_hours ?? 'N/A',
                                     'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
                                     'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($orderTicket->id)]),
@@ -4721,10 +4743,19 @@ class FrontController extends Controller
             'c_volunteer'         => $validated['name'],
             'c_email'             => $validated['email'],
             'c_phone'             => $validated['phone'],
-            'c_message'             => $validated['message']
+            'c_message'             => $validated['message'],
+            'inbox_link'            => $this->mailUrl('contact-lists')
         ];
         
-        $this->sendEmail($organiser->email_address, CONTACT_ORG_MAIL_SUB, $mail_content, "contact-organizer");
+        $to_arr = [
+            [
+                "to" => [
+                    ["email" => trim($organiser->email_address)]
+                ],
+                "dynamic_template_data" => $mail_content
+            ]
+        ];
+        $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-9addd3042e0a43f7830062b695c8a4e3");
         
         $this->setFlashSession(true, "Thank you for contacting the organizer. We will get back to you soon.");
         return redirect()->back();
