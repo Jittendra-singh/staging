@@ -45,11 +45,11 @@
                         <div class="card-body p-4">
                             <form class="filter-form">
                                 <div class="row g-3 align-items-end">
-                                    <div class="col-md-7">
+                                    <div class="col-md-4">
                                         <label class="form-label filter-label">Search Volunteer</label>
                                         <div class="filter-input-wrap">
                                             <i class="fa fa-search filter-icon"></i>
-                                            <input class="form-control filter-field" value="{{ request()->search }}" name="search" type="text" placeholder="Name, email, or phone">
+                                            <input class="form-control filter-field" value="{{ request()->search }}" name="search" type="text" placeholder="Name, email, phone">
                                         </div>
                                     </div>
                                     <div class="col-md-3">
@@ -61,6 +61,14 @@
                                             <option value="checked_in" @selected(request()->status == 'checked_in')>Checked-in</option>
                                             <option value="not_checked_in" @selected(request()->status == 'not_checked_in')>Not Checked-in</option>
                                             <option value="checked_in_signed" @selected(request()->status == 'checked_in_signed')>Checked-in & Signed</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label filter-label">Sort By</label>
+                                        <select class="selectpicker filter-field w-100" name="sort" title="Sort By: Default">
+                                            <option value="">Sort By: Default</option>
+                                            <option value="name_asc" @selected(request()->sort == 'name_asc')>Name (A-Z)</option>
+                                            <option value="name_desc" @selected(request()->sort == 'name_desc')>Name (Z-A)</option>
                                         </select>
                                     </div>
                                     <div class="col-md-2 d-flex gap-2">

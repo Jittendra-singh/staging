@@ -709,7 +709,7 @@ class FrontController extends Controller
             return redirect()->route('front-cleanup-ongoing');
         }
 
-        $registrations = EventOrderTicket::with(['volunteer', 'ticket'])
+        $query = EventOrderTicket::with(['volunteer', 'ticket'])
             ->where('event_id', $event->id)
             ->where('rsvp_confirmation', 1)
             ->where(function ($q) {
@@ -737,9 +737,23 @@ class FrontController extends Controller
                 } elseif (request()->status == 'checked_in_signed') {
                     $q->where('checkin', 1)->whereNotNull('waiver_filled_at');
                 }
-            })
-            ->latest()
-            ->paginate(25)
+            });
+
+        $query->orderByRaw('COALESCE(event_order_tickets.checkin, 0) ASC');
+        
+        if (request()->sort == 'name_asc' || request()->sort == 'name_desc') {
+            $direction = request()->sort == 'name_asc' ? 'asc' : 'desc';
+            $query->orderBy(\App\Models\Volunteer::select('first_name')
+                ->whereColumn('volunteers.id', 'event_order_tickets.volunteer_id')
+                ->limit(1), $direction)
+                ->orderBy(\App\Models\Volunteer::select('last_name')
+                ->whereColumn('volunteers.id', 'event_order_tickets.volunteer_id')
+                ->limit(1), $direction);
+        } else {
+            $query->latest();
+        }
+
+        $registrations = $query->paginate(25)
             ->withQueryString();
 
         return view('pages.frontend.volunteer-check-in', [
