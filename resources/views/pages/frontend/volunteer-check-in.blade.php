@@ -45,12 +45,17 @@
                         <div class="card-body p-4">
                             <form class="filter-form">
                                 <div class="row g-3 align-items-end">
-                                    <div class="col-md-4">
-                                        <label class="form-label filter-label">Search Volunteer</label>
-                                        <div class="filter-input-wrap">
-                                            <i class="fa fa-search filter-icon"></i>
-                                            <input class="form-control filter-field" value="{{ request()->search }}" name="search" type="text" placeholder="Name, email, phone">
+                                    <div class="col-md-4 d-flex gap-2 align-items-end">
+                                        <div class="flex-grow-1">
+                                            <label class="form-label filter-label">Search Volunteer</label>
+                                            <div class="filter-input-wrap">
+                                                <i class="fa fa-search filter-icon"></i>
+                                                <input class="form-control filter-field" value="{{ request()->search }}" name="search" type="text" placeholder="Name, email, phone">
+                                            </div>
                                         </div>
+                                        <button class="btn btn-primary d-sm-none" type="submit" style="height: 48px; width: 48px; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fa fa-search"></i>
+                                        </button>
                                     </div>
                                     <div class="col-md-3">
                                         <label class="form-label filter-label">Status</label>
@@ -71,7 +76,7 @@
                                             <option value="name_desc" @selected(request()->sort == 'name_desc')>Name (Z-A)</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-2 d-flex gap-2">
+                                    <div class="col-md-2 gap-2 d-none d-sm-flex">
                                         <button class="btn btn-filter-search flex-grow-1" type="submit">
                                             <i class="fa fa-search me-2"></i>Search
                                         </button>
@@ -97,16 +102,16 @@
                             <div class="main-card volunteer-checkin-card mb-3" id="volunteer-card-{{$registration->id}}">
                                 <div class="volunteer-checkin-card-body">
                                     <div class="volunteer-checkin-main">
-                                        <img class="volunteer-checkin-avatar" src="{{ $volunteer->formattedImage('profile_picture') }}" alt="{{ $volunteer->name }}">
+                                        <img class="volunteer-checkin-avatar d-none d-sm-block" src="{{ $volunteer->formattedImage('profile_picture') }}" alt="{{ $volunteer->name }}">
 
                                         <div class="volunteer-checkin-info">
                                             <h5>{{ $volunteer->name }}</h5>
-                                            <p><i class="fa fa-envelope me-1"></i>{{ $volunteer->email_address }}</p>
+                                            <p><i class="fa fa-envelope me-1 text-muted"></i>{{ $volunteer->email_address }}</p>
                                             @if($volunteer->phone)
-                                                <p><i class="fa fa-phone me-1"></i>{{ $volunteer->phone }}</p>
+                                                <p><i class="fa fa-phone me-1 text-muted"></i>{{ $volunteer->phone }}</p>
                                             @endif
 
-                                            <div class="volunteer-checkin-badges">
+                                            <div class="volunteer-checkin-badges d-none d-sm-flex">
                                                 @if(!empty($event->waiver_form_type))
                                                     @if($isSigned)
                                                         <span class="badge custom-badge-success">Signed</span>
@@ -126,7 +131,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="volunteer-checkin-action">
+                                    <div class="volunteer-checkin-action d-none d-sm-block">
                                         @if(!empty($event->waiver_form_type) && !$isSigned && !$isCheckedIn)
                                             <form method="POST" action="{{ route('front-volunteer-sign-and-check-in', ['id' => $registration->encrypted_id]) }}" class="volunteer-sign-checkin-form">
                                                 @csrf
@@ -141,9 +146,6 @@
                                                     <button type="button" class="btn btn-sm btn-outline-secondary clear-volunteer-signature" data-pad="#{{ $signatureId }}" data-input="#{{ $signatureInputId }}">
                                                         Clear
                                                     </button>
-                                                    <!-- <button type="submit" class="primary-btn w-fit btn-sign-checkin">
-                                                        <i class="fa-solid fa-signature me-2"></i>Sign & Check-in
-                                                    </button> -->
                                                     <div class="d-flex gap-2 flex-wrap">
                                                         @if(!empty($event->waiver_form_type))
                                                         <button type="button" class="btn btn-outline-primary btn-show-waiver-qr" data-url="{{ route('front-volunteer-waiver-qr', ['id' => $registration->encrypted_id]) }}">
@@ -189,6 +191,33 @@
                                             </div>
                                         @endif
                                     </div>
+                                    
+                                    <!-- Mobile Action Area -->
+                                    <div class="volunteer-checkin-action-mobile d-block d-sm-none mt-3">
+                                        @if($isCheckedIn)
+                                            <div class="p-3 text-center rounded-3" style="background-color: #f3f4f6; border: 1px solid #e5e7eb;">
+                                                <div class="fw-bold mb-1" style="color: #007bff; font-size: 14px;">
+                                                    <i class="fa-solid fa-circle-check me-1"></i> Waiver Signed & Checked In
+                                                </div>
+                                                <div class="text-muted" style="font-size: 12px;">
+                                                    {{ !empty($registration->checkin_dt) ? date(config('app.dateTimeFormat'), strtotime($registration->checkin_dt)) : 'Done' }}
+                                                </div>
+                                            </div>
+                                        @else
+                                            @if($isSigned || empty($event->waiver_form_type))
+                                                <form method="POST" action="{{ route('front-volunteer-mark-check-in', ['id' => $registration->encrypted_id]) }}">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-2" style="font-size: 14px;">
+                                                        <i class="fa-solid fa-user me-2"></i>CHECK-IN
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <button type="button" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-2 btn-mobile-unsigned-checkin" data-url="{{ route('front-volunteer-waiver-qr', ['id' => $registration->encrypted_id]) }}" style="font-size: 14px;">
+                                                    <i class="fa-solid fa-user me-2"></i>CHECK-IN
+                                                </button>
+                                            @endif
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
                         @empty
@@ -224,6 +253,9 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body text-center waiver-qr-modal-body">
+                <div id="waiverQrWarning" class="alert alert-warning d-none text-start mb-4" style="font-size: 14px;">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i> Waiver has not been signed. Please have the volunteer scan the QR code to sign the waiver.
+                </div>
                 <div id="waiverQrLoader" class="py-4">Generating QR code...</div>
                 <div id="waiverQrContent" class="d-none">
                     <div id="waiverQrImage" class="waiver-qr-image py-4"></div>
@@ -268,6 +300,39 @@
     $('.btn-show-waiver-qr').click(function () {
         const url = $(this).data('url');
 
+        $('#waiverQrWarning').addClass('d-none');
+        $('#waiverQrLoader').removeClass('d-none').text('Generating QR code...');
+        $('#waiverQrContent').addClass('d-none');
+        $('#waiverQrImage').html('');
+
+        const modal = new bootstrap.Modal(document.getElementById('waiverQrModal'));
+        modal.show();
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}'
+            },
+            success: function (response) {
+                if (response.status && response.data) {
+                    $('#waiverQrImage').html(response.data.qr_html);
+                    $('#waiverQrLoader').addClass('d-none');
+                    $('#waiverQrContent').removeClass('d-none');
+                } else {
+                    $('#waiverQrLoader').text(response.message || 'Unable to generate QR code.');
+                }
+            },
+            error: function () {
+                $('#waiverQrLoader').text('Unable to generate QR code.');
+            }
+        });
+    });
+
+    $('.btn-mobile-unsigned-checkin').click(function () {
+        const url = $(this).data('url');
+
+        $('#waiverQrWarning').removeClass('d-none');
         $('#waiverQrLoader').removeClass('d-none').text('Generating QR code...');
         $('#waiverQrContent').addClass('d-none');
         $('#waiverQrImage').html('');
