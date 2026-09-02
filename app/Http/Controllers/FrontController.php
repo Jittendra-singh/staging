@@ -854,7 +854,9 @@ class FrontController extends Controller
 
             $qrCheckinToken = encrypt('volunteer_checkin_qr:'.$orderTicket->id);
 
-            if($orderTicket->event->waiver_form_type=='external_link'){
+            $isMobile = request()->input('is_mobile');
+
+            if($orderTicket->event->waiver_form_type=='external_link' && !$isMobile){
                 if(!empty($orderTicket->event->waiver_form_content)){
                     $waiverUrl = $orderTicket->event->waiver_form_content;
                 } else {

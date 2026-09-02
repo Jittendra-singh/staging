@@ -346,7 +346,8 @@
             url: url,
             type: 'POST',
             data: {
-                _token: '{{ csrf_token() }}'
+                _token: '{{ csrf_token() }}',
+                is_mobile: 1
             },
             success: function (response) {
                 if (response.status && response.data) {
