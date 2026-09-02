@@ -24,16 +24,18 @@
                         <h3><i class="fa-solid fa-user-check me-3 mb-3"></i>Volunteer Check-in</h3>
                         <p class="mb-2">{{ $event->event_name }} | {{ $event->startTimeAndEndTime }}</p>
 
-                        @php
-                            $breadcrumbs = [
-                                ['name' => 'In-progress Cleanups', 'url' => route('front-cleanup-ongoing')],
-                                ['name' => 'Volunteer Check-in', 'url' => route('front-volunteer-check-in', ['id' => $event_id])],
-                            ];
-                        @endphp
-                        <x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs"/>
+                        <div class="d-none d-sm-block">
+                            @php
+                                $breadcrumbs = [
+                                    ['name' => 'In-progress Cleanups', 'url' => route('front-cleanup-ongoing')],
+                                    ['name' => 'Volunteer Check-in', 'url' => route('front-volunteer-check-in', ['id' => $event_id])],
+                                ];
+                            @endphp
+                            <x-reusables.frontend.breadcrumb :breadcrumbs="$breadcrumbs"/>
+                        </div>
                     </div>
 
-                    <a href="{{ route('front-volunteer-check-in-export', ['id' => $event_id]) }}" class="primary-btn w-fit">
+                    <a href="{{ route('front-volunteer-check-in-export', ['id' => $event_id]) }}" class="primary-btn w-fit d-none d-sm-flex align-items-center">
                         <i class="fa-solid fa-file-pdf me-2"></i>Export Attendees
                     </a>
                 </div>
@@ -57,7 +59,7 @@
                                             <i class="fa fa-search"></i>
                                         </button>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-3 d-none d-sm-block">
                                         <label class="form-label filter-label">Status</label>
                                         <select class="selectpicker filter-field w-100" name="status" title="Status: All">
                                             <option value="">Status: All</option>
