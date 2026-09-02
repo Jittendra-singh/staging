@@ -19,6 +19,11 @@
                             Please read the following waiver carefully before signing.
                         </p>
                         @if($event->waiver_form_type == 'external_link')
+                            <div class="alert alert-warning py-2 px-3" role="alert" style="font-size: 14px;">
+                                <i class="fa-solid fa-triangle-exclamation me-1"></i> <strong>Important:</strong> To officially record your waiver in our system, please ensure you return to this page and click the <strong>"I HAVE SIGNED THE WAIVER"</strong> button below after completing the document on the external site.
+                            </div>
+                        @endif
+                        @if($event->waiver_form_type == 'external_link')
                             @php
                                 $waiverLink = $event->waiverFormContentFilter();
                             @endphp
