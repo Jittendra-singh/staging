@@ -405,6 +405,14 @@ class FrontController extends Controller
                        ->where('start_datetime', '>=', now())
                        ->orderBy('start_datetime', 'asc')
                        ->get();
+                       
+        $eventIds = $events->pluck('id')->toArray();
+        $waitlistEventIds = \App\Models\EventWaitlist::whereIn('event_id', $eventIds)->distinct()->pluck('event_id')->toArray();
+        
+        // Filter events, but ALWAYS keep the currently viewed event so the dropdown doesn't misalign visually
+        $events = $events->filter(function($e) use ($waitlistEventIds, $event_id) {
+            return $e->id == $event_id || ($e->enable_waitlist == 1 && in_array($e->id, $waitlistEventIds));
+        });
 
         // 3. Fetch tickets for this event for Ticket Type dropdown
         $tickets = \App\Models\EventTicket::where('event_id', $event_id)->where('is_active', 1)->get();
