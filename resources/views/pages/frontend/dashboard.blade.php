@@ -337,12 +337,14 @@
                                 <div class="dashboard-wrap-content p-4">
                             <h2 class="section-title mb-1">Waitlist</h2>
                             @if(isset($globalWaitlistCount) && $globalWaitlistCount == 0)
-                                <div class="empty-state d-flex flex-column align-items-center justify-content-center" style="padding: 40px 20px;">
-                                    <div class="empty-state-icon mb-3">
-                                        <i class="fa-solid fa-user-plus" style="font-size: 64px; color: #9ca3af;"></i>
+                                <div class="card shadow-sm border-0" style="border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb !important;">
+                                    <div class="empty-state d-flex flex-column align-items-center justify-content-center" style="padding: 60px 20px; background-color: #ffffff;">
+                                        <div class="empty-state-icon mb-3 d-flex align-items-center justify-content-center" style="width: 72px; height: 72px; border-radius: 50%; background-color: #f3f4f6;">
+                                            <i class="fa-solid fa-user-slash" style="font-size: 32px; color: #4b5563;"></i>
+                                        </div>
+                                        <h4 class="fw-bold mb-2" style="color: #1f2937; font-size: 20px;">No volunteers on your waitlists yet</h4>
+                                        <p class="text-muted" style="font-size: 14px;">When people join any of your event waitlists, they will appear here.</p>
                                     </div>
-                                    <h4 class="fw-bold mb-2" style="color: #1f2937; font-size: 20px;">No volunteers on this event's waitlist yet</h4>
-                                    <p class="text-muted" style="font-size: 14px;">When people join your event's waitlist, they will appear here.</p>
                                 </div>
                             @else
                             <p class="text-secondary fw-semibold mb-4" style="font-size: 15px;">{{ $events->where('id', $selectedEventId)->first()->event_name ?? 'None' }}</p>
