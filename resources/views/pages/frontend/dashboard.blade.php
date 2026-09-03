@@ -331,7 +331,7 @@
                         </section>
                         
                         <!-- Waitlist Section (Static UI) -->
-                        @if(isset($events) && $events->count() > 0)
+                        @if(isset($events) && $events->where('enable_waitlist', 1)->count() > 0)
                         <section class="section mt-5 mb-5">
                             <div class="main-card mt-4">
                                 <div class="dashboard-wrap-content p-4">
