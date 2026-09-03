@@ -2020,7 +2020,7 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                         </div>
                                                         <div class="col-sm-4">
                                                             <div class="form-group">
-                                                                <label class="form-label fs-6">Registered From Other Sites</label>
+                                                                <label class="form-label fs-6">Walk-ups</label>
                                                                 <div class="input-group">
                                                                     <input autocomplete="off" id="volunteer_registered_from_other_sites" type="number" class="form-control decimalonly h_50" placeholder="" name="volunteer_registered_from_other_sites" 
                                                                     value="{{ old('volunteer_registered_from_other_sites', $form_data->volunteer_registered_from_other_sites ?? '') }}"
@@ -2037,7 +2037,7 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
                                                                     <i class="fa-solid fa-lock position-absolute" style="right: 15px; top: 50%; transform: translateY(-50%); z-index: 10; color: black;"></i>
                                                                     <input disabled autocomplete="off" id="total_volunteers" type="number" class="form-control decimalonly h_50" placeholder="" name="total_volunteers" value="0" style="padding-right: 35px;">
                                                                 </div>
-                                                                <small>Auto-calculated. Registered + Other Sites.</small>
+                                                                <small>Auto-calculated. Registered + Walk-ups.</small>
                                                             </div>
                                                         </div>
                                                     </div>
