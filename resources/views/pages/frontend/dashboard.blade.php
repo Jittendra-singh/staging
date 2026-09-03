@@ -336,6 +336,15 @@
                             <div class="main-card mt-4">
                                 <div class="dashboard-wrap-content p-4">
                             <h2 class="section-title mb-1">Waitlist</h2>
+                            @if(isset($globalWaitlistCount) && $globalWaitlistCount == 0)
+                                <div class="empty-state d-flex flex-column align-items-center justify-content-center" style="padding: 40px 20px;">
+                                    <div class="empty-state-icon mb-3">
+                                        <i class="fa-solid fa-user-plus" style="font-size: 64px; color: #9ca3af;"></i>
+                                    </div>
+                                    <h4 class="fw-bold mb-2" style="color: #1f2937; font-size: 20px;">No volunteers on this event's waitlist yet</h4>
+                                    <p class="text-muted" style="font-size: 14px;">When people join your event's waitlist, they will appear here.</p>
+                                </div>
+                            @else
                             <p class="text-secondary fw-semibold mb-4" style="font-size: 15px;">{{ $events->where('id', $selectedEventId)->first()->event_name ?? 'None' }}</p>
 
                             @if(isset($waitlists))
@@ -347,7 +356,7 @@
                                         <label for="eventFilter" class="form-label fs-6 me-2 mb-0 text-nowrap">Filter by Event:</label>
                                         <div class="loc-group position-relative flex-grow-1">
                                             <select id="eventFilter" class="selectpicker" onchange="window.location.href='?event_id=' + this.value + (new URLSearchParams(window.location.search).get('search') ? '&search=' + new URLSearchParams(window.location.search).get('search') : '')">
-                                                @foreach($events as $event)
+                                                @foreach($waitlistDropdownEvents as $event)
                                                     <option value="{{ $event->id }}" {{ $selectedEventId == $event->id ? 'selected' : '' }}>{{ $event->event_name }}</option>
                                                 @endforeach
                                             </select>
@@ -452,6 +461,7 @@
                                     </a>
                                 </div>
                             </div>
+                            @endif
                             @endif
 
                             <script>

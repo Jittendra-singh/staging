@@ -355,7 +355,17 @@ class FrontController extends Controller
                        ->where('start_datetime', '>=', now())
                        ->orderBy('start_datetime', 'asc')
                        ->get();
-        $selectedEventId = $request->input('event_id', $events->first()->id ?? null);
+        $eventIds = $events->pluck('id')->toArray();
+        $waitlistEventIds = \App\Models\EventWaitlist::whereIn('event_id', $eventIds)->distinct()->pluck('event_id')->toArray();
+        $waitlistDropdownEvents = $events->where('enable_waitlist', 1)->whereIn('id', $waitlistEventIds);
+        
+        $data['globalWaitlistCount'] = $waitlistDropdownEvents->count();
+        $data['waitlistDropdownEvents'] = $waitlistDropdownEvents;
+
+        $selectedEventId = $request->input('event_id');
+        if (!$selectedEventId || !$waitlistDropdownEvents->contains('id', $selectedEventId)) {
+            $selectedEventId = $waitlistDropdownEvents->first()->id ?? null;
+        }
         
         $data['events'] = $events;
         $data['selectedEventId'] = $selectedEventId;
