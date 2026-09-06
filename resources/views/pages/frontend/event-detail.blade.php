@@ -403,6 +403,10 @@ $icalStrData = getiCalData($event);
                                                 <span class="price-label">
                                                     <span class="badge badge-primary bg-primary"><span>Available from {{ $upcomingDate }}</span></span>
                                                 </span>
+                                                @elseif(($curAvailTickets-$booked_count) <= 0)
+                                                <span class="price-label">
+                                                    <span class="badge badge-danger bg-danger">Sold Out</span>
+                                                </span>
                                                 @elseif($event->show_remaining_tickets)
                                                 <span class="price-label">
                                                     <span class="badge badge-primary bg-primary"><span id="availTicketCount_{{ $eticket->id }}">{{ $curAvailTickets-$booked_count }}</span> tickets available</span>
