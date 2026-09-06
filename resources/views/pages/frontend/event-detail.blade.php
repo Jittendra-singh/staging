@@ -405,7 +405,7 @@ $icalStrData = getiCalData($event);
                                                 </span>
                                                 @elseif(($curAvailTickets-$booked_count) <= 0)
                                                 <span class="price-label">
-                                                    <span class="badge badge-danger bg-danger">Sold Out</span>
+                                                    <span class="badge badge-primary bg-primary">Sold Out</span>
                                                 </span>
                                                 @elseif($event->show_remaining_tickets)
                                                 <span class="price-label">
