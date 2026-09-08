@@ -331,11 +331,22 @@
                         </section>
                         
                         <!-- Waitlist Section (Static UI) -->
-                        @if(isset($events) && $events->count() > 0)
+                        @if(isset($events) && $events->where('enable_waitlist', 1)->count() > 0)
                         <section class="section mt-5 mb-5">
                             <div class="main-card mt-4">
                                 <div class="dashboard-wrap-content p-4">
                             <h2 class="section-title mb-1">Waitlist</h2>
+                            @if(isset($globalWaitlistCount) && $globalWaitlistCount == 0)
+                                <div class="card shadow-sm border-0" style="border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb !important;">
+                                    <div class="empty-state d-flex flex-column align-items-center justify-content-center" style="padding: 60px 20px; background-color: #ffffff;">
+                                        <div class="empty-state-icon mb-3 d-flex align-items-center justify-content-center" style="width: 72px; height: 72px; border-radius: 50%; background-color: #f3f4f6;">
+                                            <i class="fa-solid fa-user-slash" style="font-size: 32px; color: #4b5563;"></i>
+                                        </div>
+                                        <h4 class="fw-bold mb-2" style="color: #1f2937; font-size: 20px;">No volunteers on your waitlists yet</h4>
+                                        <p class="text-muted" style="font-size: 14px;">When people join any of your event waitlists, they will appear here.</p>
+                                    </div>
+                                </div>
+                            @else
                             <p class="text-secondary fw-semibold mb-4" style="font-size: 15px;">{{ $events->where('id', $selectedEventId)->first()->event_name ?? 'None' }}</p>
 
                             @if(isset($waitlists))
@@ -347,7 +358,7 @@
                                         <label for="eventFilter" class="form-label fs-6 me-2 mb-0 text-nowrap">Filter by Event:</label>
                                         <div class="loc-group position-relative flex-grow-1">
                                             <select id="eventFilter" class="selectpicker" onchange="window.location.href='?event_id=' + this.value + (new URLSearchParams(window.location.search).get('search') ? '&search=' + new URLSearchParams(window.location.search).get('search') : '')">
-                                                @foreach($events as $event)
+                                                @foreach($waitlistDropdownEvents as $event)
                                                     <option value="{{ $event->id }}" {{ $selectedEventId == $event->id ? 'selected' : '' }}>{{ $event->event_name }}</option>
                                                 @endforeach
                                             </select>
@@ -452,6 +463,7 @@
                                     </a>
                                 </div>
                             </div>
+                            @endif
                             @endif
 
                             <script>

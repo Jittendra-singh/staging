@@ -19,6 +19,11 @@
                             Please read the following waiver carefully before signing.
                         </p>
                         @if($event->waiver_form_type == 'external_link')
+                            <div class="alert alert-warning py-2 px-3" role="alert" style="font-size: 14px;">
+                                <i class="fa-solid fa-triangle-exclamation me-1"></i> <strong>Important:</strong> To officially record your waiver in our system, please ensure you return to this page and click the <strong>"I HAVE SIGNED THE WAIVER"</strong> button below after completing the document on the external site.
+                            </div>
+                        @endif
+                        @if($event->waiver_form_type == 'external_link')
                             @php
                                 $waiverLink = $event->waiverFormContentFilter();
                             @endphp
@@ -102,6 +107,7 @@
                                 @endif
                                 @if($event->waiver_form_type == 'external_link')
                                     <div class="text-center mt-4">
+                                        <p class="mb-3 text-muted" style="font-size: 14px;">By confirming, I declare that I have completed the waiver required for this event on the external website.</p>
                                         <button type="button" onclick="submitWaiverForm()" {{ (!$is_rsvp_submitted)?'disabled':'' }} class="btn mb-2 px-4 py-2" style="background-color: #17c18a; color: white; font-weight: 600; letter-spacing: 0.5px;">I HAVE SIGNED THE WAIVER</button>
                                     </div>
                                 @else

@@ -355,7 +355,17 @@ class FrontController extends Controller
                        ->where('start_datetime', '>=', now())
                        ->orderBy('start_datetime', 'asc')
                        ->get();
-        $selectedEventId = $request->input('event_id', $events->first()->id ?? null);
+        $eventIds = $events->pluck('id')->toArray();
+        $waitlistEventIds = \App\Models\EventWaitlist::whereIn('event_id', $eventIds)->distinct()->pluck('event_id')->toArray();
+        $waitlistDropdownEvents = $events->where('enable_waitlist', 1)->whereIn('id', $waitlistEventIds);
+        
+        $data['globalWaitlistCount'] = $waitlistDropdownEvents->count();
+        $data['waitlistDropdownEvents'] = $waitlistDropdownEvents;
+
+        $selectedEventId = $request->input('event_id');
+        if (!$selectedEventId || !$waitlistDropdownEvents->contains('id', $selectedEventId)) {
+            $selectedEventId = $waitlistDropdownEvents->first()->id ?? null;
+        }
         
         $data['events'] = $events;
         $data['selectedEventId'] = $selectedEventId;
@@ -395,6 +405,14 @@ class FrontController extends Controller
                        ->where('start_datetime', '>=', now())
                        ->orderBy('start_datetime', 'asc')
                        ->get();
+                       
+        $eventIds = $events->pluck('id')->toArray();
+        $waitlistEventIds = \App\Models\EventWaitlist::whereIn('event_id', $eventIds)->distinct()->pluck('event_id')->toArray();
+        
+        // Filter events, but ALWAYS keep the currently viewed event so the dropdown doesn't misalign visually
+        $events = $events->filter(function($e) use ($waitlistEventIds, $event_id) {
+            return $e->id == $event_id || ($e->enable_waitlist == 1 && in_array($e->id, $waitlistEventIds));
+        });
 
         // 3. Fetch tickets for this event for Ticket Type dropdown
         $tickets = \App\Models\EventTicket::where('event_id', $event_id)->where('is_active', 1)->get();
@@ -709,7 +727,7 @@ class FrontController extends Controller
             return redirect()->route('front-cleanup-ongoing');
         }
 
-        $registrations = EventOrderTicket::with(['volunteer', 'ticket'])
+        $query = EventOrderTicket::with(['volunteer', 'ticket'])
             ->where('event_id', $event->id)
             ->where('rsvp_confirmation', 1)
             ->where(function ($q) {
@@ -737,9 +755,23 @@ class FrontController extends Controller
                 } elseif (request()->status == 'checked_in_signed') {
                     $q->where('checkin', 1)->whereNotNull('waiver_filled_at');
                 }
-            })
-            ->latest()
-            ->paginate(25)
+            });
+
+        $query->orderByRaw('COALESCE(event_order_tickets.checkin, 0) ASC');
+        
+        if (request()->sort == 'name_asc' || request()->sort == 'name_desc') {
+            $direction = request()->sort == 'name_asc' ? 'asc' : 'desc';
+            $query->orderBy(\App\Models\Volunteer::select('first_name')
+                ->whereColumn('volunteers.id', 'event_order_tickets.volunteer_id')
+                ->limit(1), $direction)
+                ->orderBy(\App\Models\Volunteer::select('last_name')
+                ->whereColumn('volunteers.id', 'event_order_tickets.volunteer_id')
+                ->limit(1), $direction);
+        } else {
+            $query->latest();
+        }
+
+        $registrations = $query->paginate(25)
             ->withQueryString();
 
         return view('pages.frontend.volunteer-check-in', [
@@ -840,7 +872,9 @@ class FrontController extends Controller
 
             $qrCheckinToken = encrypt('volunteer_checkin_qr:'.$orderTicket->id);
 
-            if($orderTicket->event->waiver_form_type=='external_link'){
+            $isMobile = request()->input('is_mobile');
+
+            if($orderTicket->event->waiver_form_type=='external_link' && !$isMobile){
                 if(!empty($orderTicket->event->waiver_form_content)){
                     $waiverUrl = $orderTicket->event->waiver_form_content;
                 } else {
