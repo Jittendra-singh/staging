@@ -636,11 +636,21 @@ class FrontController extends Controller
                 $q->whereNull('cancelled_at');
             })
             ->when($tab == 'upcoming', function ($q) use ($now) {
-                $q->where('start_datetime', '>', (clone $now)->addHours(3))->where('is_completed', '!=', 1)->whereNull('cancelled_at');
+                $q->where('start_datetime', '>', (clone $now)->addHours(3))
+                    ->where(function ($subQ) {
+                        $subQ->whereNull('is_completed')
+                            ->orWhere('is_completed', '!=', 1);
+                    })
+                    ->whereNull('cancelled_at');
             })
             ->when($tab == 'ongoing', function ($q) use ($now) {
                 $q->where('start_datetime', '<=', (clone $now)->addHours(3))
-                ->whereDate('end_datetime', '>=', $now)->where('is_completed', '!=', 1)->whereNull('cancelled_at');
+                    ->whereDate('end_datetime', '>=', $now)
+                    ->where(function ($subQ) {
+                        $subQ->whereNull('is_completed')
+                            ->orWhere('is_completed', '!=', 1);
+                    })
+                    ->whereNull('cancelled_at');
             })
             ->when($tab == 'ended', function ($q) use ($now) {
                 $q->whereDate('end_datetime', '<', $now)

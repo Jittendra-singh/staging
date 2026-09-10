@@ -437,6 +437,9 @@ class EventController extends Controller
         }
         $obj->creator_type              = 'App\\Models\\Volunteer';
         $obj->creator_id                = $request->volunteer_id;
+        if (isset($obj->start_datetime) && Carbon::parse($obj->start_datetime)->isFuture()) {
+            $obj->is_completed          = 0;
+        }
         $obj->is_private                = $request->is_private ? 1 : 0;
         $obj->is_online                 = $request->is_online ? 1 : 0;
         $obj->is_featured               = $request->is_featured ? 1 : 0;
@@ -848,6 +851,8 @@ class EventController extends Controller
         $new_event->created_at  = $today_dt;
         $new_event->updated_at  = $today_dt;
         $new_event->status  = 'draft';
+        $new_event->is_completed  = 0;
+        $new_event->cancelled_at  = null;
         $new_event->waste_collected  = null;
 
         //$new_event->team_name  = null;
