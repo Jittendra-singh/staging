@@ -2253,7 +2253,7 @@ $eventEndedLockMsg = 'This field cannot be changed because the event end date ha
     });
 </script>
 
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBqlhfqT1MQ2MscLa_1z_MqFy8T9rwOOZ8&libraries=places&callback=initMap" async></script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{env('GOOGLE_API_KEY')}}&libraries=places&callback=initMap" async defer></script>
 <script>
     function initMap() {
         // Initialize autocomplete 
