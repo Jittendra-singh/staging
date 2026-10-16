@@ -99,6 +99,11 @@
                                 $isCheckedIn = $registration->checkin == 1;
                                 $signatureId = 'signature_'.$registration->id;
                                 $signatureInputId = 'signature_input_'.$registration->id;
+
+                                $activeChildren = $registration->children ? $registration->children->whereNull('cancelled_at') : collect();
+                                $hasChildren = $activeChildren->isNotEmpty();
+                                $childrenCount = $activeChildren->count();
+                                $checkedInChildrenCount = $activeChildren->where('checkin', 1)->count();
                             @endphp
 
                             <div class="main-card volunteer-checkin-card mb-3" id="volunteer-card-{{$registration->id}}">
@@ -107,10 +112,17 @@
                                         <img class="volunteer-checkin-avatar d-none d-sm-block" src="{{ $volunteer->formattedImage('profile_picture') }}" alt="{{ $volunteer->name }}">
 
                                         <div class="volunteer-checkin-info">
-                                            <h5>{{ $volunteer->name }}</h5>
-                                            <p><i class="fa fa-envelope me-1 text-muted"></i>{{ $volunteer->email_address }}</p>
+                                            <div class="d-flex align-items-center flex-wrap gap-2">
+                                                <h5 class="mb-0">{{ $volunteer->name }}</h5>
+                                                @if($hasChildren)
+                                                    <span class="badge" style="background-color: #e8f4fd; color: #0d6efd; font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 6px;">
+                                                        <i class="fa-solid fa-people-roof me-1"></i> Family (1 Adult + {{ $childrenCount }} {{ $childrenCount === 1 ? 'Child' : 'Children' }})
+                                                    </span>
+                                                @endif
+                                            </div>
+                                            <p class="mt-1 mb-1"><i class="fa fa-envelope me-1 text-muted"></i>{{ $volunteer->email_address }}</p>
                                             @if($volunteer->phone)
-                                                <p><i class="fa fa-phone me-1 text-muted"></i>{{ $volunteer->phone }}</p>
+                                                <p class="mb-1"><i class="fa fa-phone me-1 text-muted"></i>{{ $volunteer->phone }}</p>
                                             @endif
 
                                             <div class="volunteer-checkin-badges d-none d-sm-flex">
@@ -129,6 +141,12 @@
                                                 @else
                                                     <span class="badge custom-badge-warning">Not Checked-in</span>
                                                 @endif
+
+                                                @if($hasChildren)
+                                                    <span class="badge bg-light text-success border border-success" id="parent-badge-kids-{{ $registration->id }}" style="{{ $checkedInChildrenCount > 0 ? '' : 'display:none;' }}">
+                                                        <i class="fa-solid fa-check me-1"></i><span class="parent-in-counter-{{ $registration->id }}">{{ $checkedInChildrenCount }}</span>/{{ $childrenCount }} Kids In
+                                                    </span>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -137,6 +155,7 @@
                                         @if(!empty($event->waiver_form_type) && !$isSigned && !$isCheckedIn)
                                             <form method="POST" action="{{ route('front-volunteer-sign-and-check-in', ['id' => $registration->encrypted_id]) }}" class="volunteer-sign-checkin-form">
                                                 @csrf
+                                                <input type="hidden" name="checkin_scope" value="family">
                                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                                     <label class="form-label fw-semibold mb-0">Volunteer Signature</label>
                                                     <a href="{{ route('view-waiver-form', ['ticket' => encrypt($registration->id)]) }}" target="_blank" class="text-decoration-none" style="color: #0d6efd; font-size: 14px; font-weight: 500;">View Waiver</a>
@@ -156,7 +175,11 @@
                                                         @endif
 
                                                         <button type="submit" class="primary-btn w-fit btn-sign-checkin">
-                                                            <i class="fa-solid fa-signature me-2"></i>Sign & Check-in
+                                                            @if($hasChildren)
+                                                                <i class="fa-solid fa-signature me-2"></i>Sign & Check-in Family
+                                                            @else
+                                                                <i class="fa-solid fa-signature me-2"></i>Sign & Check-in
+                                                            @endif
                                                         </button>
                                                     </div>
                                                 </div>
@@ -172,9 +195,21 @@
                                                     <strong>No Waiver</strong>
                                                     @endif
                                                 </div>
-                                                <button type="submit" class="primary-btn w-fit">
-                                                    <i class="fa-solid fa-user-check me-2"></i>Check-in
-                                                </button>
+                                                @if($hasChildren)
+                                                    <input type="hidden" name="checkin_scope" id="scope-{{ $registration->id }}" value="family">
+                                                    <div class="d-flex flex-column gap-2 align-items-end">
+                                                        <button type="submit" class="primary-btn w-fit" onclick="document.getElementById('scope-{{ $registration->id }}').value='family';">
+                                                            <i class="fa-solid fa-users me-2"></i>Check-in Family ({{ 1 + $childrenCount }})
+                                                        </button>
+                                                        <button type="submit" class="btn btn-sm btn-link text-decoration-none text-muted p-0" onclick="document.getElementById('scope-{{ $registration->id }}').value='adult_only';">
+                                                            <small><i class="fa-solid fa-user me-1"></i>Check-in Adult Only</small>
+                                                        </button>
+                                                    </div>
+                                                @else
+                                                    <button type="submit" class="primary-btn w-fit">
+                                                        <i class="fa-solid fa-user-check me-2"></i>Check-in
+                                                    </button>
+                                                @endif
                                             </form>
                                         @else
                                             <div class="volunteer-status-stack">
@@ -190,6 +225,12 @@
                                                     <span>Checked-in</span>
                                                     <strong>{{ !empty($registration->checkin_dt) ? date(config('app.dateTimeFormat'), strtotime($registration->checkin_dt)) : 'Done' }}</strong>
                                                 </div>
+                                                @if($hasChildren)
+                                                    <div class="volunteer-status-line">
+                                                        <span>Kids Check-in</span>
+                                                        <strong><span class="parent-in-counter-{{ $registration->id }}">{{ $checkedInChildrenCount }}</span>/{{ $childrenCount }} In</strong>
+                                                    </div>
+                                                @endif
                                             </div>
                                         @endif
                                     </div>
@@ -209,9 +250,16 @@
                                             @if($isSigned || empty($event->waiver_form_type))
                                                 <form method="POST" action="{{ route('front-volunteer-mark-check-in', ['id' => $registration->encrypted_id]) }}">
                                                     @csrf
-                                                    <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-2" style="font-size: 14px;">
-                                                        <i class="fa-solid fa-user me-2"></i>CHECK-IN
-                                                    </button>
+                                                    @if($hasChildren)
+                                                        <input type="hidden" name="checkin_scope" value="family">
+                                                        <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-2" style="font-size: 14px;">
+                                                            <i class="fa-solid fa-users me-2"></i>CHECK-IN FAMILY ({{ 1 + $childrenCount }})
+                                                        </button>
+                                                    @else
+                                                        <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-2" style="font-size: 14px;">
+                                                            <i class="fa-solid fa-user me-2"></i>CHECK-IN
+                                                        </button>
+                                                    @endif
                                                 </form>
                                             @else
                                                 <button type="button" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-2 btn-mobile-unsigned-checkin" data-url="{{ route('front-volunteer-waiver-qr', ['id' => $registration->encrypted_id]) }}" style="font-size: 14px;">
@@ -221,6 +269,60 @@
                                         @endif
                                     </div>
                                 </div>
+
+                                {{-- Inline Family Box for Accompanying Children --}}
+                                @if($hasChildren)
+                                    <div class="volunteer-children-box px-4 py-3 border-top" style="background-color: #fbfcfd;" id="children-box-{{ $registration->id }}">
+                                        <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="fw-bold small text-dark">
+                                                    <i class="fa-solid fa-children text-primary me-1"></i> Accompanying Children ({{ $childrenCount }})
+                                                </span>
+                                                <span class="badge bg-light text-secondary border" style="font-size: 10.5px;">
+                                                    <span class="parent-in-counter-{{ $registration->id }}">{{ $checkedInChildrenCount }}</span>/{{ $childrenCount }} Checked-in
+                                                </span>
+                                            </div>
+                                            <span class="text-muted" style="font-size: 11.5px;">
+                                                <i class="fa-solid fa-shield-halved text-success me-1"></i>Waiver covered by {{ $volunteer->name }}
+                                            </span>
+                                        </div>
+
+                                        <div class="d-flex flex-column gap-2 mt-2">
+                                            @foreach($activeChildren as $child)
+                                                @php
+                                                    $isChildCheckedIn = ($child->checkin == 1);
+                                                @endphp
+                                                <div class="child-checkin-row d-flex align-items-center justify-content-between p-2 rounded" 
+                                                     id="child-row-{{ $child->id }}" 
+                                                     style="background-color: #ffffff; border: 1px solid #e9ecef;">
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-primary" style="width: 30px; height: 30px; font-size: 13px;">
+                                                            <i class="fa-solid fa-child"></i>
+                                                        </div>
+                                                        <div>
+                                                            <span class="fw-semibold text-dark small">{{ $child->child_name }}</span>
+                                                            <span class="badge bg-secondary ms-1" style="font-size: 10px; padding: 2px 6px;">Age {{ $child->child_age }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <form method="POST" action="{{ route('front-child-mark-check-in', ['id' => encrypt($child->id)]) }}" class="child-toggle-form" data-child-id="{{ $child->id }}" data-parent-id="{{ $registration->id }}">
+                                                            @csrf
+                                                            @if($isChildCheckedIn)
+                                                                <button type="submit" class="btn btn-sm btn-outline-success py-1 px-3 fw-semibold child-checkin-btn" style="font-size: 11px;" title="Click to undo check-in">
+                                                                    <i class="fa-solid fa-circle-check text-success me-1"></i> Checked-in @if($child->checkin_dt)({{ date('h:i A', strtotime($child->checkin_dt)) }})@endif
+                                                                </button>
+                                                            @else
+                                                                <button type="submit" class="btn btn-sm btn-outline-primary py-1 px-3 fw-semibold child-checkin-btn" style="font-size: 11px;">
+                                                                    <i class="fa-solid fa-user-check me-1"></i> Check-in Minor
+                                                                </button>
+                                                            @endif
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                         @empty
                             <div class="main-card mt-2">
@@ -360,6 +462,66 @@
             },
             error: function () {
                 $('#waiverQrLoader').text('Unable to generate QR code.');
+            }
+        });
+    });
+
+    $(document).on('submit', '.child-toggle-form', function (e) {
+        e.preventDefault();
+        const $form = $(this);
+        const $btn = $form.find('.child-checkin-btn');
+        const parentId = $form.data('parent-id');
+        const originalHtml = $btn.html();
+        
+        $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-1"></i> Saving...');
+
+        $.ajax({
+            url: $form.attr('action'),
+            type: 'POST',
+            data: $form.serialize(),
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function (response) {
+                if (response.status) {
+                    const $counter = $('.parent-in-counter-' + parentId);
+                    let currentCount = parseInt($counter.first().text(), 10) || 0;
+                    const newCount = response.checkin == 1 ? currentCount + 1 : Math.max(0, currentCount - 1);
+
+                    if (response.checkin == 1) {
+                        const timeStr = response.checkin_time ? ` (${response.checkin_time})` : '';
+                        $btn.removeClass('btn-outline-primary').addClass('btn-outline-success')
+                            .html(`<i class="fa-solid fa-circle-check text-success me-1"></i> Checked-in${timeStr}`)
+                            .attr('title', 'Click to undo check-in');
+                    } else {
+                        $btn.removeClass('btn-outline-success').addClass('btn-outline-primary')
+                            .html('<i class="fa-solid fa-user-check me-1"></i> Check-in Minor')
+                            .removeAttr('title');
+                    }
+                    $counter.text(newCount);
+                    if (newCount > 0) {
+                        $('#parent-badge-kids-' + parentId).show();
+                    } else {
+                        $('#parent-badge-kids-' + parentId).hide();
+                    }
+                    if (typeof showError === 'function') {
+                        showError(response.message, 'success');
+                    }
+                } else {
+                    $btn.html(originalHtml);
+                    if (typeof showError === 'function') {
+                        showError(response.message || 'Error updating check-in.', 'error');
+                    }
+                }
+            },
+            error: function () {
+                $btn.html(originalHtml);
+                if (typeof showError === 'function') {
+                    showError('Error updating child check-in.', 'error');
+                }
+            },
+            complete: function () {
+                $btn.prop('disabled', false);
             }
         });
     });

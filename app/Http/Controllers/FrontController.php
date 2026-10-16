@@ -18,6 +18,7 @@ use App\Models\EventCoHost;
 use App\Models\Volunteer;
 use App\Models\EventCategory;
 use App\Models\EventOrderTicket;
+use App\Models\EventOrderTicketChild;
 use App\Models\City;
 use App\Models\EventOrder;
 use App\Models\EventTicket;
@@ -737,7 +738,7 @@ class FrontController extends Controller
             return redirect()->route('front-cleanup-ongoing');
         }
 
-        $query = EventOrderTicket::with(['volunteer', 'ticket'])
+        $query = EventOrderTicket::with(['volunteer', 'ticket', 'children'])
             ->where('event_id', $event->id)
             ->where('rsvp_confirmation', 1)
             ->where(function ($q) {
@@ -806,7 +807,7 @@ class FrontController extends Controller
             return redirect()->route('front-cleanup-ongoing');
         }
 
-        $registrations = EventOrderTicket::with(['volunteer', 'ticket'])
+        $registrations = EventOrderTicket::with(['volunteer', 'ticket', 'children'])
             ->where('event_id', $event->id)
             ->where('rsvp_confirmation', 1)
             ->orderBy('id', 'asc')
@@ -837,7 +838,7 @@ class FrontController extends Controller
         ]);
 
         try {
-            $orderTicket = EventOrderTicket::with(['event', 'volunteer'])->findOrFail(decrypt($id));
+            $orderTicket = EventOrderTicket::with(['event', 'volunteer', 'children'])->findOrFail(decrypt($id));
             $authUser = auth()->guard('front')->user();
 
             $cohostEventIds = $authUser->cohostingEvents()->pluck('events.id');
@@ -858,6 +859,29 @@ class FrontController extends Controller
                 $orderTicket->waiver_filled_at = now();
                 $orderTicket->signature = request()->signature;
                 $orderTicket->save();
+            }
+
+            // Sync waiver and check-in for accompanying children
+            if ($orderTicket->children()->exists()) {
+                $scope = request()->input('checkin_scope', 'family');
+                $activeChildren = $orderTicket->children()->whereNull('cancelled_at')->get();
+                foreach ($activeChildren as $child) {
+                    $childUpdate = [
+                        'waiver_filled_at' => now(),
+                        'signature'        => request()->signature,
+                    ];
+                    if ($scope === 'family') {
+                        $pdfPath = $child->community_form_pdf;
+                        if (empty($pdfPath) || !file_exists(public_path($pdfPath))) {
+                            $pdfPath = $this->generateChildCommunityServicePdf($child, $orderTicket->event);
+                        }
+                        $childUpdate['checkin']               = 1;
+                        $childUpdate['checkin_dt']            = date('Y-m-d H:i:s');
+                        $childUpdate['community_form_pdf']    = $pdfPath;
+                        $childUpdate['community_form_status'] = 'approved';
+                    }
+                    $child->update($childUpdate);
+                }
             }
 
             return $this->ticketMarkCheckin($id, true);
@@ -917,6 +941,66 @@ class FrontController extends Controller
     public function volunteerMarkCheckin($id)
     {
         return $this->ticketMarkCheckin($id, true);
+    }
+
+    public function childMarkCheckin($id)
+    {
+        try {
+            $child = EventOrderTicketChild::with(['event', 'parent_ticket.volunteer'])->findOrFail(decrypt($id));
+            $authUser = auth()->guard('front')->user();
+
+            $cohostEventIds = $authUser->cohostingEvents()->pluck('events.id');
+            $hostingEventIds = $authUser->events()->pluck('events.id');
+            $allowedEventIds = $cohostEventIds->merge($hostingEventIds);
+
+            $eventId = $child->event_id ?: ($child->parent_ticket ? $child->parent_ticket->event_id : null);
+
+            if (!$allowedEventIds->contains($eventId)) {
+                if (request()->ajax() || request()->wantsJson()) {
+                    return response()->json(['status' => false, 'message' => 'Unauthorized action.'], 403);
+                }
+                $this->setFlashSession(false, 'Unauthorized action.');
+                return redirect()->back();
+            }
+
+            if ($child->checkin == 1) {
+                $child->checkin = 0;
+                $child->community_form_status = 'pending';
+                $child->save();
+                $msg = "Child attendee {$child->child_name} checked out successfully.";
+            } else {
+                $child->checkin = 1;
+                $child->checkin_dt = now();
+                $child->community_form_status = 'approved';
+                $event = $child->event ?: ($child->parent_ticket ? $child->parent_ticket->event : null);
+                if (empty($child->community_form_pdf) || !file_exists(public_path($child->community_form_pdf))) {
+                    $pdfPath = $this->generateChildCommunityServicePdf($child, $event);
+                    if ($pdfPath) {
+                        $child->community_form_pdf = $pdfPath;
+                    }
+                }
+                $child->save();
+                $msg = "Child attendee {$child->child_name} checked in successfully.";
+            }
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'status' => true,
+                    'message' => $msg,
+                    'checkin' => $child->checkin,
+                    'checkin_time' => $child->checkin == 1 && $child->checkin_dt ? $child->checkin_dt->format('h:i A') : null,
+                ]);
+            }
+
+            $this->setFlashSession(true, $msg);
+            return redirect()->back();
+        } catch (\Exception $e) {
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['status' => false, 'message' => 'Error updating child check-in.'], 500);
+            }
+            $this->setFlashSession(false, 'Error updating child check-in.');
+            return redirect()->back();
+        }
     }
     public function cleanupHostingDelete($id){
         $event = Event::where('creator_id', auth()->guard('front')->user()->id)->where("id", $id)->firstOrFail();
@@ -2702,7 +2786,25 @@ class FrontController extends Controller
         $event->wrapup_email_sent_by = auth()->guard('front')->user()->id;
         $event->save();
         $registered_tickets = $event->tickets()->where('rsvp_confirmation', 1)->get();
-        $tickets = $event->tickets()->where('checkin', 1)->whereNotNull('waiver_filled_at')->get();
+        $tickets = $event->tickets()->where('checkin', 1)
+            ->where(function ($q) use ($event) {
+                if (!empty($event->waiver_form_type)) {
+                    $q->whereNotNull('waiver_filled_at');
+                }
+            })->get();
+        $checkedInChildren = EventOrderTicketChild::with(['parent_ticket.volunteer', 'eventOrder'])
+            ->where('event_id', $event->id)
+            ->whereNull('cancelled_at')
+            ->where('checkin', 1)
+            ->where(function ($q) use ($event) {
+                if (!empty($event->waiver_form_type)) {
+                    $q->whereNotNull('waiver_filled_at');
+                }
+            })
+            ->get();
+        $registeredChildrenCount = EventOrderTicketChild::where('event_id', $event->id)
+            ->whereNull('cancelled_at')
+            ->count();
         $cohostText = '';
         $activeCohostsIds = $event->cohostRecords->where('request_status', 'approved')->pluck('volunteer_id');
         if ($activeCohostsIds->isNotEmpty() && $activeCohostsIds->contains($event->wrapup_email_sender->id)) {
@@ -2710,7 +2812,7 @@ class FrontController extends Controller
         } else if($event->wrapup_email_sender->id==$event->creator_id){
             $cohostText = ' (Organizer)';
         }
-        if($tickets->count() == 0){
+        if($tickets->count() == 0 && $checkedInChildren->count() == 0){
             if($submitAsForm){
                 $this->setFlashSession(true, 'Event marked as completed. Only volunteers who have checked-in and signed the waiver will receive the email. Since no attendees have been found yet, the email has not been sent to anyone.');
                 return $this->generateJsonResponse(true, 'Event marked as completed. Only volunteers who have checked-in and signed the waiver will receive the email. Since no attendees have been found yet, the email has not been sent to anyone.', [
@@ -2722,67 +2824,153 @@ class FrontController extends Controller
                 return $this->generateJsonResponse(true, 'Event marked as completed. Only volunteers who have checked-in and signed the waiver will receive the email. Since no attendees have been found yet, the email has not been sent to anyone.', '<p class="float-end text-warning">Wrap-Up Email sent by: '.auth()->guard('front')->user()->first_name.' '.auth()->guard('front')->user()->last_name.$cohostText.'</p>');
             }
         }
-        if($tickets->isNotEmpty()){
+        if($tickets->isNotEmpty() || $checkedInChildren->isNotEmpty()){
             $to_arr = [];
             $log_arr = [];
-            $to_arr2 = [];
-            foreach ($tickets as $key => $value) {
-                if(!isset($value->volunteer)){
-                    continue;
-                } else if(!isset($value->volunteer->id)){
-                    continue;
-                }
-                $email = $value->volunteer->email_address;
-                $name = $value->volunteer->first_name.' '.$value->volunteer->last_name;
-                if(!empty(trim($email))){
-                    $to_arr[] = 
-                    [
-                        "to" => [
-                            ["email" => trim($email)]
-                            //["email" => 'learningdcm@gmail.com']
-                        ],
-                        "dynamic_template_data" => [
-                            "volunteer_name" => $name,
-                            "volunteer_email" => $email,
-                            "event_name" =>  $event->event_name,
-                            "event_date" => $event->startTimeAndEndTime,
-                            "event_location" => $event->fullAddress,
-                            "organizer_name" => $event->creator->first_name.' '.$event->creator->last_name,
-                            "total_volunteers" => $tickets->count(),
-                            "total_registered_volunteers" => $registered_tickets->count(),
-                            "volunteer_registered_from_other_sites" => $event->volunteer_registered_from_other_sites,
-                            "waste_collected" => $event->waste_collected,
 
-                            "service_hours" => $event->volunteer_hours ?? 'N/A',
-                            'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
-                            'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]),
-                        ],
-                    ];
-                    $log_arr[] = [
-                        "id" => $value->id,
-                        "email" => trim($email)
-                    ];
-                    /* if(isset($value->community_form_pdf) && !empty($value->community_form_pdf)){
-                        $to_arr2[] = 
-                        [
-                            "to" => [
-                                ["email" => trim($email)]
-                                //["email" => 'learningdcm@gmail.com']
-                            ],
-                            "dynamic_template_data" => [
-                                "volunteer_name" => $name,
-                                "volunteer_email" => $email,
-                                "event_name" =>  $event->event_name,
-                                'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]),
-                                'dashboard_link' => $this->mailUrl('front-cleanup-attending')
-                            ],
-                        ];
-                        $event->tickets()->where('id', $value->id)->update([
-                            'community_form_status' => 'approved'
+            // Group checked-in children by parent email
+            $childrenByParentEmail = [];
+            foreach ($checkedInChildren as $child) {
+                if (empty($child->community_form_pdf) || !file_exists(public_path($child->community_form_pdf))) {
+                    $childPdf = $this->generateChildCommunityServicePdf($child, $event);
+                    if ($childPdf) {
+                        $child->update([
+                            'community_form_pdf'    => $childPdf,
+                            'community_form_status' => 'approved',
                         ]);
-                    } */
+                    }
+                }
+
+                $parentEmail = null;
+                $parentName = null;
+                if ($child->parent_ticket && $child->parent_ticket->volunteer) {
+                    $parentEmail = trim($child->parent_ticket->volunteer->email_address);
+                    $parentName = $child->parent_ticket->volunteer->first_name . ' ' . $child->parent_ticket->volunteer->last_name;
+                } elseif ($child->eventOrder) {
+                    $parentEmail = trim($child->eventOrder->checkout_email_address);
+                    $parentName = $child->eventOrder->checkout_first_name . ' ' . $child->eventOrder->checkout_last_name;
+                }
+
+                if (!empty($parentEmail)) {
+                    $childrenByParentEmail[$parentEmail][] = [
+                        'child_id'         => $child->id,
+                        'child_name'       => $child->child_name,
+                        'child_age'        => $child->child_age,
+                        'certificate_link' => $this->mailUrl('show-child-community-service-pdf', ['child' => encrypt($child->id)]),
+                        'parent_name'      => $parentName,
+                    ];
                 }
             }
+
+            $processedEmails = [];
+
+            // 1. Process checked-in adult tickets
+            foreach ($tickets as $key => $value) {
+                if (!isset($value->volunteer) || !isset($value->volunteer->id)) {
+                    continue;
+                }
+                $email = trim($value->volunteer->email_address);
+                if (empty($email) || isset($processedEmails[$email])) {
+                    continue;
+                }
+                $processedEmails[$email] = true;
+                $name = $value->volunteer->first_name . ' ' . $value->volunteer->last_name;
+
+                $parentCertLink = $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]);
+                $childCerts = $childrenByParentEmail[$email] ?? [];
+
+                $childCertsHtml = '';
+                $childCertsText = '';
+                if (!empty($childCerts)) {
+                    $childCertsHtml = '<div style="margin-top: 15px; padding: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">' .
+                        '<strong style="color: #1a5f9e; font-size: 14px;">Accompanying Children Certificates:</strong><ul style="margin: 8px 0 0; padding-left: 20px;">';
+                    foreach ($childCerts as $cc) {
+                        $childCertsHtml .= '<li style="margin-bottom: 6px;"><strong>' . htmlspecialchars($cc['child_name']) . '</strong>: ' .
+                            '<a href="' . $cc['certificate_link'] . '" style="color: #0d6efd; text-decoration: underline;">Download Certificate</a></li>';
+                        $childCertsText .= $cc['child_name'] . ': ' . $cc['certificate_link'] . "\n";
+                    }
+                    $childCertsHtml .= '</ul></div>';
+                }
+
+                $to_arr[] = [
+                    "to" => [
+                        ["email" => $email]
+                    ],
+                    "dynamic_template_data" => [
+                        "volunteer_name"                        => $name,
+                        "volunteer_email"                       => $email,
+                        "event_name"                            => $event->event_name,
+                        "event_date"                            => $event->startTimeAndEndTime,
+                        "event_location"                        => $event->fullAddress,
+                        "organizer_name"                        => $event->creator->first_name . ' ' . $event->creator->last_name,
+                        "total_volunteers"                      => $tickets->count() + $checkedInChildren->count() + (int)($event->volunteer_registered_from_other_sites ?? 0),
+                        "total_registered_volunteers"           => $registered_tickets->count() + $registeredChildrenCount,
+                        "volunteer_registered_from_other_sites" => $event->volunteer_registered_from_other_sites,
+                        "waste_collected"                       => $event->waste_collected,
+                        "service_hours"                         => $event->volunteer_hours ?? 'N/A',
+                        'highlight_link'                        => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
+                        'certificate_download_link'             => $parentCertLink,
+                        'children_certificates'                 => $childCerts,
+                        'children_certificates_html'            => $childCertsHtml,
+                        'children_certificates_text'            => $childCertsText,
+                        'has_children_certificates'             => !empty($childCerts),
+                    ],
+                ];
+                $log_arr[] = [
+                    "id"    => $value->id,
+                    "email" => $email,
+                ];
+            }
+
+            // 2. Process parents whose children checked in, but parent ticket was not checked in
+            foreach ($childrenByParentEmail as $email => $childCerts) {
+                if (isset($processedEmails[$email]) || empty($email)) {
+                    continue;
+                }
+                $processedEmails[$email] = true;
+                $parentName = $childCerts[0]['parent_name'] ?? 'Volunteer Family';
+                $firstCertLink = $childCerts[0]['certificate_link'];
+
+                $childCertsHtml = '<div style="margin-top: 15px; padding: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">' .
+                    '<strong style="color: #1a5f9e; font-size: 14px;">Accompanying Children Certificates:</strong><ul style="margin: 8px 0 0; padding-left: 20px;">';
+                $childCertsText = '';
+                foreach ($childCerts as $cc) {
+                    $childCertsHtml .= '<li style="margin-bottom: 6px;"><strong>' . htmlspecialchars($cc['child_name']) . '</strong>: ' .
+                        '<a href="' . $cc['certificate_link'] . '" style="color: #0d6efd; text-decoration: underline;">Download Certificate</a></li>';
+                    $childCertsText .= $cc['child_name'] . ': ' . $cc['certificate_link'] . "\n";
+                }
+                $childCertsHtml .= '</ul></div>';
+
+                $to_arr[] = [
+                    "to" => [
+                        ["email" => $email]
+                    ],
+                    "dynamic_template_data" => [
+                        "volunteer_name"                        => $parentName,
+                        "volunteer_email"                       => $email,
+                        "event_name"                            => $event->event_name,
+                        "event_date"                            => $event->startTimeAndEndTime,
+                        "event_location"                        => $event->fullAddress,
+                        "organizer_name"                        => $event->creator->first_name . ' ' . $event->creator->last_name,
+                        "total_volunteers"                      => $tickets->count() + $checkedInChildren->count() + (int)($event->volunteer_registered_from_other_sites ?? 0),
+                        "total_registered_volunteers"           => $registered_tickets->count() + $registeredChildrenCount,
+                        "volunteer_registered_from_other_sites" => $event->volunteer_registered_from_other_sites,
+                        "waste_collected"                       => $event->waste_collected,
+                        "service_hours"                         => $event->volunteer_hours ?? 'N/A',
+                        'highlight_link'                        => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
+                        'certificate_download_link'             => $firstCertLink,
+                        'children_certificates'                 => $childCerts,
+                        'children_certificates_html'            => $childCertsHtml,
+                        'children_certificates_text'            => $childCertsText,
+                        'has_children_certificates'             => true,
+                    ],
+                ];
+                $log_arr[] = [
+                    "id"    => $childCerts[0]['child_id'],
+                    "email" => $email,
+                ];
+            }
+
             if(!empty($to_arr) && count($to_arr)>0){
                 $to_arr_child = array_chunk($to_arr, 300);
                 $log_arr_child = array_chunk($log_arr, 300);
@@ -3298,6 +3486,12 @@ class FrontController extends Controller
                 $orderTicket->community_form_status = 'pending';
                 $orderTicket->checkin = 0;
                 $orderTicket->save();
+                if(request()->input('checkin_scope') === 'family'){
+                    $orderTicket->children()->whereNull('cancelled_at')->update([
+                        'checkin' => 0,
+                        'community_form_status' => 'pending',
+                    ]);
+                }
                 if($callFromBackend){
                     $this->setFlashSession(true , "Volunteer has been checked out successfully.");
                     return redirect()->back();
@@ -3323,11 +3517,47 @@ class FrontController extends Controller
                         $orderTicket->is_late_checkin = 1;
                     }
                     $orderTicket->save();
+                    if(request()->input('checkin_scope') === 'family'){
+                        $activeChildren = $orderTicket->children()->whereNull('cancelled_at')->get();
+                        foreach($activeChildren as $child){
+                            $pdfPath = $child->community_form_pdf;
+                            if(empty($pdfPath) || !file_exists(public_path($pdfPath))){
+                                $pdfPath = $this->generateChildCommunityServicePdf($child, $event);
+                            }
+                            $child->update([
+                                'checkin'               => 1,
+                                'checkin_dt'            => date('Y-m-d H:i:s'),
+                                'community_form_pdf'    => $pdfPath,
+                                'community_form_status' => 'approved',
+                            ]);
+                        }
+                    }
                     if($event->is_completed==1){
                         $to_arr = [];
                         $log_arr = [];
                         if (isset($orderTicket->volunteer) && isset($orderTicket->volunteer->id)) {
                             $tickets = $event->tickets()->where('checkin', 1)->whereNotNull('waiver_filled_at')->get();
+                            $checkedChildren = $orderTicket->children()->whereNull('cancelled_at')->where('checkin', 1)->get();
+                            $childCerts = [];
+                            $childCertsHtml = '';
+                            $childCertsText = '';
+                            if ($checkedChildren->isNotEmpty()) {
+                                $childCertsHtml = '<div style="margin-top: 15px; padding: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">' .
+                                    '<strong style="color: #1a5f9e; font-size: 14px;">Accompanying Children Certificates:</strong><ul style="margin: 8px 0 0; padding-left: 20px;">';
+                                foreach ($checkedChildren as $cc) {
+                                    $link = $this->mailUrl('show-child-community-service-pdf', ['child' => encrypt($cc->id)]);
+                                    $childCerts[] = [
+                                        'child_id'         => $cc->id,
+                                        'child_name'       => $cc->child_name,
+                                        'child_age'        => $cc->child_age,
+                                        'certificate_link' => $link,
+                                    ];
+                                    $childCertsHtml .= '<li style="margin-bottom: 6px;"><strong>' . htmlspecialchars($cc->child_name) . '</strong>: ' .
+                                        '<a href="' . $link . '" style="color: #0d6efd; text-decoration: underline;">Download Certificate</a></li>';
+                                    $childCertsText .= $cc->child_name . ': ' . $link . "\n";
+                                }
+                                $childCertsHtml .= '</ul></div>';
+                            }
                             $email = $orderTicket->volunteer->email_address;
                             $name = $orderTicket->volunteer->first_name.' '.$orderTicket->volunteer->last_name;
                             if(!empty(trim($email))){
@@ -3350,6 +3580,10 @@ class FrontController extends Controller
                                         "service_hours" => $event->volunteer_hours ?? 'N/A',
                                         'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
                                         'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($orderTicket->id)]),
+                                        'children_certificates' => $childCerts,
+                                        'children_certificates_html' => $childCertsHtml,
+                                        'children_certificates_text' => $childCertsText,
+                                        'has_children_certificates' => !empty($childCerts),
                                     ],
                                 ];
                                 $log_arr[] = [
@@ -3477,6 +3711,75 @@ class FrontController extends Controller
         }
         $seo_details = (object)['title' => 'Community Service PDF'];
         return view('pages.frontend.show-community-service-pdf', ['seo_details' => $seo_details]);
+    }
+
+    public function showChildCommunityServicePdf($child)
+    {
+        $childRecord = EventOrderTicketChild::with(['event.creator', 'parent_ticket.event.creator'])->findOrFail(decrypt($child));
+        if ($childRecord->checkin == 1) {
+            $pdfUrl = $childRecord->community_form_pdf;
+            $hasValidFile = !empty($pdfUrl);
+            if ($hasValidFile) {
+                $exp = explode('events/', $pdfUrl);
+                $relPath = isset($exp[1]) ? 'events/'.$exp[1] : $pdfUrl;
+                $hasValidFile = file_exists(public_path($relPath));
+            }
+            if (!$hasValidFile) {
+                $event = $childRecord->event ?: ($childRecord->parent_ticket ? $childRecord->parent_ticket->event : null);
+                $pdfUrl = $this->generateChildCommunityServicePdf($childRecord, $event);
+                if ($pdfUrl) {
+                    $childRecord->update([
+                        'community_form_pdf'    => $pdfUrl,
+                        'community_form_status' => 'approved',
+                    ]);
+                }
+            }
+            if (!empty($pdfUrl)) {
+                $exp = explode('events/', $pdfUrl);
+                $relativePath = isset($exp[1]) ? 'events/'.$exp[1] : $pdfUrl;
+                $filePath = public_path($relativePath);
+                if (file_exists($filePath)) {
+                    return response()->file($filePath, [
+                        'Content-Type' => 'application/pdf',
+                    ]);
+                }
+            }
+        }
+        $seo_details = (object)['title' => 'Community Service PDF'];
+        return view('pages.frontend.show-community-service-pdf', ['seo_details' => $seo_details]);
+    }
+
+    public function generateChildCommunityServicePdf($child, $event)
+    {
+        $hours = ($event && $event->start_datetime && $event->end_datetime)
+            ? round($event->start_datetime->diffInMinutes($event->end_datetime) / 60, 2)
+            : 0;
+
+        $data = [
+            'event'              => $event,
+            'volunteerName'      => $child->child_name,
+            'hours'              => $hours,
+            'organization_name'  => ($event && $event->creator) ? $event->creator->organisation_name : '',
+            'organizer_name'     => ($event && $event->creator) ? ($event->creator->first_name.' '.$event->creator->last_name) : '',
+            'organization_email' => ($event && $event->creator) ? $event->creator->email_address : '',
+            'organizer_link'     => ($event && $event->creator) ? route('organizer-detail', ['slug' => $event->creator->organisation_landing_slug]) : '#',
+        ];
+
+        try {
+            $html = view('pages.events.community-form-new', $data)->render();
+            $pdf = \PDF::setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true])->loadHTML($html);
+            $filename = 'child_community_form_' . $child->id . '_' . time() . '.pdf';
+            $path = 'events/community_forms/' . $filename;
+            $publicPath = public_path($path);
+            if (!file_exists(dirname($publicPath))) {
+                mkdir(dirname($publicPath), 0755, true);
+            }
+            file_put_contents($publicPath, $pdf->output());
+            return $path;
+        } catch (\Exception $e) {
+            \Log::error('Child certificate generation failed: ' . $e->getMessage());
+            return null;
+        }
     }
     /* public function ticketMarkCheckin($id){
         $registration = EventOrderTicket::findOrFail(decrypt($id));

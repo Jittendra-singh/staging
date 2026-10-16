@@ -1093,6 +1093,23 @@ class FrontOrderController extends Controller
                 if ($qrCheckinValue === 'volunteer_checkin_qr:'.$orderTicket->id && $orderTicket->checkin != 1) {
                     $frontController = new FrontController();
                     $frontController->ticketMarkCheckin(encrypt($orderTicket->id), true);
+
+                    // Also check in accompanying children on QR check-in
+                    if ($orderTicket->children()->exists()) {
+                        $activeChildren = $orderTicket->children()->whereNull('cancelled_at')->get();
+                        foreach ($activeChildren as $child) {
+                            $pdfPath = $child->community_form_pdf;
+                            if (empty($pdfPath) || !file_exists(public_path($pdfPath))) {
+                                $pdfPath = $frontController->generateChildCommunityServicePdf($child, $orderTicket->event);
+                            }
+                            $child->update([
+                                'checkin'               => 1,
+                                'checkin_dt'            => now(),
+                                'community_form_pdf'    => $pdfPath,
+                                'community_form_status' => 'approved',
+                            ]);
+                        }
+                    }
                 }
             } catch (\Exception $e) {
                 // Invalid QR check-in token. Waiver submission still remains valid.

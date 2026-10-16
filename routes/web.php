@@ -106,6 +106,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
     Route::get('unsubscribe-alert/{user}/{alert?}', 'unsubscribeAlert')->name('unsubscribe-alert');
     Route::get('confirmed-unsubscribe-alert/{user}/{alert?}', 'confirmedUnsubscribeAlert')->name('confirmed-unsubscribe-alert');
     Route::get('show-community-service-pdf/{ticket}', 'showCommunityServicePdf')->name('show-community-service-pdf');
+    Route::get('show-child-community-service-pdf/{child}', 'showChildCommunityServicePdf')->name('show-child-community-service-pdf');
     Route::get('front-save-ticket-notify/{ticket}', 'saveTicketNotify')->name('save-ticket-notify');
     Route::post('front-save-ticket-notify-guest', 'saveGuestTicketNotify')->name('save-ticket-notify-guest');
     Route::get('verify-ticket-notification-email/{notification}', 'verifyGuestTicketNotification')->middleware('signed')->name('verify-ticket-notify-email');
@@ -166,6 +167,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::get('volunteer-check-in/{id}', 'volunteerCheckin')->name('front-volunteer-check-in');
         Route::post('volunteer-check-in/sign-and-check-in/{id}', 'volunteerSignAndCheckin')->name('front-volunteer-sign-and-check-in');
         Route::post('volunteer-check-in/mark-check-in/{id}', 'volunteerMarkCheckin')->name('front-volunteer-mark-check-in');
+        Route::post('volunteer-check-in/child-mark-check-in/{id}', 'childMarkCheckin')->name('front-child-mark-check-in');
         Route::get('volunteer-check-in/export/{id}', 'exportVolunteerCheckinPdf')->name('front-volunteer-check-in-export');
         Route::post('volunteer-check-in/waiver-qr/{id}', 'volunteerWaiverQr')->name('front-volunteer-waiver-qr');
 

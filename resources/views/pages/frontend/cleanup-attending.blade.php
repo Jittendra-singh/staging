@@ -380,6 +380,25 @@
 																<span class="badge custom-badge-danger 1">Not Available</span>
 															</h6>
 														@endif
+
+														@php
+															$attendingChildren = $children ? $children->whereNull('cancelled_at') : collect();
+														@endphp
+														@if($attendingChildren->isNotEmpty())
+															<div class="mt-2 pt-2 border-top w-100 text-start">
+																<p class="mb-1 text-muted" style="font-size: 11px; font-weight: 600;">Child Certificates:</p>
+																@foreach($attendingChildren as $ch)
+																	<div class="d-flex align-items-center justify-content-between mb-1 gap-2">
+																		<span style="font-size: 12px; font-weight: 500;">{{ $ch->child_name }}</span>
+																		@if($ch->checkin == 1)
+																			<a class="btn btn-sm py-0 px-2" style="font-size: 11px;" href="{{ route('show-child-community-service-pdf', ['child' => encrypt($ch->id)]) }}" target="_blank">Download PDF</a>
+																		@else
+																			<span class="badge custom-badge-warning" style="font-size: 10px;">Not Checked-In</span>
+																		@endif
+																	</div>
+																@endforeach
+															</div>
+														@endif
 														<!-- <div class="form-group">
 															<div class="d-flex align-items-start">
 																<label class="btn-switch m-0 me-3">
