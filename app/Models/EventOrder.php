@@ -20,4 +20,8 @@ class EventOrder extends Model
     {
         return $this->hasMany(EventOrderTicket::class, 'order_id');
     }
+    public function children()
+    {
+        return $this->hasMany(EventOrderTicketChild::class, 'order_id');
+    }
 }

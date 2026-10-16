@@ -85,6 +85,22 @@
                                 <label for="signer_name" class="form-label">Your Name</label>
                                 <div>{{ $signerName ?? '' }}</div>
                             </div>
+                            @if(isset($ticket->children) && $ticket->children->count() > 0)
+                                <div class="mb-3 p-3 rounded" style="background-color: #f8fafc; border: 1px solid #e2e8f0;">
+                                    <label class="form-label fw-bold text-dark mb-1">Accompanying Children (Under 18)</label>
+                                    <p class="text-muted small mb-2">The following minor attendee(s) are registered under your supervision:</p>
+                                    <ul class="mb-2 ps-3">
+                                        @foreach($ticket->children as $child)
+                                            <li class="mb-1">
+                                                <strong>{{ $child->child_name }}</strong> (Age {{ $child->child_age }})
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                    <div class="small text-muted fst-italic">
+                                        <i class="fa-solid fa-circle-info me-1"></i> By signing below, you agree to this waiver on behalf of yourself and all accompanying minors listed above.
+                                    </div>
+                                </div>
+                            @endif
                             <div class="mb-3">
                                 <label for="date_signed" class="form-label">Date</label>
                                 <div>{{ \Carbon\Carbon::now()->toDateString() }}</div>

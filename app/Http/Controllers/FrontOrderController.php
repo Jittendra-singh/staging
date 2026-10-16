@@ -400,11 +400,6 @@ class FrontOrderController extends Controller
 
             if(!$event)
                 throw new CustomException("No booking for this event.");
-
-            $childrenByTicket = $this->validatedChildrenByTicket(
-                $event,
-                request()->input('ticket', [])
-            );
             
             //DB::beginTransaction();
                 $pincode = '';
@@ -549,36 +544,20 @@ class FrontOrderController extends Controller
                 /**create ticket holders */
                 $email_people_array = [];
                 $waiver_people_array = [];
-                // dd(request()->ticket);
                 $total_18_tickets = 0;
                 $bookedTicketsById = collect($ticket_booking)->keyBy('id');
+                $createdOrderTickets = [];
+                $pendingChildTickets = [];
+
+                // Phase 1: Create Adult (Form 1) and Youth (Form 2) tickets
                 foreach (request()->ticket as $ticket_key => $ticket_arr) {
                     if(in_array($ticket_arr['id'], $available_ticket_array)){
-                        $ticket_volunteer = Volunteer::where('email_address', $ticket_arr['email_address'])->first();
-                        if(!$ticket_volunteer){ 
-                            $ticket_volunteer = Volunteer::create([
-                                                    'first_name'    => $ticket_arr['first_name'] , 
-                                                    'last_name'     => $ticket_arr['last_name'] , 
-                                                    'email_address' => $ticket_arr['email_address'] , 
-                                                    'phone'         => formatPhoneNumber($ticket_arr['phone']),
-                                                    'is_newsletter'     => $newsletter,
-                                                ]);
-                            $ticket_volunteer->refresh();
-                        }elseif($ticket_volunteer && !$ticket_volunteer->status){
-                                throw new CustomException("$ticket_arr[email_address] is alrady inactive by admin");
-                        } elseif ($ticket_volunteer && trim($ticket_volunteer->phone)==''){
-                            $ticket_volunteer->phone = formatPhoneNumber($ticket_arr['phone']);
-                            $ticket_volunteer->save();
-                            $ticket_volunteer->refresh();
-                        }
+                        $formType = (int) ($ticket_arr['form_type'] ?? 1);
 
-                        $t_obj = EventTicket::findOrfail($ticket_arr['id']);
-                        $waiver_handler_name = @$ticket_arr['waiver_handler_name'] ? : $ticket_volunteer->name;
-                        $waiver_handler_email = @$ticket_arr['waiver_handler_email'] ? : $ticket_volunteer->email_address;
-                        $is_under_18 = isset($ticket_arr['is_under_18']) ? 1 : 0;
-                        $total_18_tickets = isset($ticket_arr['is_under_18'])?$total_18_tickets+1:$total_18_tickets;
-                        //$allPrice = $t_obj->all_price;
-                        //$total_platform_fee += $allPrice['ticket_platform_fee'];
+                        if ($formType === 3) {
+                            $pendingChildTickets[$ticket_key] = $ticket_arr;
+                            continue; // Process in Phase 2
+                        }
 
                         $savedPricing = $bookedTicketsById->get($ticket_arr['id']);
                         if (!$savedPricing) {
@@ -586,32 +565,58 @@ class FrontOrderController extends Controller
                         }
                         $total_platform_fee += (float) $savedPricing['platform_fee'];
 
+                        $ticketEmail = !empty($ticket_arr['email_address'])
+                            ? $ticket_arr['email_address']
+                            : $creating_volunteer->email_address;
+
+                        $ticket_volunteer = Volunteer::where('email_address', $ticketEmail)->first();
+                        if(!$ticket_volunteer){ 
+                            $ticket_volunteer = Volunteer::create([
+                                                    'first_name'    => $ticket_arr['first_name'] ?? '', 
+                                                    'last_name'     => $ticket_arr['last_name'] ?? '', 
+                                                    'email_address' => $ticketEmail, 
+                                                    'phone'         => formatPhoneNumber($ticket_arr['phone'] ?? ''),
+                                                    'is_newsletter' => $newsletter,
+                                                ]);
+                            $ticket_volunteer->refresh();
+                        }elseif($ticket_volunteer && !$ticket_volunteer->status){
+                                throw new CustomException("$ticketEmail is already inactive by admin");
+                        } elseif ($ticket_volunteer && trim($ticket_volunteer->phone)==''){
+                            $ticket_volunteer->phone = formatPhoneNumber($ticket_arr['phone'] ?? '');
+                            $ticket_volunteer->save();
+                            $ticket_volunteer->refresh();
+                        }
+
+                        $t_obj = EventTicket::findOrFail($ticket_arr['id']);
+                        $waiver_handler_name = @$ticket_arr['waiver_handler_name'] ?: $ticket_volunteer->name;
+                        $waiver_handler_email = @$ticket_arr['waiver_handler_email'] ?: $ticket_volunteer->email_address;
+                        $is_under_18 = ($formType === 2 || isset($ticket_arr['is_under_18'])) ? 1 : 0;
+                        if ($is_under_18) {
+                            $total_18_tickets++;
+                        }
+
                         $event_order_ticket_obj = EventOrderTicket::create([
-                            'order_id'       => $order_object->id , 
-                            'volunteer_id'   => $ticket_volunteer->id , 
-                            'event_id'       => $event->id , 
-                            'ticket_id'      => $ticket_arr['id'] , 
-                            /* 'price'          => $allPrice['ticket_price'], 
-                            'ticket_base_price' => $allPrice['ticket_base_price'], 
-                            'ticket_platform_fee' => $allPrice['ticket_platform_fee'], 
-                            'tikcet_org_payout' => $allPrice['tikcet_org_payout'],  */
-
-                            'price'                  => $savedPricing['price'],
-                            'ticket_base_price'      => $savedPricing['base_price'],
-                            'ticket_platform_fee'    => $savedPricing['platform_fee'],
-                            'ticket_processing_fee'  => $savedPricing['processing_fee'],
-                            'tikcet_org_payout'      => $savedPricing['organizer_payout'],
-
-                            //'price'          => $t_obj->ticket_type == 'free' ? 0 : $t_obj->ticket_price , 
-                            'ticket_number'  => $this->generateRandomTicketNumber() , 
-                            'ticket_status'  => 'approved' , /**ideally it should be pending */ 
-                            'ticket_answer'  => @$ticket_arr['answer'] ,
-                            'is_under_18'    => $is_under_18 , 
-                            'waiver_handler_name'  => $waiver_handler_name  ,
-                            'waiver_handler_email' => $waiver_handler_email ,
-                            'rsvp_confirmation'    => 1, // RSVP values added here after RSVP Waiver flow changes 
-                            'rsvp_filled_at'    => now(), 
+                            'order_id'              => $order_object->id, 
+                            'volunteer_id'          => $ticket_volunteer->id, 
+                            'event_id'              => $event->id, 
+                            'ticket_id'             => $ticket_arr['id'], 
+                            'price'                 => $savedPricing['price'],
+                            'ticket_base_price'     => $savedPricing['base_price'],
+                            'ticket_platform_fee'   => $savedPricing['platform_fee'],
+                            'ticket_processing_fee' => $savedPricing['processing_fee'],
+                            'tikcet_org_payout'     => $savedPricing['organizer_payout'],
+                            'ticket_number'         => $this->generateRandomTicketNumber(), 
+                            'ticket_status'         => 'approved', 
+                            'ticket_answer'         => @$ticket_arr['answer'],
+                            'is_under_18'           => $is_under_18, 
+                            'waiver_handler_name'   => $waiver_handler_name,
+                            'waiver_handler_email'  => $waiver_handler_email, 
+                            'rsvp_confirmation'     => 1, 
+                            'rsvp_filled_at'        => now(), 
                         ]);
+
+                        // Store for child lookup in Phase 2
+                        $createdOrderTickets[$ticket_key] = $event_order_ticket_obj;
 
                         // Clear waitlist status if they were on it
                         \App\Models\EventWaitlist::where('event_id', $event->id)
@@ -620,88 +625,44 @@ class FrontOrderController extends Controller
                             ->where('status', 'waiting')
                             ->update(['status' => 'purchased']);
 
-                        foreach ($childrenByTicket[$ticket_key] ?? [] as $child) {
-                            $event_order_ticket_obj->children()->create([
-                                'event_id' => $event->id,
-                                'order_id' => $order_object->id,
-                                'child_name' => $child['child_name'],
-                                'child_age' => $child['child_age'],
-                            ]);
-                        }
-                        
                         if(SEND_MAIL){
                             $email_people_array[$ticket_volunteer->email_address] = [   
-                                'purchase_by_name' => $creating_volunteer->first_name.' '.$creating_volunteer->last_name,
-                                'purchase_by_email' => $creating_volunteer->email_address,
-                                'recipient_name' => $ticket_volunteer->name,
-                                'recipient_email' => $ticket_volunteer->email_address,
-                                'event_title'    => $event->event_name,
-                                'event_date'     => $event->startTimeAndEndTime,
-                                'event'          => $event,
-                                'event_location' => $event->fullAddress,
-                                'is_under_18'    => $is_under_18 , // or true if applicable
-                                'waiver_link'    => $this->mailUrl('view-waiver-form', ['ticket' => encrypt($event_order_ticket_obj->id)]),
-                                //'cancelRegistrationUrl' => route('cancel-rsvp-get', ['ticket' => encrypt($event_order_ticket_obj->id),'type'=>1]),
+                                'purchase_by_name'      => $creating_volunteer->first_name.' '.$creating_volunteer->last_name,
+                                'purchase_by_email'     => $creating_volunteer->email_address,
+                                'recipient_name'        => $ticket_volunteer->name,
+                                'recipient_email'       => $ticket_volunteer->email_address,
+                                'event_title'           => $event->event_name,
+                                'event_date'            => $event->startTimeAndEndTime,
+                                'event'                 => $event,
+                                'event_location'        => $event->fullAddress,
+                                'is_under_18'           => $is_under_18,
+                                'waiver_link'           => $this->mailUrl('view-waiver-form', ['ticket' => encrypt($event_order_ticket_obj->id)]),
                                 'cancelRegistrationUrl' => $this->mailUrl('front-cleanup-attending'),
-                                'waiver_name'    => $waiver_handler_name, 
-                                'waiver_email'   => $waiver_handler_email, 
-                                'event_pdf_link' => $this->mailUrl('front-registration-calendar', ['slug' => $event->slug]), 
-                                'organizer_name' => $event->creator->name,
-                                'event_link'     => $this->mailUrl('view-event-details', ['slug' => $event->slug]),
+                                'waiver_name'           => $waiver_handler_name, 
+                                'waiver_email'          => $waiver_handler_email, 
+                                'event_pdf_link'        => $this->mailUrl('front-registration-calendar', ['slug' => $event->slug]), 
+                                'organizer_name'        => $event->creator->name,
+                                'event_link'            => $this->mailUrl('view-event-details', ['slug' => $event->slug]),
+                                'accompanying_children' => [], // Populated in Phase 2 for parents
                             ];
-                            /* $email_people_array[$ticket_volunteer->email_address] = 
-                                                new \App\Mail\SendMail(
-                                                    "🌿 You’re Invited to Join ".$event->event_name.'!', 
-                                                    'pages.emails.thankyou-for-order-mail', 
-                                                    [   
-                                                        'purchase_by_name' => request()->checkout_first_name.' '.request()->checkout_last_name,
-                                                        'recipient_name' => $ticket_volunteer->name,
-                                                        'event_title'    => $event->event_name,
-                                                        'event_date'     => $event->startTimeAndEndTime,
-                                                        'event'          => $event,
-                                                        'event_location' => $event->fullAddress,
-                                                        'is_under_18'    => $is_under_18 , // or true if applicable
-                                                        'waiver_link'    => route('view-waiver-form', ['ticket' => encrypt($event_order_ticket_obj->id)]),
-                                                        'waiver_name'    => $waiver_handler_name, 
-                                                        'waiver_email'   => $waiver_handler_email, 
-                                                        'event_pdf_link' => route('front-registration-calendar', ['slug' => $event->slug]), 
-                                                        'organizer_name' => $event->creator->name,
-                                                    ]
-                                                ); */
-                            if($is_under_18 && $event->waiverFormContentFilter()){
+
+                            // Only Form 2 (Youth with external guardian) gets separate waiver invite to guardian
+                            if($formType === 2 && $is_under_18 && $event->waiverFormContentFilter() && !empty($waiver_handler_email) && strtolower(trim($waiver_handler_email)) !== strtolower(trim($ticket_volunteer->email_address))){
                                 $waiver_people_array[$waiver_handler_email] = [ 
-                                    'purchase_by_name' => $creating_volunteer->first_name.' '.$creating_volunteer->last_name,  
-                                    'name'      => $waiver_handler_name,
-                                    'childName'     => $ticket_volunteer->name,
-                                    'childEmail'     => $ticket_volunteer->email_address,
-                                    'isUnder18' => 1,
-                                    'event'          => $event,
-                                    'eventName' => $event->event_name,
-                                    'eventDate'     => $event->startTimeAndEndTime,
-                                    'eventLocation' => $event->fullAddress,
-                                    'waiverUrl' => $this->mailUrl('view-waiver-form', ['ticket' => encrypt($event_order_ticket_obj->id)]),
-                                    //'cancelRegistrationUrl' => route('cancel-rsvp-get', ['ticket' => encrypt($event_order_ticket_obj->id),'type'=>1]),
+                                    'purchase_by_name'      => $creating_volunteer->first_name.' '.$creating_volunteer->last_name,  
+                                    'name'                  => $waiver_handler_name,
+                                    'childName'             => $ticket_volunteer->name,
+                                    'childEmail'            => $ticket_volunteer->email_address,
+                                    'isUnder18'             => 1,
+                                    'event'                 => $event,
+                                    'eventName'             => $event->event_name,
+                                    'eventDate'             => $event->startTimeAndEndTime,
+                                    'eventLocation'         => $event->fullAddress,
+                                    'waiverUrl'             => $this->mailUrl('view-waiver-form', ['ticket' => encrypt($event_order_ticket_obj->id)]),
                                     'cancelRegistrationUrl' => $this->mailUrl('cancel-registration-front', ['ticket' => encrypt($event_order_ticket_obj->id)]),
-                                    'event_link' => $this->mailUrl('view-event-details', ['slug' => $event->slug]),
+                                    'event_link'            => $this->mailUrl('view-event-details', ['slug' => $event->slug]),
                                 ];
-                                /* $waiver_people_array[$waiver_handler_email] = 
-                                                new \App\Mail\SendMail(
-                                                    "📩 Action Needed: Confirm Participation for {$ticket_volunteer->name} in {$event->event_name}", 
-                                                    'pages.emails.waiver-invitation-form', 
-                                                    [ 
-                                                        'purchase_by_name' => request()->checkout_first_name.' '.request()->checkout_last_name,  
-                                                        'name'      => $waiver_handler_name,
-                                                        'childName'     => $ticket_volunteer->name,
-                                                        'childEmail'     => $ticket_volunteer->email_address,
-                                                        'isUnder18' => 1,
-                                                        'eventName' => $event->event_name,
-                                                        'eventDate'     => $event->startTimeAndEndTime,
-                                                        'eventLocation' => $event->fullAddress,
-                                                        'waiverUrl' => route('view-waiver-form', ['ticket' => encrypt($event_order_ticket_obj->id)]),
-                                                    ]
-                                                ); */
                             }
-                        
                         }
 
                         $tags = [];
@@ -721,7 +682,55 @@ class FrontOrderController extends Controller
                             }
                         }
                     }
+                }
 
+                // Phase 2: Create Child Tickets (Form 3) — Stored EXCLUSIVELY in event_order_ticket_childs
+                foreach ($pendingChildTickets as $ticket_key => $child_arr) {
+                    $savedPricing = $bookedTicketsById->get($child_arr['id']);
+                    if (!$savedPricing) {
+                        throw new CustomException('Ticket pricing data is missing. Please restart checkout.');
+                    }
+                    $total_platform_fee += (float) $savedPricing['platform_fee'];
+
+                    // Identify accompanying guardian ticket
+                    $parentKey = $child_arr['accompanying_guardian'] ?? null;
+                    $parentTicketObj = null;
+
+                    if ($parentKey && isset($createdOrderTickets[$parentKey])) {
+                        $parentTicketObj = $createdOrderTickets[$parentKey];
+                    } else {
+                        // Defaults to the first adult ticket on order, or null
+                        $parentTicketObj = !empty($createdOrderTickets) ? reset($createdOrderTickets) : null;
+                    }
+
+                    $guardianTicketId = $parentTicketObj ? $parentTicketObj->id : null;
+                    $childFullName = trim($child_arr['child_name'] ?? 'Child Attendee');
+                    $childAge = (int) ($child_arr['child_age'] ?? 0);
+
+                    $childRecord = \App\Models\EventOrderTicketChild::create([
+                        'event_order_ticket_id' => $guardianTicketId,
+                        'event_id'              => $event->id,
+                        'order_id'              => $order_object->id,
+                        'child_name'            => $childFullName,
+                        'child_age'             => $childAge,
+                        'is_participating'      => 1,
+                        'price'                 => $savedPricing['price'],
+                        'ticket_base_price'     => $savedPricing['base_price'],
+                        'ticket_platform_fee'   => $savedPricing['platform_fee'],
+                        'ticket_processing_fee' => $savedPricing['processing_fee'],
+                        'tikcet_org_payout'     => $savedPricing['organizer_payout'],
+                    ]);
+
+                    // Consolidate child into accompanying parent's single email payload (NO separate email sent for child)
+                    if (SEND_MAIL && $parentTicketObj && $parentTicketObj->volunteer) {
+                        $parentEmail = $parentTicketObj->volunteer->email_address;
+                        if (isset($email_people_array[$parentEmail])) {
+                            $email_people_array[$parentEmail]['accompanying_children'][] = [
+                                'name' => $childFullName,
+                                'age'  => $childAge,
+                            ];
+                        }
+                    }
                 }
 
             // creating weekly alert if checkbox of weekly alert checked on the checkout page
@@ -736,14 +745,14 @@ class FrontOrderController extends Controller
             //DB::commit();
             /**emptying the sessions */
             Session::forget(['ticket_booking', 'checkout_event', 'checkout_order_details']);
-            $totalChildren = collect($childrenByTicket)->flatten(1)->count();
+            $totalChildren = count($pendingChildTickets);
             $this->setFlashSession(true, "Great! we have created order.");
             if(SEND_MAIL){
                 $hasProcessingFee = !is_null($order_object->processing_fee_per)
                     && (float) $order_object->processing_fee_per > 0;
 
                 $ticketProcessingFee = $hasProcessingFee
-                    ? (float) $order_object->tickets->sum('ticket_processing_fee')
+                    ? (float) ($order_object->tickets->sum('ticket_processing_fee') + $order_object->children->sum('ticket_processing_fee'))
                     : 0;
 
                 $donationProcessingFee = $hasProcessingFee
@@ -965,7 +974,7 @@ class FrontOrderController extends Controller
         }
     }
     public function viewWaiverPdf($ticket){
-        $ticket = EventOrderTicket::with('volunteer')->findOrFail(decrypt($ticket));
+        $ticket = EventOrderTicket::with(['volunteer', 'children'])->findOrFail(decrypt($ticket));
         if(empty($ticket->waiver_filled_at) || empty($ticket->signature)){
             abort(404, 'Waiver is not signed yet.');
         }
@@ -1023,7 +1032,7 @@ class FrontOrderController extends Controller
     }
     public function viewWaiverForm($ticket){
         
-        $ticket = EventOrderTicket::with('volunteer')->findOrFail(decrypt($ticket));
+        $ticket = EventOrderTicket::with(['volunteer', 'children'])->findOrFail(decrypt($ticket));
         $event  = $ticket->event;
         $waiver_form_content = $event->waiverFormContentFilter();
         if($event->waiver_form_type=='pdf'){
@@ -1053,7 +1062,7 @@ class FrontOrderController extends Controller
         ]);
     }
     public function submitWaiverForm($ticket , Request $request){
-        $orderTicket = EventOrderTicket::with('event')->find(decrypt($ticket));
+        $orderTicket = EventOrderTicket::with(['event', 'children'])->find(decrypt($ticket));
         if(!$orderTicket) 
             abort(404);
 
@@ -1069,6 +1078,14 @@ class FrontOrderController extends Controller
             throw new CustomException("This waiver is already filled and signed. if you have any doubt, please contact organizer.", 408);
             
         $orderTicket->update(['waiver_filled_at' => now(), 'signature' => $request->signature]);
+
+        // Automatically update all associated children's waiver status
+        if ($orderTicket->children()->exists()) {
+            $orderTicket->children()->update([
+                'waiver_filled_at' => now(),
+                'signature'        => $request->signature,
+            ]);
+        }
         if ($request->filled('qr_checkin')) {
             try {
                 $qrCheckinValue = decrypt($request->qr_checkin);

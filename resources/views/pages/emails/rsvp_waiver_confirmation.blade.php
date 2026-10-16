@@ -125,6 +125,17 @@
             @endif 
             <li>Ticket ID: {{ $event_ticket_id}}</li>
         </ul>
+        @if(isset($ticket->children) && $ticket->children->count() > 0)
+        <hr>
+        <h5><strong>Accompanying Children (Under 18)</strong></h5>
+        <ul>
+            @foreach($ticket->children as $child)
+                <li>
+                    <strong>{{ $child->child_name }}</strong> (Age {{ $child->child_age }}) - Waiver: {{ $child->waiver_filled_at ? '✅ Signed' : '❌ Pending' }}
+                </li>
+            @endforeach
+        </ul>
+        @endif
         @endif
 
     <hr>

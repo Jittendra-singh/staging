@@ -39,6 +39,16 @@
                                 <label for="signer_name" class="form-label">Your Name</label>
                                 <div>{{ $signerName ?? '' }}</div>
                             </div>
+                            @if(isset($ticket->children) && $ticket->children->count() > 0)
+                                <div class="mb-3">
+                                    <label class="form-label"><strong>Accompanying Children (Under 18):</strong></label>
+                                    <ul>
+                                        @foreach($ticket->children as $child)
+                                            <li>{{ $child->child_name }} (Age {{ $child->child_age }})</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
                             <div class="mb-3">
                                 <label for="date_signed" class="form-label">Date</label>
                                 <div>{{ \Carbon\Carbon::now()->toDateString() }}</div>
