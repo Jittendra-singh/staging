@@ -37,7 +37,7 @@
                             @if($is_waiver_allowed)
                                 <option value="2">Youth (Under 18 with Guardian)</option>
                             @endif
-                            <option value="3">Child (Under 13 years)</option>
+                            <option value="3">Child (Under 18 years)</option>
                         </select>
                     </div>
                 </div>
@@ -148,12 +148,12 @@
                         </div>
                         <div class="col-lg-3 col-md-3">
                             <div class="form-group">
-                                <label class="form-label">Child Age (under 13)*</label>
+                                <label class="form-label">Child Age (under 18)*</label>
                                 <input class="form-control child_age"
                                        name="ticket[{{ $name_counter }}][child_age]"
                                        type="number"
                                        min="0"
-                                       max="12"
+                                       max="17"
                                        placeholder="e.g. 8"
                                        disabled>
                             </div>

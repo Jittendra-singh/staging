@@ -228,20 +228,32 @@ class FrontOrderController extends Controller
         $formdata = request()->all();
         $tickets = $formdata['ticket'] ?? [];
         $emails = [];
+
         foreach ($tickets as $key => $value) {
-            if(in_array($value['email_address'], $emails)){
-                return $this->generateJsonResponse(false , "The email address '{$value['email_address']}' is repeated in the tickets. Please use unique emails for every volunteers.");
-            } else {
-                $emails[] = $value['email_address'];
+            $formType = (int) ($value['form_type'] ?? 1);
+
+            // Child attendees (Form Type 3) do not have email addresses
+            if ($formType === 3) {
+                continue;
+            }
+
+            $email = trim($value['email_address'] ?? '');
+            if (!empty($email)) {
+                $normalizedEmail = strtolower($email);
+                if (in_array($normalizedEmail, $emails)) {
+                    return $this->generateJsonResponse(false, "The email address '{$email}' is repeated in the tickets. Please use unique emails for each adult attendee.");
+                } else {
+                    $emails[] = $normalizedEmail;
+                }
             }
         }
-        //print_r($tickets);
+
         $ticket_booking = session()->get('ticket_booking');
         foreach ($ticket_booking as $ticket_id => $ticket_row) {
             $ticket_obj = EventTicket::findOrfail($ticket_row['id']);
             $remaining_tickets = $ticket_obj->remainingTickets();
-            if($remaining_tickets < (int)$ticket_row['count']){
-                return $this->generateJsonResponse(false , "Opps! {$ticket_obj->ticket_name} ticket has only {$remaining_tickets} allocations left. please reallocate tickets from event details page. ");
+            if ($remaining_tickets < (int) $ticket_row['count']) {
+                return $this->generateJsonResponse(false, "Opps! {$ticket_obj->ticket_name} ticket has only {$remaining_tickets} allocations left. Please reallocate tickets from event details page.");
             }
         }
         return $this->generateJsonResponse(true);
@@ -252,80 +264,104 @@ class FrontOrderController extends Controller
         if($cart_id==null){
             $rules = [
                 // Billing Information
-                'checkout_email_address' => ['required', 'email', new \App\Rules\StrictEmail()],
-                'checkout_first_name' => [ 'max:255',
-                                            new \App\Rules\RequireFieldsIfEmailExists(request()->checkout_email_address, 'checkout_first_name')
-                                        ],
-                'checkout_last_name' => [  'max:255',
-                                            new \App\Rules\RequireFieldsIfEmailExists(request()->checkout_email_address, 'checkout_last_name')
-                                        ],
-                'checkout_pincode' =>   [  'max:20',
-                                            new \App\Rules\RequireFieldsIfEmailExists(request()->checkout_email_address, 'checkout_pincode')
-                                        ],
+                'checkout_email_address'     => ['required', 'email', new \App\Rules\StrictEmail()],
+                'checkout_first_name'        => ['max:255', new \App\Rules\RequireFieldsIfEmailExists(request()->checkout_email_address, 'checkout_first_name')],
+                'checkout_last_name'         => ['max:255', new \App\Rules\RequireFieldsIfEmailExists(request()->checkout_email_address, 'checkout_last_name')],
+                'checkout_pincode'           => ['max:20', new \App\Rules\RequireFieldsIfEmailExists(request()->checkout_email_address, 'checkout_pincode')],
                 'checkout_organisation_name' => 'nullable|string|max:255',
-                'phone' => ['nullable', 'string',  'max:20', new \App\Rules\ValidUSPhoneNumber()],
+                'phone'                      => ['nullable', 'string', 'max:20', new \App\Rules\ValidUSPhoneNumber()],
 
-                // Ticket Information (array validation for dynamic tickets)
-                'ticket' => 'required|array',
-                'ticket.*.email_address' => [
-                                                'required','email', new \App\Rules\StrictEmail(),
-                                                function ($attribute, $value, $fail){
-                                                    $emails = collect(request()->tickets)->pluck('email');
-                                                    if ($emails->duplicates()->contains($value)) 
-                                                        $fail("The email address {$value} is repeated in the tickets.");
-                                                }
-                                            ],
-                // 'ticket.*.first_name' => 'required|string|max:255',
-                // 'ticket.*.last_name' => 'required|string|max:255',
-                // 'ticket.*.phone' => ['required', 'string', 'max:20', new \App\Rules\ValidUSPhoneNumber()],
-                'ticket.*.id' => 'required|integer',
+                // Ticket Information
+                'ticket'                     => 'required|array',
+                'ticket.*.id'                => 'required|integer',
             ];
-            /**Dynamically Adding the Rules */
-            $allEmails = [];
-            $isDuplicateEmail = false;
-            foreach (request()->input('ticket', []) as $index => $ticket) {
-                $email = $ticket['email_address'] ?? null; 
-                if(!empty($email)){
-                    if(!in_array($email,$allEmails)){
-                        $allEmails[] = $email;
-                    } else {
-                        $isDuplicateEmail = true;
-                    }
-                }
-
-                $rules["ticket.$index.first_name"] = [
-                    'max:255',
-                    new \App\Rules\RequireFieldsIfEmailExists($email, 'ticket.$index.first_name')
-                ];
-                $rules["ticket.$index.last_name"] = [
-                    'max:255',
-                    new \App\Rules\RequireFieldsIfEmailExists($email, 'ticket.$index.last_name')
-                ];
-                $rules["ticket.$index.phone"] = [
-                    'max:20',
-                    new \App\Rules\RequireFieldsIfEmailExists($email, 'ticket.$index.phone')
-                ];
-            }
-            if($isDuplicateEmail){
-                throw new CustomException("Duplicate emails found in the order. Please use unique emails for every volunteers.");
-            }
 
             $messages = [
-                'checkout_email_address.required' => 'The billing email address is required.',
-                'checkout_email_address.email' => 'The billing email address must be a valid email.',
-                'checkout_first_name.required' => 'The first name is required.',
-                'checkout_last_name.required' => 'The last name is required.',
-                'checkout_pincode.required' => 'The zip/post code is required.',
+                'checkout_email_address.required'     => 'The billing email address is required.',
+                'checkout_email_address.email'        => 'The billing email address must be a valid email.',
+                'checkout_first_name.required'        => 'The first name is required.',
+                'checkout_last_name.required'         => 'The last name is required.',
+                'checkout_pincode.required'           => 'The zip/post code is required.',
                 'checkout_organisation_name.required' => 'The company name is required.',
-                'phone.required' => 'The phone number is required.',
-                'ticket.required' => 'Ticket information is required.',
-                'ticket.*.email_address.required' => 'The email address for each ticket is required.',
-                'ticket.*.email_address.email' => 'The email address for each ticket must be a valid email.',
-                'ticket.*.first_name.required' => 'The first name for each ticket is required.',
-                'ticket.*.last_name.required' => 'The last name for each ticket is required.',
-                'ticket.*.phone.required' => 'The phone number for each ticket is required.',
-                'ticket.*.id.required' => 'The ticket ID is required.',
+                'phone.required'                      => 'The phone number is required.',
+                'ticket.required'                     => 'Ticket information is required.',
+                'ticket.*.id.required'                => 'The ticket ID is required.',
             ];
+
+            $allAdultEmails = [];
+            $isDuplicateEmail = false;
+
+            // Collect all Form Type 1 (Adult) ticket indexes to validate accompanying guardians
+            $adultTicketIndexes = [];
+            foreach (request()->input('ticket', []) as $idx => $t) {
+                if ((int) ($t['form_type'] ?? 1) === 1) {
+                    $adultTicketIndexes[] = (string) $idx;
+                }
+            }
+
+            foreach (request()->input('ticket', []) as $index => $ticket) {
+                $formType = (int) ($ticket['form_type'] ?? 1);
+
+                if ($formType === 3) {
+                    // ==================== FORM TYPE 3: CHILD (UNDER 18) ====================
+                    $rules["ticket.$index.child_name"] = ['required', 'string', 'max:255'];
+                    $rules["ticket.$index.child_age"]  = ['required', 'integer', 'min:0', 'max:17'];
+                    $rules["ticket.$index.accompanying_guardian"] = [
+                        'required',
+                        function ($attribute, $value, $fail) use ($adultTicketIndexes) {
+                            if (!in_array((string) $value, $adultTicketIndexes)) {
+                                $fail('An attending adult must be selected as the accompanying guardian for the child.');
+                            }
+                        }
+                    ];
+
+                    $messages["ticket.$index.child_name.required"] = "Child full name is required for ticket #$index.";
+                    $messages["ticket.$index.child_age.required"]  = "Child age is required for ticket #$index.";
+                    $messages["ticket.$index.child_age.integer"]   = "Child age must be an integer for ticket #$index.";
+                    $messages["ticket.$index.child_age.min"]       = "Child age must be between 0 and 17 years for ticket #$index.";
+                    $messages["ticket.$index.child_age.max"]       = "Child age must be between 0 and 17 years for ticket #$index.";
+                    $messages["ticket.$index.accompanying_guardian.required"] = "Please select an accompanying adult for ticket #$index.";
+
+                } else {
+                    // ==================== FORM TYPE 1 & 2: ADULT & YOUTH ====================
+                    $email = $ticket['email_address'] ?? null;
+
+                    $rules["ticket.$index.email_address"] = ['required', 'email', new \App\Rules\StrictEmail()];
+                    $rules["ticket.$index.first_name"]    = ['required', 'string', 'max:255'];
+                    $rules["ticket.$index.last_name"]     = ['required', 'string', 'max:255'];
+                    $rules["ticket.$index.phone"]         = ['required', 'string', 'max:20', new \App\Rules\ValidUSPhoneNumber()];
+
+                    $messages["ticket.$index.email_address.required"] = "Email address is required for ticket #$index.";
+                    $messages["ticket.$index.email_address.email"]    = "Please enter a valid email for ticket #$index.";
+                    $messages["ticket.$index.first_name.required"]    = "First name is required for ticket #$index.";
+                    $messages["ticket.$index.last_name.required"]     = "Last name is required for ticket #$index.";
+                    $messages["ticket.$index.phone.required"]         = "Attendee phone is required for ticket #$index.";
+
+                    // Check duplicate email only across adults/youth
+                    if (!empty($email)) {
+                        $normalizedEmail = strtolower(trim($email));
+                        if (in_array($normalizedEmail, $allAdultEmails)) {
+                            $isDuplicateEmail = true;
+                        } else {
+                            $allAdultEmails[] = $normalizedEmail;
+                        }
+                    }
+
+                    // Additional fields for Form Type 2 (Youth Under 18)
+                    if ($formType === 2) {
+                        $rules["ticket.$index.waiver_handler_name"]  = ['required', 'string', 'max:255'];
+                        $rules["ticket.$index.waiver_handler_email"] = ['required', 'email', new \App\Rules\StrictEmail()];
+
+                        $messages["ticket.$index.waiver_handler_name.required"]  = "Guardian name is required for youth attendee on ticket #$index.";
+                        $messages["ticket.$index.waiver_handler_email.required"] = "Guardian email is required for youth attendee on ticket #$index.";
+                        $messages["ticket.$index.waiver_handler_email.email"]    = "Please enter a valid guardian email for youth attendee on ticket #$index.";
+                    }
+                }
+            }
+
+            if ($isDuplicateEmail) {
+                throw new CustomException("Duplicate emails found in the order. Please use unique emails for each adult attendee.");
+            }
 
             request()->validate($rules, $messages);
             /**get session details */

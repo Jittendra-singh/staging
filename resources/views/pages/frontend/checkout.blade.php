@@ -356,7 +356,7 @@ $(document).ready(function () {
             $childFields.find('input, select').prop('disabled', true).prop('required', false).val('');
 
         } else if (formType === '3') {
-            // Form Type 3: Child (Under 13)
+            // Form Type 3: Child (Under 18)
             // Hide & disable standard fields (no email/phone required for child)
             $standardFields.addClass('d-none');
             $standardFields.find('input').prop('disabled', true).prop('required', false);
