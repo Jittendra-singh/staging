@@ -9,10 +9,12 @@ use App\Models\EventCoHost;
 use App\Models\CohostPermission;
 use App\Models\Volunteer;
 use App\Models\EventOrderTicket;
+use App\Models\EventOrderTicketChild;
 use App\Models\Setting;
 use App\Models\EventTicket;
 use App\Models\CityStateZip;
 use App\Http\Controllers\FrontOrderController;
+use App\Http\Controllers\FrontController;
 use Carbon\Carbon;
 class EventController extends Controller
 {
@@ -1271,73 +1273,186 @@ class EventController extends Controller
             return redirect()->route('post-event-action', ['placeholder' => $id]);
         }
         $event->is_completed = 1;
-        //$event->wrapup_email_sent_by = auth()->user()->id;
+        $event->wrapup_email_sent_by = auth()->user()->id;
         $event->save();
-        $tickets = $event->tickets()->where('checkin', 1)->whereNotNull('waiver_filled_at')->get();
-        if($tickets->count() == 0){
+
+        $tickets = $event->tickets()
+            ->where('checkin', 1)
+            ->where(function ($q) use ($event) {
+                if (!empty($event->waiver_form_type)) {
+                    $q->whereNotNull('waiver_filled_at');
+                }
+            })
+            ->get();
+        $registered_tickets = $event->tickets()->get();
+
+        $checkedInChildren = EventOrderTicketChild::with(['parent_ticket.volunteer', 'eventOrder'])
+            ->where('event_id', $event->id)
+            ->whereNull('cancelled_at')
+            ->where('checkin', 1)
+            ->where(function ($q) use ($event) {
+                if (!empty($event->waiver_form_type)) {
+                    $q->whereNotNull('waiver_filled_at');
+                }
+            })
+            ->get();
+        $registeredChildrenCount = EventOrderTicketChild::where('event_id', $event->id)
+            ->whereNull('cancelled_at')
+            ->count();
+
+        if($tickets->count() == 0 && $checkedInChildren->count() == 0){
             $this->setFlashSession(true,'Event marked as completed. Only volunteers who have checked-in and signed the waiver will receive the email. Since no attendees have been found yet, the email has not been sent to anyone.');
             return redirect()->route('post-event-action', ['placeholder' => $id]);
         }
-        if($tickets->isNotEmpty()){
+
+        if($tickets->isNotEmpty() || $checkedInChildren->isNotEmpty()){
             $to_arr = [];
             $log_arr = [];
-            $to_arr2 = [];
-            foreach ($tickets as $key => $value) {
-                if(!isset($value->volunteer)){
-                    continue;
-                } else if(!isset($value->volunteer->id)){
-                    continue;
-                }
-                $email = $value->volunteer->email_address;
-                $name = $value->volunteer->first_name.' '.$value->volunteer->last_name;
-                if(!empty(trim($email))){
-                    $to_arr[] = 
-                    [
-                        "to" => [
-                            ["email" => trim($email)]
-                            //["email" => 'learningdcm@gmail.com']
-                        ],
-                        "dynamic_template_data" => [
-                            "volunteer_name" => $name,
-                            "volunteer_email" => $email,
-                            "event_name" =>  $event->event_name,
-                            "event_date" => $event->startTimeAndEndTime,
-                            "event_location" => $event->fullAddress,
-                            "organizer_name" => $event->creator->first_name.' '.$event->creator->last_name,
-                            "total_volunteers" => $tickets->count(),
-                            "waste_collected" => $event->waste_collected,
+            $frontController = new FrontController();
 
-                            "service_hours" => $event->volunteer_hours ?? 'N/A',
-                            'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
-                            'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]),
-                        ],
-                    ];
-                    $log_arr[] = [
-                        "id" => $value->id,
-                        "email" => trim($email)
-                    ];
-                    /* if(isset($value->community_form_pdf) && !empty($value->community_form_pdf)){
-                        $to_arr2[] = 
-                        [
-                            "to" => [
-                                ["email" => trim($email)]
-                                //["email" => 'learningdcm@gmail.com']
-                            ],
-                            "dynamic_template_data" => [
-                                "volunteer_name" => $name,
-                                "volunteer_email" => $email,
-                                "event_name" =>  $event->event_name,
-                                'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]),
-                                'dashboard_link' => $this->mailUrl('front-cleanup-attending')
-                            ],
-                        ];
-                        $event->tickets()->where('id', $value->id)->update([
-                            'community_form_status' => 'approved'
+            // Group checked-in children by parent email
+            $childrenByParentEmail = [];
+            foreach ($checkedInChildren as $child) {
+                if (empty($child->community_form_pdf) || !file_exists(public_path($child->community_form_pdf))) {
+                    $childPdf = $frontController->generateChildCommunityServicePdf($child, $event);
+                    if ($childPdf) {
+                        $child->update([
+                            'community_form_pdf'    => $childPdf,
+                            'community_form_status' => 'approved',
                         ]);
-                        // $value->update(['community_form_status' => 'approved']);
-                    } */
+                    }
+                }
+
+                $parentEmail = null;
+                $parentName = null;
+                if ($child->parent_ticket && $child->parent_ticket->volunteer) {
+                    $parentEmail = trim($child->parent_ticket->volunteer->email_address);
+                    $parentName = $child->parent_ticket->volunteer->first_name . ' ' . $child->parent_ticket->volunteer->last_name;
+                } elseif ($child->eventOrder) {
+                    $parentEmail = trim($child->eventOrder->checkout_email_address);
+                    $parentName = $child->eventOrder->checkout_first_name . ' ' . $child->eventOrder->checkout_last_name;
+                }
+
+                if (!empty($parentEmail)) {
+                    $childrenByParentEmail[$parentEmail][] = [
+                        'child_id'         => $child->id,
+                        'child_name'       => $child->child_name,
+                        'child_age'        => $child->child_age,
+                        'certificate_link' => $this->mailUrl('show-child-community-service-pdf', ['child' => encrypt($child->id)]),
+                        'parent_name'      => $parentName,
+                    ];
                 }
             }
+
+            $processedEmails = [];
+
+            // 1. Process checked-in adult tickets
+            foreach ($tickets as $key => $value) {
+                if (!isset($value->volunteer) || !isset($value->volunteer->id)) {
+                    continue;
+                }
+                $email = trim($value->volunteer->email_address);
+                if (empty($email) || isset($processedEmails[$email])) {
+                    continue;
+                }
+                $processedEmails[$email] = true;
+                $name = $value->volunteer->first_name . ' ' . $value->volunteer->last_name;
+
+                $parentCertLink = $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]);
+                $childCerts = $childrenByParentEmail[$email] ?? [];
+
+                $childCertsHtml = '';
+                $childCertsText = '';
+                if (!empty($childCerts)) {
+                    $childCertsHtml = '<div style="margin-top: 15px; padding: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">' .
+                        '<strong style="color: #1a5f9e; font-size: 14px;">Accompanying Children Certificates:</strong><ul style="margin: 8px 0 0; padding-left: 20px;">';
+                    foreach ($childCerts as $cc) {
+                        $childCertsHtml .= '<li style="margin-bottom: 6px;"><strong>' . htmlspecialchars($cc['child_name']) . '</strong>: ' .
+                            '<a href="' . $cc['certificate_link'] . '" style="color: #0d6efd; text-decoration: underline;">Download Certificate</a></li>';
+                        $childCertsText .= $cc['child_name'] . ': ' . $cc['certificate_link'] . "\n";
+                    }
+                    $childCertsHtml .= '</ul></div>';
+                }
+
+                $to_arr[] = [
+                    "to" => [
+                        ["email" => $email]
+                    ],
+                    "dynamic_template_data" => [
+                        "volunteer_name"                        => $name,
+                        "volunteer_email"                       => $email,
+                        "event_name"                            => $event->event_name,
+                        "event_date"                            => $event->startTimeAndEndTime,
+                        "event_location"                        => $event->fullAddress,
+                        "organizer_name"                        => $event->creator->first_name . ' ' . $event->creator->last_name,
+                        "total_volunteers"                      => $tickets->count() + $checkedInChildren->count() + (int)($event->volunteer_registered_from_other_sites ?? 0),
+                        "total_registered_volunteers"           => $registered_tickets->count() + $registeredChildrenCount,
+                        "volunteer_registered_from_other_sites" => $event->volunteer_registered_from_other_sites,
+                        "waste_collected"                       => $event->waste_collected,
+                        "service_hours"                         => $event->volunteer_hours ?? 'N/A',
+                        'highlight_link'                        => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
+                        'certificate_download_link'             => $parentCertLink,
+                        'children_certificates'                 => $childCerts,
+                        'children_certificates_html'            => $childCertsHtml,
+                        'children_certificates_text'            => $childCertsText,
+                        'has_children_certificates'             => !empty($childCerts),
+                    ],
+                ];
+                $log_arr[] = [
+                    "id"    => $value->id,
+                    "email" => $email,
+                ];
+            }
+
+            // 2. Process parents whose children checked in, but parent ticket was not checked in
+            foreach ($childrenByParentEmail as $email => $childCerts) {
+                if (isset($processedEmails[$email]) || empty($email)) {
+                    continue;
+                }
+                $processedEmails[$email] = true;
+                $parentName = $childCerts[0]['parent_name'] ?? 'Volunteer Family';
+                $firstCertLink = $childCerts[0]['certificate_link'];
+
+                $childCertsHtml = '<div style="margin-top: 15px; padding: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">' .
+                    '<strong style="color: #1a5f9e; font-size: 14px;">Accompanying Children Certificates:</strong><ul style="margin: 8px 0 0; padding-left: 20px;">';
+                $childCertsText = '';
+                foreach ($childCerts as $cc) {
+                    $childCertsHtml .= '<li style="margin-bottom: 6px;"><strong>' . htmlspecialchars($cc['child_name']) . '</strong>: ' .
+                        '<a href="' . $cc['certificate_link'] . '" style="color: #0d6efd; text-decoration: underline;">Download Certificate</a></li>';
+                    $childCertsText .= $cc['child_name'] . ': ' . $cc['certificate_link'] . "\n";
+                }
+                $childCertsHtml .= '</ul></div>';
+
+                $to_arr[] = [
+                    "to" => [
+                        ["email" => $email]
+                    ],
+                    "dynamic_template_data" => [
+                        "volunteer_name"                        => $parentName,
+                        "volunteer_email"                       => $email,
+                        "event_name"                            => $event->event_name,
+                        "event_date"                            => $event->startTimeAndEndTime,
+                        "event_location"                        => $event->fullAddress,
+                        "organizer_name"                        => $event->creator->first_name . ' ' . $event->creator->last_name,
+                        "total_volunteers"                      => $tickets->count() + $checkedInChildren->count() + (int)($event->volunteer_registered_from_other_sites ?? 0),
+                        "total_registered_volunteers"           => $registered_tickets->count() + $registeredChildrenCount,
+                        "volunteer_registered_from_other_sites" => $event->volunteer_registered_from_other_sites,
+                        "waste_collected"                       => $event->waste_collected,
+                        "service_hours"                         => $event->volunteer_hours ?? 'N/A',
+                        'highlight_link'                        => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
+                        'certificate_download_link'             => $firstCertLink,
+                        'children_certificates'                 => $childCerts,
+                        'children_certificates_html'            => $childCertsHtml,
+                        'children_certificates_text'            => $childCertsText,
+                        'has_children_certificates'             => true,
+                    ],
+                ];
+                $log_arr[] = [
+                    "id"    => $childCerts[0]['child_id'],
+                    "email" => $email,
+                ];
+            }
+
             if(!empty($to_arr) && count($to_arr)>0){
                 $to_arr_child = array_chunk($to_arr, 300);
                 $log_arr_child = array_chunk($log_arr, 300);
@@ -1345,12 +1460,6 @@ class EventController extends Controller
                     $this->sendSendgridTemplateEmailWithoutLog($value,"d-84b101582dbb408aa6f90cf53b2be2d0");
                 }
             }
-            /* if(!empty($to_arr2) && count($to_arr2)>0){
-                $to_arr2_child = array_chunk($to_arr2, 300);
-                foreach ($to_arr2_child as $key => $value) {
-                    $this->sendSendgridTemplateEmailWithoutLog($value,"d-3badeebd9cfe40458f55935dd25aa41a");
-                }
-            } */
         }
         $this->setFlashSession(true, 'Event marked as completed. Wrap-Up email and certificate email has been sent successfully.');
         return redirect()->route('post-event-action', ['placeholder' => $id]);

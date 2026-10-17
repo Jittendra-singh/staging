@@ -4125,6 +4125,27 @@ class FrontController extends Controller
                     $log_arr = [];
                     if (isset($volunteer) && isset($volunteer->id)) {
                         $tickets = $event->tickets()->where('checkin', 1)->whereNotNull('waiver_filled_at')->get();
+                        $checkedChildren = $orderTicket->children()->whereNull('cancelled_at')->where('checkin', 1)->get();
+                        $childCerts = [];
+                        $childCertsHtml = '';
+                        $childCertsText = '';
+                        if ($checkedChildren->isNotEmpty()) {
+                            $childCertsHtml = '<div style="margin-top: 15px; padding: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">' .
+                                '<strong style="color: #1a5f9e; font-size: 14px;">Accompanying Children Certificates:</strong><ul style="margin: 8px 0 0; padding-left: 20px;">';
+                            foreach ($checkedChildren as $cc) {
+                                $link = $this->mailUrl('show-child-community-service-pdf', ['child' => encrypt($cc->id)]);
+                                $childCerts[] = [
+                                    'child_id'         => $cc->id,
+                                    'child_name'       => $cc->child_name,
+                                    'child_age'        => $cc->child_age,
+                                    'certificate_link' => $link,
+                                ];
+                                $childCertsHtml .= '<li style="margin-bottom: 6px;"><strong>' . htmlspecialchars($cc->child_name) . '</strong>: ' .
+                                    '<a href="' . $link . '" style="color: #0d6efd; text-decoration: underline;">Download Certificate</a></li>';
+                                $childCertsText .= $cc->child_name . ': ' . $link . "\n";
+                            }
+                            $childCertsHtml .= '</ul></div>';
+                        }
                         $email = $volunteer->email_address;
                         $name = $volunteer->first_name.' '.$volunteer->last_name;
                         if(!empty(trim($email))){
@@ -4147,6 +4168,10 @@ class FrontController extends Controller
                                     "service_hours" => $event->volunteer_hours ?? 'N/A',
                                     'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
                                     'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($orderTicket->id)]),
+                                    'children_certificates' => $childCerts,
+                                    'children_certificates_html' => $childCertsHtml,
+                                    'children_certificates_text' => $childCertsText,
+                                    'has_children_certificates' => !empty($childCerts),
                                 ],
                             ];
                             $log_arr[] = [
