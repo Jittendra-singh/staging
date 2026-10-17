@@ -713,6 +713,7 @@ class FrontOrderController extends Controller
                         'order_id'              => $order_object->id,
                         'child_name'            => $childFullName,
                         'child_age'             => $childAge,
+                        'ticket_answer'         => @$child_arr['answer'],
                         'is_participating'      => 1,
                         'price'                 => $savedPricing['price'],
                         'ticket_base_price'     => $savedPricing['base_price'],

@@ -163,7 +163,7 @@
                                 <div style="margin-top: 4px; padding-top: 4px; border-top: 1px dashed #d9dee8; font-size: 8.5px; color: #495057;">
                                     <strong>Accompanying Children ({{ $activeChildren->count() }}):</strong>
                                     @foreach($activeChildren as $child)
-                                        <div>• {{ $child->child_name }} (Age {{ $child->child_age }}) — <em>{{ $child->checkin == 1 ? 'Checked In' : 'Pending' }}</em></div>
+                                        <div>• {{ $child->child_name }} (Age {{ $child->child_age }}) — <em>{{ $child->checkin == 1 ? 'Checked In' : 'Pending' }}</em>@if(!empty($child->ticket_answer)) | <strong>Ans:</strong> {{ $child->ticket_answer }}@endif</div>
                                     @endforeach
                                 </div>
                             @endif

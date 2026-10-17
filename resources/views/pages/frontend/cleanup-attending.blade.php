@@ -148,6 +148,7 @@
 												return [
 													'child_name' => $child->child_name,
 													'child_age' => $child->child_age,
+													'ticket_answer' => $child->ticket_answer,
 												];
 											})
 											->values();

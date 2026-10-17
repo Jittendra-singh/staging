@@ -168,6 +168,19 @@
                                 </select>
                             </div>
                         </div>
+
+                        @if($event->ticket_questions)
+                            <div class="col-12">
+                                <div class="form-group mt-3">
+                                    <label class="form-label">{{ strip_tags($event->ticket_questions) }}</label>
+                                    <input class="form-control child_answer answer" 
+                                           name="ticket[{{ $name_counter }}][answer]" 
+                                           type="text" 
+                                           placeholder="Enter answer here"
+                                           disabled>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
 

@@ -302,6 +302,11 @@
                                                         <div>
                                                             <span class="fw-semibold text-dark small">{{ $child->child_name }}</span>
                                                             <span class="badge bg-secondary ms-1" style="font-size: 10px; padding: 2px 6px;">Age {{ $child->child_age }}</span>
+                                                            @if(!empty($child->ticket_answer))
+                                                                <div class="text-muted small mt-1" style="font-size: 11px;">
+                                                                    <i class="fa-regular fa-comment-dots me-1 text-primary"></i><strong>Ans:</strong> {{ $child->ticket_answer }}
+                                                                </div>
+                                                            @endif
                                                         </div>
                                                     </div>
                                                     <div class="d-flex align-items-center gap-2">

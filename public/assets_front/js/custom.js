@@ -838,8 +838,9 @@ function populateOrderDetails(targetButton) {
 
 	if (children.length > 0) {
 		children.forEach(function (child) {
+			const ansText = child.ticket_answer ? ` (Answer: ${child.ticket_answer})` : '';
 			$('<li>')
-				.text(`${child.child_name} — Age ${child.child_age}`)
+				.text(`${child.child_name} — Age ${child.child_age}${ansText}`)
 				.appendTo($childrenList);
 		});
 
