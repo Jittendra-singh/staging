@@ -329,7 +329,16 @@ class FrontOrderController extends Controller
                     $rules["ticket.$index.email_address"] = ['required', 'email', new \App\Rules\StrictEmail()];
                     $rules["ticket.$index.first_name"]    = ['required', 'string', 'max:255'];
                     $rules["ticket.$index.last_name"]     = ['required', 'string', 'max:255'];
-                    $rules["ticket.$index.phone"]         = ['required', 'string', 'max:20', new \App\Rules\ValidUSPhoneNumber()];
+
+                    // Check if attendee is an existing volunteer with a phone number on file
+                    $existingVolunteer = !empty($email) ? Volunteer::where('email_address', strtolower(trim($email)))->first() : null;
+                    $hasPhoneOnFile    = $existingVolunteer && !empty(trim($existingVolunteer->phone ?? ''));
+
+                    if ($hasPhoneOnFile) {
+                        $rules["ticket.$index.phone"] = ['nullable', 'string', 'max:20', new \App\Rules\ValidUSPhoneNumber()];
+                    } else {
+                        $rules["ticket.$index.phone"] = ['required', 'string', 'max:20', new \App\Rules\ValidUSPhoneNumber()];
+                    }
 
                     $messages["ticket.$index.email_address.required"] = "Email address is required for ticket #$index.";
                     $messages["ticket.$index.email_address.email"]    = "Please enter a valid email for ticket #$index.";
