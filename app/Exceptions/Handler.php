@@ -38,16 +38,15 @@ class Handler extends ExceptionHandler
     public function render($request, Throwable $exception)
     {
         if ($exception instanceof \Illuminate\Auth\Access\AuthorizationException) {
-            if ($request->acceptsJson() && false) {
+            if ($request->acceptsJson()) {
                 return response()->json(
                     [
                         'status' => false,
                         'message' => 'You are not Authorized to perform this Action.',
-                        'data' => $request->acceptsJson(),
-                    ],200,
+                    ], 403
                 );
             } else {
-                return redirect()->route('welcome');
+                abort(403, 'You are not authorized to perform this action.');
             }
         } elseif ($exception instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
             return response()->json([

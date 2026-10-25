@@ -566,19 +566,10 @@ $is_session = session()->get('checkout_event');
                             <span class="menu--label">{{ __('messages.dashboard') }}</span>
                         </a>
                     </li>
-<<<<<<< HEAD
-                    <li class="menu--item">
-                        <a href="{{ route('front-cleanup-attending') }}"
-                            class="menu--link {{ url()->current() == route('front-cleanup-attending') ? 'active' : '' }}"
-                            title="{{ __('messages.cleanups_attending') }}" data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-calendar-days menu--icon"></i>
-                            <span class="menu--label">{{ __('messages.cleanups_attending') }}</span>
-=======
                     <li class="menu--item menu--item__has_sub_menu menu--subitens__opened">
                         <a class="menu--link">
                             <i class="fa-solid fa-calendar-days menu--icon"></i>
                             <span class="menu--label">Events</span>
->>>>>>> 4d68bcdd4e0aeedbb221e851e64cebe300837f26
                         </a>
                         <ul class="sub_menu mt-0">
                             <li>
@@ -615,20 +606,10 @@ $is_session = session()->get('checkout_event');
                             @endif
                         </ul>
                     </li>
-<<<<<<< HEAD
-                    @if($adminUser->is_organiser == '1')
-                    <li class="menu--item">
-                        <a href="{{ route('front-cleanup-hosting', ['type' => 'organizer']) }}"
-                            class="menu--link {{ request()->routeIs('front-cleanup-hosting',['type' => request()->segment(2) ?? 'organizer']) ? 'active' : '' }}"
-                            title="{{ __('messages.cleanups_hosting') }}" data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-clock-rotate-left menu--icon"></i>
-                            <span class="menu--label">{{ __('messages.cleanups_hosting') }}</span>
-=======
                     <li class="menu--item menu--item__has_sub_menu {{ url()->current() == route('contact-lists') || url()->current() == route('front-email-alerts') ? 'menu--subitens__opened' : '' }}">
                         <a class="menu--link">
                             <i class="fa-solid fa-envelope menu--icon"></i>
                             <span class="menu--label">Communication</span>
->>>>>>> 4d68bcdd4e0aeedbb221e851e64cebe300837f26
                         </a>
                         <ul class="sub_menu mt-0">
                             @if($adminUser->is_organiser == '1')
@@ -649,34 +630,6 @@ $is_session = session()->get('checkout_event');
                             </li>
                         </ul>
                     </li>
-<<<<<<< HEAD
-                    @endif
-                    <li class="menu--item">
-                        <a href="{{ route('front-post-a-event') }}"
-                            class="menu--link {{ url()->current() == route('front-post-a-event') ? 'active' : '' }}"
-                            title="{{ __('messages.post_new_cleanup') }}" data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-paper-plane menu--icon"></i>
-                            <span class="menu--label">{{ __('messages.post_new_cleanup') }}</span>
-                        </a>
-                    </li>
-                    <li class="menu--item">
-                        <a href="{{ route('front-profile') }}" class="menu--link {{ url()->current() == route('front-profile') ? 'active' : '' }}"
-                            title="{{ __('messages.manage_profile') }}" data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-user menu--icon"></i>
-                            <span class="menu--label">{{ __('messages.manage_profile') }}</span>
-                        </a>
-                    </li>
-                    <li class="menu--item">
-                        <a href="{{ route('front-email-alerts') }}"
-                            class="menu--link {{ url()->current() == route('front-email-alerts') ? 'active' : '' }}"
-                            title="{{ __('messages.weekly_email_alerts') }}" data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-bell menu--icon"></i>
-                            <span class="menu--label">{{ __('messages.weekly_email_alerts') }}</span>
-                        </a>
-                    </li>
-
-=======
->>>>>>> 4d68bcdd4e0aeedbb221e851e64cebe300837f26
                     @php
                         $isCertificateDetailMyRequest = request()->routeIs('front-certificate-request-detail')
                             && isset($ticket)
@@ -688,27 +641,21 @@ $is_session = session()->get('checkout_event');
 
                         $hasAttendedCertificateEvents = $adminUser->attendingEventsWithoutActive()->exists();
                     @endphp
+                    @if($hasAttendedCertificateEvents || $adminUser->is_organiser == '1')
                     <li class="menu--item menu--item__has_sub_menu {{ request()->routeIs('front-certificate-my-requests') || request()->routeIs('front-certificate-volunteer-requests') || $isCertificateDetailMyRequest || $isCertificateDetailVolunteerRequest ? 'menu--subitens__opened' : '' }}">
-                    <!-- <li class="menu--item menu--item__has_sub_menu {{ url()->current() == route('front-certificate-my-requests') ? 'menu--subitens__opened' : '' }} {{ url()->current() == route('front-certificate-volunteer-requests') ? 'menu--subitens__opened' : '' }}"> -->
                         <a class="menu--link">
                             <i class="menu--icon fa fa-vcard"></i>
                             <span class="menu--label">{{ __('messages.certificates') }}</span>
                         </a>
-                        @if($hasAttendedCertificateEvents || $adminUser->is_organiser == '1')
                         <ul class="sub_menu mt-0">
                             @if($hasAttendedCertificateEvents)
                             <li>
                                 <a href="{{ route('front-certificate-my-requests') }}" class="sub_menu--link {{ request()->routeIs('front-certificate-my-requests') || $isCertificateDetailMyRequest ? 'active' : '' }}" title="{{ __('messages.my_requests_tooltip') }}" data-bs-toggle="tooltip" data-bs-placement="right">{{ __('messages.my_requests') }}</a>
-
-                                <!-- <a href="{{ route('front-certificate-my-requests') }}" class="sub_menu--link {{ url()->current() == route('front-certificate-my-requests') ? 'active' : '' }}" title="Track your requests and download your certificates once approved" data-bs-toggle="tooltip" data-bs-placement="right">My Requests</a> -->
                             </li>
                             @endif
                             @if($adminUser->is_organiser == '1')
                             <li>
-
                                 <a href="{{ route('front-certificate-volunteer-requests') }}" class="sub_menu--link {{ request()->routeIs('front-certificate-volunteer-requests') || $isCertificateDetailVolunteerRequest ? 'active' : '' }}" title="{{ __('messages.volunteer_requests_tooltip') }}" data-bs-toggle="tooltip" data-bs-placement="right">{{ __('messages.volunteer_requests') }}</a>
-
-                                <!-- <a href="{{ route('front-certificate-volunteer-requests') }}" class="sub_menu--link {{ url()->current() == route('front-certificate-volunteer-requests') ? 'active' : '' }}" title="Check volunteer requests and approve or reject them" data-bs-toggle="tooltip" data-bs-placement="right">Volunteer Requests</a> -->
                             </li>
                             @endif
                         </ul>
@@ -716,47 +663,6 @@ $is_session = session()->get('checkout_event');
                     @endif
 
                     @if($adminUser->is_organiser == '1')
-                    <!-- <li class="menu--item">
-                        <a href="{{ route('front-certificate-volunteer-requests') }}"
-                            class="menu--link {{ url()->current() == route('front-certificate-volunteer-requests') ? 'active' : '' }}"
-                            title="Certificate Management" data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-certificate menu--icon"></i>
-                            <span class="menu--label">Certificate Management</span>
-                        </a>
-                    </li> -->
-
-<<<<<<< HEAD
-                    <li class="menu--item">
-                        <a href="{{ route('front-registration-list') }}"
-                            class="menu--link {{ url()->current() == route('front-registration-list') ? 'active' : '' }}"
-                            title="{{ __('messages.registration_lists') }}" data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-list menu--icon"></i>
-                            <span class="menu--label">{{ __('messages.registration_lists') }}</span>
-                        </a>
-                    </li>
-=======
-
->>>>>>> 4d68bcdd4e0aeedbb221e851e64cebe300837f26
-                    <!-- <li class="menu--item">
-                        <a href="{{ route('front-sales-report') }}"
-                            class="menu--link {{ url()->current() == route('front-sales-report') ? 'active' : '' }}"
-                            title="Sales Report" data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-bar-chart menu--icon"></i>
-                            <span class="menu--label">Sales Report</span>
-                        </a>
-                    </li> -->
-<<<<<<< HEAD
-                    <li class="menu--item">
-                        <a href="{{ route('contact-lists') }}"
-                            class="menu--link {{ url()->current() == route('contact-lists') ? 'active' : '' }}"
-                            title="{{ __('messages.inbox_title') }}" data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-list-alt menu--icon"></i>
-                            <span class="menu--label">{{ __('messages.inbox_title') }}</span>
-                        </a>
-                    </li>
-=======
-
->>>>>>> 4d68bcdd4e0aeedbb221e851e64cebe300837f26
                     <li class="menu--item menu--item__has_sub_menu {{ request()->routeIs('front-sales-report') || request()->routeIs('front-orders') || request()->routeIs('front-order-details') || request()->routeIs('front-stripe-connect') ? 'menu--subitens__opened' : '' }}">
                         <a class="menu--link">
                             <i class="menu--icon fa fa-dollar"></i>
@@ -771,7 +677,6 @@ $is_session = session()->get('checkout_event');
                             </li>
                             <li>
                                 <a href="{{ route('front-orders') }}" class="sub_menu--link {{ request()->routeIs('front-orders') || request()->routeIs('front-order-details') ? 'active' : '' }}" title="{{ __('messages.revenue_donation_summary') }}" data-bs-toggle="tooltip" data-bs-placement="right">{{ __('messages.orders') }}</a>
-
                             </li>
                         </ul>
                     </li>
@@ -786,18 +691,11 @@ $is_session = session()->get('checkout_event');
                     </li>
                     @endif
 
-<<<<<<< HEAD
-                    <li class="menu--item">
-                        <a href="{{ route('front-embedded-widget') }}" class="menu--link {{ url()->current() == route('front-embedded-widget') ? 'active' : '' }}" title="{{ __('messages.embedded_widget') }}"
-                            data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-file-code menu--icon"></i>
-                            <span class="menu--label">{{ __('messages.embedded_widget') }}</span>
-=======
+                    @if($adminUser->is_organiser == '1')
                     <li class="menu--item menu--item__has_sub_menu {{ url()->current() == route('front-embedded-widget') || url()->current() == route('front-embedded-widget-report') ? 'menu--subitens__opened' : '' }}">
                         <a class="menu--link">
                             <i class="fa-solid fa-globe menu--icon"></i>
                             <span class="menu--label">Website & Widgets</span>
->>>>>>> 4d68bcdd4e0aeedbb221e851e64cebe300837f26
                         </a>
                         <ul class="sub_menu mt-0">
                             <li>
@@ -808,19 +706,12 @@ $is_session = session()->get('checkout_event');
                             </li>
                         </ul>
                     </li>
+                    @endif
 
-<<<<<<< HEAD
-                    <li class="menu--item">
-                        <a href="{{ route('front-embedded-widget-report') }}" class="menu--link {{ url()->current() == route('front-embedded-widget-report') ? 'active' : '' }}" title="{{ __('messages.embedded_widget_report') }}"
-                            data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-server menu--icon"></i>
-                            <span class="menu--label">{{ __('messages.widget_report') }}</span>
-=======
                     <li class="menu--item menu--item__has_sub_menu {{ url()->current() == route('front-profile') ? 'menu--subitens__opened' : '' }}">
                         <a class="menu--link">
                             <i class="fa-solid fa-user menu--icon"></i>
                             <span class="menu--label">Account</span>
->>>>>>> 4d68bcdd4e0aeedbb221e851e64cebe300837f26
                         </a>
                         <ul class="sub_menu mt-0">
                             <li>
@@ -828,26 +719,11 @@ $is_session = session()->get('checkout_event');
                             </li>
                         </ul>
                     </li>
-<<<<<<< HEAD
-                    <li class="menu--item">
-                        <a href="{{ route('front-release-notes') }}" class="menu--link {{ url()->current() == route('front-release-notes') ? 'active' : '' }}" title="{{ __('messages.release_notes') }}"
-                            data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-bullhorn menu--icon"></i>
-                            <span class="menu--label">{{ __('messages.release_notes') }}
-=======
-                    <!-- <li class="menu--item">
-                        <a href="{{ route('front-certificate-my-requests') }}"
-                            class="menu--link {{ url()->current() == route('front-certificate-my-requests') ? 'active' : '' }}"
-                            title="Certificate Requests" data-bs-toggle="tooltip" data-bs-placement="right">
-                            <i class="fa-solid fa-vcard menu--icon"></i>
-                            <span class="menu--label">Certificate Requests</span>
-                        </a>
-                    </li> -->
+
                     <li class="menu--item menu--item__has_sub_menu {{ url()->current() == route('front-release-notes') ? 'menu--subitens__opened' : '' }}">
                         <a class="menu--link">
                             <i class="fa-solid fa-life-ring menu--icon"></i>
                             <span class="menu--label">Support
->>>>>>> 4d68bcdd4e0aeedbb221e851e64cebe300837f26
                                 @if(!empty($hasNewReleaseNotes))
                                     <span class="badge bg-danger ms-2">{{ __('messages.new_badge') }}</span>
                                 @endif
