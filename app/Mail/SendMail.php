@@ -9,19 +9,27 @@ use Illuminate\Queue\SerializesModels;
 class SendMail extends Mailable
 {
     use Queueable, SerializesModels;
-    /**
-     * Create a new message instance.
-     *
-     * @return void
-     */
+
     public $data;
     public $subject;
     public $view;
-    public function __construct($subject, $view, $data )
+    public $replyToAddress;
+
+    /**
+     * Create a new message instance.
+     *
+     * @param string $subject
+     * @param string $view
+     * @param array $data
+     * @param string|null $replyToAddress
+     * @return void
+     */
+    public function __construct($subject, $view, $data, $replyToAddress = null)
     {
         $this->subject = $subject;
         $this->view = $view;
         $this->data = $data;
+        $this->replyToAddress = $replyToAddress;
     }
     /**
      * Get the message envelope.
@@ -31,8 +39,8 @@ class SendMail extends Mailable
     public function envelope()
     {
         return new Envelope(
-            //subject: 'Forgot Password',
             subject: $this->subject,
+            replyTo: $this->replyToAddress ? [$this->replyToAddress] : [],
         );
     }
     /**

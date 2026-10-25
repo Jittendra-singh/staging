@@ -243,7 +243,8 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::post('save-organisation-details', 'saveOrganisationDetails')->name('save.front.organisation.details');
 
         
-        Route::get('inbox', 'contactLists')->name('contact-lists');
+        Route::get('inbox', [\App\Http\Controllers\MessagingController::class, 'index'])
+            ->name('contact-lists');
         Route::get('orders', 'orders')->name('front-orders');
         Route::post('orders', 'orders')->name('front-orders-post');
         Route::get('order-details/{placeholder}', 'orderDetails')->name('front-order-details');
