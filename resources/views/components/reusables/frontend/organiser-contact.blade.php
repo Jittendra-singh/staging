@@ -27,14 +27,22 @@
 							</div>
 							<div class="col-lg-12 col-md-12">
 								<div class="form-group mt-4">
-									<label class="form-label">Phone*</label>
-									<input class="form-control h_40 usphonemask" type="text" name="phone" placeholder="" value="" required>
+									<label class="form-label">Phone</label>
+									<input class="form-control h_40 usphonemask" type="text" name="phone" placeholder="" value="">
 								</div>
 							</div>
 							<div class="col-lg-12 col-md-12">
 								<div class="form-group mt-4">
 									<label class="form-label">Message*</label>
 									<textarea class="form-control" cols="30" rows="7" name="message" required></textarea>
+								</div>
+							</div>
+							<div class="col-lg-12 col-md-12">
+								<div class="form-check mt-3">
+									<input class="form-check-input" type="checkbox" name="consent" id="contactConsent" value="1">
+									<label class="form-check-label text-muted small" for="contactConsent">
+										I agree to create an account so I can communicate with the organizer and continue this conversation.
+									</label>
 								</div>
 							</div>
 

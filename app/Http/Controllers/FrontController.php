@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
+use Barryvdh\DomPDF\Facade\Pdf;
 /**iCal  */
 use Eluceo\iCal\Component\Calendar as ICal;
 use Eluceo\iCal\Component\Event as ICalEvent;
@@ -142,7 +143,7 @@ class FrontController extends Controller
                 continue;
 
             try {
-                Mail::raw(request()->content, function ($message) use($email) {
+                Mail::raw(request()->input('content'), function ($message) use($email) {
                     $message->to($email)
                             ->subject(request()->subject);
                 });
@@ -831,7 +832,7 @@ class FrontController extends Controller
             'registrations' => $registrations,
         ])->render();
 
-        $pdf = \PDF::setOptions([
+        $pdf = Pdf::setOptions([
             'isHtml5ParserEnabled' => true,
             'isRemoteEnabled' => true,
             'defaultFont' => 'sans-serif',
@@ -1420,14 +1421,14 @@ class FrontController extends Controller
             'countries'     => \App\Models\Country::orderBy('country_name')->get(),
             'bring_tools'   => \App\Models\Tool::orderBy('name')->get(),
             'provided_tools'=> \App\Models\Tool::orderBy('name')->get(),
-            'categories'    => \App\Models\EventCategory::orderBy('name')->get(),
+            'categories'    => EventCategory::orderBy('name')->get(),
             /* 'event_tags'    => \App\Models\Tag::where('type', 'event')->orderBy('name')->get(),
             'volunteer_tags'=> \App\Models\Tag::where('type', 'volunteer')->orderBy('name')->get(), */
             'event_tags'    => \App\Models\Tag::orderBy('name')->get(),
             'volunteer_tags'=> \App\Models\Tag::orderBy('name')->get(),
             'timezones'     => config('app.timezones'),
             'reoccurring'   => config('app.reoccurring'),
-            'volunteers'    => \App\Models\Volunteer::orderBy('first_name')->get(),
+            'volunteers'    => Volunteer::orderBy('first_name')->get(),
         ]);
     }
 
@@ -1792,7 +1793,7 @@ class FrontController extends Controller
             ]);
 
             try {
-                $event = \App\Models\Event::findOrFail(decrypt($validated['event_id']));
+                $event = Event::findOrFail(decrypt($validated['event_id']));
 
                 if ($request->input('remove_banner_image') == '1') {
                     $event->banner_image = null;
@@ -1820,8 +1821,13 @@ class FrontController extends Controller
                     $fileName = str_replace(' ', '', date('dmyhis') . $originalName);
                     $destinationPath = 'events/banners';
 
+                    $destinationDir = public_path($destinationPath);
+                    if (!is_dir($destinationDir)) {
+                        mkdir($destinationDir, 0755, true);
+                    }
+
                     // Save directly — no temp file, no UploadedFile
-                    file_put_contents(public_path($destinationPath) . '/' . $fileName, $imageData);
+                    file_put_contents($destinationDir . '/' . $fileName, $imageData);
 
                     $event->banner_image = json_encode([
                         'path'          => "$destinationPath/" . $fileName,
@@ -1862,9 +1868,10 @@ class FrontController extends Controller
                     $event->tags()->sync($validated['tags'] ?? []);
                 }
 
-            } catch (\Exception $e) {
-
-                dd($e);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Failed saveCleanUpMediaDetails: ' . $e->getMessage(), [
+                    'exception' => $e
+                ]);
                 return $this->generateJsonResponse(false, 'Failed to save media & other information: ' . $e->getMessage());
             }
 
@@ -1877,7 +1884,7 @@ class FrontController extends Controller
     public function saveCleanUpTicketDetails(){
 
         $request = request();
-        $event   = \App\Models\Event::findOrFail(decrypt(request()->event_id));
+        $event   = Event::findOrFail(decrypt(request()->event_id));
 
         $start_datetime = $event->start_datetime;
         if(!empty($start_datetime) && !empty($request->ticket_sell_start_time) && (strtotime($start_datetime) < strtotime($request->ticket_sell_start_time)) ){
@@ -2112,7 +2119,7 @@ class FrontController extends Controller
     public function saveCleanUpTicketDetailsOld(){
 
         $request = request();
-        $event   = \App\Models\Event::findOrFail(decrypt(request()->event_id));
+        $event   = Event::findOrFail(decrypt(request()->event_id));
 
         $start_datetime = $event->start_datetime;
         if(!empty($start_datetime) && !empty($request->ticket_sell_start_time) && (strtotime($start_datetime) < strtotime($request->ticket_sell_start_time)) ){
@@ -2347,7 +2354,7 @@ class FrontController extends Controller
             'sell_end_time.required'    => 'Sell end time is required.',
         ]);
         try {
-            $event = \App\Models\Event::findOrFail(decrypt(request()->event_id));
+            $event = Event::findOrFail(decrypt(request()->event_id));
             if($validated['ticket_type']=='free' && floatval($validated['ticket_price'])>0){
                 throw new \Exception("Ticket price should be $0 for free type of ticket.");
             }
@@ -2411,7 +2418,7 @@ class FrontController extends Controller
         ]);
 
         try {
-            $event = \App\Models\Event::findOrFail(decrypt($validated['event_id']));
+            $event = Event::findOrFail(decrypt($validated['event_id']));
             $event->meta_title = $validated['meta_title'];
             $event->meta_focus_keyword = $validated['meta_focus_keyword'];
             $event->meta_description = $validated['meta_description'];
@@ -2454,7 +2461,7 @@ class FrontController extends Controller
         ]);
 
         try {
-            $event = \App\Models\Event::findOrFail(decrypt($validated['event_id']));
+            $event = Event::findOrFail(decrypt($validated['event_id']));
             $event->waste_collected = $validated['waste_collected'];
 
             //$event->team_name = $validated['team_name'];
@@ -2496,9 +2503,6 @@ class FrontController extends Controller
             'event_instance' => encrypt($event->id),
             'event' => $event , 
             'redirect_href' => $this->mailUrl('front-cleanup-hosting', ['type' => 'organizer']) , 
-            'redirect_href' => $this->mailUrl('front-cleanup-hosting', [
-                'type' => 'organizer',
-            ]),
         ]);
     }
     public function removeEventAfterImage($index, $id){
@@ -3405,7 +3409,7 @@ class FrontController extends Controller
         $this->setFlashSession(false, 'Issue occured while requesting certificate.');
         return redirect()->back();
     }
-    public function ticketMarkCheckinTest($ticket){
+    public function ticketMarkCheckinTest($ticket, $callFromBackend = false){
         $orderTicket = EventOrderTicket::findOrFail(decrypt($ticket));
         $event = $orderTicket->event;
         $volunteer = $orderTicket->volunteer;
@@ -3422,7 +3426,7 @@ class FrontController extends Controller
         ];
         try{
             $html = view('pages.events.community-form-new', $data)->render();
-            $pdf = \PDF::setOptions(['isHtml5ParserEnabled' => true,'isRemoteEnabled' => true])->loadHTML($html);
+            $pdf = Pdf::setOptions(['isHtml5ParserEnabled' => true,'isRemoteEnabled' => true])->loadHTML($html);
             //$filename = 'community_form_' . $orderTicket->id . '_' . time() . '.pdf';
             $filename = 'community_form_123.pdf';
             $path = 'events/community_forms/' . $filename;
@@ -3469,7 +3473,7 @@ class FrontController extends Controller
             ];
             try{
                 $html = view('pages.events.community-form-new', $data)->render();
-                $pdf = \PDF::setOptions(['isHtml5ParserEnabled' => true,'isRemoteEnabled' => true])->loadHTML($html);
+                $pdf = Pdf::setOptions(['isHtml5ParserEnabled' => true,'isRemoteEnabled' => true])->loadHTML($html);
                 $filename = 'community_form_' . $orderTicket->id . '_' . time() . '.pdf';
                 $path = 'events/community_forms/' . $filename;
                 $publicPath = public_path($path);
@@ -3780,7 +3784,7 @@ class FrontController extends Controller
 
         try {
             $html = view('pages.events.community-form-new', $data)->render();
-            $pdf = \PDF::setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true])->loadHTML($html);
+            $pdf = Pdf::setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true])->loadHTML($html);
             $filename = 'child_community_form_' . $child->id . '_' . time() . '.pdf';
             $path = 'events/community_forms/' . $filename;
             $publicPath = public_path($path);
@@ -3979,7 +3983,7 @@ class FrontController extends Controller
             $rawDate = request()->by_date;
         
             // Try parsing with Carbon's flexible parse (handles m/d/Y, d/m/Y, Y-m-d etc.)
-            $date = \Carbon\Carbon::parse($rawDate)->format('Y-m-d');
+            $date = Carbon::parse($rawDate)->format('Y-m-d');
             $query->wherePivot('certificate_requested_at', 'LIKE', "%{$date}%");
         }
 
@@ -4042,7 +4046,7 @@ class FrontController extends Controller
         // Filter by Date
         if (request()->filled('by_date')) {
             try {
-                $date = \Carbon\Carbon::parse(request()->by_date)->format('Y-m-d');
+                $date = Carbon::parse(request()->by_date)->format('Y-m-d');
                 $query->whereDate('certificate_requested_at', $date);
             } catch (\Exception $e) {}
         }
@@ -4112,7 +4116,7 @@ class FrontController extends Controller
                 ];
                 try{
                     $html = view('pages.events.community-form-new', $data)->render();
-                    $pdf = \PDF::setOptions(['isHtml5ParserEnabled' => true,'isRemoteEnabled' => true])->loadHTML($html);
+                    $pdf = Pdf::setOptions(['isHtml5ParserEnabled' => true,'isRemoteEnabled' => true])->loadHTML($html);
                     $filename = 'community_form_' . $orderTicket->id . '_' . time() . '.pdf';
                     $path = 'events/community_forms/' . $filename;
                     $publicPath = public_path($path);
@@ -5108,41 +5112,39 @@ class FrontController extends Controller
         ]);
     }
 
-    public function saveOrganizerLead(){
+    public function saveOrganizerLead(?\App\Services\Messaging\ConversationService $conversationService = null){
+        $conversationService = $conversationService ?? app(\App\Services\Messaging\ConversationService::class);
         $request = request();
 
         $validated = $request->validate([
             'organiser_id' => 'required|exists:volunteers,id',
             'name'         => 'required|string|max:255',
             'email'        => 'required|email|max:255',
-            'phone'        => 'required|string|max:20',
+            'phone'        => 'nullable|string|max:20',
             'message'      => 'required|string',
+            'consent'      => 'nullable|boolean',
         ]);
 
-        $validated['phone'] = formatPhoneNumber($validated['phone']);
-        \App\Models\OrganiserLead::create($validated);
+        $hasConsent = $request->boolean('consent') || \Illuminate\Support\Facades\Auth::guard('front')->check();
+        $leadData = \Illuminate\Support\Arr::except($validated, ['consent']);
+        $leadData['phone'] = !empty($leadData['phone']) ? formatPhoneNumber($leadData['phone']) : '';
 
-        $organiser = Volunteer::find($validated['organiser_id']);
-        $mail_content = [
-            'org_name'         => $organiser->first_name.' '.$organiser->last_name,
-            'c_volunteer'         => $validated['name'],
-            'c_email'             => $validated['email'],
-            'c_phone'             => $validated['phone'],
-            'c_message'             => $validated['message'],
-            'inbox_link'            => $this->mailUrl('contact-lists')
-        ];
-        
-        $to_arr = [
-            [
-                "to" => [
-                    ["email" => trim($organiser->email_address)]
-                ],
-                "dynamic_template_data" => $mail_content
-            ]
-        ];
-        $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-9addd3042e0a43f7830062b695c8a4e3");
-        
-        $this->setFlashSession(true, "Thank you for contacting the organizer. We will get back to you soon.");
+        if ($hasConsent) {
+            $result = $conversationService->startContactRequest($leadData);
+
+            if ($result['status'] === 'delivered') {
+                $this->setFlashSession(true, "Your message has been sent.");
+                return redirect()->route('messaging.conversations.show', $result['conversation']);
+            }
+
+            $this->setFlashSession(true, "Please check your email to verify this message. It will be delivered to the organizer after verification.");
+            return redirect()->back();
+        }
+
+        $organiserLead = OrganiserLead::create($leadData);
+        $conversationService->startGuestContactRequest($leadData, $organiserLead->id);
+
+        $this->setFlashSession(true, "Your message has been sent to the organizer.");
         return redirect()->back();
     }
     public function waiverForm($ticket){
@@ -5258,7 +5260,7 @@ class FrontController extends Controller
             ],
             "dynamic_template_data" => [
                 "subject" => request()->subject,
-                "content" => request()->content,
+                "content" => request()->input('content'),
                 "attendee_name" => $ticket->volunteer->first_name.' '.$ticket->volunteer->last_name,
                 "attendee_email" => $ticket->volunteer->email_address,
             ],
@@ -5314,7 +5316,7 @@ class FrontController extends Controller
                 ],
                 "dynamic_template_data" => [
                     "subject" => request()->subject,
-                    "content" => request()->content,
+                    "content" => request()->input('content'),
                     "attendee_name" => $ticket->volunteer->first_name.' '.$ticket->volunteer->last_name,
                     "attendee_email" => $email,
                 ],
@@ -5507,13 +5509,13 @@ class FrontController extends Controller
             $lastResendWaiverLog = $registration->resendWaiverLogs()->latest('created_at')->first();
             if(isset($lastResendWaiverLog->id)){
                 // Check 60 second gap
-                $secondsSinceLastSend = now()->diffInSeconds(\Carbon\Carbon::parse($lastResendWaiverLog->createdDateTimeStr));
+                $secondsSinceLastSend = now()->diffInSeconds(Carbon::parse($lastResendWaiverLog->createdDateTimeStr));
                 if($secondsSinceLastSend < 60){
                     $responseArr['wait_before_resend'] = true;
                     $responseArr['wait_seconds'] = 60 - $secondsSinceLastSend;
                     return $this->generateJsonResponse(false, 'Please wait ' . (60 - $secondsSinceLastSend) . ' seconds before resending the waiver email.', $responseArr);
                 }
-                $lastResendWaiverLog->createdDateTime = $lastResendWaiverLog->createdDateTime;
+                $lastResendWaiverLog->append('createdDateTime');
                 $responseArr['log'] = $lastResendWaiverLog->toArray();
             }
             return $this->generateJsonResponse(true, 'Waiver email sent successfully.', $responseArr);
@@ -5550,7 +5552,7 @@ class FrontController extends Controller
                     ];
                     try{
                         $html = view('pages.events.community-form-new', $data)->render();
-                        $pdf = \PDF::setOptions(['isHtml5ParserEnabled' => true,'isRemoteEnabled' => true])->loadHTML($html);
+                        $pdf = Pdf::setOptions(['isHtml5ParserEnabled' => true,'isRemoteEnabled' => true])->loadHTML($html);
                         $filename = 'community_form_' . $value->id . '_' . time() . '.pdf';
                         $path = 'events/community_forms/' . $filename;
                         $publicPath = public_path($path);
