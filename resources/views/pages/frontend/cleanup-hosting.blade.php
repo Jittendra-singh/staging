@@ -50,8 +50,13 @@ a[disabled]{
                                     <label class="form-label fs-6 me-2 mb-0">{{ __('messages.front_sort_by_start_date') }}</label>
                                     <div class="loc-group position-relative flex-grow-1">
                                         <select onchange="this.form.submit()" class="selectpicker" name="start_date_sort" title="{{ __('messages.front_sort_by') }}">
-                                            <option value="desc" {{ request('start_date_sort', 'desc') == 'desc' ? 'selected' : '' }} >{{ __('messages.front_newest_first') }}</option>
-                                            <option value="asc" {{ request('start_date_sort') == 'asc' ? 'selected' : '' }}>{{ __('messages.front_oldest_first') }}</option>
+                                            @if(in_array($activeTab, ['upcoming', 'ongoing']))
+                                                <option value="asc" {{ request('start_date_sort', 'asc') == 'asc' ? 'selected' : '' }}>{{ __('messages.front_soonest_first') }}</option>
+                                                <option value="desc" {{ request('start_date_sort') == 'desc' ? 'selected' : '' }}>{{ __('messages.front_latest_first') }}</option>
+                                            @else
+                                                <option value="desc" {{ request('start_date_sort', 'desc') == 'desc' ? 'selected' : '' }}>{{ __('messages.front_newest_first') }}</option>
+                                                <option value="asc" {{ request('start_date_sort') == 'asc' ? 'selected' : '' }}>{{ __('messages.front_oldest_first') }}</option>
+                                            @endif
                                         </select>
                                     </div>
                                 </div>
@@ -103,27 +108,27 @@ a[disabled]{
                                                 class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'action_required' ? 'active text-white' : '' }}">
                                                 Pending Completion
                                             </a> -->
-                                            <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'upcoming', 'start_date_sort' => request('start_date_sort', 'desc')]) }}"
+                                            <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'upcoming']) }}"
                                                 class="btn btn-outline-primary px-3 py-2 {{ request('tabs', 'upcoming') == 'upcoming' ? 'active text-white' : '' }}">
                                                 Upcoming
                                             </a>
 
-                                            <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'ongoing', 'start_date_sort' => request('start_date_sort', 'desc')]) }}"
+                                            <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'ongoing']) }}"
                                                 class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'ongoing' ? 'active text-white' : '' }}">
                                                 In-Progress
                                             </a>
 
-                                            <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'action_required', 'start_date_sort' => request('start_date_sort', 'desc')]) }}"
+                                            <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'action_required']) }}"
                                                 class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'action_required' ? 'active text-white' : '' }}">
                                                 Pending Completion
                                             </a>
 
-                                            <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'ended', 'start_date_sort' => request('start_date_sort', 'desc')]) }}"
+                                            <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'ended']) }}"
                                                 class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'ended' ? 'active text-white' : '' }}">
                                                 Completed
                                             </a>
 
-                                            <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'cancelled', 'start_date_sort' => request('start_date_sort', 'desc')]) }}"
+                                            <a href="{{ route('front-cleanup-hosting', ['type' => request()->segment(2) == 'cohost' ? 'cohost' : 'organizer', 'tabs' => 'cancelled']) }}"
                                                 class="btn btn-outline-primary px-3 py-2 {{ request('tabs') == 'cancelled' ? 'active text-white' : '' }}">
                                                 Cancelled
                                             </a>
@@ -312,8 +317,8 @@ a[disabled]{
                                                     @else
                                                         <div class="card-event-dt">
                                                             @if(empty($event->cancelled_at))
-                                                    <button {{ $event->is_completed==1?'disabled':'' }} class="btn btn-sm btn-default border-default show-alert-run-url" message="You want to send the waiver email to all attendees" url="{{route('send-waiver-bulk-email', ['id' => $event->encrypted_id])}}"><i class="fa fa-envelope me-2"></i>{{ __('messages.front_send_waiver_all') }}</button>
-                                                            <button {{ $event->is_completed==1?'disabled':'' }} class="btn btn-sm btn-default ms-2 border-default show-alert-run-url" message="You want to mark all attendees as checked-in" url="{{route('mark-bulk-checkin-with-email', ['id' => $event->encrypted_id])}}"><i class="fa fa-check-square me-2"></i>{{ __('messages.front_checkin_signed_volunteers') }}</button>
+                                                            <button {{ $event->is_completed==1?'disabled':'' }} class="btn btn-sm btn-default border-default show-alert-send-waiver-to-all" url_registration_list="{{ route('front-registration-list',['event'=>$event->id]) }}" url="{{route('send-waiver-bulk-email', ['id' => $event->encrypted_id])}}"><i class="fa fa-envelope me-2"></i>{{ __('messages.front_send_waiver_all') }}</button>
+                                                            <button {{ $event->is_completed==1?'disabled':'' }} class="btn btn-sm btn-default ms-2 border-default show-alert-check-in-signed-volunteers" url_registration_list="{{ route('front-registration-list',['event'=>$event->id]) }}" url="{{route('mark-bulk-checkin-with-email', ['id' => $event->encrypted_id])}}"><i class="fa fa-check-square me-2"></i>{{ __('messages.front_checkin_signed_volunteers') }}</button>
                                                             @endif
                                                             <button class="btn btn-sm btn-default ms-2 border-default send-event-attendees-email" data-route="{{ route('front-send-custom-email-event-attendees', ['id' => $event->encrypted_id]) }}" data-bs-toggle="modal" data-bs-target="#sendEventAttendeesEmailModal"><i class="fa fa-paper-plane me-2"></i>{{ __('messages.front_send_email') }}</button>
                                                         </div>
@@ -452,6 +457,21 @@ a[disabled]{
                                                 <h6 class="coupon-status"><span class="badge custom-badge-danger cancelled-count">{{$event->tickets()->where('rsvp_confirmation',0)->count()}}</span></h6>
                                             </div>
                                             @endif
+                                            @php
+                                                $waitlistCount = \App\Models\EventWaitlist::where('event_id', $event->id)->count();
+                                            @endphp
+                                            @if($waitlistCount > 0)
+                                            <div class="icon-box ">
+                                                <span class="icon">
+                                                    <i class="fa-solid fa-hourglass"></i>
+                                                </span>
+                                                <p>Waitlist</p>
+                                                <h6 class="coupon-status">
+                                                    {{ $waitlistCount }} 
+                                                    <span class="badge" style="background-color: #3b82f6; color: white; font-size: 10px; margin-left: 2px; vertical-align: middle;">WAITING</span>
+                                                </h6>
+                                            </div>
+                                            @endif
                                             <div class="icon-box ">
                                                 <span class="icon">
                                                     <i class="fa-solid fa-handshake"></i>
@@ -528,10 +548,13 @@ a[disabled]{
                                                     </div>
                                                 </div>
                                             </div>
-                                            @if($activeTab=='upcoming')
-                                            <a class="sign-up-btn text-white w-fit me-3" href="{{route('front-post-a-event', ['id'=> $event->encrypted_id])}}" {{ ($event->is_active!=1)?'disabled':'' }}>Edit Event</a>
+                                            @if($waitlistCount > 0)
+                                            <a class="primary-btn w-fit me-3" href="{{ route('waitlist.detail', ['event_id' => $event->id]) }}" style="text-transform: uppercase;"><i class="fa-solid fa-list-ul me-2"></i>View Waitlist</a>
                                             @endif
-                                            <a class="primary-btn w-fit" href="{{route('front-reschedule-event', ['id' => $event->encrypted_id])}}" {{ ($event->is_completed==1 || $event->is_active!=1)?'disabled':'' }}>Reschedule Event</a>
+                                            @if($activeTab=='upcoming')
+                                            <a class="sign-up-btn text-white w-fit me-3" style="text-transform: uppercase;" href="{{route('front-post-a-event', ['id'=> $event->encrypted_id])}}" {{ ($event->is_active!=1)?'disabled':'' }}>Edit Event</a>
+                                            @endif
+                                            <a class="primary-btn w-fit" style="text-transform: uppercase;" href="{{route('front-reschedule-event', ['id' => $event->encrypted_id])}}" {{ ($event->is_completed==1 || $event->is_active!=1)?'disabled':'' }}>Reschedule Event</a>
                                             @if($activeTab!='upcoming')
                                             <a class="sign-up-btn text-white w-fit ms-3" href="{{route('front-post-a-event', ['id'=> $event->encrypted_id,'open_tab'=>'step5'])}}" {{ ($eventStatusClass!='action_required' || $event->is_active!=1)?'disabled':'' }}>Submit Wrap-Up Report</a>
                                             @endif

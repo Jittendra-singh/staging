@@ -1004,6 +1004,8 @@ return [
     'front_sort_by' => 'Ordenar por',
     'front_newest_first' => 'Más recientes primero',
     'front_oldest_first' => 'Más antiguos primero',
+    'front_soonest_first' => 'Más próximos primero',
+    'front_latest_first' => 'Más lejanos primero',
     'front_organizing_cleanups_count' => 'Limpiezas organizadas (:count)',
     'front_cohosting_cleanups_count' => 'Limpiezas coorganizadas (:count)',
     'front_no_cleanup_found' => 'No se encontró ninguna limpieza',

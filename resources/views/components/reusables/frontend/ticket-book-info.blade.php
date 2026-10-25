@@ -1,129 +1,189 @@
 @php
-    $name_counter = 0 ;
+    $name_counter = 0;
     $is_waiver_allowed = $event->waiver_form_type ? true : false;
 @endphp
+
 @foreach ($ticketbooking as $booking)
     @php
-        $ticket_id = $booking['id'];
+        $ticket_id    = $booking['id'];
         $ticket_count = $booking['count'];
         $ticket_name  = $booking['name'];
         $ticket_price = $booking['price'];
-        
     @endphp
+
     <div class="ticket-box mb-1 border-bottom">
         <div class="col-12 text-left mt-3 mb-1 border-bottom bp-title">
-            <!-- <h4 class="px-0">Ticket - {{$ticket_name}} - {{config('app.currency').$ticket_price}}/ per ticket</h4> -->
             <h4 class="px-0">Attendee Information ({{ $ticket_name }})</h4>
         </div>
-        @for ($i = 1 ; $i <= $ticket_count ; $i++)
+
+        @for ($i = 1; $i <= $ticket_count; $i++)
             @php
-                $name_counter = $name_counter + 1 ;
+                $name_counter++;
             @endphp
-            <div class=" pb-4 parent-container" data-ticket="1" data-ticketid="{{$ticket_id}}" data-ticket-index="{{$name_counter}}">
-                <div class="row">
-                    <div class="col-lg-3 col-md-3">
-                        <div class="form-group mt-4">
-                            <label class="form-label">Email Address*</label>
-                            <input class="form-control checkout-email email_address attendee-email" name="ticket[{{$name_counter}}][email_address]" type="text" placeholder="Enter email" required value="">
-                        </div>
+
+            <div class="pb-4 parent-container" 
+                 data-ticket="1" 
+                 data-ticketid="{{ $ticket_id }}" 
+                 data-ticket-index="{{ $name_counter }}">
+
+                {{-- Form Type Dropdown --}}
+                <div class="row mb-3 pb-2 border-bottom">
+                    <div class="col-md-6 col-lg-4">
+                        <label class="form-label fw-bold">Ticket Attendee Type</label>
+                        <select class="form-select attendee-form-type" 
+                                name="ticket[{{ $name_counter }}][form_type]" 
+                                data-ticket-index="{{ $name_counter }}">
+                            <option value="1" selected>Adult (18+ years)</option>
+                            @if($is_waiver_allowed)
+                                <option value="2">Youth (Under 18 with Guardian)</option>
+                            @endif
+                            <option value="3">Child (Under 18 years)</option>
+                        </select>
                     </div>
-                    <div class="col-lg-3 col-md-3">
-                        <div class="form-group mt-4">
-                            <label class="form-label">First Name*</label> 
-                            <input type="hidden" name="ticket[{{$name_counter}}][id]" class="ticket_id" value="{{$ticket_id}}">
-                            <input class="form-control first_name" name="ticket[{{$name_counter}}][first_name]" type="text" placeholder="Enter first name" required value="">
+                </div>
+
+                {{-- Hidden ticket_id: Always submitted --}}
+                <input type="hidden" 
+                       name="ticket[{{ $name_counter }}][id]" 
+                       class="ticket_id" 
+                       value="{{ $ticket_id }}">
+
+                {{-- SECTION A: Standard Attendee Fields (Form Type 1 & 2) --}}
+                <div class="standard-attendee-fields" id="standard-fields-{{ $name_counter }}">
+                    <div class="row">
+                        <div class="col-lg-3 col-md-3">
+                            <div class="form-group mt-3">
+                                <label class="form-label">Email Address*</label>
+                                <input class="form-control checkout-email email_address attendee-email" 
+                                       name="ticket[{{ $name_counter }}][email_address]" 
+                                       type="email" 
+                                       placeholder="Enter email" 
+                                       required>
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-lg-3 col-md-3">
-                        <div class="form-group mt-4">
-                            <label class="form-label">Last Name*</label>
-                            <input class="form-control last_name" name="ticket[{{$name_counter}}][last_name]" type="text" placeholder="Enter last name" value="" required>
+                        <div class="col-lg-3 col-md-3">
+                            <div class="form-group mt-3">
+                                <label class="form-label">First Name*</label> 
+                                <input class="form-control first_name" 
+                                       name="ticket[{{ $name_counter }}][first_name]" 
+                                       type="text" 
+                                       placeholder="Enter first name" 
+                                       required>
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-lg-3 col-md-3">
-                        <div class="form-group mt-4">
-                            <label class="form-label">Attendee Phone* <span class="fs-7 text-info d-none">Start with +1</span></label>
-                            <input class="form-control phone usphonemask" name="ticket[{{$name_counter}}][phone]" type="text" placeholder="Enter phone" value="" required>
+                        <div class="col-lg-3 col-md-3">
+                            <div class="form-group mt-3">
+                                <label class="form-label">Last Name*</label>
+                                <input class="form-control last_name" 
+                                       name="ticket[{{ $name_counter }}][last_name]" 
+                                       type="text" 
+                                       placeholder="Enter last name" 
+                                       required>
+                            </div>
                         </div>
+                        <div class="col-lg-3 col-md-3">
+                            <div class="form-group mt-3">
+                                <label class="form-label">Attendee Phone*</label>
+                                <input class="form-control phone usphonemask" 
+                                       name="ticket[{{ $name_counter }}][phone]" 
+                                       type="text" 
+                                       placeholder="Enter phone" 
+                                       required>
+                            </div>
+                        </div>
+
+                        @if($event->ticket_questions)
+                            <div class="col-12">
+                                <div class="form-group mt-3">
+                                    <label class="form-label">{{ strip_tags($event->ticket_questions) }}</label>
+                                    <input class="form-control answer" 
+                                           name="ticket[{{ $name_counter }}][answer]" 
+                                           type="text" 
+                                           placeholder="Enter answer here">
+                                </div>
+                            </div>
+                        @endif
                     </div>
-                    @if($event->ticket_questions)
+
+                    {{-- SECTION B: Guardian Fields (Form Type 2 Youth) --}}
+                    <div class="row guardian-fields-div d-none mt-2" id="guardian-fields-{{ $name_counter }}">
                         <div class="col-12">
-                            <div class="form-group mt-4">
-                                <label class="form-label">{{strip_tags($event->ticket_questions)}}</label>
-                                <input class="form-control answer" name="ticket[{{$name_counter}}][answer]" type="text" placeholder="Enter answer here" value="" required>
-                            </div>
+                            <h6 class="text-primary mt-2">Parent / Guardian Information</h6>
                         </div>
-                    @endif
-                </div>
-                <div class="row attendee-age-options">
-                    @if($is_waiver_allowed)
-                        <div class="col-lg-auto col-md-auto under-18-option">
-                            <div class="form-group mt-4">
-                                <label class="form-label mt-4" for="is-18-checkbox-{{$name_counter}}">
-                                    <input type="checkbox"
-                                        name="ticket[{{$name_counter}}][is_under_18]"
-                                        class="form-check-input waiver_check_age is_under_18"
-                                        id="is-18-checkbox-{{$name_counter}}"
-                                        value="1">
-                                    This volunteer is under 18 years of age.
-                                </label>
-                            </div>
-                        </div>
-                    @endif
-
-                    @if($event->allow_child_under13)
-                        <div class="col-lg-auto col-md-auto child-option">
-                            <div class="form-group mt-4">
-                                <label class="form-label mt-4" for="has-children-checkbox-{{$name_counter}}">
-                                    <input type="checkbox"
-                                        name="ticket[{{$name_counter}}][has_children]"
-                                        class="form-check-input has-children-checkbox"
-                                        id="has-children-checkbox-{{$name_counter}}"
-                                        value="1">
-                                    I am coming with children below 13 years
-                                </label>
-                            </div>
-                        </div>
-                    @endif
-                </div>
-
-                @if($is_waiver_allowed)
-                    <div class="row waiver-form-div">
-                        <div class="col-lg-4 col-md-4 waiver-guardian d-none">
-                            <div class="form-group mt-4">
+                        <div class="col-lg-4 col-md-4">
+                            <div class="form-group">
                                 <label class="form-label">Guardian Name*</label>
                                 <input class="form-control guardian_name"
-                                    name="ticket[{{$name_counter}}][waiver_handler_name]"
-                                    type="text"
-                                    placeholder="Enter guardian name">
+                                       name="ticket[{{ $name_counter }}][waiver_handler_name]"
+                                       type="text"
+                                       placeholder="Enter guardian name"
+                                       disabled>
                             </div>
                         </div>
-
-                        <div class="col-lg-4 col-md-4 waiver-guardian d-none">
-                            <div class="form-group mt-4">
+                        <div class="col-lg-4 col-md-4">
+                            <div class="form-group">
                                 <label class="form-label">Guardian Email*</label>
                                 <input class="form-control guardian_email"
-                                    name="ticket[{{$name_counter}}][waiver_handler_email]"
-                                    type="text"
-                                    placeholder="Enter guardian email">
+                                       name="ticket[{{ $name_counter }}][waiver_handler_email]"
+                                       type="email"
+                                       placeholder="Enter guardian email"
+                                       disabled>
                             </div>
                         </div>
                     </div>
-                @endif
+                </div>
 
-                @if($event->allow_child_under13)
-                    <div class="children-fields-container d-none mt-3">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <label class="form-label mb-0 fw-bold">Children Information</label>
-                            <button type="button" class="btn btn-sm btn-outline-primary add-child-row">
-                                <i class="fa-solid fa-plus"></i> Add Child
-                            </button>
+                {{-- SECTION C: Child Fields (Form Type 3 Child) --}}
+                <div class="child-attendee-fields d-none mt-3" id="child-fields-{{ $name_counter }}">
+                    <div class="row">
+                        <div class="col-lg-4 col-md-4">
+                            <div class="form-group">
+                                <label class="form-label">Child Full Name*</label>
+                                <input class="form-control child_name"
+                                       name="ticket[{{ $name_counter }}][child_name]"
+                                       type="text"
+                                       placeholder="Enter child's name"
+                                       disabled>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-3">
+                            <div class="form-group">
+                                <label class="form-label">Child Age (under 18)*</label>
+                                <input class="form-control child_age"
+                                       name="ticket[{{ $name_counter }}][child_age]"
+                                       type="number"
+                                       min="0"
+                                       max="17"
+                                       placeholder="e.g. 8"
+                                       disabled>
+                            </div>
+                        </div>
+                        <div class="col-lg-5 col-md-5">
+                            <div class="form-group">
+                                <label class="form-label">Accompanying Guardian / Adult*</label>
+                                <select class="form-select accompanying-guardian-select" 
+                                        name="ticket[{{ $name_counter }}][accompanying_guardian]"
+                                        disabled>
+                                    <option value="" disabled selected>Select Accompanying Adult</option>
+                                </select>
+                            </div>
                         </div>
 
-                        <div class="children-rows"></div>
-                        <small class="text-muted">You can add up to 4 children below 13 years of age.</small>
+                        @if($event->ticket_questions)
+                            <div class="col-12">
+                                <div class="form-group mt-3">
+                                    <label class="form-label">{{ strip_tags($event->ticket_questions) }}</label>
+                                    <input class="form-control child_answer answer" 
+                                           name="ticket[{{ $name_counter }}][answer]" 
+                                           type="text" 
+                                           placeholder="Enter answer here"
+                                           disabled>
+                                </div>
+                            </div>
+                        @endif
                     </div>
-                @endif
+                </div>
+
             </div>
         @endfor
     </div>

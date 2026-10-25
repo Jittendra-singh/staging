@@ -18,6 +18,7 @@ use App\Models\EventCoHost;
 use App\Models\Volunteer;
 use App\Models\EventCategory;
 use App\Models\EventOrderTicket;
+use App\Models\EventOrderTicketChild;
 use App\Models\City;
 use App\Models\EventOrder;
 use App\Models\EventTicket;
@@ -358,9 +359,168 @@ class FrontController extends Controller
             'verify-ticket-notification-email'
         );
     }
-    public function dashboard(){
+    public function dashboard(\Illuminate\Http\Request $request){
         $data['seo_details'] = (object)['title' => 'Dashboard'];
+        
+        // Fetch organiser's events
+        $user = auth()->guard('front')->user();
+        $events = $user->events()
+                       ->active()
+                       ->where('start_datetime', '>=', now())
+                       ->orderBy('start_datetime', 'asc')
+                       ->get();
+        $eventIds = $events->pluck('id')->toArray();
+        $waitlistEventIds = \App\Models\EventWaitlist::whereIn('event_id', $eventIds)->distinct()->pluck('event_id')->toArray();
+        $waitlistDropdownEvents = $events->where('enable_waitlist', 1)->whereIn('id', $waitlistEventIds);
+        
+        $data['globalWaitlistCount'] = $waitlistDropdownEvents->count();
+        $data['waitlistDropdownEvents'] = $waitlistDropdownEvents;
+
+        $selectedEventId = $request->input('event_id');
+        if (!$selectedEventId || !$waitlistDropdownEvents->contains('id', $selectedEventId)) {
+            $selectedEventId = $waitlistDropdownEvents->first()->id ?? null;
+        }
+        
+        $data['events'] = $events;
+        $data['selectedEventId'] = $selectedEventId;
+        $data['waitlists'] = null;
+        
+        if ($selectedEventId) {
+            $waitlistQuery = \App\Models\EventWaitlist::with('ticket')
+                ->where('event_id', $selectedEventId);
+            
+            $data['totalWaitlistCount'] = (clone $waitlistQuery)->count();
+            
+            if ($request->filled('search')) {
+                $search = $request->input('search');
+                $waitlistQuery->where(function($q) use ($search) {
+                    $q->where('first_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
+                });
+            }
+            
+            $data['waitlists'] = $waitlistQuery->orderBy('joined_at', 'desc')->paginate(4);
+        }
+
         return view('pages.frontend.dashboard', $data);
+    }
+
+    public function waitlistDetail(\Illuminate\Http\Request $request, $event_id)
+    {
+        $user = auth()->guard('front')->user();
+        
+        // 1. Fetch Event
+        $event = \App\Models\Event::where('id', $event_id)->where('creator_id', $user->id)->firstOrFail();
+
+        // 2. Fetch all user's active events for dropdown
+        $events = $user->events()
+                       ->active()
+                       ->where('start_datetime', '>=', now())
+                       ->orderBy('start_datetime', 'asc')
+                       ->get();
+                       
+        $eventIds = $events->pluck('id')->toArray();
+        $waitlistEventIds = \App\Models\EventWaitlist::whereIn('event_id', $eventIds)->distinct()->pluck('event_id')->toArray();
+        
+        // Filter events, but ALWAYS keep the currently viewed event so the dropdown doesn't misalign visually
+        $events = $events->filter(function($e) use ($waitlistEventIds, $event_id) {
+            return $e->id == $event_id || ($e->enable_waitlist == 1 && in_array($e->id, $waitlistEventIds));
+        });
+
+        // 3. Fetch tickets for this event for Ticket Type dropdown
+        $tickets = \App\Models\EventTicket::where('event_id', $event_id)->where('is_active', 1)->get();
+
+        // 4. Calculate Capacity Stats
+        $totalCapacity = \App\Models\EventTicket::where('event_id', $event_id)->where('is_active', 1)->sum('available_quantity');
+        $registeredCount = \App\Models\EventOrderTicket::where('event_id', $event_id)->active()->count();
+        
+        // 5. Query Waitlist with filters
+        $waitlistQuery = \App\Models\EventWaitlist::with('ticket')->where('event_id', $event_id);
+        
+        $totalWaitlistCount = (clone $waitlistQuery)->count(); // absolute total for this event
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $waitlistQuery->where(function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+        
+        if ($request->filled('ticket_id') && $request->input('ticket_id') != 'all') {
+            $waitlistQuery->where('ticket_id', $request->input('ticket_id'));
+        }
+
+        $waitlists = $waitlistQuery->orderBy('joined_at', 'desc')->paginate(10);
+        $waitlists->appends($request->all());
+
+        $data = [
+            'event' => $event,
+            'events' => $events,
+            'tickets' => $tickets,
+            'totalCapacity' => $totalCapacity,
+            'registeredCount' => $registeredCount,
+            'totalWaitlistCount' => $totalWaitlistCount,
+            'waitlists' => $waitlists,
+            'selectedEventId' => $event_id,
+        ];
+
+        return view('pages.frontend.waitlist-detail', $data);
+    }
+
+    public function exportWaitlist(\Illuminate\Http\Request $request, $event_id)
+    {
+        $user = auth()->guard('front')->user();
+        $event = \App\Models\Event::where('id', $event_id)->where('creator_id', $user->id)->firstOrFail();
+        
+        $waitlistQuery = \App\Models\EventWaitlist::with('ticket')
+            ->where('event_id', $event_id);
+        
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $waitlistQuery->where(function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+        
+        $waitlists = $waitlistQuery->orderBy('joined_at', 'desc')->get();
+        
+        $safeEventName = \Illuminate\Support\Str::slug($event->event_name);
+        $fileName = 'waitlist_' . $safeEventName . '_' . date('Y-m-d') . '.csv';
+        
+        $headers = array(
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$fileName",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        );
+        
+        $columns = array('First Name', 'Last Name', 'Email', 'Ticket Type', 'Joined Date/Time', 'Status');
+        
+        $callback = function() use($waitlists, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+            
+            foreach ($waitlists as $entry) {
+                $row['First Name']  = $entry->first_name;
+                $row['Last Name']   = $entry->last_name;
+                $row['Email']       = $entry->email;
+                $row['Ticket Type'] = $entry->ticket->ticket_name ?? 'N/A';
+                $row['Joined Date/Time']  = \Carbon\Carbon::parse($entry->joined_at)->format('M d, g:i A');
+                $row['Status']      = ucfirst($entry->status);
+                
+                fputcsv($file, array($row['First Name'], $row['Last Name'], $row['Email'], $row['Ticket Type'], $row['Joined Date/Time'], $row['Status']));
+            }
+            
+            fclose($file);
+        };
+        
+        return response()->stream($callback, 200, $headers);
     }
     public function releaseNotes()
     {
@@ -470,14 +630,16 @@ class FrontController extends Controller
         $cohostEventCount = $user->cohostingEvents()->count();
         $hostingEventCount = $user->events()->count();
 
-        $startDateSort = request('start_date_sort', 'desc');
-        if (!in_array($startDateSort, ['asc', 'desc'])) {
-            $startDateSort = 'desc';
-        }
-
         $tab = request('tabs', 'upcoming');
         if (!in_array($tab, ['upcoming', 'ongoing', 'ended', 'cancelled', 'action_required'])) {
             $tab = 'upcoming';
+        }
+
+        $defaultSort = in_array($tab, ['upcoming', 'ongoing']) ? 'asc' : 'desc';
+
+        $startDateSort = request('start_date_sort', $defaultSort);
+        if (!in_array($startDateSort, ['asc', 'desc'])) {
+            $startDateSort = $defaultSort;
         }
 
         $now = now();
@@ -488,21 +650,31 @@ class FrontController extends Controller
                 $q->whereNull('cancelled_at');
             })
             ->when($tab == 'upcoming', function ($q) use ($now) {
-                $q->where('start_datetime', '>', $now)->where('is_completed', '!=', 1)->whereNull('cancelled_at');
+                $q->where('start_datetime', '>', (clone $now)->addHours(3))
+                    ->where(function ($subQ) {
+                        $subQ->whereNull('is_completed')
+                            ->orWhere('is_completed', '!=', 1);
+                    })
+                    ->whereNull('cancelled_at');
             })
             ->when($tab == 'ongoing', function ($q) use ($now) {
-                $q->where('start_datetime', '<=', $now)
-                ->where('end_datetime', '>=', $now)->where('is_completed', '!=', 1)->whereNull('cancelled_at');
+                $q->where('start_datetime', '<=', (clone $now)->addHours(3))
+                    ->whereDate('end_datetime', '>=', $now)
+                    ->where(function ($subQ) {
+                        $subQ->whereNull('is_completed')
+                            ->orWhere('is_completed', '!=', 1);
+                    })
+                    ->whereNull('cancelled_at');
             })
             ->when($tab == 'ended', function ($q) use ($now) {
-                $q->where('end_datetime', '<', $now)
+                $q->whereDate('end_datetime', '<', $now)
                 ->where('is_completed', 1);
             })
             ->when($tab == 'cancelled', function ($q) {
                 $q->whereNotNull('cancelled_at');
             })
             ->when($tab == 'action_required', function ($q) use ($now) {
-                $q->where('end_datetime', '<', $now)
+                $q->whereDate('end_datetime', '<', $now)
                 ->where(function ($subQ) {
                     $subQ->whereNull('is_completed')
                         ->orWhere('is_completed', '!=', 1);
@@ -579,7 +751,7 @@ class FrontController extends Controller
             return redirect()->route('front-cleanup-ongoing');
         }
 
-        $registrations = EventOrderTicket::with(['volunteer', 'ticket'])
+        $query = EventOrderTicket::with(['volunteer', 'ticket', 'children'])
             ->where('event_id', $event->id)
             ->where('rsvp_confirmation', 1)
             ->where(function ($q) {
@@ -607,9 +779,23 @@ class FrontController extends Controller
                 } elseif (request()->status == 'checked_in_signed') {
                     $q->where('checkin', 1)->whereNotNull('waiver_filled_at');
                 }
-            })
-            ->latest()
-            ->paginate(25)
+            });
+
+        $query->orderByRaw('COALESCE(event_order_tickets.checkin, 0) ASC');
+        
+        if (request()->sort == 'name_asc' || request()->sort == 'name_desc') {
+            $direction = request()->sort == 'name_asc' ? 'asc' : 'desc';
+            $query->orderBy(\App\Models\Volunteer::select('first_name')
+                ->whereColumn('volunteers.id', 'event_order_tickets.volunteer_id')
+                ->limit(1), $direction)
+                ->orderBy(\App\Models\Volunteer::select('last_name')
+                ->whereColumn('volunteers.id', 'event_order_tickets.volunteer_id')
+                ->limit(1), $direction);
+        } else {
+            $query->latest();
+        }
+
+        $registrations = $query->paginate(25)
             ->withQueryString();
 
         return view('pages.frontend.volunteer-check-in', [
@@ -634,7 +820,7 @@ class FrontController extends Controller
             return redirect()->route('front-cleanup-ongoing');
         }
 
-        $registrations = EventOrderTicket::with(['volunteer', 'ticket'])
+        $registrations = EventOrderTicket::with(['volunteer', 'ticket', 'children'])
             ->where('event_id', $event->id)
             ->where('rsvp_confirmation', 1)
             ->orderBy('id', 'asc')
@@ -665,7 +851,7 @@ class FrontController extends Controller
         ]);
 
         try {
-            $orderTicket = EventOrderTicket::with(['event', 'volunteer'])->findOrFail(decrypt($id));
+            $orderTicket = EventOrderTicket::with(['event', 'volunteer', 'children'])->findOrFail(decrypt($id));
             $authUser = auth()->guard('front')->user();
 
             $cohostEventIds = $authUser->cohostingEvents()->pluck('events.id');
@@ -686,6 +872,29 @@ class FrontController extends Controller
                 $orderTicket->waiver_filled_at = now();
                 $orderTicket->signature = request()->signature;
                 $orderTicket->save();
+            }
+
+            // Sync waiver and check-in for accompanying children
+            if ($orderTicket->children()->exists()) {
+                $scope = request()->input('checkin_scope', 'family');
+                $activeChildren = $orderTicket->children()->whereNull('cancelled_at')->get();
+                foreach ($activeChildren as $child) {
+                    $childUpdate = [
+                        'waiver_filled_at' => now(),
+                        'signature'        => request()->signature,
+                    ];
+                    if ($scope === 'family') {
+                        $pdfPath = $child->community_form_pdf;
+                        if (empty($pdfPath) || !file_exists(public_path($pdfPath))) {
+                            $pdfPath = $this->generateChildCommunityServicePdf($child, $orderTicket->event);
+                        }
+                        $childUpdate['checkin']               = 1;
+                        $childUpdate['checkin_dt']            = date('Y-m-d H:i:s');
+                        $childUpdate['community_form_pdf']    = $pdfPath;
+                        $childUpdate['community_form_status'] = 'approved';
+                    }
+                    $child->update($childUpdate);
+                }
             }
 
             return $this->ticketMarkCheckin($id, true);
@@ -710,7 +919,9 @@ class FrontController extends Controller
 
             $qrCheckinToken = encrypt('volunteer_checkin_qr:'.$orderTicket->id);
 
-            if($orderTicket->event->waiver_form_type=='external_link'){
+            $isMobile = request()->input('is_mobile');
+
+            if($orderTicket->event->waiver_form_type=='external_link' && !$isMobile){
                 if(!empty($orderTicket->event->waiver_form_content)){
                     $waiverUrl = $orderTicket->event->waiver_form_content;
                 } else {
@@ -743,6 +954,66 @@ class FrontController extends Controller
     public function volunteerMarkCheckin($id)
     {
         return $this->ticketMarkCheckin($id, true);
+    }
+
+    public function childMarkCheckin($id)
+    {
+        try {
+            $child = EventOrderTicketChild::with(['event', 'parent_ticket.volunteer'])->findOrFail(decrypt($id));
+            $authUser = auth()->guard('front')->user();
+
+            $cohostEventIds = $authUser->cohostingEvents()->pluck('events.id');
+            $hostingEventIds = $authUser->events()->pluck('events.id');
+            $allowedEventIds = $cohostEventIds->merge($hostingEventIds);
+
+            $eventId = $child->event_id ?: ($child->parent_ticket ? $child->parent_ticket->event_id : null);
+
+            if (!$allowedEventIds->contains($eventId)) {
+                if (request()->ajax() || request()->wantsJson()) {
+                    return response()->json(['status' => false, 'message' => 'Unauthorized action.'], 403);
+                }
+                $this->setFlashSession(false, 'Unauthorized action.');
+                return redirect()->back();
+            }
+
+            if ($child->checkin == 1) {
+                $child->checkin = 0;
+                $child->community_form_status = 'pending';
+                $child->save();
+                $msg = "Child attendee {$child->child_name} checked out successfully.";
+            } else {
+                $child->checkin = 1;
+                $child->checkin_dt = now();
+                $child->community_form_status = 'approved';
+                $event = $child->event ?: ($child->parent_ticket ? $child->parent_ticket->event : null);
+                if (empty($child->community_form_pdf) || !file_exists(public_path($child->community_form_pdf))) {
+                    $pdfPath = $this->generateChildCommunityServicePdf($child, $event);
+                    if ($pdfPath) {
+                        $child->community_form_pdf = $pdfPath;
+                    }
+                }
+                $child->save();
+                $msg = "Child attendee {$child->child_name} checked in successfully.";
+            }
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'status' => true,
+                    'message' => $msg,
+                    'checkin' => $child->checkin,
+                    'checkin_time' => $child->checkin == 1 && $child->checkin_dt ? $child->checkin_dt->format('h:i A') : null,
+                ]);
+            }
+
+            $this->setFlashSession(true, $msg);
+            return redirect()->back();
+        } catch (\Exception $e) {
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['status' => false, 'message' => 'Error updating child check-in.'], 500);
+            }
+            $this->setFlashSession(false, 'Error updating child check-in.');
+            return redirect()->back();
+        }
     }
     public function cleanupHostingDelete($id){
         $event = Event::where('creator_id', auth()->guard('front')->user()->id)->where("id", $id)->firstOrFail();
@@ -1175,7 +1446,7 @@ class FrontController extends Controller
         $new_event->is_active  = 1;
         $new_event->cancelled_at  = null;
         $new_event->waste_collected  = null;
-        $new_event->area_cleaned  = null;
+
         $new_event->volunteer_registered_from_other_sites  = null;
         $new_event->team_name  = null;
         $new_event->volunteer_hours  = null;
@@ -1346,7 +1617,7 @@ class FrontController extends Controller
                 $newEvent->cancelled_at = null;
                 $newEvent->is_completed = 0;
                 $newEvent->waste_collected = null;
-                $newEvent->area_cleaned = null;
+
                 $newEvent->volunteer_hours = null;
                 $newEvent->post_event_notes = null;
                 $newEvent->click_views = 0;
@@ -1730,6 +2001,7 @@ class FrontController extends Controller
             $event->show_remaining_tickets = $request->has('show_remaining_tickets') ? 1 : 0;
             $event->allow_donations = $request->has('allow_donations') ? 1 : 0;
             $event->allow_child_under13 = $request->has('allow_child_under13') ? 1 : 0;
+            $event->enable_waitlist = $request->has('enable_waitlist') ? 1 : 0;
             /* $event->allow_refund = $request->has('allow_refund') ? 1 : 0;
             $event->charge_bear_by = $request->charge_bear_by ?? 0;  */
             if (!$hasRegisteredVolunteers) {
@@ -2174,9 +2446,9 @@ class FrontController extends Controller
         $validated = $request->validate([
             'event_id'           => 'required',
             'waste_collected'    => 'required|max:255',
-            'area_cleaned'       => 'required|max:255',
+
             //'team_name'          => 'required|string',
-            'volunteer_hours'    => 'required|numeric|min:0',
+
             'post_event_notes'   => 'required|string',
             'volunteer_registered_from_other_sites' => 'nullable|numeric|min:0',
         ]);
@@ -2184,9 +2456,9 @@ class FrontController extends Controller
         try {
             $event = \App\Models\Event::findOrFail(decrypt($validated['event_id']));
             $event->waste_collected = $validated['waste_collected'];
-            $event->area_cleaned = $validated['area_cleaned'];
+
             //$event->team_name = $validated['team_name'];
-            $event->volunteer_hours = ceil($validated['volunteer_hours']);
+
             $event->post_event_notes = $validated['post_event_notes'];
             $event->volunteer_registered_from_other_sites = $validated['volunteer_registered_from_other_sites'] ?? 0;
             if (request()->hasFile('after_event_images')) {
@@ -2364,6 +2636,11 @@ class FrontController extends Controller
             // send email to cohost about permission update
             $event = $cohost->event;
             $volunteer = $cohost->volunteer;
+            $permission_strings = [];
+            foreach($cohost->permissions as $p) {
+                $permission_strings[] = config('app.cohost_permissions')[$p->permission] ?? $p->permission;
+            }
+
             $email_content = [
                 'is_deleted'=>false,
                 'organizer_name' => $event->creator->first_name.' '.$event->creator->last_name,
@@ -2371,10 +2648,19 @@ class FrontController extends Controller
                 'cohost_first_name' => $volunteer->first_name,
                 //'dashboardLink'=>route('front-dashboard'),
                 'dashboardLink'=>$this->mailUrl('front-dashboard'),
-                'permissions'=>$cohost->permissions
+                'permissions'=>$permission_strings
             ];
-            $sub = 'Your co-host permissions were updated for '.$email_content['event_name'];
-            $this->sendEmail($volunteer->email_address, $sub, $email_content, "cohost-update");
+            $email_content['subject'] = 'Your co-host permissions were updated for '.$email_content['event_name'];
+            
+            $to_arr = [
+                [
+                    "to" => [
+                        ["email" => trim($volunteer->email_address)]
+                    ],
+                    "dynamic_template_data" => $email_content
+                ]
+            ];
+            $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-ccfba74fdc894547a239d1e5824cbcf8");
 
             return $this->generateJsonResponse(true, 'Co-Host permissions updated successfully.');
         } catch (\Exception $e) {
@@ -2398,8 +2684,16 @@ class FrontController extends Controller
 
         $res = $cohost->delete();
 
-        $sub = 'You’ve been removed as a co-host from '.$email_content['event_name'];
-        $this->sendEmail($volunteer->email_address, $sub, $email_content, "cohost-update");
+        $email_content['subject'] = 'You’ve been removed as a co-host from '.$email_content['event_name'];
+        $to_arr = [
+            [
+                "to" => [
+                    ["email" => trim($volunteer->email_address)]
+                ],
+                "dynamic_template_data" => $email_content
+            ]
+        ];
+        $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-ccfba74fdc894547a239d1e5824cbcf8");
         return $this->generateJsonResponse(true,'Co-Host removed successfully.');
     }
     public function reinviteCoHost($id){
@@ -2498,14 +2792,32 @@ class FrontController extends Controller
         if($event->is_completed==1){
             return $this->generateJsonResponse(false, 'Event is already marked as completed and wrap-up email has been sent.');
         }
-        if(empty($event->waste_collected) || empty($event->area_cleaned) || empty($event->volunteer_hours)){
-            return $this->generateJsonResponse(false, 'Waste Collected, Area Cleaned, and Volunteer Hours should be saved before sending the email.');
+        if(empty($event->waste_collected)){
+            return $this->generateJsonResponse(false, 'Waste Collected should be saved before sending the email.');
         }
         $event->is_completed = 1;
         $event->wrapup_email_sent_by = auth()->guard('front')->user()->id;
         $event->save();
         $registered_tickets = $event->tickets()->where('rsvp_confirmation', 1)->get();
-        $tickets = $event->tickets()->where('checkin', 1)->whereNotNull('waiver_filled_at')->get();
+        $tickets = $event->tickets()->where('checkin', 1)
+            ->where(function ($q) use ($event) {
+                if (!empty($event->waiver_form_type)) {
+                    $q->whereNotNull('waiver_filled_at');
+                }
+            })->get();
+        $checkedInChildren = EventOrderTicketChild::with(['parent_ticket.volunteer', 'eventOrder'])
+            ->where('event_id', $event->id)
+            ->whereNull('cancelled_at')
+            ->where('checkin', 1)
+            ->where(function ($q) use ($event) {
+                if (!empty($event->waiver_form_type)) {
+                    $q->whereNotNull('waiver_filled_at');
+                }
+            })
+            ->get();
+        $registeredChildrenCount = EventOrderTicketChild::where('event_id', $event->id)
+            ->whereNull('cancelled_at')
+            ->count();
         $cohostText = '';
         $activeCohostsIds = $event->cohostRecords->where('request_status', 'approved')->pluck('volunteer_id');
         if ($activeCohostsIds->isNotEmpty() && $activeCohostsIds->contains($event->wrapup_email_sender->id)) {
@@ -2513,7 +2825,7 @@ class FrontController extends Controller
         } else if($event->wrapup_email_sender->id==$event->creator_id){
             $cohostText = ' (Organizer)';
         }
-        if($tickets->count() == 0){
+        if($tickets->count() == 0 && $checkedInChildren->count() == 0){
             if($submitAsForm){
                 $this->setFlashSession(true, 'Event marked as completed. Only volunteers who have checked-in and signed the waiver will receive the email. Since no attendees have been found yet, the email has not been sent to anyone.');
                 return $this->generateJsonResponse(true, 'Event marked as completed. Only volunteers who have checked-in and signed the waiver will receive the email. Since no attendees have been found yet, the email has not been sent to anyone.', [
@@ -2525,67 +2837,153 @@ class FrontController extends Controller
                 return $this->generateJsonResponse(true, 'Event marked as completed. Only volunteers who have checked-in and signed the waiver will receive the email. Since no attendees have been found yet, the email has not been sent to anyone.', '<p class="float-end text-warning">Wrap-Up Email sent by: '.auth()->guard('front')->user()->first_name.' '.auth()->guard('front')->user()->last_name.$cohostText.'</p>');
             }
         }
-        if($tickets->isNotEmpty()){
+        if($tickets->isNotEmpty() || $checkedInChildren->isNotEmpty()){
             $to_arr = [];
             $log_arr = [];
-            $to_arr2 = [];
-            foreach ($tickets as $key => $value) {
-                if(!isset($value->volunteer)){
-                    continue;
-                } else if(!isset($value->volunteer->id)){
-                    continue;
-                }
-                $email = $value->volunteer->email_address;
-                $name = $value->volunteer->first_name.' '.$value->volunteer->last_name;
-                if(!empty(trim($email))){
-                    $to_arr[] = 
-                    [
-                        "to" => [
-                            ["email" => trim($email)]
-                            //["email" => 'learningdcm@gmail.com']
-                        ],
-                        "dynamic_template_data" => [
-                            "volunteer_name" => $name,
-                            "volunteer_email" => $email,
-                            "event_name" =>  $event->event_name,
-                            "event_date" => $event->startTimeAndEndTime,
-                            "event_location" => $event->fullAddress,
-                            "organizer_name" => $event->creator->first_name.' '.$event->creator->last_name,
-                            "total_volunteers" => $tickets->count(),
-                            "total_registered_volunteers" => $registered_tickets->count(),
-                            "volunteer_registered_from_other_sites" => $event->volunteer_registered_from_other_sites,
-                            "waste_collected" => $event->waste_collected,
-                            "area_cleaned" => $event->area_cleaned,
-                            "service_hours" => $event->volunteer_hours ?? 'N/A',
-                            'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
-                            'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]),
-                        ],
-                    ];
-                    $log_arr[] = [
-                        "id" => $value->id,
-                        "email" => trim($email)
-                    ];
-                    /* if(isset($value->community_form_pdf) && !empty($value->community_form_pdf)){
-                        $to_arr2[] = 
-                        [
-                            "to" => [
-                                ["email" => trim($email)]
-                                //["email" => 'learningdcm@gmail.com']
-                            ],
-                            "dynamic_template_data" => [
-                                "volunteer_name" => $name,
-                                "volunteer_email" => $email,
-                                "event_name" =>  $event->event_name,
-                                'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]),
-                                'dashboard_link' => $this->mailUrl('front-cleanup-attending')
-                            ],
-                        ];
-                        $event->tickets()->where('id', $value->id)->update([
-                            'community_form_status' => 'approved'
+
+            // Group checked-in children by parent email
+            $childrenByParentEmail = [];
+            foreach ($checkedInChildren as $child) {
+                if (empty($child->community_form_pdf) || !file_exists(public_path($child->community_form_pdf))) {
+                    $childPdf = $this->generateChildCommunityServicePdf($child, $event);
+                    if ($childPdf) {
+                        $child->update([
+                            'community_form_pdf'    => $childPdf,
+                            'community_form_status' => 'approved',
                         ]);
-                    } */
+                    }
+                }
+
+                $parentEmail = null;
+                $parentName = null;
+                if ($child->parent_ticket && $child->parent_ticket->volunteer) {
+                    $parentEmail = trim($child->parent_ticket->volunteer->email_address);
+                    $parentName = $child->parent_ticket->volunteer->first_name . ' ' . $child->parent_ticket->volunteer->last_name;
+                } elseif ($child->eventOrder) {
+                    $parentEmail = trim($child->eventOrder->checkout_email_address);
+                    $parentName = $child->eventOrder->checkout_first_name . ' ' . $child->eventOrder->checkout_last_name;
+                }
+
+                if (!empty($parentEmail)) {
+                    $childrenByParentEmail[$parentEmail][] = [
+                        'child_id'         => $child->id,
+                        'child_name'       => $child->child_name,
+                        'child_age'        => $child->child_age,
+                        'certificate_link' => $this->mailUrl('show-child-community-service-pdf', ['child' => encrypt($child->id)]),
+                        'parent_name'      => $parentName,
+                    ];
                 }
             }
+
+            $processedEmails = [];
+
+            // 1. Process checked-in adult tickets
+            foreach ($tickets as $key => $value) {
+                if (!isset($value->volunteer) || !isset($value->volunteer->id)) {
+                    continue;
+                }
+                $email = trim($value->volunteer->email_address);
+                if (empty($email) || isset($processedEmails[$email])) {
+                    continue;
+                }
+                $processedEmails[$email] = true;
+                $name = $value->volunteer->first_name . ' ' . $value->volunteer->last_name;
+
+                $parentCertLink = $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]);
+                $childCerts = $childrenByParentEmail[$email] ?? [];
+
+                $childCertsHtml = '';
+                $childCertsText = '';
+                if (!empty($childCerts)) {
+                    $childCertsHtml = '<div style="margin-top: 15px; padding: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">' .
+                        '<strong style="color: #1a5f9e; font-size: 14px;">Accompanying Children Certificates:</strong><ul style="margin: 8px 0 0; padding-left: 20px;">';
+                    foreach ($childCerts as $cc) {
+                        $childCertsHtml .= '<li style="margin-bottom: 6px;"><strong>' . htmlspecialchars($cc['child_name']) . '</strong>: ' .
+                            '<a href="' . $cc['certificate_link'] . '" style="color: #0d6efd; text-decoration: underline;">Download Certificate</a></li>';
+                        $childCertsText .= $cc['child_name'] . ': ' . $cc['certificate_link'] . "\n";
+                    }
+                    $childCertsHtml .= '</ul></div>';
+                }
+
+                $to_arr[] = [
+                    "to" => [
+                        ["email" => $email]
+                    ],
+                    "dynamic_template_data" => [
+                        "volunteer_name"                        => $name,
+                        "volunteer_email"                       => $email,
+                        "event_name"                            => $event->event_name,
+                        "event_date"                            => $event->startTimeAndEndTime,
+                        "event_location"                        => $event->fullAddress,
+                        "organizer_name"                        => $event->creator->first_name . ' ' . $event->creator->last_name,
+                        "total_volunteers"                      => $tickets->count() + $checkedInChildren->count() + (int)($event->volunteer_registered_from_other_sites ?? 0),
+                        "total_registered_volunteers"           => $registered_tickets->count() + $registeredChildrenCount,
+                        "volunteer_registered_from_other_sites" => $event->volunteer_registered_from_other_sites,
+                        "waste_collected"                       => $event->waste_collected,
+                        "service_hours"                         => $event->volunteer_hours ?? 'N/A',
+                        'highlight_link'                        => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
+                        'certificate_download_link'             => $parentCertLink,
+                        'children_certificates'                 => $childCerts,
+                        'children_certificates_html'            => $childCertsHtml,
+                        'children_certificates_text'            => $childCertsText,
+                        'has_children_certificates'             => !empty($childCerts),
+                    ],
+                ];
+                $log_arr[] = [
+                    "id"    => $value->id,
+                    "email" => $email,
+                ];
+            }
+
+            // 2. Process parents whose children checked in, but parent ticket was not checked in
+            foreach ($childrenByParentEmail as $email => $childCerts) {
+                if (isset($processedEmails[$email]) || empty($email)) {
+                    continue;
+                }
+                $processedEmails[$email] = true;
+                $parentName = $childCerts[0]['parent_name'] ?? 'Volunteer Family';
+                $firstCertLink = $childCerts[0]['certificate_link'];
+
+                $childCertsHtml = '<div style="margin-top: 15px; padding: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">' .
+                    '<strong style="color: #1a5f9e; font-size: 14px;">Accompanying Children Certificates:</strong><ul style="margin: 8px 0 0; padding-left: 20px;">';
+                $childCertsText = '';
+                foreach ($childCerts as $cc) {
+                    $childCertsHtml .= '<li style="margin-bottom: 6px;"><strong>' . htmlspecialchars($cc['child_name']) . '</strong>: ' .
+                        '<a href="' . $cc['certificate_link'] . '" style="color: #0d6efd; text-decoration: underline;">Download Certificate</a></li>';
+                    $childCertsText .= $cc['child_name'] . ': ' . $cc['certificate_link'] . "\n";
+                }
+                $childCertsHtml .= '</ul></div>';
+
+                $to_arr[] = [
+                    "to" => [
+                        ["email" => $email]
+                    ],
+                    "dynamic_template_data" => [
+                        "volunteer_name"                        => $parentName,
+                        "volunteer_email"                       => $email,
+                        "event_name"                            => $event->event_name,
+                        "event_date"                            => $event->startTimeAndEndTime,
+                        "event_location"                        => $event->fullAddress,
+                        "organizer_name"                        => $event->creator->first_name . ' ' . $event->creator->last_name,
+                        "total_volunteers"                      => $tickets->count() + $checkedInChildren->count() + (int)($event->volunteer_registered_from_other_sites ?? 0),
+                        "total_registered_volunteers"           => $registered_tickets->count() + $registeredChildrenCount,
+                        "volunteer_registered_from_other_sites" => $event->volunteer_registered_from_other_sites,
+                        "waste_collected"                       => $event->waste_collected,
+                        "service_hours"                         => $event->volunteer_hours ?? 'N/A',
+                        'highlight_link'                        => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
+                        'certificate_download_link'             => $firstCertLink,
+                        'children_certificates'                 => $childCerts,
+                        'children_certificates_html'            => $childCertsHtml,
+                        'children_certificates_text'            => $childCertsText,
+                        'has_children_certificates'             => true,
+                    ],
+                ];
+                $log_arr[] = [
+                    "id"    => $childCerts[0]['child_id'],
+                    "email" => $email,
+                ];
+            }
+
             if(!empty($to_arr) && count($to_arr)>0){
                 $to_arr_child = array_chunk($to_arr, 300);
                 $log_arr_child = array_chunk($log_arr, 300);
@@ -2618,8 +3016,8 @@ class FrontController extends Controller
         ]);
 
         $event = Event::with('creator')->findOrFail(decrypt($validated['event_id']));
-        if(empty($event->waste_collected) || empty($event->area_cleaned) || empty($event->volunteer_hours)){
-            return $this->generateJsonResponse(false, 'Waste Collected, Area Cleaned, and Volunteer Hours should be saved before sending the email.');
+        if(empty($event->waste_collected)){
+            return $this->generateJsonResponse(false, 'Waste Collected should be saved before sending the email.');
         }
         $tickets = $event->tickets()->where('checkin', 1)->where('community_form_status', 'pending')->get();
         if($tickets->count() == 0){
@@ -2632,7 +3030,7 @@ class FrontController extends Controller
                     'date' => $event->start_datetime->format(config('app.dateTimeFormat')),
                     'volunteersCount' => $event->tickets()->where('checkin', 1)->count(),
                     'wasteCollected' => $event->waste_collected ?? 'N/A',
-                    'areaCleaned' => $event->area_cleaned ?? 'N/A',
+
                     'communityServiceFormLink' => $event->allow_community_service_form ? $this->mailUrl('community-form', ['placeholder' => $event->encrypted_id]) : null,
                     //'feedbackFormLink' => route('event-feedback', ['placeholder' => $event->encrypted_id]),
                     'feedbackFormLink' => $this->mailUrl('event-feedback', ['placeholder' => $event->encrypted_id]),
@@ -3016,7 +3414,7 @@ class FrontController extends Controller
             'event'            => $event,
             'volunteerName'    => $volunteer->name,
             //'hours'            => $orderTicket->hours_completed,
-            'hours'            => $event->volunteer_hours,
+            'hours'            => ($event->start_datetime && $event->end_datetime) ? round($event->start_datetime->diffInMinutes($event->end_datetime) / 60, 2) : 0,
             'organization_name'   => $event->creator->organisation_name,
             'organizer_name'   => $event->creator->first_name.' '.$event->creator->last_name,
             'organization_email'   => $event->creator->email_address,
@@ -3063,7 +3461,7 @@ class FrontController extends Controller
                 'event'            => $event,
                 'volunteerName'    => $volunteer->name,
                 //'hours'            => $orderTicket->hours_completed,
-                'hours'            => $event->volunteer_hours,
+                'hours'            => ($event->start_datetime && $event->end_datetime) ? round($event->start_datetime->diffInMinutes($event->end_datetime) / 60, 2) : 0,
                 'organization_name'   => $event->creator->organisation_name,
                 'organizer_name'   => $event->creator->first_name.' '.$event->creator->last_name,
                 'organization_email'   => $event->creator->email_address,
@@ -3101,6 +3499,12 @@ class FrontController extends Controller
                 $orderTicket->community_form_status = 'pending';
                 $orderTicket->checkin = 0;
                 $orderTicket->save();
+                if(request()->input('checkin_scope') === 'family'){
+                    $orderTicket->children()->whereNull('cancelled_at')->update([
+                        'checkin' => 0,
+                        'community_form_status' => 'pending',
+                    ]);
+                }
                 if($callFromBackend){
                     $this->setFlashSession(true , "Volunteer has been checked out successfully.");
                     return redirect()->back();
@@ -3126,11 +3530,47 @@ class FrontController extends Controller
                         $orderTicket->is_late_checkin = 1;
                     }
                     $orderTicket->save();
+                    if(request()->input('checkin_scope') === 'family'){
+                        $activeChildren = $orderTicket->children()->whereNull('cancelled_at')->get();
+                        foreach($activeChildren as $child){
+                            $pdfPath = $child->community_form_pdf;
+                            if(empty($pdfPath) || !file_exists(public_path($pdfPath))){
+                                $pdfPath = $this->generateChildCommunityServicePdf($child, $event);
+                            }
+                            $child->update([
+                                'checkin'               => 1,
+                                'checkin_dt'            => date('Y-m-d H:i:s'),
+                                'community_form_pdf'    => $pdfPath,
+                                'community_form_status' => 'approved',
+                            ]);
+                        }
+                    }
                     if($event->is_completed==1){
                         $to_arr = [];
                         $log_arr = [];
                         if (isset($orderTicket->volunteer) && isset($orderTicket->volunteer->id)) {
                             $tickets = $event->tickets()->where('checkin', 1)->whereNotNull('waiver_filled_at')->get();
+                            $checkedChildren = $orderTicket->children()->whereNull('cancelled_at')->where('checkin', 1)->get();
+                            $childCerts = [];
+                            $childCertsHtml = '';
+                            $childCertsText = '';
+                            if ($checkedChildren->isNotEmpty()) {
+                                $childCertsHtml = '<div style="margin-top: 15px; padding: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">' .
+                                    '<strong style="color: #1a5f9e; font-size: 14px;">Accompanying Children Certificates:</strong><ul style="margin: 8px 0 0; padding-left: 20px;">';
+                                foreach ($checkedChildren as $cc) {
+                                    $link = $this->mailUrl('show-child-community-service-pdf', ['child' => encrypt($cc->id)]);
+                                    $childCerts[] = [
+                                        'child_id'         => $cc->id,
+                                        'child_name'       => $cc->child_name,
+                                        'child_age'        => $cc->child_age,
+                                        'certificate_link' => $link,
+                                    ];
+                                    $childCertsHtml .= '<li style="margin-bottom: 6px;"><strong>' . htmlspecialchars($cc->child_name) . '</strong>: ' .
+                                        '<a href="' . $link . '" style="color: #0d6efd; text-decoration: underline;">Download Certificate</a></li>';
+                                    $childCertsText .= $cc->child_name . ': ' . $link . "\n";
+                                }
+                                $childCertsHtml .= '</ul></div>';
+                            }
                             $email = $orderTicket->volunteer->email_address;
                             $name = $orderTicket->volunteer->first_name.' '.$orderTicket->volunteer->last_name;
                             if(!empty(trim($email))){
@@ -3149,10 +3589,14 @@ class FrontController extends Controller
                                         "organizer_name" => $event->creator->first_name.' '.$event->creator->last_name,
                                         "total_volunteers" => $tickets->count(),
                                         "waste_collected" => $event->waste_collected,
-                                        "area_cleaned" => $event->area_cleaned,
+
                                         "service_hours" => $event->volunteer_hours ?? 'N/A',
                                         'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
                                         'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($orderTicket->id)]),
+                                        'children_certificates' => $childCerts,
+                                        'children_certificates_html' => $childCertsHtml,
+                                        'children_certificates_text' => $childCertsText,
+                                        'has_children_certificates' => !empty($childCerts),
                                     ],
                                 ];
                                 $log_arr[] = [
@@ -3280,6 +3724,75 @@ class FrontController extends Controller
         }
         $seo_details = (object)['title' => 'Community Service PDF'];
         return view('pages.frontend.show-community-service-pdf', ['seo_details' => $seo_details]);
+    }
+
+    public function showChildCommunityServicePdf($child)
+    {
+        $childRecord = EventOrderTicketChild::with(['event.creator', 'parent_ticket.event.creator'])->findOrFail(decrypt($child));
+        if ($childRecord->checkin == 1) {
+            $pdfUrl = $childRecord->community_form_pdf;
+            $hasValidFile = !empty($pdfUrl);
+            if ($hasValidFile) {
+                $exp = explode('events/', $pdfUrl);
+                $relPath = isset($exp[1]) ? 'events/'.$exp[1] : $pdfUrl;
+                $hasValidFile = file_exists(public_path($relPath));
+            }
+            if (!$hasValidFile) {
+                $event = $childRecord->event ?: ($childRecord->parent_ticket ? $childRecord->parent_ticket->event : null);
+                $pdfUrl = $this->generateChildCommunityServicePdf($childRecord, $event);
+                if ($pdfUrl) {
+                    $childRecord->update([
+                        'community_form_pdf'    => $pdfUrl,
+                        'community_form_status' => 'approved',
+                    ]);
+                }
+            }
+            if (!empty($pdfUrl)) {
+                $exp = explode('events/', $pdfUrl);
+                $relativePath = isset($exp[1]) ? 'events/'.$exp[1] : $pdfUrl;
+                $filePath = public_path($relativePath);
+                if (file_exists($filePath)) {
+                    return response()->file($filePath, [
+                        'Content-Type' => 'application/pdf',
+                    ]);
+                }
+            }
+        }
+        $seo_details = (object)['title' => 'Community Service PDF'];
+        return view('pages.frontend.show-community-service-pdf', ['seo_details' => $seo_details]);
+    }
+
+    public function generateChildCommunityServicePdf($child, $event)
+    {
+        $hours = ($event && $event->start_datetime && $event->end_datetime)
+            ? round($event->start_datetime->diffInMinutes($event->end_datetime) / 60, 2)
+            : 0;
+
+        $data = [
+            'event'              => $event,
+            'volunteerName'      => $child->child_name,
+            'hours'              => $hours,
+            'organization_name'  => ($event && $event->creator) ? $event->creator->organisation_name : '',
+            'organizer_name'     => ($event && $event->creator) ? ($event->creator->first_name.' '.$event->creator->last_name) : '',
+            'organization_email' => ($event && $event->creator) ? $event->creator->email_address : '',
+            'organizer_link'     => ($event && $event->creator) ? route('organizer-detail', ['slug' => $event->creator->organisation_landing_slug]) : '#',
+        ];
+
+        try {
+            $html = view('pages.events.community-form-new', $data)->render();
+            $pdf = \PDF::setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true])->loadHTML($html);
+            $filename = 'child_community_form_' . $child->id . '_' . time() . '.pdf';
+            $path = 'events/community_forms/' . $filename;
+            $publicPath = public_path($path);
+            if (!file_exists(dirname($publicPath))) {
+                mkdir(dirname($publicPath), 0755, true);
+            }
+            file_put_contents($publicPath, $pdf->output());
+            return $path;
+        } catch (\Exception $e) {
+            \Log::error('Child certificate generation failed: ' . $e->getMessage());
+            return null;
+        }
     }
     /* public function ticketMarkCheckin($id){
         $registration = EventOrderTicket::findOrFail(decrypt($id));
@@ -3591,7 +4104,7 @@ class FrontController extends Controller
                     'event'            => $event,
                     'volunteerName'    => $volunteer->name,
                     //'hours'            => $orderTicket->hours_completed,
-                    'hours'            => $event->volunteer_hours,
+                    'hours'            => ($event->start_datetime && $event->end_datetime) ? round($event->start_datetime->diffInMinutes($event->end_datetime) / 60, 2) : 0,
                     'organization_name'   => $event->creator->organisation_name,
                     'organizer_name'   => $event->creator->first_name.' '.$event->creator->last_name,
                     'organization_email'   => $event->creator->email_address,
@@ -3625,6 +4138,27 @@ class FrontController extends Controller
                     $log_arr = [];
                     if (isset($volunteer) && isset($volunteer->id)) {
                         $tickets = $event->tickets()->where('checkin', 1)->whereNotNull('waiver_filled_at')->get();
+                        $checkedChildren = $orderTicket->children()->whereNull('cancelled_at')->where('checkin', 1)->get();
+                        $childCerts = [];
+                        $childCertsHtml = '';
+                        $childCertsText = '';
+                        if ($checkedChildren->isNotEmpty()) {
+                            $childCertsHtml = '<div style="margin-top: 15px; padding: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">' .
+                                '<strong style="color: #1a5f9e; font-size: 14px;">Accompanying Children Certificates:</strong><ul style="margin: 8px 0 0; padding-left: 20px;">';
+                            foreach ($checkedChildren as $cc) {
+                                $link = $this->mailUrl('show-child-community-service-pdf', ['child' => encrypt($cc->id)]);
+                                $childCerts[] = [
+                                    'child_id'         => $cc->id,
+                                    'child_name'       => $cc->child_name,
+                                    'child_age'        => $cc->child_age,
+                                    'certificate_link' => $link,
+                                ];
+                                $childCertsHtml .= '<li style="margin-bottom: 6px;"><strong>' . htmlspecialchars($cc->child_name) . '</strong>: ' .
+                                    '<a href="' . $link . '" style="color: #0d6efd; text-decoration: underline;">Download Certificate</a></li>';
+                                $childCertsText .= $cc->child_name . ': ' . $link . "\n";
+                            }
+                            $childCertsHtml .= '</ul></div>';
+                        }
                         $email = $volunteer->email_address;
                         $name = $volunteer->first_name.' '.$volunteer->last_name;
                         if(!empty(trim($email))){
@@ -3643,10 +4177,14 @@ class FrontController extends Controller
                                     "organizer_name" => $event->creator->first_name.' '.$event->creator->last_name,
                                     "total_volunteers" => $tickets->count(),
                                     "waste_collected" => $event->waste_collected,
-                                    "area_cleaned" => $event->area_cleaned,
+
                                     "service_hours" => $event->volunteer_hours ?? 'N/A',
                                     'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
                                     'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($orderTicket->id)]),
+                                    'children_certificates' => $childCerts,
+                                    'children_certificates_html' => $childCertsHtml,
+                                    'children_certificates_text' => $childCertsText,
+                                    'has_children_certificates' => !empty($childCerts),
                                 ],
                             ];
                             $log_arr[] = [
@@ -4546,7 +5084,7 @@ class FrontController extends Controller
                             'description' => $organiser->orgranisation_short_description,                
                         ];
         //$past_events = Event::where('creator_id', $organiser->id)->past()->get();
-        $past_events = Event::with('category')->where('creator_id', $organiser->id)->where('end_datetime', '<', now())
+        $past_events = Event::with('category')->where('creator_id', $organiser->id)->whereDate('end_datetime', '<', now())
             ->orderBy('start_datetime', 'desc') 
             ->orderBy('end_datetime', 'desc')
             ->orderBy('site_publish_date', 'asc')
@@ -4590,10 +5128,19 @@ class FrontController extends Controller
             'c_volunteer'         => $validated['name'],
             'c_email'             => $validated['email'],
             'c_phone'             => $validated['phone'],
-            'c_message'             => $validated['message']
+            'c_message'             => $validated['message'],
+            'inbox_link'            => $this->mailUrl('contact-lists')
         ];
         
-        $this->sendEmail($organiser->email_address, CONTACT_ORG_MAIL_SUB, $mail_content, "contact-organizer");
+        $to_arr = [
+            [
+                "to" => [
+                    ["email" => trim($organiser->email_address)]
+                ],
+                "dynamic_template_data" => $mail_content
+            ]
+        ];
+        $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-9addd3042e0a43f7830062b695c8a4e3");
         
         $this->setFlashSession(true, "Thank you for contacting the organizer. We will get back to you soon.");
         return redirect()->back();
@@ -4995,7 +5542,7 @@ class FrontController extends Controller
                         'event'            => $event,
                         'volunteerName'    => $value->volunteer->first_name.' '.$value->volunteer->last_name,
                         //'hours'            => $value->hours_completed,
-                        'hours'            => $event->volunteer_hours,
+                        'hours'            => ($event->start_datetime && $event->end_datetime) ? round($event->start_datetime->diffInMinutes($event->end_datetime) / 60, 2) : 0,
                         'organization_name'   => $event->creator->organisation_name,
                         'organizer_name'   => $event->creator->first_name.' '.$event->creator->last_name,
                         'organization_email'   => $event->creator->email_address,
@@ -6505,5 +7052,44 @@ class FrontController extends Controller
         return response()->json($this->generateResponse(true, 'Event reminder cron executed successfully.', [
             'email_count' => count($to_arr),
         ]));
+    }
+
+    public function joinWaitlist(\Illuminate\Http\Request $request) 
+    {
+        $request->validate([
+            'event_id' => 'required',
+            'ticket_id' => 'required',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+        ]);
+
+        // Check for existing waitlist entry
+        $existingEntry = \App\Models\EventWaitlist::where('event_id', $request->event_id)
+            ->where('ticket_id', $request->ticket_id)
+            ->where('email', $request->email)
+            ->first();
+
+        if ($existingEntry) {
+            if ($existingEntry->status === 'waiting') {
+                return response()->json(['success' => false, 'message' => 'You are already on the waitlist for this ticket.']);
+            } else {
+                // Status is 'cleared', so they are re-joining the waitlist
+                $existingEntry->status = 'waiting';
+                $existingEntry->first_name = $request->first_name;
+                $existingEntry->last_name = $request->last_name;
+                $existingEntry->joined_at = now();
+                $existingEntry->save();
+
+                return response()->json(['success' => true, 'message' => 'You are on the waitlist! We will email you if a ticket becomes available.']);
+            }
+        }
+
+        // If no entry exists at all, create a new one
+        $data = $request->all();
+        $data['joined_at'] = now();
+        \App\Models\EventWaitlist::create($data);
+
+        return response()->json(['success' => true, 'message' => 'You are on the waitlist! We will email you if a ticket becomes available.']);
     }
 }

@@ -529,4 +529,31 @@ class Controller extends BaseController
         curl_close($ch);
         return $response;
     }
+
+    public function notifyWaitlistWhenAvailable($event_id, $ticket_id)
+    {
+        // Get all people waiting for this specific ticket
+        $waitlistedUsers = \App\Models\EventWaitlist::where('event_id', $event_id)
+            ->where('ticket_id', $ticket_id)
+            ->where('status', 'waiting')
+            ->get();
+
+        if ($waitlistedUsers->isEmpty()) {
+            return;
+        }
+
+        $event = \App\Models\Event::find($event_id);
+
+        // Send the email using the central helper method
+        foreach ($waitlistedUsers as $user) {
+            $mail_content = [
+                'waitlist_name' => $user->first_name,
+                'eventTitle' => $event->event_name,
+                'link' => route('view-event-details', $event->slug)
+            ];
+            $subject = 'A ticket is now available! - ' . $event->event_name;
+            
+            $this->sendEmail($user->email, $subject, $mail_content, "ticket-available");
+        }
+    }
 }

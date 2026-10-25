@@ -37,6 +37,27 @@ class Event extends Model
             get: fn () => ($this->end_datetime ? $this->end_datetime->format(config('app.eventDateTimeFormat')).' '.$timezoneCode : null),
         );
     }
+    public function volunteerHours():Attribute{
+        return Attribute::make(
+            get: function ($value) {
+                if ($this->start_datetime && $this->end_datetime) {
+                    $hours = $this->start_datetime->diffInMinutes($this->end_datetime) / 60;
+                    if ($this->relationLoaded('tickets')) {
+                        $checkedInCount = $this->tickets->where('checkin', 1)->count();
+                    } else {
+                        $checkedInCount = $this->tickets()->where('checkin', 1)->count();
+                    }
+                    
+                    // Include volunteers registered from other sites
+                    $otherSitesCount = (int) $this->volunteer_registered_from_other_sites;
+                    $totalVolunteers = $checkedInCount + $otherSitesCount;
+                    
+                    return $totalVolunteers * $hours;
+                }
+                return 0;
+            }
+        );
+    }
     public function waiverFormContentFilter(){
         $content = "";
         if($this->waiver_form_content){
@@ -181,17 +202,17 @@ class Event extends Model
         return $this->is_active && $this->site_publish_date <= date('Y-m-d') && $this->site_depublish_date >= date('Y-m-d'); 
     }
     public function scopePast($query){
-        $query->detailactive()->where('end_datetime', '<', now());
+        $query->detailactive()->whereDate('end_datetime', '<', now());
     }
     public function scopePresent($query){
-        $query->detailactive()->where('start_datetime', '<=', now())
-              ->where('end_datetime', '>=', now());
+        $query->detailactive()->where('start_datetime', '<=', now()->addHours(3))
+              ->whereDate('end_datetime', '>=', now());
     }
     public function scopeFuture($query){
-        $query->detailactive()->where('start_datetime', '>', now());
+        $query->detailactive()->where('start_datetime', '>', now()->addHours(3));
     }
     public function afterActionDone(){
-        return $this->area_cleaned && $this->waste_collected;
+        return $this->waste_collected;
     }
     public function creator(){
         //return $this->morphTo();
@@ -248,9 +269,9 @@ class Event extends Model
     public function runningStatus() : Attribute{
         $now = now();
         $running_status = '';
-        if ($this->start_datetime > $now) {
+        if ($this->start_datetime > $now->copy()->addHours(3)) {
             $running_status = 'Upcoming';
-        } elseif ($this->end_datetime < $now) {
+        } elseif ($this->end_datetime->copy()->endOfDay() < $now) {
             //$running_status = 'completed';
             //$running_status = 'Expired';
             $running_status = 'Ended';

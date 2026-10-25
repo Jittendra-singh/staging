@@ -4,7 +4,7 @@
             <div class="order-text mb-0"><h6 class="mb-1"><b>{{$ticket['count']}}x</b> {{$ticket['name']}}</h6></div>
             <div class="order-number mb-0">
                 @if($ticket['price'] > 0)
-                <h6 class="mb-1">{{config('app.currency')}}{{formatAmt($ticket['price'])}}</h6>
+                <h6 class="mb-1">{{config('app.currency')}}{{formatAmt($ticket['price'] * $ticket['count'])}}</h6>
                 @else
                 <h6 class="mb-1">Free</h6>
                 @endif
@@ -13,38 +13,27 @@
         @if($ticket['price'] > 0)
         @if($event->charge_bear_by==1)
         <div class="order-total-dt">
-            <div class="order-text mb-0"><small style="font-weight: 100;font-size: 13px;">Base Ticket Price</small></div>
-            <div class="order-number mb-0"><small style="font-weight: 100;font-size: 13px;">{{config('app.currency')}}{{formatAmt($ticket['base_price'])}}</small></div>
+            <div class="order-text mb-0 ms-3"><small style="font-weight: 100;font-size: 13px;">Base Ticket Price ({{$ticket['count']}}x {{config('app.currency')}}{{formatAmt($ticket['base_price'])}})</small></div>
+            <div class="order-number mb-0"><small style="font-weight: 100;font-size: 13px;">{{config('app.currency')}}{{formatAmt($ticket['base_price'] * $ticket['count'])}}</small></div>
         </div>
         @endif
         <!-- <div class="order-total-dt mb-3">
             <div class="order-text mb-1"><small style="font-weight: 100;font-size: 13px;">Platform Fee ({{$setting->event_commission}}%)</small></div>
             <div class="order-number mb-1"><small style="font-weight: 100;font-size: 13px;">{{config('app.currency')}}{{formatAmt(($ticket['base_price']*$setting->event_commission)/100)}}</small></div>
         </div> -->
-        <div class="order-total-dt">
-            <div class="order-text mb-0">
-                <small style="font-weight:100;font-size:13px;">
-                    Platform Fee ({{ $setting->event_commission }}%)
-                    {{ $buyer_pays_fees ? '' : 'Included' }}
-                </small>
-            </div>
-            <div class="order-number mb-0">
-                <small style="font-weight:100;font-size:13px;">
-                    {{ config('app.currency') }}{{ formatAmt($ticket['platform_fee'] * $ticket['count']) }}
-                </small>
-            </div>
-        </div>
-
         <div class="order-total-dt mb-3">
-            <div class="order-text mb-0">
+            <div class="order-text mb-0 ms-3">
                 <small style="font-weight:100;font-size:13px;">
-                    Processing Fee ({{ $processing_fee_per }}%)
+                    Processing Fee 
+                    <i class="fa-solid fa-circle-info ms-1 text-muted" 
+                       title="Platform Fee ({{ $setting->event_commission }}%): {{ config('app.currency') }}{{ formatAmt($ticket['platform_fee'] * $ticket['count']) }}&#10;Payment Fee ({{ $processing_fee_per }}%): {{ config('app.currency') }}{{ formatAmt($ticket['processing_fee'] * $ticket['count']) }}"
+                       style="cursor: pointer;"></i>
                     {{ $buyer_pays_fees ? '' : 'Included' }}
                 </small>
             </div>
             <div class="order-number mb-0">
                 <small style="font-weight:100;font-size:13px;">
-                    {{ config('app.currency') }}{{ formatAmt($ticket['processing_fee'] * $ticket['count']) }}
+                    {{ config('app.currency') }}{{ formatAmt(($ticket['platform_fee'] + $ticket['processing_fee']) * $ticket['count']) }}
                 </small>
             </div>
         </div>
@@ -106,12 +95,12 @@
         </div>
     </div>
     @endif
-    <div class="order-total-dt mt-4 pt-1">
+    <div class="order-total-dt mt-4 pt-1 d-none">
         <div class="order-text mb-3">Sub Total</div>
         <div class="order-number mb-3">{{config('app.currency')}}<span id="f-sub-total">{{ formatAmt($sub_total) }}</span></div>
     </div>
 
-    <div class="order-total-dt mb-2">
+    <div class="order-total-dt mb-2 d-none">
         <div class="order-text mb-2">
             <h6>
                 Platform Fee ({{ $setting->event_commission }}%)
@@ -123,7 +112,7 @@
         </div>
     </div>
     @if((float) $processing_fee_per > 0)
-        <div class="order-total-dt mb-2">
+        <div class="order-total-dt mb-2 d-none">
             <div class="order-text mb-2">
                 <h6>
                     Processing Fee ({{ $processing_fee_per }}%)

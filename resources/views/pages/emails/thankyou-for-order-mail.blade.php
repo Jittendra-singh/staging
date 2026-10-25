@@ -17,11 +17,31 @@
         <p>You’ve been registered by <strong>{{ $purchase_by_name ?? 'Primary User' }}</strong> to attend the <strong>{{ $event_title ?? 'Event Title' }}</strong>.</p>
     @endif
 
+    @if(!empty($accompanying_children) && count($accompanying_children) > 0)
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 16px; margin: 15px 0;">
+            <p style="margin: 0 0 8px 0; font-weight: bold; color: #1e293b;">Accompanying Children (Under 18):</p>
+            <ul style="margin: 0; padding-left: 20px;">
+                @foreach($accompanying_children as $child)
+                    <li style="margin-bottom: 4px; color: #334155;">
+                        <strong>{{ $child['name'] }}</strong> (Age {{ $child['age'] }})
+                    </li>
+                @endforeach
+            </ul>
+            <p style="margin: 8px 0 0 0; font-size: 13px; color: #64748b;">
+                Your registration includes the minor attendee(s) listed above. When you sign the waiver, you will sign for yourself and on behalf of your accompanying child(ren).
+            </p>
+        </div>
+    @endif
+
     @if($event->waiverFormContentFilter())
         @if($is_under_18)
         <p>Since you are under 18, your RSVP and waiver have been sent to {{$waiver_name}} for approval. Your guardian will need to confirm your participation by completing the RSVP & Waiver form.</p>
         @else
+        @if(!empty($accompanying_children) && count($accompanying_children) > 0)
+        <p>To complete participation for yourself and your accompanying child(ren), please sign the waiver before the event using the link below:</p>
+        @else
         <p>To complete your participation, please sign the waiver before the event using the link below:</p>
+        @endif
         <p><a href="{{ $waiver_link ?? '#' }}">Sign Waiver</a></p>
         @endif
     @endif

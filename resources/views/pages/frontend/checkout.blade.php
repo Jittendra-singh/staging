@@ -276,161 +276,115 @@ $user = auth()->guard('front')->check() ? auth()->guard('front')->user()->load([
 </script>
 <script>
 $(document).ready(function () {
-    const maxChildren = 4;
+    // 1. Helper to refresh the Accompanying Guardian dropdown on all Child cards
+    function refreshGuardianDropdowns() {
+        let adults = [];
 
-    function childRow(ticketIndex, childIndex) {
-        return `
-            <div class="row child-row align-items-start mb-3" data-child-index="${childIndex}">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Child Name*</label>
-                        <input type="text"
-                            class="form-control"
-                            name="ticket[${ticketIndex}][children][${childIndex}][child_name]"
-                            placeholder="Enter child name"
-                            required>
-                    </div>
-                </div>
+        // Collect all attending adults (Form Type 1) who have entered at least a first name
+        $('.parent-container').each(function () {
+            const formType  = $(this).find('.attendee-form-type').val();
+            const index     = $(this).data('ticket-index');
+            const firstName = $.trim($(this).find('.first_name').val());
+            const lastName  = $.trim($(this).find('.last_name').val());
 
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">Child Age*</label>
-                        <input type="number"
-                            class="form-control"
-                            name="ticket[${ticketIndex}][children][${childIndex}][child_age]"
-                            min="0"
-                            max="12"
-                            step="1"
-                            placeholder="Enter age"
-                            required>
-                    </div>
-                </div>
-
-                <div class="col-md-2">
-                    <div class="form-group">
-                        <label class="form-label invisible">Remove</label>
-                        <button type="button"
-                            class="btn btn-outline-danger remove-child-row w-100">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    function refreshChildRows($parent) {
-        const count = $parent.find('.child-row').length;
-
-        $parent.find('.add-child-row').prop('disabled', count >= maxChildren);
-        $parent.find('.remove-child-row').toggle(count > 1);
-    }
-
-    function addChild($parent) {
-        const $rows = $parent.find('.children-rows');
-
-        if ($rows.find('.child-row').length >= maxChildren) {
-            return;
-        }
-
-        const ticketIndex = $parent.data('ticket-index');
-        const nextIndex = $rows.find('.child-row').length;
-
-        $rows.append(childRow(ticketIndex, nextIndex));
-        refreshChildRows($parent);
-    }
-
-    function clearChildren($parent) {
-        $parent.find('.children-rows').empty();
-        $parent.find('.children-fields-container').addClass('d-none');
-        refreshChildRows($parent);
-    }
-
-    $(document).on('change', '.has-children-checkbox', function () {
-        const $parent = $(this).closest('.parent-container');
-        const $under18 = $parent.find('.is_under_18').first();
-        const $under18Option = $parent.find('.under-18-option');
-        const $guardians = $parent.find('.waiver-guardian');
-
-        if ($(this).is(':checked')) {
-            $under18.prop('checked', false).prop('disabled', true).trigger('change');
-            $under18Option.addClass('d-none');
-
-            $guardians.addClass('d-none');
-            $guardians.find('input').prop('disabled', true).removeAttr('required');
-
-            $parent.find('.children-fields-container').removeClass('d-none');
-
-            if ($parent.find('.child-row').length === 0) {
-                addChild($parent);
+            if (formType === '1' && firstName) {
+                const fullName = lastName ? `${firstName} ${lastName}` : firstName;
+                adults.push({
+                    id: index,
+                    label: fullName
+                });
             }
-        } else {
-            $under18.prop('disabled', false);
-            $under18Option.removeClass('d-none');
-
-            clearChildren($parent);
-        }
-    });
-
-    $(document).on('change', '.is_under_18', function () {
-        const $parent = $(this).closest('.parent-container');
-        const $childrenCheckbox = $parent.find('.has-children-checkbox');
-        const $childrenOption = $parent.find('.child-option');
-        const $guardians = $parent.find('.waiver-guardian');
-        const $guardianInputs = $guardians.find('input');
-
-        if ($(this).is(':checked')) {
-            // Show guardian fields for an under-18 attendee.
-            $guardians.removeClass('d-none');
-            $guardianInputs
-                .prop('disabled', false)
-                .attr('required', true);
-
-            // An under-18 attendee cannot have accompanying children.
-            $childrenCheckbox
-                .prop('checked', false)
-                .prop('disabled', true);
-
-            $childrenOption.addClass('d-none');
-            clearChildren($parent);
-        } else {
-            // Hide and clear guardian information when the attendee is not under 18.
-            $guardians.addClass('d-none');
-            $guardianInputs
-                .prop('disabled', true)
-                .removeAttr('required')
-                .val('');
-
-            $childrenCheckbox.prop('disabled', false);
-            $childrenOption.removeClass('d-none');
-        }
-    });
-
-    $(document).on('click', '.add-child-row', function () {
-        addChild($(this).closest('.parent-container'));
-    });
-
-    $(document).on('click', '.remove-child-row', function () {
-        const $parent = $(this).closest('.parent-container');
-
-        $(this).closest('.child-row').remove();
-
-        $parent.find('.child-row').each(function (index) {
-            const ticketIndex = $parent.data('ticket-index');
-
-            $(this).attr('data-child-index', index);
-            $(this).find('input[name*="[child_name]"]').attr(
-                'name',
-                `ticket[${ticketIndex}][children][${index}][child_name]`
-            );
-            $(this).find('input[name*="[child_age]"]').attr(
-                'name',
-                `ticket[${ticketIndex}][children][${index}][child_age]`
-            );
         });
 
-        refreshChildRows($parent);
+        // Update every child's accompanying guardian select
+        $('.accompanying-guardian-select').each(function () {
+            const currentVal = $(this).val();
+            $(this).empty();
+
+            if (adults.length === 0) {
+                $(this).append(new Option('Select Accompanying Adult', '', true, true));
+                $(this).find('option').prop('disabled', true);
+            } else {
+                $(this).append(new Option('Select Accompanying Adult', '', false, !currentVal));
+                $(this).find('option[value=""]').prop('disabled', true);
+
+                adults.forEach(function (adult) {
+                    const isSelected = String(adult.id) === String(currentVal);
+                    $(this).append(new Option(adult.label, adult.id, false, isSelected));
+                }.bind(this));
+            }
+        });
+    }
+
+    // 2. Handle Form Type Switching (Adult / Youth / Child)
+    $(document).on('change', '.attendee-form-type', function () {
+        const formType = $(this).val(); // '1', '2', or '3'
+        const $parent  = $(this).closest('.parent-container');
+
+        const $standardFields = $parent.find('.standard-attendee-fields');
+        const $guardianFields = $parent.find('.guardian-fields-div');
+        const $childFields    = $parent.find('.child-attendee-fields');
+
+        if (formType === '1') {
+            // Form Type 1: Standard Adult
+            // Show & enable standard fields
+            $standardFields.removeClass('d-none');
+            $standardFields.find('input').prop('disabled', false);
+            $standardFields.find('.attendee-email, .first_name, .last_name, .phone').prop('required', true);
+
+            // Hide & disable guardian fields
+            $guardianFields.addClass('d-none');
+            $guardianFields.find('input').prop('disabled', true).prop('required', false).val('');
+
+            // Hide & disable child fields
+            $childFields.addClass('d-none');
+            $childFields.find('input, select').prop('disabled', true).prop('required', false).val('');
+
+        } else if (formType === '2') {
+            // Form Type 2: Youth (Under 18 with Guardian)
+            // Show & enable standard fields
+            $standardFields.removeClass('d-none');
+            $standardFields.find('input').prop('disabled', false);
+            $standardFields.find('.attendee-email, .first_name, .last_name, .phone').prop('required', true);
+
+            // Show & enable guardian fields
+            $guardianFields.removeClass('d-none');
+            $guardianFields.find('input').prop('disabled', false).prop('required', true);
+
+            // Hide & disable child fields
+            $childFields.addClass('d-none');
+            $childFields.find('input, select').prop('disabled', true).prop('required', false).val('');
+
+        } else if (formType === '3') {
+            // Form Type 3: Child (Under 18)
+            // Hide & disable standard fields (no email/phone required for child)
+            $standardFields.addClass('d-none');
+            $standardFields.find('input').prop('disabled', true).prop('required', false);
+
+            // Hide & disable guardian fields
+            $guardianFields.addClass('d-none');
+            $guardianFields.find('input').prop('disabled', true).prop('required', false);
+
+            // Show & enable child fields
+            $childFields.removeClass('d-none');
+            $childFields.find('input, select').prop('disabled', false);
+            $childFields.find('.child_name, .child_age, .accompanying-guardian-select').prop('required', true);
+
+            // Standalone ticket_id must always stay enabled
+            $parent.find('.ticket_id').prop('disabled', false);
+        }
+
+        // Re-evaluate available adults for all child dropdowns
+        refreshGuardianDropdowns();
     });
+
+    // 3. Update guardian dropdowns dynamically as attendee names are typed
+    $(document).on('input', '.first_name, .last_name', function () {
+        refreshGuardianDropdowns();
+    });
+
+    // Run on initial load
+    refreshGuardianDropdowns();
 });
 </script>
 @endpush

@@ -154,7 +154,20 @@
                     @endphp
                     <tr>
                         <td>{{ $key + 1 }}</td>
-                        <td>{{ $volunteer ? $volunteer->name : 'N/A' }}</td>
+                        <td>
+                            <strong>{{ $volunteer ? $volunteer->name : 'N/A' }}</strong>
+                            @php
+                                $activeChildren = $registration->children ? $registration->children->whereNull('cancelled_at') : collect();
+                            @endphp
+                            @if($activeChildren->isNotEmpty())
+                                <div style="margin-top: 4px; padding-top: 4px; border-top: 1px dashed #d9dee8; font-size: 8.5px; color: #495057;">
+                                    <strong>Accompanying Children ({{ $activeChildren->count() }}):</strong>
+                                    @foreach($activeChildren as $child)
+                                        <div>• {{ $child->child_name }} (Age {{ $child->child_age }}) — <em>{{ $child->checkin == 1 ? 'Checked In' : 'Pending' }}</em>@if(!empty($child->ticket_answer)) | <strong>Ans:</strong> {{ $child->ticket_answer }}@endif</div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </td>
                         <td>{{ $volunteer ? $volunteer->email_address : 'N/A' }}</td>
                         <td>{{ $ticket ? $ticket->ticket_name : 'N/A' }}</td>
                         <td>{{ $isSigned ? 'Signed' : 'Need Sign' }}</td>

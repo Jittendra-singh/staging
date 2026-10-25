@@ -376,6 +376,10 @@ $icalStrData = getiCalData($event);
                                                 <span class="price-label">
                                                     <span class="badge badge-primary bg-primary"><span>Available from {{ $upcomingDate }}</span></span>
                                                 </span>
+                                                @elseif(($curAvailTickets-$booked_count) <= 0)
+                                                <span class="price-label">
+                                                    <span class="badge badge-primary bg-primary">Sold Out</span>
+                                                </span>
                                                 @elseif($event->show_remaining_tickets)
                                                 <span class="price-label">
                                                     <span class="badge badge-primary bg-primary"><span id="availTicketCount_{{ $eticket->id }}">{{ $curAvailTickets-$booked_count }}</span> {{ __('messages.tickets_available') }}</span>
@@ -383,8 +387,13 @@ $icalStrData = getiCalData($event);
                                                 @endif
                                             </div>
                                             @if(empty($upcomingDate))
-                                            @if($event->sell_tickets_individually)
-                                            <div class=" w-auto">
+                                            @if($curAvailTickets <= 0 && $event->enable_waitlist && strtotime($eticket->sell_end_time) >= strtotime(date('Y-m-d H:i:s')) && strtotime($event->start_datetime) > strtotime(date('Y-m-d H:i:s')))
+                                                <div class="w-auto">
+                                                    <button type="button" data-bs-toggle="modal" data-bs-target="#join-waitlist-modal" data-event-id="{{ $event->id }}" data-ticket-id="{{ $eticket->id }}" class="btn bg-white fw-bold shadow-sm join-waitlist-btn" style="border: 1px solid #e5e7eb; color: #374151; border-radius: 6px; padding: 6px 14px; font-size: 14px;">Join Waitlist</button>
+                                                </div>
+                                            @else
+                                                @if($event->sell_tickets_individually)
+                                                <div class=" w-auto">
                                                 <label for="order_ticket_{{$eticket->id}}">
                                                     <input id="order_ticket_{{$eticket->id}}" class="checkout-ticket-checkbox"
                                                         onchange="$(this).is(':checked') ? $('.checkout-ticket-checkbox').not(this).prop('checked', false): true"
@@ -411,7 +420,15 @@ $icalStrData = getiCalData($event);
                                                 </div>
                                             @endif
                                             @endif
+                                            @endif
                                         </div>
+
+                                        @if($curAvailTickets <= 0 && $event->enable_waitlist && strtotime($eticket->sell_end_time) >= strtotime(date('Y-m-d H:i:s')) && strtotime($event->start_datetime) > strtotime(date('Y-m-d H:i:s')))
+                                        <div class="col-sm-12 px-3 pt-2 pb-2 text-muted" style="font-size: 13px; color: #6b7280;">
+                                            Join our waitlist to be notified if spots become available for this tier.
+                                        </div>
+                                        @endif
+
                                     </div>
                                     @endforeach
 
@@ -781,6 +798,42 @@ $icalStrData = getiCalData($event);
         </div>
     </div>
 </div>
+<!-- Join Waitlist Modal -->
+<div class="modal fade" id="join-waitlist-modal" tabindex="-1" aria-labelledby="joinWaitlistModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="joinWaitlistModalLabel">Enter details</h5>
+                <button type="button" class="close-model-btn" data-bs-dismiss="modal" aria-label="Close"><i class="fa fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="model-content main-form">
+                    <form id="joinWaitlistForm">
+                        @csrf
+                        <input type="hidden" name="event_id" id="waitlist_event_id">
+                        <input type="hidden" name="ticket_id" id="waitlist_ticket_id">
+                        <div class="form-group mb-3">
+                            <label class="form-label">First Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="first_name" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="last_name" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="form-label">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="primary-btn w-fit" onclick="submitWaitlistForm();">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <x-reusables.frontend.organiser-contact :organiser="$event->creator_id" />
 @endsection
 @push('script')
@@ -796,5 +849,47 @@ $icalStrData = getiCalData($event);
             }
         }
     });
+    $('#join-waitlist-modal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        $('#waitlist_event_id').val(button.data('event-id'));
+        $('#waitlist_ticket_id').val(button.data('ticket-id'));
+    });
+
+    function submitWaitlistForm() {
+        var form = $('#joinWaitlistForm');
+        
+        $.ajax({
+            url: "{{ route('join.waitlist') }}",
+            type: "POST",
+            data: form.serialize(),
+            success: function(response) {
+                if(response.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: response.message,
+                        confirmButtonColor: '#3085d6'
+                    });
+                    $('#join-waitlist-modal').modal('hide');
+                    form[0].reset();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: response.message,
+                        confirmButtonColor: '#d33'
+                    });
+                }
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'Please fill out all required fields properly.',
+                    confirmButtonColor: '#d33'
+                });
+            }
+        });
+    }
 </script>
 @endpush

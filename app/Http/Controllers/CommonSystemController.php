@@ -24,12 +24,21 @@ class CommonSystemController extends Controller
             'organizer_first_name' => $event_obj->creator->first_name,
             'eventEditLink' => route('front-post-a-event',['id'=>$event]),
         ];
+
         if($email_content['is_accepted']){
-            $sub = $email_content['cohost_first_name'].' accepted your co-host invitation for '.$email_content['event_name'];
+            $email_content['subject'] = $email_content['cohost_first_name'].' accepted your co-host invitation for '.$email_content['event_name'];
         } else {
-            $sub = $email_content['cohost_first_name'].' declined your co-host invitation';
+            $email_content['subject'] = $email_content['cohost_first_name'].' declined your co-host invitation';
         }
-        $this->sendEmail($event_obj->creator->email_address, $sub, $email_content, "cohost-accept-decline");
+        $to_arr = [
+            [
+                "to" => [
+                    ["email" => trim($event_obj->creator->email_address)]
+                ],
+                "dynamic_template_data" => $email_content
+            ]
+        ];
+        $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-e9c0f85957f74ef19b7f1d87ff82bf92");
 
         $this->syncWithWP($volunteer_obj);
 

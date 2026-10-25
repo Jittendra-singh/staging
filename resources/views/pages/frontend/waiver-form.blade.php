@@ -1,7 +1,7 @@
 @php
     $outPages = true;
     $is_rsvp_submitted = (!empty($ticket->rsvp_confirmation) && !empty($ticket->rsvp_filled_at))?true:false;
-    $is_waiver_submitted = (!empty($ticket->waiver_filled_at) && !empty($ticket->signature))?true:false;
+    $is_waiver_submitted = (!empty($ticket->waiver_filled_at) && (!empty($ticket->signature) || $event->waiver_form_type == 'external_link'))?true:false;
     $is_event_datetime_exceed = (strtotime($event->start_datetime)<strtotime(date('Y-m-d H:i:s')))?true:false;
 @endphp
 @extends('layouts.frontend')
@@ -18,9 +18,52 @@
                         <p>
                             Please read the following waiver carefully before signing.
                         </p>
-                        <div class="waiver-terms mb-4 p-3 border rounded ">
-                            {!! $waiverTerms !!}
-                        </div>
+                        @if($event->waiver_form_type == 'external_link')
+                            <div class="alert alert-warning py-2 px-3" role="alert" style="font-size: 14px;">
+                                <i class="fa-solid fa-triangle-exclamation me-1"></i> <strong>Important:</strong> To officially record your waiver in our system, please ensure you return to this page and click the <strong>"I HAVE SIGNED THE WAIVER"</strong> button below after completing the document on the external site.
+                            </div>
+                        @endif
+                        @if($event->waiver_form_type == 'external_link')
+                            @php
+                                $waiverLink = $event->waiverFormContentFilter();
+                            @endphp
+                            <div class="waiver-terms mb-4 p-3 rounded d-flex justify-content-between align-items-center" style="background-color: #f0fdf4; border: 1px solid #17c18a;">
+                                <div>
+                                    <a target="_blank" href="{{ $waiverLink }}" style="color: #374151 !important; text-decoration: none; font-weight: 600; font-size: 16px;">Open Waiver External Link</a>
+                                </div>
+                                <div class="text-center d-flex flex-column align-items-center">
+                                    <div style="font-size: 12px; font-weight: 600; margin-bottom: 5px; color: #374151;">Scan to View Digital Document</div>
+                                    <div onclick="openQrModal()" style="cursor: pointer; background: #f3f4f6; padding: 10px; display: inline-block; border-radius: 4px;">
+                                        {!! \QrCode::size(80)->generate($waiverLink) !!}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- QR Code Modal -->
+                            <div id="qrModal" class="qr-modal" onclick="closeQrModal()" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+                                <div class="qr-modal-content" onclick="event.stopPropagation()" style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center;">
+                                    <h4 class="mb-3 text-center" style="color: #374151;">Scan QR Code</h4>
+                                    <div class="text-center">
+                                        {!! \QrCode::size(250)->generate($waiverLink) !!}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            @push('script')
+                            <script>
+                                function openQrModal() {
+                                    document.getElementById('qrModal').style.display = 'flex';
+                                }
+                                function closeQrModal() {
+                                    document.getElementById('qrModal').style.display = 'none';
+                                }
+                            </script>
+                            @endpush
+                        @else
+                            <div class="waiver-terms mb-4 p-3 border rounded ">
+                                {!! $waiverTerms !!}
+                            </div>
+                        @endif
                         <form id="waiver-form-id" method="POST" action="{{ route('submit-waiver-form', ['ticket' => encrypt($ticket->id)]) }}">
                             @csrf
                             @if(request()->filled('qr_checkin'))
@@ -42,6 +85,22 @@
                                 <label for="signer_name" class="form-label">Your Name</label>
                                 <div>{{ $signerName ?? '' }}</div>
                             </div>
+                            @if(isset($ticket->children) && $ticket->children->count() > 0)
+                                <div class="mb-3 p-3 rounded" style="background-color: #f8fafc; border: 1px solid #e2e8f0;">
+                                    <label class="form-label fw-bold text-dark mb-1">Accompanying Children (Under 18)</label>
+                                    <p class="text-muted small mb-2">The following minor attendee(s) are registered under your supervision:</p>
+                                    <ul class="mb-2 ps-3">
+                                        @foreach($ticket->children as $child)
+                                            <li class="mb-1">
+                                                <strong>{{ $child->child_name }}</strong> (Age {{ $child->child_age }})
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                    <div class="small text-muted fst-italic">
+                                        <i class="fa-solid fa-circle-info me-1"></i> By signing below, you agree to this waiver on behalf of yourself and all accompanying minors listed above.
+                                    </div>
+                                </div>
+                            @endif
                             <div class="mb-3">
                                 <label for="date_signed" class="form-label">Date</label>
                                 <div>{{ \Carbon\Carbon::now()->toDateString() }}</div>
@@ -49,6 +108,7 @@
                             @if($is_waiver_submitted)
                                 <span class="badge text-bg-success">You have submitted the waiver form.</span>
                             @else 
+                                @if($event->waiver_form_type != 'external_link')
                                 <div class="mb-3">
                                     <label class="form-label">Signature</label>
                                     <br>
@@ -60,7 +120,15 @@
                                     <div class='js-signature' data-width="450" data-height="200"></div>
                                     <button onclick="clearSignature()" type="button" class="btn btn-secondary btn-sm mt-2" id="clear-js-signature">Clear</button>
                                 </div>
-                                <button type="button" onclick="submitWaiverForm()" {{ (!$is_rsvp_submitted)?'disabled':'' }} class="btn btn-primary mb-2">Submit Waiver</button>
+                                @endif
+                                @if($event->waiver_form_type == 'external_link')
+                                    <div class="text-center mt-4">
+                                        <p class="mb-3 text-muted" style="font-size: 14px;">By confirming, I declare that I have completed the waiver required for this event on the external website.</p>
+                                        <button type="button" onclick="submitWaiverForm()" {{ (!$is_rsvp_submitted)?'disabled':'' }} class="btn mb-2 px-4 py-2" style="background-color: #17c18a; color: white; font-weight: 600; letter-spacing: 0.5px;">I HAVE SIGNED THE WAIVER</button>
+                                    </div>
+                                @else
+                                    <button type="button" onclick="submitWaiverForm()" {{ (!$is_rsvp_submitted)?'disabled':'' }} class="btn btn-primary mb-2">Submit Waiver</button>
+                                @endif
                             @endif
                         </form>
                     </div>
@@ -78,11 +146,15 @@
         $('.js-signature').jqSignature('clearCanvas');
     }
     function submitWaiverForm(){
+        @if($event->waiver_form_type != 'external_link')
         if(!is_signature_done){
             showError('Please provide your signature before submitting the form.', 'error');
         } else {
             $('#waiver-form-id').submit();
         }
+        @else
+        $('#waiver-form-id').submit();
+        @endif
     }
 </script>
 
