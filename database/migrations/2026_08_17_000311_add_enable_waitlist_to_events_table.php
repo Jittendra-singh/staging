@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('events', function (Blueprint $table) {
             if (!Schema::hasColumn('events', 'enable_waitlist')) {
-                $table->boolean('enable_waitlist')->default(0)->after('allow_donations');
+                $table->boolean('enable_waitlist')->default(false);
             }
         });
     }
