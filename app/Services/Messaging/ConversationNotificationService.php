@@ -244,6 +244,19 @@ class ConversationNotificationService
         }
     }
 
+    private function sendDigest(Volunteer $recipient, Collection $logs): void
+    {
+        $logs->loadMissing(['message.sender', 'recipient', 'conversation']);
+        $conversation = $logs->first()?->conversation;
+        $messages = $logs->pluck('message')->filter();
+
+        if (!$conversation || $messages->isEmpty()) {
+            return;
+        }
+
+        $this->mailMessageCollection($recipient, $messages, $conversation, true);
+    }
+
     private function effectiveDeliveryType(ConversationParticipant $participant): string
     {
         if ($participant->muted_until && $participant->muted_until->isFuture()) {
@@ -384,7 +397,6 @@ class ConversationNotificationService
             'status' => $status,
         ]);
     }
-
     private function markLogs(Collection $logs, string $status, ?string $error = null): void
     {
         foreach ($logs as $log) {
@@ -394,5 +406,42 @@ class ConversationNotificationService
                 'error_message' => $error,
             ]);
         }
+    }
+
+    private function mailMessageCollection(
+        Volunteer $recipient,
+        Collection $messages,
+        \App\Models\Conversation $conversation,
+        bool $isDigest
+    ): void {
+        if (defined('SEND_MAIL') && !SEND_MAIL) {
+            throw new \RuntimeException('Email sending is disabled by SEND_MAIL.');
+        }
+
+        $messages = $messages->filter()->values();
+
+        if ($messages->isEmpty()) {
+            throw new \InvalidArgumentException(
+                'No messages provided for notification.'
+            );
+        }
+
+        $recipientName = trim(
+            ($recipient->first_name ?? '') . ' ' .
+            ($recipient->last_name ?? '')
+        );
+
+        Mail::to($recipient->email_address)->send(new SendMail(
+            $isDigest
+                ? 'New messages in your VolunteerCleanup conversation'
+                : 'New message in your VolunteerCleanup conversation',
+            'pages.emails.conversation-message-notification',
+            [
+                'recipient_name' => $recipientName ?: 'there',
+                'conversation_subject' => $conversation->subject ?: 'Conversation',
+                'messages' => $messages,
+                'is_digest' => $isDigest,
+            ]
+        ));
     }
 }
