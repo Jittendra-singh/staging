@@ -34,7 +34,7 @@ class Menu extends Model
 
     public function childMenus(){
 
-        if(auth()->user()->role_id == 1){
+        if(auth()->user()?->role_id == 1){
             return $this->hasMany(Self::class , 'menu_parent' , 'id');
         }
 
@@ -42,11 +42,12 @@ class Menu extends Model
     }
 
     public function permission(){
-        if(auth()->user()->role_id == 1){
+        if(auth()->user()?->role_id == 1){
             return $this->hasMany(RoleMenuPermission::class , 'menu_id');
         }
         else{
-            return $this->hasMany(RoleMenuPermission::class , 'menu_id')->where('permission_id' , '1')->where('role_id' , auth()->user()->role_id);
+            $roleId = auth()->user()?->role_id;
+            return $this->hasMany(RoleMenuPermission::class , 'menu_id')->where('permission_id' , '1')->where('role_id' , $roleId);
         }
     }
 

@@ -1,4 +1,4 @@
-@extends('layouts.frontend')
+﻿@extends('layouts.frontend')
 @section('title')
     {{ __('messages.weekly_email_alerts') }}
 @endsection
@@ -60,17 +60,19 @@
 																<tr class="single-tr">
 																	<td>{{$data->alert_name}}</td>
 																	<td>{{$data->zipcode}}</td>
-<<<<<<< HEAD
-																	<td>{{ config('app.widget_create_from')[$data->created_from] }}</td>
-=======
-																	@if($data->created_from==1)
-																		<td>{{ __('messages.front_alert_page') }}</td>
-																	@elseif($data->created_from==2)
-																		<td>{{ __('messages.front_registration_page') }}</td>
-																	@elseif($data->created_from==3)
-																		<td>{{ __('messages.front_booking_page') }}</td>
-																	@endif
->>>>>>> 9ff315d561a2784f7cf2cafe283dee2cab202959
+																	@if($data->created_from == 1)
+    <td>{{ __('messages.dashboard') }}</td>
+@elseif($data->created_from == 2)
+    <td>{{ __('messages.front_alert_page') }}</td>
+@elseif($data->created_from == 3)
+    <td>{{ __('messages.front_registration_page') }}</td>
+@elseif($data->created_from == 4)
+    <td>{{ __('messages.front_booking_page') }}</td>
+@elseif($data->created_from == 5)
+    <td>{{ __('messages.embedded_widget') }}</td>
+@else
+    <td>{{ config('app.widget_create_from')[$data->created_from] ?? '' }}</td>
+@endif
 																	<td>{{$data->created_at}}</td>
 																	<!-- <td>
 																		@if($data->status)
