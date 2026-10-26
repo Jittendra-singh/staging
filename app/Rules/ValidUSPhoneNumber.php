@@ -9,6 +9,10 @@ class ValidUSPhoneNumber implements ValidationRule
 {
     public function validate(string $attribute, mixed $value, \Closure $fail): void
     {
+        if (empty($value)) {
+            return;
+        }
+
         // Remove formatting characters
         $cleaned = preg_replace('/[\s\-\(\)]+/', '', $value);
 

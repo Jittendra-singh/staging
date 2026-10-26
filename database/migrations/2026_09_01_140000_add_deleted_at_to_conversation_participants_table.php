@@ -12,7 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('conversation_participants', function (Blueprint $table) {
-            $table->timestamp('deleted_at')->nullable()->after('muted_until');
+            if (!Schema::hasColumn('conversation_participants', 'deleted_at')) {
+                $column = $table->timestamp('deleted_at')->nullable();
+                if (Schema::hasColumn('conversation_participants', 'muted_until')) {
+                    $column->after('muted_until');
+                }
+            }
         });
     }
 
@@ -22,7 +27,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('conversation_participants', function (Blueprint $table) {
-            $table->dropColumn('deleted_at');
+            if (Schema::hasColumn('conversation_participants', 'deleted_at')) {
+                $table->dropColumn('deleted_at');
+            }
         });
     }
 };

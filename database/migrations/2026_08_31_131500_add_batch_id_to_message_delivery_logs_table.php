@@ -12,7 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('message_delivery_logs', function (Blueprint $table) {
-            $table->string('batch_id', 64)->nullable()->after('recipient_id')->index();
+            if (!Schema::hasColumn('message_delivery_logs', 'batch_id')) {
+                $column = $table->string('batch_id', 64)->nullable()->index();
+                if (Schema::hasColumn('message_delivery_logs', 'recipient_id')) {
+                    $column->after('recipient_id');
+                }
+            }
         });
     }
 
@@ -22,7 +27,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('message_delivery_logs', function (Blueprint $table) {
-            $table->dropColumn('batch_id');
+            if (Schema::hasColumn('message_delivery_logs', 'batch_id')) {
+                $table->dropColumn('batch_id');
+            }
         });
     }
 };

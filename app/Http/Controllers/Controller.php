@@ -279,7 +279,7 @@ class Controller extends BaseController
         \"meta_keywords\": \"\"
         }";
         $content = $this->hitApiToAi($content);
-        return $content; 
+        return $content;
     }
     public function getAiFocusKeyword($meta_title,$meta_description){
         $content = "
@@ -300,11 +300,11 @@ class Controller extends BaseController
                         - Return only a comma-separated list of keywords.
                         - Do not explain anything.
                         - Do not ask for more information.
-                        - If nothing meaningful is provided or no keywords can be extracted, return exactly a blank string which literally empty.: 
+                        - If nothing meaningful is provided or no keywords can be extracted, return exactly a blank string which literally empty.:
                         Output: (Do not include labels or extra formatting — return only the keyword list or an empty string)
                     ";
         $content = $this->hitApiToAi($content);
-        return $content; 
+        return $content;
     }
     public function hitApiToAi($content){
         $url = "https://api.openai.com/v1/chat/completions";
@@ -366,16 +366,16 @@ class Controller extends BaseController
             } else {
                 return [
                     'latitude' => null,
-                    'longitude' => null,   
+                    'longitude' => null,
                 ];
             }
         }catch(\Exception $e){
             return [
                     'latitude' => null,
-                    'longitude' => null,   
+                    'longitude' => null,
                 ];
         }
-        
+
     }
 
     public function generateRandomOrderNumber(){
@@ -393,7 +393,7 @@ class Controller extends BaseController
     }
 
     public function generateRandomWidgetNumber(){
-        $randomString = str()->random(8); 
+        $randomString = str()->random(8);
         $widgetNumber = 'WID' . strtoupper($randomString);
         return $widgetNumber;
     }
@@ -401,13 +401,13 @@ class Controller extends BaseController
     function generateRandomPassword($length = 8) {
         $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=';
         return substr(str_shuffle(str_repeat($chars, ceil($length / strlen($chars)))), 0, $length);
-    } 
+    }
 
     function sendEmail($to, $subject, $bodyData, $view){
         if(SEND_MAIL){
             try {
                 //$body = view('pages.emails.'.$view, $bodyData)->render();
-                //$this->SendSendgridEmail($to, $subject,$body);  
+                //$this->SendSendgridEmail($to, $subject,$body);
                 \Mail::to($to)->send( //$to
                     new \App\Mail\SendMail(
                         $subject,
@@ -428,13 +428,13 @@ class Controller extends BaseController
             return false;
         }
         $jayParsedAry = [
-            "personalizations" => $to_arr, 
+            "personalizations" => $to_arr,
             "from" => [
                         "name" => "VolunteerCleanup.Org" ,
-                        "email" => "outreach@volunteercleanup.org" 
-                    ], 
+                        "email" => "outreach@volunteercleanup.org"
+                    ],
             "template_id" => $temp_id
-        ]; 
+        ];
 
         // Convert the post data to a string
         $postDataString = http_build_query($jayParsedAry);
@@ -528,5 +528,32 @@ class Controller extends BaseController
         // Close cURL session
         curl_close($ch);
         return $response;
+    }
+
+    public function notifyWaitlistWhenAvailable($event_id, $ticket_id)
+    {
+        // Get all people waiting for this specific ticket
+        $waitlistedUsers = \App\Models\EventWaitlist::where('event_id', $event_id)
+            ->where('ticket_id', $ticket_id)
+            ->where('status', 'waiting')
+            ->get();
+
+        if ($waitlistedUsers->isEmpty()) {
+            return;
+        }
+
+        $event = \App\Models\Event::find($event_id);
+
+        // Send the email using the central helper method
+        foreach ($waitlistedUsers as $user) {
+            $mail_content = [
+                'waitlist_name' => $user->first_name,
+                'eventTitle' => $event->event_name,
+                'link' => route('view-event-details', $event->slug)
+            ];
+            $subject = 'A ticket is now available! - ' . $event->event_name;
+
+            $this->sendEmail($user->email, $subject, $mail_content, "ticket-available");
+        }
     }
 }

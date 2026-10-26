@@ -18,6 +18,7 @@ use App\Models\EventCoHost;
 use App\Models\Volunteer;
 use App\Models\EventCategory;
 use App\Models\EventOrderTicket;
+use App\Models\EventOrderTicketChild;
 use App\Models\City;
 use App\Models\EventOrder;
 use App\Models\EventTicket;
@@ -56,12 +57,12 @@ class FrontController extends Controller
         $translationService->preload($mapEvents, ['event_name', 'venue']);
         //echo '<pre>';
         //print_r($mapEvents->toArray());die();
-        
+
         //$location_array = $events_clone->map(function ($event) {
         $location_array = $mapEvents->map(function ($event) {
-                            if (!$event->latitude || !$event->longitude) 
+                            if (!$event->latitude || !$event->longitude)
                                 return null; // Skip invalid entries
-                            
+
                             return [
                                 'lat' => (float) $event->latitude,
                                 'lng' => (float) $event->longitude,
@@ -70,7 +71,7 @@ class FrontController extends Controller
                         })->filter()->values()->all();
 
                        //print_r($events->toArray());die();
-                        
+
         return view('pages.frontend.event-lists', [
             'timezonescode'     => config('app.timezonescode'),
             'events'            => $events,
@@ -100,12 +101,12 @@ class FrontController extends Controller
         ->select('id', 'event_name', 'latitude', 'longitude', 'start_datetime', 'end_datetime', 'venue')
         ->get();
         $translationService->preload($mapEvents, ['event_name', 'venue']);
-        
+
         //$location_array = $events_clone->map(function ($event) {
         $location_array = $mapEvents->map(function ($event) {
-                            if (!$event->latitude || !$event->longitude) 
+                            if (!$event->latitude || !$event->longitude)
                                 return null; // Skip invalid entries
-                            
+
                             return [
                                 'lat' => (float) $event->latitude,
                                 'lng' => (float) $event->longitude,
@@ -114,7 +115,7 @@ class FrontController extends Controller
                         })->filter()->values()->all();
 
                        //print_r($events->toArray());die();
-                        
+
         return view('pages.frontend.international-event-lists', [
             'timezonescode'     => config('app.timezonescode'),
             'events'            => $events,
@@ -150,11 +151,11 @@ class FrontController extends Controller
                 $errorMessage = $e->getMessage();
                 Storage::append('logs/email_trigger.log', "\n{$today_date} Failed for {$email} - {$event->event_name}, ".$errorMessage);
             }
-        } 
+        }
 
         $this->setFlashSession(true, "Emails has been trigger to the attendies of the system");
         return redirect()->route('front-cleanup-hosting', ['type' => 'organizer']);
-    
+
     }
     public function viewEventPage($slug){
         //$event = Event::where('slug', $slug)->detailactive()->first();
@@ -163,7 +164,7 @@ class FrontController extends Controller
             abort(404, 'Event not found.');
         }
         // EVENT COUNTER
-        $event->click_views = $event->click_views + 1; 
+        $event->click_views = $event->click_views + 1;
         $seo_details = (object)[
             'title'       => $event->meta_title ?: $event->translated_event_name,
             'description' => $event->meta_description ?: strip_tags($event->translated_description),
@@ -358,9 +359,168 @@ class FrontController extends Controller
             'verify-ticket-notification-email'
         );
     }
-    public function dashboard(){
+    public function dashboard(\Illuminate\Http\Request $request){
         $data['seo_details'] = (object)['title' => 'Dashboard'];
+
+        // Fetch organiser's events
+        $user = auth()->guard('front')->user();
+        $events = $user->events()
+                       ->active()
+                       ->where('start_datetime', '>=', now())
+                       ->orderBy('start_datetime', 'asc')
+                       ->get();
+        $eventIds = $events->pluck('id')->toArray();
+        $waitlistEventIds = \App\Models\EventWaitlist::whereIn('event_id', $eventIds)->distinct()->pluck('event_id')->toArray();
+        $waitlistDropdownEvents = $events->where('enable_waitlist', 1)->whereIn('id', $waitlistEventIds);
+
+        $data['globalWaitlistCount'] = $waitlistDropdownEvents->count();
+        $data['waitlistDropdownEvents'] = $waitlistDropdownEvents;
+
+        $selectedEventId = $request->input('event_id');
+        if (!$selectedEventId || !$waitlistDropdownEvents->contains('id', $selectedEventId)) {
+            $selectedEventId = $waitlistDropdownEvents->first()->id ?? null;
+        }
+
+        $data['events'] = $events;
+        $data['selectedEventId'] = $selectedEventId;
+        $data['waitlists'] = null;
+
+        if ($selectedEventId) {
+            $waitlistQuery = \App\Models\EventWaitlist::with('ticket')
+                ->where('event_id', $selectedEventId);
+
+            $data['totalWaitlistCount'] = (clone $waitlistQuery)->count();
+
+            if ($request->filled('search')) {
+                $search = $request->input('search');
+                $waitlistQuery->where(function($q) use ($search) {
+                    $q->where('first_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
+                });
+            }
+
+            $data['waitlists'] = $waitlistQuery->orderBy('joined_at', 'desc')->paginate(4);
+        }
+
         return view('pages.frontend.dashboard', $data);
+    }
+
+    public function waitlistDetail(\Illuminate\Http\Request $request, $event_id)
+    {
+        $user = auth()->guard('front')->user();
+
+        // 1. Fetch Event
+        $event = \App\Models\Event::where('id', $event_id)->where('creator_id', $user->id)->firstOrFail();
+
+        // 2. Fetch all user's active events for dropdown
+        $events = $user->events()
+                       ->active()
+                       ->where('start_datetime', '>=', now())
+                       ->orderBy('start_datetime', 'asc')
+                       ->get();
+
+        $eventIds = $events->pluck('id')->toArray();
+        $waitlistEventIds = \App\Models\EventWaitlist::whereIn('event_id', $eventIds)->distinct()->pluck('event_id')->toArray();
+
+        // Filter events, but ALWAYS keep the currently viewed event so the dropdown doesn't misalign visually
+        $events = $events->filter(function($e) use ($waitlistEventIds, $event_id) {
+            return $e->id == $event_id || ($e->enable_waitlist == 1 && in_array($e->id, $waitlistEventIds));
+        });
+
+        // 3. Fetch tickets for this event for Ticket Type dropdown
+        $tickets = \App\Models\EventTicket::where('event_id', $event_id)->where('is_active', 1)->get();
+
+        // 4. Calculate Capacity Stats
+        $totalCapacity = \App\Models\EventTicket::where('event_id', $event_id)->where('is_active', 1)->sum('available_quantity');
+        $registeredCount = \App\Models\EventOrderTicket::where('event_id', $event_id)->active()->count();
+
+        // 5. Query Waitlist with filters
+        $waitlistQuery = \App\Models\EventWaitlist::with('ticket')->where('event_id', $event_id);
+
+        $totalWaitlistCount = (clone $waitlistQuery)->count(); // absolute total for this event
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $waitlistQuery->where(function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('ticket_id') && $request->input('ticket_id') != 'all') {
+            $waitlistQuery->where('ticket_id', $request->input('ticket_id'));
+        }
+
+        $waitlists = $waitlistQuery->orderBy('joined_at', 'desc')->paginate(10);
+        $waitlists->appends($request->all());
+
+        $data = [
+            'event' => $event,
+            'events' => $events,
+            'tickets' => $tickets,
+            'totalCapacity' => $totalCapacity,
+            'registeredCount' => $registeredCount,
+            'totalWaitlistCount' => $totalWaitlistCount,
+            'waitlists' => $waitlists,
+            'selectedEventId' => $event_id,
+        ];
+
+        return view('pages.frontend.waitlist-detail', $data);
+    }
+
+    public function exportWaitlist(\Illuminate\Http\Request $request, $event_id)
+    {
+        $user = auth()->guard('front')->user();
+        $event = \App\Models\Event::where('id', $event_id)->where('creator_id', $user->id)->firstOrFail();
+
+        $waitlistQuery = \App\Models\EventWaitlist::with('ticket')
+            ->where('event_id', $event_id);
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $waitlistQuery->where(function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $waitlists = $waitlistQuery->orderBy('joined_at', 'desc')->get();
+
+        $safeEventName = \Illuminate\Support\Str::slug($event->event_name);
+        $fileName = 'waitlist_' . $safeEventName . '_' . date('Y-m-d') . '.csv';
+
+        $headers = array(
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$fileName",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        );
+
+        $columns = array('First Name', 'Last Name', 'Email', 'Ticket Type', 'Joined Date/Time', 'Status');
+
+        $callback = function() use($waitlists, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($waitlists as $entry) {
+                $row['First Name']  = $entry->first_name;
+                $row['Last Name']   = $entry->last_name;
+                $row['Email']       = $entry->email;
+                $row['Ticket Type'] = $entry->ticket->ticket_name ?? 'N/A';
+                $row['Joined Date/Time']  = \Carbon\Carbon::parse($entry->joined_at)->format('M d, g:i A');
+                $row['Status']      = ucfirst($entry->status);
+
+                fputcsv($file, array($row['First Name'], $row['Last Name'], $row['Email'], $row['Ticket Type'], $row['Joined Date/Time'], $row['Status']));
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
     public function releaseNotes()
     {
@@ -417,7 +577,7 @@ class FrontController extends Controller
             ->keyBy('id');
         return view('pages.frontend.cleanup-attending' , [
             'childrenByTicket' => $childrenByTicket,
-            'attending_events' => $attending_events , 
+            'attending_events' => $attending_events ,
             'seo_details'      => (object)['title' => 'Attending Events'] ,
         ]);
     }
@@ -430,7 +590,7 @@ class FrontController extends Controller
         if($type == 'cohost'){
             $hosting_events_builder = auth()->guard('front')->user()->cohostingEvents();
         }else{
-            $hosting_events_builder = auth()->guard('front')->user()->events(); 
+            $hosting_events_builder = auth()->guard('front')->user()->events();
         }
         $cohostEventCount = auth()->guard('front')->user()->cohostingEvents()->active()->count();
         $hostingEventCount = auth()->guard('front')->user()->events()->active()->count();
@@ -466,18 +626,20 @@ class FrontController extends Controller
         } else {
             $hosting_events_builder = $user->events();
         }
-        
+
         $cohostEventCount = $user->cohostingEvents()->count();
         $hostingEventCount = $user->events()->count();
-
-        $startDateSort = request('start_date_sort', 'desc');
-        if (!in_array($startDateSort, ['asc', 'desc'])) {
-            $startDateSort = 'desc';
-        }
 
         $tab = request('tabs', 'upcoming');
         if (!in_array($tab, ['upcoming', 'ongoing', 'ended', 'cancelled', 'action_required'])) {
             $tab = 'upcoming';
+        }
+
+        $defaultSort = in_array($tab, ['upcoming', 'ongoing']) ? 'asc' : 'desc';
+
+        $startDateSort = request('start_date_sort', $defaultSort);
+        if (!in_array($startDateSort, ['asc', 'desc'])) {
+            $startDateSort = $defaultSort;
         }
 
         $now = now();
@@ -488,21 +650,31 @@ class FrontController extends Controller
                 $q->whereNull('cancelled_at');
             })
             ->when($tab == 'upcoming', function ($q) use ($now) {
-                $q->where('start_datetime', '>', $now)->where('is_completed', '!=', 1)->whereNull('cancelled_at');
+                $q->where('start_datetime', '>', (clone $now)->addHours(3))
+                    ->where(function ($subQ) {
+                        $subQ->whereNull('is_completed')
+                            ->orWhere('is_completed', '!=', 1);
+                    })
+                    ->whereNull('cancelled_at');
             })
             ->when($tab == 'ongoing', function ($q) use ($now) {
-                $q->where('start_datetime', '<=', $now)
-                ->where('end_datetime', '>=', $now)->where('is_completed', '!=', 1)->whereNull('cancelled_at');
+                $q->where('start_datetime', '<=', (clone $now)->addHours(3))
+                    ->whereDate('end_datetime', '>=', $now)
+                    ->where(function ($subQ) {
+                        $subQ->whereNull('is_completed')
+                            ->orWhere('is_completed', '!=', 1);
+                    })
+                    ->whereNull('cancelled_at');
             })
             ->when($tab == 'ended', function ($q) use ($now) {
-                $q->where('end_datetime', '<', $now)
+                $q->whereDate('end_datetime', '<', $now)
                 ->where('is_completed', 1);
             })
             ->when($tab == 'cancelled', function ($q) {
                 $q->whereNotNull('cancelled_at');
             })
             ->when($tab == 'action_required', function ($q) use ($now) {
-                $q->where('end_datetime', '<', $now)
+                $q->whereDate('end_datetime', '<', $now)
                 ->where(function ($subQ) {
                     $subQ->whereNull('is_completed')
                         ->orWhere('is_completed', '!=', 1);
@@ -579,7 +751,7 @@ class FrontController extends Controller
             return redirect()->route('front-cleanup-ongoing');
         }
 
-        $registrations = EventOrderTicket::with(['volunteer', 'ticket'])
+        $query = EventOrderTicket::with(['volunteer', 'ticket', 'children'])
             ->where('event_id', $event->id)
             ->where('rsvp_confirmation', 1)
             ->where(function ($q) {
@@ -607,9 +779,23 @@ class FrontController extends Controller
                 } elseif (request()->status == 'checked_in_signed') {
                     $q->where('checkin', 1)->whereNotNull('waiver_filled_at');
                 }
-            })
-            ->latest()
-            ->paginate(25)
+            });
+
+        $query->orderByRaw('COALESCE(event_order_tickets.checkin, 0) ASC');
+
+        if (request()->sort == 'name_asc' || request()->sort == 'name_desc') {
+            $direction = request()->sort == 'name_asc' ? 'asc' : 'desc';
+            $query->orderBy(\App\Models\Volunteer::select('first_name')
+                ->whereColumn('volunteers.id', 'event_order_tickets.volunteer_id')
+                ->limit(1), $direction)
+                ->orderBy(\App\Models\Volunteer::select('last_name')
+                ->whereColumn('volunteers.id', 'event_order_tickets.volunteer_id')
+                ->limit(1), $direction);
+        } else {
+            $query->latest();
+        }
+
+        $registrations = $query->paginate(25)
             ->withQueryString();
 
         return view('pages.frontend.volunteer-check-in', [
@@ -634,7 +820,7 @@ class FrontController extends Controller
             return redirect()->route('front-cleanup-ongoing');
         }
 
-        $registrations = EventOrderTicket::with(['volunteer', 'ticket'])
+        $registrations = EventOrderTicket::with(['volunteer', 'ticket', 'children'])
             ->where('event_id', $event->id)
             ->where('rsvp_confirmation', 1)
             ->orderBy('id', 'asc')
@@ -665,7 +851,7 @@ class FrontController extends Controller
         ]);
 
         try {
-            $orderTicket = EventOrderTicket::with(['event', 'volunteer'])->findOrFail(decrypt($id));
+            $orderTicket = EventOrderTicket::with(['event', 'volunteer', 'children'])->findOrFail(decrypt($id));
             $authUser = auth()->guard('front')->user();
 
             $cohostEventIds = $authUser->cohostingEvents()->pluck('events.id');
@@ -686,6 +872,29 @@ class FrontController extends Controller
                 $orderTicket->waiver_filled_at = now();
                 $orderTicket->signature = request()->signature;
                 $orderTicket->save();
+            }
+
+            // Sync waiver and check-in for accompanying children
+            if ($orderTicket->children()->exists()) {
+                $scope = request()->input('checkin_scope', 'family');
+                $activeChildren = $orderTicket->children()->whereNull('cancelled_at')->get();
+                foreach ($activeChildren as $child) {
+                    $childUpdate = [
+                        'waiver_filled_at' => now(),
+                        'signature'        => request()->signature,
+                    ];
+                    if ($scope === 'family') {
+                        $pdfPath = $child->community_form_pdf;
+                        if (empty($pdfPath) || !file_exists(public_path($pdfPath))) {
+                            $pdfPath = $this->generateChildCommunityServicePdf($child, $orderTicket->event);
+                        }
+                        $childUpdate['checkin']               = 1;
+                        $childUpdate['checkin_dt']            = date('Y-m-d H:i:s');
+                        $childUpdate['community_form_pdf']    = $pdfPath;
+                        $childUpdate['community_form_status'] = 'approved';
+                    }
+                    $child->update($childUpdate);
+                }
             }
 
             return $this->ticketMarkCheckin($id, true);
@@ -710,14 +919,16 @@ class FrontController extends Controller
 
             $qrCheckinToken = encrypt('volunteer_checkin_qr:'.$orderTicket->id);
 
-            if($orderTicket->event->waiver_form_type=='external_link'){
+            $isMobile = request()->input('is_mobile');
+
+            if($orderTicket->event->waiver_form_type=='external_link' && !$isMobile){
                 if(!empty($orderTicket->event->waiver_form_content)){
                     $waiverUrl = $orderTicket->event->waiver_form_content;
                 } else {
                     return response()->json($this->generateResponse(false, 'waiver external link not available.'), 403);
                 }
             } else {
-                
+
                 if(($orderTicket->event->waiver_form_type=='default' || $orderTicket->event->waiver_form_type=='text' || $orderTicket->event->waiver_form_type=='pdf') && empty($orderTicket->event->waiver_form_content)){
                     return response()->json($this->generateResponse(false, 'waiver form not available.'), 403);
                 }
@@ -744,11 +955,71 @@ class FrontController extends Controller
     {
         return $this->ticketMarkCheckin($id, true);
     }
+
+    public function childMarkCheckin($id)
+    {
+        try {
+            $child = EventOrderTicketChild::with(['event', 'parent_ticket.volunteer'])->findOrFail(decrypt($id));
+            $authUser = auth()->guard('front')->user();
+
+            $cohostEventIds = $authUser->cohostingEvents()->pluck('events.id');
+            $hostingEventIds = $authUser->events()->pluck('events.id');
+            $allowedEventIds = $cohostEventIds->merge($hostingEventIds);
+
+            $eventId = $child->event_id ?: ($child->parent_ticket ? $child->parent_ticket->event_id : null);
+
+            if (!$allowedEventIds->contains($eventId)) {
+                if (request()->ajax() || request()->wantsJson()) {
+                    return response()->json(['status' => false, 'message' => 'Unauthorized action.'], 403);
+                }
+                $this->setFlashSession(false, 'Unauthorized action.');
+                return redirect()->back();
+            }
+
+            if ($child->checkin == 1) {
+                $child->checkin = 0;
+                $child->community_form_status = 'pending';
+                $child->save();
+                $msg = "Child attendee {$child->child_name} checked out successfully.";
+            } else {
+                $child->checkin = 1;
+                $child->checkin_dt = now();
+                $child->community_form_status = 'approved';
+                $event = $child->event ?: ($child->parent_ticket ? $child->parent_ticket->event : null);
+                if (empty($child->community_form_pdf) || !file_exists(public_path($child->community_form_pdf))) {
+                    $pdfPath = $this->generateChildCommunityServicePdf($child, $event);
+                    if ($pdfPath) {
+                        $child->community_form_pdf = $pdfPath;
+                    }
+                }
+                $child->save();
+                $msg = "Child attendee {$child->child_name} checked in successfully.";
+            }
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'status' => true,
+                    'message' => $msg,
+                    'checkin' => $child->checkin,
+                    'checkin_time' => $child->checkin == 1 && $child->checkin_dt ? $child->checkin_dt->format('h:i A') : null,
+                ]);
+            }
+
+            $this->setFlashSession(true, $msg);
+            return redirect()->back();
+        } catch (\Exception $e) {
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['status' => false, 'message' => 'Error updating child check-in.'], 500);
+            }
+            $this->setFlashSession(false, 'Error updating child check-in.');
+            return redirect()->back();
+        }
+    }
     public function cleanupHostingDelete($id){
         $event = Event::where('creator_id', auth()->guard('front')->user()->id)->where("id", $id)->firstOrFail();
         if($event->orders->count())
-            return $this->generateJsonResponse(false , 'Opps! Order are connected with this event, we can\'t delete this.');    
-        $res = $event->delete(); 
+            return $this->generateJsonResponse(false , 'Opps! Order are connected with this event, we can\'t delete this.');
+        $res = $event->delete();
         return $this->generateJsonResponse($res);
     }
     public function emailAlerts()
@@ -760,8 +1031,8 @@ class FrontController extends Controller
     }
     public function unsubscribeAlert($user,$alert=null){
         $data = [];
-        $data['seo_details'] = (object)['title' => 'Unsubscribe Alert']; 
-        $data['url'] = route('confirmed-unsubscribe-alert',['user'=>$user,'alert'=>$alert]); 
+        $data['seo_details'] = (object)['title' => 'Unsubscribe Alert'];
+        $data['url'] = route('confirmed-unsubscribe-alert',['user'=>$user,'alert'=>$alert]);
         if(!empty($alert)){
             $data['alert'] = VolunteerAlert::where('id', decrypt($alert))->firstOrFail();
         }
@@ -778,8 +1049,8 @@ class FrontController extends Controller
             $msg = 'All alerts unsubscribed successfully.';
         }
         $data = [];
-        $data['seo_details'] = (object)['title' => 'Unsubscribe Alert']; 
-        $data['msg'] = $msg; 
+        $data['seo_details'] = (object)['title' => 'Unsubscribe Alert'];
+        $data['msg'] = $msg;
         return view('pages.frontend.alert-unsubscribed', $data);
     }
     /* public function disableEmailAlerts($id){
@@ -829,14 +1100,14 @@ class FrontController extends Controller
             'alert_name' => 'required|string|max:255',
             'city_id'    => 'required',
         ]);
-        
+
         $pincode = '';
         $cityStateZip = CityStateZip::find($validated['city_id']);
         if(isset($cityStateZip->id)){
             $pincode = $cityStateZip->zipcode;
         }
 
-        $user = auth()->guard('front')->user(); 
+        $user = auth()->guard('front')->user();
         (new FrontOrderController)->createWeeklyAlert(
             $user->id,
             $validated['alert_name'],
@@ -910,7 +1181,7 @@ class FrontController extends Controller
                 $b_total = formatAmt($pricing['attendee_total']);
                 $net_org_total = formatAmt($pricing['organizer_payout']);
 
-                
+
                 //$b_total = $charge_bear_by==1?(formatAmt($eventTicket->ticket_price+$fee)):formatAmt($eventTicket->ticket_price);
                 $b_fee_text = $charge_bear_by==1?'Platform Fee':'Platform Fee Included';
                 //$net_org_total = $charge_bear_by==1?(formatAmt($eventTicket->ticket_price)):formatAmt($eventTicket->ticket_price-$fee);
@@ -1137,7 +1408,7 @@ class FrontController extends Controller
                 return redirect()->back();
             } */
         }
-        
+
         $setting = Setting::first();
         $open_tab = request()->has('open_tab') ? request()->open_tab : '' ;
         return view('pages.frontend.cleanup-post', [
@@ -1165,7 +1436,7 @@ class FrontController extends Controller
         $today_dt = date('Y-m-d H:i:s');
         $new_event = $event->replicate();
         $new_event->event_name  = $event->event_name . ' (Clone)';
-        $new_event->slug        = $this->generateSlug(Event::class, 'slug', $event->slug , 0); 
+        $new_event->slug        = $this->generateSlug(Event::class, 'slug', $event->slug , 0);
         $new_event->creator_id  = auth()->guard('front')->user()->id;
         $new_event->created_at  = $today_dt;
         $new_event->updated_at  = $today_dt;
@@ -1175,7 +1446,7 @@ class FrontController extends Controller
         $new_event->is_active  = 1;
         $new_event->cancelled_at  = null;
         $new_event->waste_collected  = null;
-        $new_event->area_cleaned  = null;
+
         $new_event->volunteer_registered_from_other_sites  = null;
         $new_event->team_name  = null;
         $new_event->volunteer_hours  = null;
@@ -1188,16 +1459,16 @@ class FrontController extends Controller
         $new_event->end_datetime = date('Y-m-d H:i:s', strtotime('+2 day', strtotime($today_dt)));
         $new_event->site_publish_date = date('Y-m-d', strtotime($today_dt));
         $new_event->site_depublish_date = date('Y-m-d', strtotime('+3 day', strtotime($today_dt)));
-        $new_event->wp_id = null;  
-        $new_event->wp_meta = null;  
+        $new_event->wp_id = null;
+        $new_event->wp_meta = null;
         $new_event->save();
         $new_event_id = $new_event->id;
         $new_event->eventTickets()->createMany(
             $event->eventTickets->map(function ($ticket) use ($new_event_id, $today_dt) {
                 $newTicket = $ticket->replicate();
                 $newTicket->event_id = $new_event_id;
-                $newTicket->sell_start_time = $today_dt;  
-                $newTicket->sell_end_time = date('Y-m-d', strtotime('+1 day', strtotime($today_dt)));  
+                $newTicket->sell_start_time = $today_dt;
+                $newTicket->sell_end_time = date('Y-m-d', strtotime('+1 day', strtotime($today_dt)));
                 $newTicket->wp_id = null;
                 $newTicket->wp_meta = null;
                 $newTicket->created_at = $today_dt;
@@ -1229,15 +1500,15 @@ class FrontController extends Controller
         $event->event_name  = $event->event_name . ' (Clone)';
         $event->slug        = $this->generateSlug(Event::class, 'slug', $event->slug , 0);
         $event->tickets     = $event->eventTickets->map(function($ticket){
-                                $ticket->id = 0;    
+                                $ticket->id = 0;
                                 $today_dt = date('Y-m-d');
-                                $ticket->sell_start_time = $today_dt;  
-                                $ticket->sell_end_time = date('Y-m-d', strtotime('+1 day', strtotime($today_dt)));  
-                                return $ticket; 
-                            });  
-        $event->tags        = $event->tags()->pluck('event_tags.tag_id')->toArray(); 
-        $event->volunteer_tags  = $event->volunteertags()->pluck('event_volunteer_tags.tag_id')->toArray(); 
-        $event->bring_tools     = $event->bringTools()->pluck('tools.id')->toArray(); 
+                                $ticket->sell_start_time = $today_dt;
+                                $ticket->sell_end_time = date('Y-m-d', strtotime('+1 day', strtotime($today_dt)));
+                                return $ticket;
+                            });
+        $event->tags        = $event->tags()->pluck('event_tags.tag_id')->toArray();
+        $event->volunteer_tags  = $event->volunteertags()->pluck('event_volunteer_tags.tag_id')->toArray();
+        $event->bring_tools     = $event->bringTools()->pluck('tools.id')->toArray();
         $event->provided_tools  = $event->providedTools()->pluck('tools.id')->toArray();
         $event->id              = null; // Reset ID to create a new record
 
@@ -1346,7 +1617,7 @@ class FrontController extends Controller
                 $newEvent->cancelled_at = null;
                 $newEvent->is_completed = 0;
                 $newEvent->waste_collected = null;
-                $newEvent->area_cleaned = null;
+
                 $newEvent->volunteer_hours = null;
                 $newEvent->post_event_notes = null;
                 $newEvent->click_views = 0;
@@ -1365,7 +1636,7 @@ class FrontController extends Controller
                 $newEvent->created_at = $now;
                 $newEvent->updated_at = $now;
                 $newEvent->save();
-                
+
                 if ((int) $parentEvent->participation_type === 1) {
                     foreach ($parentEvent->eventTickets as $ticketIndex => $ticket) {
                         $ticketDates = $recurrence['tickets'][$ticketIndex];
@@ -1427,7 +1698,7 @@ class FrontController extends Controller
 
             auth()->guard('front')->user()->save();
 
-            // hit the wp api to update the user 
+            // hit the wp api to update the user
             //if(!$is_org){
                 $this->syncWithWP(auth()->guard('front')->user());
             //}
@@ -1441,7 +1712,7 @@ class FrontController extends Controller
         }
         $validatedObj = request()->validate([
                             'event_name'      => 'required|string|max:255',
-                            'event_category_id' => 'required|exists:event_categories,id', 
+                            'event_category_id' => 'required|exists:event_categories,id',
                             'description'     => 'required|string',
                             'start_datetime'  => 'required|date',
                             'end_datetime'    => 'required|date|after:start_datetime',
@@ -1490,7 +1761,7 @@ class FrontController extends Controller
         return $this->generateJsonResponse($res, 'Event details saved successfully.', [
             'event_instance' => encrypt($eventObj->id) ,
             'section_html'   => [] ,
-            'event'          => $eventObj                                                    
+            'event'          => $eventObj
         ]);
     }
 
@@ -1510,7 +1781,7 @@ class FrontController extends Controller
                 'tags.*'            => 'exists:tags,id',
                 'meeting_spot_details' => 'nullable|string',
                 'parking_info_details' => 'nullable|string',
-                
+
                 'bring_tools'       => 'nullable|array',
                 'bring_tools.*'     => 'exists:tools,id',
                 'provided_tools'    => 'nullable|array',
@@ -1586,7 +1857,7 @@ class FrontController extends Controller
                 if (request()->has('volunteer_tags')) {
                     $event->volunteertags()->sync($validated['volunteer_tags'] ?? []);
                 }
-                
+
                 if (request()->has('tags')) {
                     $event->tags()->sync($validated['tags'] ?? []);
                 }
@@ -1615,7 +1886,7 @@ class FrontController extends Controller
         if(!empty($start_datetime) && !empty($request->ticket_sell_end_time) && (strtotime(date('Y-m-d',strtotime($start_datetime))) < strtotime($request->ticket_sell_end_time)) ){
             return $this->generateJsonResponse(false, 'Ticket sell end date must be lower than or equal to event start date.');
         }
-        
+
         if (!$request->has('not_check_ticket_type')) {
             if($event->participation_type==1){
                 $hasSavedTickets = $event->eventTickets()->exists();
@@ -1644,7 +1915,7 @@ class FrontController extends Controller
             'waiver_form_content' => ['nullable',
                 'required_if:waiver_form_type,text,external_link,pdf',
                 function($attribute, $value, $fail) use ($request, $obj) {
-                    
+
                     $type = $request->waiver_form_type;
                     if ($type === 'text') {
                         if (empty($value) || !is_string($value)) {
@@ -1687,11 +1958,11 @@ class FrontController extends Controller
         ]);
 
         try {
-            
-            
+
+
             /**************************************************************************
             * Manage Waiver *
-            ***************************************************************************/ 
+            ***************************************************************************/
             $waiver_form_pdf = $request->waiver_form_content;
             $event->waiver_form_type = request()->waiver_form_type ?? null;
             if(request()->waiver_form_type  == 'pdf'){
@@ -1707,7 +1978,7 @@ class FrontController extends Controller
                 } else if(isset($event->id) && !str_contains($event->waiver_form_content, '"path"')){
                     $event->waiver_form_content = null;
                 }
-            }elseif(request()->waiver_form_type == 'default'){ 
+            }elseif(request()->waiver_form_type == 'default'){
                 $settings = Setting::first();
                 $event->waiver_form_content = $settings->waiver_text;
             }elseif(!request()->waiver_form_type){
@@ -1725,11 +1996,12 @@ class FrontController extends Controller
                     ->exists();
             $event->ticket_sell_start_time = $validated['ticket_sell_start_time'] ?? null;
             $event->ticket_sell_end_time = $validated['ticket_sell_end_time'] ?? null;
-            $event->ticket_questions = $validated['ticket_questions'] ?? null; 
+            $event->ticket_questions = $validated['ticket_questions'] ?? null;
             $event->show_ticket_description = $request->has('show_ticket_description') ? 1 : 0;
             $event->show_remaining_tickets = $request->has('show_remaining_tickets') ? 1 : 0;
             $event->allow_donations = $request->has('allow_donations') ? 1 : 0;
             $event->allow_child_under13 = $request->has('allow_child_under13') ? 1 : 0;
+            $event->enable_waitlist = $request->has('enable_waitlist') ? 1 : 0;
             /* $event->allow_refund = $request->has('allow_refund') ? 1 : 0;
             $event->charge_bear_by = $request->charge_bear_by ?? 0;  */
             if (!$hasRegisteredVolunteers) {
@@ -1739,19 +2011,19 @@ class FrontController extends Controller
             $event->sell_tickets_individually = $request->has('sell_tickets_individually') ? 1 : 0;
             /**************************************************************************
             * tickets system with constrait of changing number of ticket after orders *
-            ***************************************************************************/ 
+            ***************************************************************************/
             /* $tickets = [];
-            if ($event->exists) { 
+            if ($event->exists) {
                 $existingTickets = $event->eventTickets()->get()->keyBy('id');
                 $submittedTicketIds = collect($request->ticket)->pluck('ticket_id')->filter()->toArray();
                 $event->eventTickets()->whereNotIn('id', $submittedTicketIds)->get()->each(function($ticket) {
-                    $orderTicketCount = EventOrderTicket::where('ticket_id', $ticket->id)->count(); 
+                    $orderTicketCount = EventOrderTicket::where('ticket_id', $ticket->id)->count();
                     if((int)$orderTicketCount > 0){
                         throw new \Exception("Ticket ID {$ticket->id} has already been sold and cannot be deleted.");
-                    } 
+                    }
                     $ticket->delete();
                 });
-                if(isset($request->ticket) && is_array($request->ticket)){               
+                if(isset($request->ticket) && is_array($request->ticket)){
                     foreach ($request->ticket as $ticketData) {
                         if($ticketData['ticket_type']=='free' && floatval($ticketData['ticket_price'])>0){
                             throw new \Exception("Ticket price should be $0 for free type of ticket.");
@@ -1789,7 +2061,7 @@ class FrontController extends Controller
             } else {
                 // Create new tickets for new event
                 $tickets = [];
-                if(isset($request->ticket) && is_array($request->ticket)){  
+                if(isset($request->ticket) && is_array($request->ticket)){
                     foreach ($request->ticket as $ticketData) {
                         if($ticketData['ticket_type']=='free' && floatval($ticketData['ticket_price'])>0){
                             throw new \Exception("Ticket price should be $0 for free type of ticket.");
@@ -1807,8 +2079,8 @@ class FrontController extends Controller
                             throw new \Exception("Max tickets allowed per order should be greater than 0.");
                         }
                         $ticketData['is_active'] = isset($ticketData['is_active'])?$ticketData['is_active']:0;
-                        $tickets[] = new EventTicket($ticketData); 
-                    } 
+                        $tickets[] = new EventTicket($ticketData);
+                    }
                 }
                 //$obj->eventTickets()->saveMany($tickets);
                 $event->eventTickets()->saveMany($tickets);
@@ -1819,8 +2091,8 @@ class FrontController extends Controller
         }
 
         $ticket_container_section = '';
-        /* $counter = 0; 
-        $event->eventTickets->map(function($ticket) use(&$ticket_container_section, &$counter){ 
+        /* $counter = 0;
+        $event->eventTickets->map(function($ticket) use(&$ticket_container_section, &$counter){
             $ticket_container_section .= view('components.reusables.frontend.ticket-form', [
                                             'frontend' => 1,
                                             'ticket' => $ticket,
@@ -1831,7 +2103,7 @@ class FrontController extends Controller
 
         return $this->generateJsonResponse(true, 'Tickets & waiver setting saved successfully.', [
             'event_instance' => encrypt($event->id),
-            'event' => $event , 
+            'event' => $event ,
             'section_html'   => [
                 // 'ticket-container-section' => $ticket_container_section
             ] ,
@@ -1866,7 +2138,7 @@ class FrontController extends Controller
             'waiver_form_type' => 'nullable',
             'waiver_form_content' => ['nullable',
                 function($attribute, $value, $fail) use ($request, $obj) {
-                    
+
                     $type = $request->waiver_form_type;
                     if ($type === 'text') {
                         if (empty($value) || !is_string($value)) {
@@ -1906,11 +2178,11 @@ class FrontController extends Controller
         ]);
 
         try {
-            
-            
+
+
             /**************************************************************************
             * Manage Waiver *
-            ***************************************************************************/ 
+            ***************************************************************************/
             $waiver_form_pdf = $request->waiver_form_content;
             $event->waiver_form_type = request()->waiver_form_type ?? null;
             if(request()->waiver_form_type  == 'pdf'){
@@ -1926,7 +2198,7 @@ class FrontController extends Controller
                 } else if(isset($event->id) && !str_contains($event->waiver_form_content, '"path"')){
                     $event->waiver_form_content = null;
                 }
-            }elseif(request()->waiver_form_type == 'default'){ 
+            }elseif(request()->waiver_form_type == 'default'){
                 $settings = Setting::first();
                 $event->waiver_form_content = $settings->waiver_text;
             }elseif(!request()->waiver_form_type){
@@ -1942,28 +2214,28 @@ class FrontController extends Controller
 
             $event->ticket_sell_start_time = $validated['ticket_sell_start_time'] ?? null;
             $event->ticket_sell_end_time = $validated['ticket_sell_end_time'] ?? null;
-            $event->ticket_questions = $validated['ticket_questions'] ?? null; 
+            $event->ticket_questions = $validated['ticket_questions'] ?? null;
             $event->show_ticket_description = $request->has('show_ticket_description') ? 1 : 0;
             $event->show_remaining_tickets = $request->has('show_remaining_tickets') ? 1 : 0;
             $event->allow_donations = $request->has('allow_donations') ? 1 : 0;
             $event->allow_refund = $request->has('allow_refund') ? 1 : 0;
-            $event->charge_bear_by = $request->charge_bear_by ?? 0; 
+            $event->charge_bear_by = $request->charge_bear_by ?? 0;
             $event->sell_tickets_individually = $request->has('sell_tickets_individually') ? 1 : 0;
             /**************************************************************************
             * tickets system with constrait of changing number of ticket after orders *
-            ***************************************************************************/ 
+            ***************************************************************************/
             $tickets = [];
-            if ($event->exists) { 
+            if ($event->exists) {
                 $existingTickets = $event->eventTickets()->get()->keyBy('id');
                 $submittedTicketIds = collect($request->ticket)->pluck('ticket_id')->filter()->toArray();
                 $event->eventTickets()->whereNotIn('id', $submittedTicketIds)->get()->each(function($ticket) {
-                    $orderTicketCount = EventOrderTicket::where('ticket_id', $ticket->id)->count(); 
+                    $orderTicketCount = EventOrderTicket::where('ticket_id', $ticket->id)->count();
                     if((int)$orderTicketCount > 0){
                         throw new \Exception("Ticket ID {$ticket->id} has already been sold and cannot be deleted.");
-                    } 
+                    }
                     $ticket->delete();
                 });
-                if(isset($request->ticket) && is_array($request->ticket)){               
+                if(isset($request->ticket) && is_array($request->ticket)){
                     foreach ($request->ticket as $ticketData) {
                         if($ticketData['ticket_type']=='free' && floatval($ticketData['ticket_price'])>0){
                             throw new \Exception("Ticket price should be $0 for free type of ticket.");
@@ -2001,7 +2273,7 @@ class FrontController extends Controller
             } else {
                 // Create new tickets for new event
                 $tickets = [];
-                if(isset($request->ticket) && is_array($request->ticket)){  
+                if(isset($request->ticket) && is_array($request->ticket)){
                     foreach ($request->ticket as $ticketData) {
                         if($ticketData['ticket_type']=='free' && floatval($ticketData['ticket_price'])>0){
                             throw new \Exception("Ticket price should be $0 for free type of ticket.");
@@ -2019,8 +2291,8 @@ class FrontController extends Controller
                             throw new \Exception("Max tickets allowed per order should be greater than 0.");
                         }
                         $ticketData['is_active'] = isset($ticketData['is_active'])?$ticketData['is_active']:0;
-                        $tickets[] = new EventTicket($ticketData); 
-                    } 
+                        $tickets[] = new EventTicket($ticketData);
+                    }
                 }
                 //$obj->eventTickets()->saveMany($tickets);
                 $event->eventTickets()->saveMany($tickets);
@@ -2031,8 +2303,8 @@ class FrontController extends Controller
         }
 
         $ticket_container_section = '';
-        $counter = 0; 
-        $event->eventTickets->map(function($ticket) use(&$ticket_container_section, &$counter){ 
+        $counter = 0;
+        $event->eventTickets->map(function($ticket) use(&$ticket_container_section, &$counter){
             $ticket_container_section .= view('components.reusables.frontend.ticket-form', [
                                             'frontend' => 1,
                                             'ticket' => $ticket,
@@ -2043,7 +2315,7 @@ class FrontController extends Controller
 
         return $this->generateJsonResponse(true, 'Tickets & waiver setting saved successfully.', [
             'event_instance' => encrypt($event->id),
-            'event' => $event , 
+            'event' => $event ,
             'section_html'   => [
                 // 'ticket-container-section' => $ticket_container_section
             ] ,
@@ -2150,8 +2422,8 @@ class FrontController extends Controller
         /* if(request()->is_create){
             return $this->generateJsonResponse(true, 'SEO details saved successfully.', [
                 'event_instance' => encrypt($event->id),
-                'event' => $event , 
-                'redirect_href' => route('front-cleanup-hosting', ['type' => 'organizer']) , 
+                'event' => $event ,
+                'redirect_href' => route('front-cleanup-hosting', ['type' => 'organizer']) ,
             ]);
         } else { */
             // SEO details saved successfully.
@@ -2162,8 +2434,8 @@ class FrontController extends Controller
             }
             return $this->generateJsonResponse(true, 'Event details saved successfully.'.$addedMsg, [
                 'event_instance' => encrypt($event->id),
-                'event' => $event , 
-                //'redirect_href' => route('front-cleanup-hosting', ['type' => 'organizer']) , 
+                'event' => $event ,
+                //'redirect_href' => route('front-cleanup-hosting', ['type' => 'organizer']) ,
             ]);
         //}
 
@@ -2174,9 +2446,9 @@ class FrontController extends Controller
         $validated = $request->validate([
             'event_id'           => 'required',
             'waste_collected'    => 'required|max:255',
-            'area_cleaned'       => 'required|max:255',
+
             //'team_name'          => 'required|string',
-            'volunteer_hours'    => 'required|numeric|min:0',
+
             'post_event_notes'   => 'required|string',
             'volunteer_registered_from_other_sites' => 'nullable|numeric|min:0',
         ]);
@@ -2184,9 +2456,9 @@ class FrontController extends Controller
         try {
             $event = \App\Models\Event::findOrFail(decrypt($validated['event_id']));
             $event->waste_collected = $validated['waste_collected'];
-            $event->area_cleaned = $validated['area_cleaned'];
+
             //$event->team_name = $validated['team_name'];
-            $event->volunteer_hours = ceil($validated['volunteer_hours']);
+
             $event->post_event_notes = $validated['post_event_notes'];
             $event->volunteer_registered_from_other_sites = $validated['volunteer_registered_from_other_sites'] ?? 0;
             if (request()->hasFile('after_event_images')) {
@@ -2252,11 +2524,11 @@ class FrontController extends Controller
             $html = '';
             foreach ($new_photos as $key => $image) {
                 $imagePath = isset($image['path']) ? $image['path'] : $image;
-                $html .=' 
+                $html .='
                 <div class="position-relative me-3 mt-2" id="saved-img-'.$key.'">
                     <img style="width: 50px; height: 50px; border-radius: 6px; object-fit: cover;" src="'.asset($imagePath).'">
                     <button divid="saved-img-'.$key.'" url="'.route('front-remove-event-after-image', ['index' => $key, 'id' => $row->encrypted_id]).'"
-                        type="button" 
+                        type="button"
                         class="remove-event-img-btn remove-new-img">✕
                     </button>
                 </div>';
@@ -2363,6 +2635,11 @@ class FrontController extends Controller
             // send email to cohost about permission update
             $event = $cohost->event;
             $volunteer = $cohost->volunteer;
+            $permission_strings = [];
+            foreach($cohost->permissions as $p) {
+                $permission_strings[] = config('app.cohost_permissions')[$p->permission] ?? $p->permission;
+            }
+
             $email_content = [
                 'is_deleted'=>false,
                 'organizer_name' => $event->creator->first_name.' '.$event->creator->last_name,
@@ -2370,10 +2647,19 @@ class FrontController extends Controller
                 'cohost_first_name' => $volunteer->first_name,
                 //'dashboardLink'=>route('front-dashboard'),
                 'dashboardLink'=>$this->mailUrl('front-dashboard'),
-                'permissions'=>$cohost->permissions
+                'permissions'=>$permission_strings
             ];
-            $sub = 'Your co-host permissions were updated for '.$email_content['event_name'];
-            $this->sendEmail($volunteer->email_address, $sub, $email_content, "cohost-update");
+            $email_content['subject'] = 'Your co-host permissions were updated for '.$email_content['event_name'];
+
+            $to_arr = [
+                [
+                    "to" => [
+                        ["email" => trim($volunteer->email_address)]
+                    ],
+                    "dynamic_template_data" => $email_content
+                ]
+            ];
+            $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-ccfba74fdc894547a239d1e5824cbcf8");
 
             return $this->generateJsonResponse(true, 'Co-Host permissions updated successfully.');
         } catch (\Exception $e) {
@@ -2397,8 +2683,16 @@ class FrontController extends Controller
 
         $res = $cohost->delete();
 
-        $sub = 'You’ve been removed as a co-host from '.$email_content['event_name'];
-        $this->sendEmail($volunteer->email_address, $sub, $email_content, "cohost-update");
+        $email_content['subject'] = 'You’ve been removed as a co-host from '.$email_content['event_name'];
+        $to_arr = [
+            [
+                "to" => [
+                    ["email" => trim($volunteer->email_address)]
+                ],
+                "dynamic_template_data" => $email_content
+            ]
+        ];
+        $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-ccfba74fdc894547a239d1e5824cbcf8");
         return $this->generateJsonResponse(true,'Co-Host removed successfully.');
     }
     public function reinviteCoHost($id){
@@ -2497,14 +2791,32 @@ class FrontController extends Controller
         if($event->is_completed==1){
             return $this->generateJsonResponse(false, 'Event is already marked as completed and wrap-up email has been sent.');
         }
-        if(empty($event->waste_collected) || empty($event->area_cleaned) || empty($event->volunteer_hours)){
-            return $this->generateJsonResponse(false, 'Waste Collected, Area Cleaned, and Volunteer Hours should be saved before sending the email.');
+        if(empty($event->waste_collected)){
+            return $this->generateJsonResponse(false, 'Waste Collected should be saved before sending the email.');
         }
         $event->is_completed = 1;
         $event->wrapup_email_sent_by = auth()->guard('front')->user()->id;
         $event->save();
         $registered_tickets = $event->tickets()->where('rsvp_confirmation', 1)->get();
-        $tickets = $event->tickets()->where('checkin', 1)->whereNotNull('waiver_filled_at')->get();
+        $tickets = $event->tickets()->where('checkin', 1)
+            ->where(function ($q) use ($event) {
+                if (!empty($event->waiver_form_type)) {
+                    $q->whereNotNull('waiver_filled_at');
+                }
+            })->get();
+        $checkedInChildren = EventOrderTicketChild::with(['parent_ticket.volunteer', 'eventOrder'])
+            ->where('event_id', $event->id)
+            ->whereNull('cancelled_at')
+            ->where('checkin', 1)
+            ->where(function ($q) use ($event) {
+                if (!empty($event->waiver_form_type)) {
+                    $q->whereNotNull('waiver_filled_at');
+                }
+            })
+            ->get();
+        $registeredChildrenCount = EventOrderTicketChild::where('event_id', $event->id)
+            ->whereNull('cancelled_at')
+            ->count();
         $cohostText = '';
         $activeCohostsIds = $event->cohostRecords->where('request_status', 'approved')->pluck('volunteer_id');
         if ($activeCohostsIds->isNotEmpty() && $activeCohostsIds->contains($event->wrapup_email_sender->id)) {
@@ -2512,79 +2824,165 @@ class FrontController extends Controller
         } else if($event->wrapup_email_sender->id==$event->creator_id){
             $cohostText = ' (Organizer)';
         }
-        if($tickets->count() == 0){
+        if($tickets->count() == 0 && $checkedInChildren->count() == 0){
             if($submitAsForm){
                 $this->setFlashSession(true, 'Event marked as completed. Only volunteers who have checked-in and signed the waiver will receive the email. Since no attendees have been found yet, the email has not been sent to anyone.');
                 return $this->generateJsonResponse(true, 'Event marked as completed. Only volunteers who have checked-in and signed the waiver will receive the email. Since no attendees have been found yet, the email has not been sent to anyone.', [
                     'event_instance' => encrypt($event->id),
-                    'event' => $event , 
-                    'redirect_href' => route('front-cleanup-hosting', ['type' => 'organizer']) , 
+                    'event' => $event ,
+                    'redirect_href' => route('front-cleanup-hosting', ['type' => 'organizer']) ,
                 ]);
             } else {
                 return $this->generateJsonResponse(true, 'Event marked as completed. Only volunteers who have checked-in and signed the waiver will receive the email. Since no attendees have been found yet, the email has not been sent to anyone.', '<p class="float-end text-warning">Wrap-Up Email sent by: '.auth()->guard('front')->user()->first_name.' '.auth()->guard('front')->user()->last_name.$cohostText.'</p>');
             }
         }
-        if($tickets->isNotEmpty()){
+        if($tickets->isNotEmpty() || $checkedInChildren->isNotEmpty()){
             $to_arr = [];
             $log_arr = [];
-            $to_arr2 = [];
-            foreach ($tickets as $key => $value) {
-                if(!isset($value->volunteer)){
-                    continue;
-                } else if(!isset($value->volunteer->id)){
-                    continue;
-                }
-                $email = $value->volunteer->email_address;
-                $name = $value->volunteer->first_name.' '.$value->volunteer->last_name;
-                if(!empty(trim($email))){
-                    $to_arr[] = 
-                    [
-                        "to" => [
-                            ["email" => trim($email)]
-                            //["email" => 'learningdcm@gmail.com']
-                        ],
-                        "dynamic_template_data" => [
-                            "volunteer_name" => $name,
-                            "volunteer_email" => $email,
-                            "event_name" =>  $event->event_name,
-                            "event_date" => $event->startTimeAndEndTime,
-                            "event_location" => $event->fullAddress,
-                            "organizer_name" => $event->creator->first_name.' '.$event->creator->last_name,
-                            "total_volunteers" => $tickets->count(),
-                            "total_registered_volunteers" => $registered_tickets->count(),
-                            "volunteer_registered_from_other_sites" => $event->volunteer_registered_from_other_sites,
-                            "waste_collected" => $event->waste_collected,
-                            "area_cleaned" => $event->area_cleaned,
-                            "service_hours" => $event->volunteer_hours ?? 'N/A',
-                            'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
-                            'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]),
-                        ],
-                    ];
-                    $log_arr[] = [
-                        "id" => $value->id,
-                        "email" => trim($email)
-                    ];
-                    /* if(isset($value->community_form_pdf) && !empty($value->community_form_pdf)){
-                        $to_arr2[] = 
-                        [
-                            "to" => [
-                                ["email" => trim($email)]
-                                //["email" => 'learningdcm@gmail.com']
-                            ],
-                            "dynamic_template_data" => [
-                                "volunteer_name" => $name,
-                                "volunteer_email" => $email,
-                                "event_name" =>  $event->event_name,
-                                'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]),
-                                'dashboard_link' => $this->mailUrl('front-cleanup-attending')
-                            ],
-                        ];
-                        $event->tickets()->where('id', $value->id)->update([
-                            'community_form_status' => 'approved'
+
+            // Group checked-in children by parent email
+            $childrenByParentEmail = [];
+            foreach ($checkedInChildren as $child) {
+                if (empty($child->community_form_pdf) || !file_exists(public_path($child->community_form_pdf))) {
+                    $childPdf = $this->generateChildCommunityServicePdf($child, $event);
+                    if ($childPdf) {
+                        $child->update([
+                            'community_form_pdf'    => $childPdf,
+                            'community_form_status' => 'approved',
                         ]);
-                    } */
+                    }
+                }
+
+                $parentEmail = null;
+                $parentName = null;
+                if ($child->parent_ticket && $child->parent_ticket->volunteer) {
+                    $parentEmail = trim($child->parent_ticket->volunteer->email_address);
+                    $parentName = $child->parent_ticket->volunteer->first_name . ' ' . $child->parent_ticket->volunteer->last_name;
+                } elseif ($child->eventOrder) {
+                    $parentEmail = trim($child->eventOrder->checkout_email_address);
+                    $parentName = $child->eventOrder->checkout_first_name . ' ' . $child->eventOrder->checkout_last_name;
+                }
+
+                if (!empty($parentEmail)) {
+                    $childrenByParentEmail[$parentEmail][] = [
+                        'child_id'         => $child->id,
+                        'child_name'       => $child->child_name,
+                        'child_age'        => $child->child_age,
+                        'certificate_link' => $this->mailUrl('show-child-community-service-pdf', ['child' => encrypt($child->id)]),
+                        'parent_name'      => $parentName,
+                    ];
                 }
             }
+
+            $processedEmails = [];
+
+            // 1. Process checked-in adult tickets
+            foreach ($tickets as $key => $value) {
+                if (!isset($value->volunteer) || !isset($value->volunteer->id)) {
+                    continue;
+                }
+                $email = trim($value->volunteer->email_address);
+                if (empty($email) || isset($processedEmails[$email])) {
+                    continue;
+                }
+                $processedEmails[$email] = true;
+                $name = $value->volunteer->first_name . ' ' . $value->volunteer->last_name;
+
+                $parentCertLink = $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($value->id)]);
+                $childCerts = $childrenByParentEmail[$email] ?? [];
+
+                $childCertsHtml = '';
+                $childCertsText = '';
+                if (!empty($childCerts)) {
+                    $childCertsHtml = '<div style="margin-top: 15px; padding: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">' .
+                        '<strong style="color: #1a5f9e; font-size: 14px;">Accompanying Children Certificates:</strong><ul style="margin: 8px 0 0; padding-left: 20px;">';
+                    foreach ($childCerts as $cc) {
+                        $childCertsHtml .= '<li style="margin-bottom: 6px;"><strong>' . htmlspecialchars($cc['child_name']) . '</strong>: ' .
+                            '<a href="' . $cc['certificate_link'] . '" style="color: #0d6efd; text-decoration: underline;">Download Certificate</a></li>';
+                        $childCertsText .= $cc['child_name'] . ': ' . $cc['certificate_link'] . "\n";
+                    }
+                    $childCertsHtml .= '</ul></div>';
+                }
+
+                $to_arr[] = [
+                    "to" => [
+                        ["email" => $email]
+                    ],
+                    "dynamic_template_data" => [
+                        "volunteer_name"                        => $name,
+                        "volunteer_email"                       => $email,
+                        "event_name"                            => $event->event_name,
+                        "event_date"                            => $event->startTimeAndEndTime,
+                        "event_location"                        => $event->fullAddress,
+                        "organizer_name"                        => $event->creator->first_name . ' ' . $event->creator->last_name,
+                        "total_volunteers"                      => $tickets->count() + $checkedInChildren->count() + (int)($event->volunteer_registered_from_other_sites ?? 0),
+                        "total_registered_volunteers"           => $registered_tickets->count() + $registeredChildrenCount,
+                        "volunteer_registered_from_other_sites" => $event->volunteer_registered_from_other_sites,
+                        "waste_collected"                       => $event->waste_collected,
+                        "service_hours"                         => $event->volunteer_hours ?? 'N/A',
+                        'highlight_link'                        => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
+                        'certificate_download_link'             => $parentCertLink,
+                        'children_certificates'                 => $childCerts,
+                        'children_certificates_html'            => $childCertsHtml,
+                        'children_certificates_text'            => $childCertsText,
+                        'has_children_certificates'             => !empty($childCerts),
+                    ],
+                ];
+                $log_arr[] = [
+                    "id"    => $value->id,
+                    "email" => $email,
+                ];
+            }
+
+            // 2. Process parents whose children checked in, but parent ticket was not checked in
+            foreach ($childrenByParentEmail as $email => $childCerts) {
+                if (isset($processedEmails[$email]) || empty($email)) {
+                    continue;
+                }
+                $processedEmails[$email] = true;
+                $parentName = $childCerts[0]['parent_name'] ?? 'Volunteer Family';
+                $firstCertLink = $childCerts[0]['certificate_link'];
+
+                $childCertsHtml = '<div style="margin-top: 15px; padding: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">' .
+                    '<strong style="color: #1a5f9e; font-size: 14px;">Accompanying Children Certificates:</strong><ul style="margin: 8px 0 0; padding-left: 20px;">';
+                $childCertsText = '';
+                foreach ($childCerts as $cc) {
+                    $childCertsHtml .= '<li style="margin-bottom: 6px;"><strong>' . htmlspecialchars($cc['child_name']) . '</strong>: ' .
+                        '<a href="' . $cc['certificate_link'] . '" style="color: #0d6efd; text-decoration: underline;">Download Certificate</a></li>';
+                    $childCertsText .= $cc['child_name'] . ': ' . $cc['certificate_link'] . "\n";
+                }
+                $childCertsHtml .= '</ul></div>';
+
+                $to_arr[] = [
+                    "to" => [
+                        ["email" => $email]
+                    ],
+                    "dynamic_template_data" => [
+                        "volunteer_name"                        => $parentName,
+                        "volunteer_email"                       => $email,
+                        "event_name"                            => $event->event_name,
+                        "event_date"                            => $event->startTimeAndEndTime,
+                        "event_location"                        => $event->fullAddress,
+                        "organizer_name"                        => $event->creator->first_name . ' ' . $event->creator->last_name,
+                        "total_volunteers"                      => $tickets->count() + $checkedInChildren->count() + (int)($event->volunteer_registered_from_other_sites ?? 0),
+                        "total_registered_volunteers"           => $registered_tickets->count() + $registeredChildrenCount,
+                        "volunteer_registered_from_other_sites" => $event->volunteer_registered_from_other_sites,
+                        "waste_collected"                       => $event->waste_collected,
+                        "service_hours"                         => $event->volunteer_hours ?? 'N/A',
+                        'highlight_link'                        => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
+                        'certificate_download_link'             => $firstCertLink,
+                        'children_certificates'                 => $childCerts,
+                        'children_certificates_html'            => $childCertsHtml,
+                        'children_certificates_text'            => $childCertsText,
+                        'has_children_certificates'             => true,
+                    ],
+                ];
+                $log_arr[] = [
+                    "id"    => $childCerts[0]['child_id'],
+                    "email" => $email,
+                ];
+            }
+
             if(!empty($to_arr) && count($to_arr)>0){
                 $to_arr_child = array_chunk($to_arr, 300);
                 $log_arr_child = array_chunk($log_arr, 300);
@@ -2603,8 +3001,8 @@ class FrontController extends Controller
             $this->setFlashSession(true, 'Event marked as completed. Wrap-Up email and certificate email has been sent successfully.');
             return $this->generateJsonResponse(true, 'Event marked as completed. Wrap-Up email and certificate email has been sent successfully.', [
                 'event_instance' => encrypt($event->id),
-                'event' => $event , 
-                'redirect_href' => route('front-cleanup-hosting', ['type' => 'organizer']), 
+                'event' => $event ,
+                'redirect_href' => route('front-cleanup-hosting', ['type' => 'organizer']),
             ]);
         } else {
             return $this->generateJsonResponse(true, 'Event marked as completed. Wrap-Up email and certificate email has been sent successfully.', '<p class="float-end text-warning">Wrap-Up Email sent by: '.auth()->guard('front')->user()->first_name.' '.auth()->guard('front')->user()->last_name.$cohostText.'</p>');
@@ -2617,8 +3015,8 @@ class FrontController extends Controller
         ]);
 
         $event = Event::with('creator')->findOrFail(decrypt($validated['event_id']));
-        if(empty($event->waste_collected) || empty($event->area_cleaned) || empty($event->volunteer_hours)){
-            return $this->generateJsonResponse(false, 'Waste Collected, Area Cleaned, and Volunteer Hours should be saved before sending the email.');
+        if(empty($event->waste_collected)){
+            return $this->generateJsonResponse(false, 'Waste Collected should be saved before sending the email.');
         }
         $tickets = $event->tickets()->where('checkin', 1)->where('community_form_status', 'pending')->get();
         if($tickets->count() == 0){
@@ -2631,7 +3029,7 @@ class FrontController extends Controller
                     'date' => $event->start_datetime->format(config('app.dateTimeFormat')),
                     'volunteersCount' => $event->tickets()->where('checkin', 1)->count(),
                     'wasteCollected' => $event->waste_collected ?? 'N/A',
-                    'areaCleaned' => $event->area_cleaned ?? 'N/A',
+
                     'communityServiceFormLink' => $event->allow_community_service_form ? $this->mailUrl('community-form', ['placeholder' => $event->encrypted_id]) : null,
                     //'feedbackFormLink' => route('event-feedback', ['placeholder' => $event->encrypted_id]),
                     'feedbackFormLink' => $this->mailUrl('event-feedback', ['placeholder' => $event->encrypted_id]),
@@ -2709,8 +3107,8 @@ class FrontController extends Controller
     public function contactLists(){
         $leads = OrganiserLead::where('organiser_id',auth()->guard('front')->user()->id)->latest()->get();
         return view('pages.frontend.contact-lists', [
-                                                        'leads' => $leads , 
-                                                        'seo_details' => (object)['title' => 'Contact List'] 
+                                                        'leads' => $leads ,
+                                                        'seo_details' => (object)['title' => 'Contact List']
                                                     ]);
     }
     public function orders(){
@@ -2770,9 +3168,9 @@ class FrontController extends Controller
             $fileName = $event->event_name.' Registrations.csv';
         }
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\RegistrationExport, 
-            $fileName, 
-            \Maatwebsite\Excel\Excel::CSV 
+            new \App\Exports\RegistrationExport,
+            $fileName,
+            \Maatwebsite\Excel\Excel::CSV
         );
     }
     public function salesReport(){
@@ -2811,7 +3209,7 @@ class FrontController extends Controller
     }
     public function registrationList(){
         $organising_events = auth()->guard('front')->user()->allControlEvents();
-        
+
         $registration_builder = EventOrderTicket::with(['children', 'volunteer', 'ticket', 'event'])->where(function($query) use($organising_events){
             $query->whereIn('event_id', $organising_events->pluck('id'))
             ->getVolunteerRegistrationLists();
@@ -2820,7 +3218,7 @@ class FrontController extends Controller
             $query->whereIn('event_id', $organising_events->pluck('id'))
             ->getVolunteerRegistrationLists();
         });
-        
+
         if (request()->filter === 'oldest') {
             //$registrations = (clone $registration_builder)->get();
             $registrations = (clone $registration_builder_p)->paginate(50)->withQueryString();
@@ -2833,7 +3231,7 @@ class FrontController extends Controller
         $approved = (clone $registration_builder)->active()->count();
         $free = (clone $registration_builder)->free()->count();
         $paid = (clone $registration_builder)->paid()->count();
- 
+
         return view('pages.frontend.registration-list', [
                                                         'registrations' => $registrations,
                                                         'seo_details' => (object)['title' => 'Registration List'],
@@ -2846,7 +3244,7 @@ class FrontController extends Controller
                                                             'free' => $free,
                                                             'paid' => $paid,
                                                         ],
-                                                        'events' => $organising_events , 
+                                                        'events' => $organising_events ,
                                                     ]);
     }
     public function resendWaiverLogs($ticket)
@@ -3015,7 +3413,7 @@ class FrontController extends Controller
             'event'            => $event,
             'volunteerName'    => $volunteer->name,
             //'hours'            => $orderTicket->hours_completed,
-            'hours'            => $event->volunteer_hours,
+            'hours'            => ($event->start_datetime && $event->end_datetime) ? round($event->start_datetime->diffInMinutes($event->end_datetime) / 60, 2) : 0,
             'organization_name'   => $event->creator->organisation_name,
             'organizer_name'   => $event->creator->first_name.' '.$event->creator->last_name,
             'organization_email'   => $event->creator->email_address,
@@ -3057,13 +3455,13 @@ class FrontController extends Controller
         $event = $orderTicket->event;
         $volunteer = $orderTicket->volunteer;
         if($orderTicket->community_form_pdf){
-            $community_form = $orderTicket->community_form_pdf; 
+            $community_form = $orderTicket->community_form_pdf;
         }else{
             $data = [
                 'event'            => $event,
                 'volunteerName'    => $volunteer->name,
                 //'hours'            => $orderTicket->hours_completed,
-                'hours'            => $event->volunteer_hours,
+                'hours'            => ($event->start_datetime && $event->end_datetime) ? round($event->start_datetime->diffInMinutes($event->end_datetime) / 60, 2) : 0,
                 'organization_name'   => $event->creator->organisation_name,
                 'organizer_name'   => $event->creator->first_name.' '.$event->creator->last_name,
                 'organization_email'   => $event->creator->email_address,
@@ -3101,6 +3499,12 @@ class FrontController extends Controller
                 $orderTicket->community_form_status = 'pending';
                 $orderTicket->checkin = 0;
                 $orderTicket->save();
+                if(request()->input('checkin_scope') === 'family'){
+                    $orderTicket->children()->whereNull('cancelled_at')->update([
+                        'checkin' => 0,
+                        'community_form_status' => 'pending',
+                    ]);
+                }
                 if($callFromBackend){
                     $this->setFlashSession(true , "Volunteer has been checked out successfully.");
                     return redirect()->back();
@@ -3126,15 +3530,51 @@ class FrontController extends Controller
                         $orderTicket->is_late_checkin = 1;
                     }
                     $orderTicket->save();
+                    if(request()->input('checkin_scope') === 'family'){
+                        $activeChildren = $orderTicket->children()->whereNull('cancelled_at')->get();
+                        foreach($activeChildren as $child){
+                            $pdfPath = $child->community_form_pdf;
+                            if(empty($pdfPath) || !file_exists(public_path($pdfPath))){
+                                $pdfPath = $this->generateChildCommunityServicePdf($child, $event);
+                            }
+                            $child->update([
+                                'checkin'               => 1,
+                                'checkin_dt'            => date('Y-m-d H:i:s'),
+                                'community_form_pdf'    => $pdfPath,
+                                'community_form_status' => 'approved',
+                            ]);
+                        }
+                    }
                     if($event->is_completed==1){
                         $to_arr = [];
                         $log_arr = [];
                         if (isset($orderTicket->volunteer) && isset($orderTicket->volunteer->id)) {
                             $tickets = $event->tickets()->where('checkin', 1)->whereNotNull('waiver_filled_at')->get();
+                            $checkedChildren = $orderTicket->children()->whereNull('cancelled_at')->where('checkin', 1)->get();
+                            $childCerts = [];
+                            $childCertsHtml = '';
+                            $childCertsText = '';
+                            if ($checkedChildren->isNotEmpty()) {
+                                $childCertsHtml = '<div style="margin-top: 15px; padding: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">' .
+                                    '<strong style="color: #1a5f9e; font-size: 14px;">Accompanying Children Certificates:</strong><ul style="margin: 8px 0 0; padding-left: 20px;">';
+                                foreach ($checkedChildren as $cc) {
+                                    $link = $this->mailUrl('show-child-community-service-pdf', ['child' => encrypt($cc->id)]);
+                                    $childCerts[] = [
+                                        'child_id'         => $cc->id,
+                                        'child_name'       => $cc->child_name,
+                                        'child_age'        => $cc->child_age,
+                                        'certificate_link' => $link,
+                                    ];
+                                    $childCertsHtml .= '<li style="margin-bottom: 6px;"><strong>' . htmlspecialchars($cc->child_name) . '</strong>: ' .
+                                        '<a href="' . $link . '" style="color: #0d6efd; text-decoration: underline;">Download Certificate</a></li>';
+                                    $childCertsText .= $cc->child_name . ': ' . $link . "\n";
+                                }
+                                $childCertsHtml .= '</ul></div>';
+                            }
                             $email = $orderTicket->volunteer->email_address;
                             $name = $orderTicket->volunteer->first_name.' '.$orderTicket->volunteer->last_name;
                             if(!empty(trim($email))){
-                                $to_arr[] = 
+                                $to_arr[] =
                                 [
                                     "to" => [
                                         ["email" => trim($email)]
@@ -3149,10 +3589,14 @@ class FrontController extends Controller
                                         "organizer_name" => $event->creator->first_name.' '.$event->creator->last_name,
                                         "total_volunteers" => $tickets->count(),
                                         "waste_collected" => $event->waste_collected,
-                                        "area_cleaned" => $event->area_cleaned,
+
                                         "service_hours" => $event->volunteer_hours ?? 'N/A',
                                         'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
                                         'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($orderTicket->id)]),
+                                        'children_certificates' => $childCerts,
+                                        'children_certificates_html' => $childCertsHtml,
+                                        'children_certificates_text' => $childCertsText,
+                                        'has_children_certificates' => !empty($childCerts),
                                     ],
                                 ];
                                 $log_arr[] = [
@@ -3281,11 +3725,80 @@ class FrontController extends Controller
         $seo_details = (object)['title' => 'Community Service PDF'];
         return view('pages.frontend.show-community-service-pdf', ['seo_details' => $seo_details]);
     }
+
+    public function showChildCommunityServicePdf($child)
+    {
+        $childRecord = EventOrderTicketChild::with(['event.creator', 'parent_ticket.event.creator'])->findOrFail(decrypt($child));
+        if ($childRecord->checkin == 1) {
+            $pdfUrl = $childRecord->community_form_pdf;
+            $hasValidFile = !empty($pdfUrl);
+            if ($hasValidFile) {
+                $exp = explode('events/', $pdfUrl);
+                $relPath = isset($exp[1]) ? 'events/'.$exp[1] : $pdfUrl;
+                $hasValidFile = file_exists(public_path($relPath));
+            }
+            if (!$hasValidFile) {
+                $event = $childRecord->event ?: ($childRecord->parent_ticket ? $childRecord->parent_ticket->event : null);
+                $pdfUrl = $this->generateChildCommunityServicePdf($childRecord, $event);
+                if ($pdfUrl) {
+                    $childRecord->update([
+                        'community_form_pdf'    => $pdfUrl,
+                        'community_form_status' => 'approved',
+                    ]);
+                }
+            }
+            if (!empty($pdfUrl)) {
+                $exp = explode('events/', $pdfUrl);
+                $relativePath = isset($exp[1]) ? 'events/'.$exp[1] : $pdfUrl;
+                $filePath = public_path($relativePath);
+                if (file_exists($filePath)) {
+                    return response()->file($filePath, [
+                        'Content-Type' => 'application/pdf',
+                    ]);
+                }
+            }
+        }
+        $seo_details = (object)['title' => 'Community Service PDF'];
+        return view('pages.frontend.show-community-service-pdf', ['seo_details' => $seo_details]);
+    }
+
+    public function generateChildCommunityServicePdf($child, $event)
+    {
+        $hours = ($event && $event->start_datetime && $event->end_datetime)
+            ? round($event->start_datetime->diffInMinutes($event->end_datetime) / 60, 2)
+            : 0;
+
+        $data = [
+            'event'              => $event,
+            'volunteerName'      => $child->child_name,
+            'hours'              => $hours,
+            'organization_name'  => ($event && $event->creator) ? $event->creator->organisation_name : '',
+            'organizer_name'     => ($event && $event->creator) ? ($event->creator->first_name.' '.$event->creator->last_name) : '',
+            'organization_email' => ($event && $event->creator) ? $event->creator->email_address : '',
+            'organizer_link'     => ($event && $event->creator) ? route('organizer-detail', ['slug' => $event->creator->organisation_landing_slug]) : '#',
+        ];
+
+        try {
+            $html = view('pages.events.community-form-new', $data)->render();
+            $pdf = \PDF::setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true])->loadHTML($html);
+            $filename = 'child_community_form_' . $child->id . '_' . time() . '.pdf';
+            $path = 'events/community_forms/' . $filename;
+            $publicPath = public_path($path);
+            if (!file_exists(dirname($publicPath))) {
+                mkdir(dirname($publicPath), 0755, true);
+            }
+            file_put_contents($publicPath, $pdf->output());
+            return $path;
+        } catch (\Exception $e) {
+            \Log::error('Child certificate generation failed: ' . $e->getMessage());
+            return null;
+        }
+    }
     /* public function ticketMarkCheckin($id){
         $registration = EventOrderTicket::findOrFail(decrypt($id));
         $registration->checkin = 1;
         $registration->save();
-        
+
         $mail_content = [
             //'org_name'         => $organiser->first_name.' '.$organiser->last_name,
         ];
@@ -3295,7 +3808,7 @@ class FrontController extends Controller
     } */
     public function postRegistrationNotes(){
         $request = request();
-       
+
         $validated = $request->validate([
             'ticket_order_id' => 'required|integer|exists:event_order_tickets,id',
             'ticket_order_notes' => 'required|string|max:2000',
@@ -3321,7 +3834,7 @@ class FrontController extends Controller
     public function profile(){
         $seo_details = (object)['title' => 'Profile'];
         return view('pages.frontend.volunteer-profile', [
-                                    'seo_details' => $seo_details , 
+                                    'seo_details' => $seo_details ,
                                     'cities' => City::all() ,
                                     'user' => auth()->guard('front')->user()]);
     }
@@ -3342,7 +3855,7 @@ class FrontController extends Controller
         if(request()->hasFile('profile_picture')) {
             $uploadedFiles = $this->uploadFiles('profile_picture' , 'uploads/volunteer_profile_pictures');
             $validated['profile_picture']= json_encode($uploadedFiles);
-            
+
         }else{
             unset($validated['profile_picture']);
         }
@@ -3363,7 +3876,7 @@ class FrontController extends Controller
                 'original_name' => $originalName,
                 'extension'     => 'jpg',
             ]);
-            
+
         }else{
             unset($validated['cropped_image']);
         }
@@ -3427,7 +3940,7 @@ class FrontController extends Controller
                 'original_name' => $originalName,
                 'extension'     => 'jpg',
             ]);
-            
+
         }else{
             unset($validated['cropped_image']);
         }
@@ -3464,7 +3977,7 @@ class FrontController extends Controller
         // Filter by Date (certificate_requested_at date)
         if (request()->filled('by_date')) {
             $rawDate = request()->by_date;
-        
+
             // Try parsing with Carbon's flexible parse (handles m/d/Y, d/m/Y, Y-m-d etc.)
             $date = \Carbon\Carbon::parse($rawDate)->format('Y-m-d');
             $query->wherePivot('certificate_requested_at', 'LIKE', "%{$date}%");
@@ -3473,11 +3986,11 @@ class FrontController extends Controller
         $data['requests'] = $query->get();
         $data['by_date']  = request()->by_date;
         $data['seo_details'] = (object)['title' => 'Certificate Requests'];
-        return view('pages.frontend.certificate-requests', $data); 
+        return view('pages.frontend.certificate-requests', $data);
     }
     public function certificateRequestDetail($id){
         $orderTicket = EventOrderTicket::with(['volunteer', 'event', 'event.creator'])->findOrFail(decrypt($id));
-        
+
         $authUser = auth()->guard('front')->user();
         $cohostCreatorIds = $orderTicket->event->cohosts()->where('request_status', 'approved')->pluck('volunteer_id')->toArray();
         $cohostCreatorIds[] = $orderTicket->event->creator_id;
@@ -3491,7 +4004,7 @@ class FrontController extends Controller
         $data['event']       = $orderTicket->event;
         $data['volunteer']   = $orderTicket->volunteer;
         $data['seo_details'] = (object)['title' => 'Certificate Request Detail'];
-        return view('pages.frontend.certificate-request-detail', $data); 
+        return view('pages.frontend.certificate-request-detail', $data);
     }
     public function certificateManagement(){
         $data = [];
@@ -3547,7 +4060,7 @@ class FrontController extends Controller
             if(empty(trim($orderTicket->waiver_filled_at))){
                 return $this->generateJsonResponse(false, 'A waiver must be signed before the request can be approved.');
             }
-            
+
             if(!$callFromBackend){
                 $authUser = auth()->guard('front')->user();
                 // Security: make sure this ticket belongs to organizer's event
@@ -3585,13 +4098,13 @@ class FrontController extends Controller
             $event = $orderTicket->event;
             $volunteer = $orderTicket->volunteer;
             if($orderTicket->community_form_pdf){
-                $community_form = $orderTicket->community_form_pdf; 
+                $community_form = $orderTicket->community_form_pdf;
             }else{
                 $data = [
                     'event'            => $event,
                     'volunteerName'    => $volunteer->name,
                     //'hours'            => $orderTicket->hours_completed,
-                    'hours'            => $event->volunteer_hours,
+                    'hours'            => ($event->start_datetime && $event->end_datetime) ? round($event->start_datetime->diffInMinutes($event->end_datetime) / 60, 2) : 0,
                     'organization_name'   => $event->creator->organisation_name,
                     'organizer_name'   => $event->creator->first_name.' '.$event->creator->last_name,
                     'organization_email'   => $event->creator->email_address,
@@ -3625,10 +4138,31 @@ class FrontController extends Controller
                     $log_arr = [];
                     if (isset($volunteer) && isset($volunteer->id)) {
                         $tickets = $event->tickets()->where('checkin', 1)->whereNotNull('waiver_filled_at')->get();
+                        $checkedChildren = $orderTicket->children()->whereNull('cancelled_at')->where('checkin', 1)->get();
+                        $childCerts = [];
+                        $childCertsHtml = '';
+                        $childCertsText = '';
+                        if ($checkedChildren->isNotEmpty()) {
+                            $childCertsHtml = '<div style="margin-top: 15px; padding: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">' .
+                                '<strong style="color: #1a5f9e; font-size: 14px;">Accompanying Children Certificates:</strong><ul style="margin: 8px 0 0; padding-left: 20px;">';
+                            foreach ($checkedChildren as $cc) {
+                                $link = $this->mailUrl('show-child-community-service-pdf', ['child' => encrypt($cc->id)]);
+                                $childCerts[] = [
+                                    'child_id'         => $cc->id,
+                                    'child_name'       => $cc->child_name,
+                                    'child_age'        => $cc->child_age,
+                                    'certificate_link' => $link,
+                                ];
+                                $childCertsHtml .= '<li style="margin-bottom: 6px;"><strong>' . htmlspecialchars($cc->child_name) . '</strong>: ' .
+                                    '<a href="' . $link . '" style="color: #0d6efd; text-decoration: underline;">Download Certificate</a></li>';
+                                $childCertsText .= $cc->child_name . ': ' . $link . "\n";
+                            }
+                            $childCertsHtml .= '</ul></div>';
+                        }
                         $email = $volunteer->email_address;
                         $name = $volunteer->first_name.' '.$volunteer->last_name;
                         if(!empty(trim($email))){
-                            $to_arr[] = 
+                            $to_arr[] =
                             [
                                 "to" => [
                                     ["email" => trim($email)]
@@ -3643,10 +4177,14 @@ class FrontController extends Controller
                                     "organizer_name" => $event->creator->first_name.' '.$event->creator->last_name,
                                     "total_volunteers" => $tickets->count(),
                                     "waste_collected" => $event->waste_collected,
-                                    "area_cleaned" => $event->area_cleaned,
+
                                     "service_hours" => $event->volunteer_hours ?? 'N/A',
                                     'highlight_link' => $this->mailUrl('cleanup-highlights', ['event' => encrypt($event->id)]),
                                     'certificate_download_link' => $this->mailUrl('show-community-service-pdf', ['ticket' => encrypt($orderTicket->id)]),
+                                    'children_certificates' => $childCerts,
+                                    'children_certificates_html' => $childCertsHtml,
+                                    'children_certificates_text' => $childCertsText,
+                                    'has_children_certificates' => !empty($childCerts),
                                 ],
                             ];
                             $log_arr[] = [
@@ -3717,7 +4255,7 @@ class FrontController extends Controller
                 $name = $orderTicket->volunteer->first_name.' '.$orderTicket->volunteer->last_name;
                 if(!empty(trim($email))){
                     $to_arr = [];
-                    $to_arr[] = 
+                    $to_arr[] =
                     [
                         "to" => [
                             ["email" => trim($email)]
@@ -3748,7 +4286,7 @@ class FrontController extends Controller
         $data['categories']        = EventCategory::all();
         $data['seo_details'] = (object)['title' => 'Embedded Widget'];
         $data['listing_data'] = auth()->guard()->user()->widgets()->orderBy('id', 'desc')->get();
-        return view('pages.frontend.embedded-widget', $data); 
+        return view('pages.frontend.embedded-widget', $data);
     }
     public function manageWidget($id=null)
     {
@@ -3761,7 +4299,7 @@ class FrontController extends Controller
         $data['organizers'] = Volunteer::where('is_organiser', 1)->get();
         $data['event_tags'] = \App\Models\Tag::orderBy('name')->get();
         $data['seo_details'] = (object)['title' => 'Manage Embedded Widget'];
-        return view('pages.frontend.manage-embedded-widget', $data); 
+        return view('pages.frontend.manage-embedded-widget', $data);
     }
     public function widgetEventCount()
     {
@@ -4011,7 +4549,7 @@ class FrontController extends Controller
         }])->where('volunteer_id', auth()->guard('front')->user()->id)->get();
         $data['from_date'] = $from_date;
         $data['to_date'] = $to_date;
-        return view('pages.frontend.embedded-widget-report', $data); 
+        return view('pages.frontend.embedded-widget-report', $data);
     }
     public function saveWidget($id=null){
         $request = request();
@@ -4053,7 +4591,7 @@ class FrontController extends Controller
             $widget = new VolunteerWidget();
             $widget->wid_number = $this->generateRandomWidgetNumber();
             $widget->volunteer_id = auth()->guard('front')->user()->id;
-        }    
+        }
         $widget->fill($validated);
         $widget->location_lat = $validated['latitude'];
         $widget->location_long = $validated['longitude'];
@@ -4120,10 +4658,10 @@ class FrontController extends Controller
         }
         $org_html = '';
         if(!empty($widget->org_ids)){
-            // need to show name like "first_name last_name (email_address)" means we need to contact these 3 columns in one string 
+            // need to show name like "first_name last_name (email_address)" means we need to contact these 3 columns in one string
             $org_ids = explode(',', $widget->org_ids);
             $vols = Volunteer::whereIn('id', $org_ids)->get();
-            foreach($vols as $key => $vol){ 
+            foreach($vols as $key => $vol){
                 $org_html .= $vol->first_name.' '.$vol->last_name.' ('.$vol->email_address.')';
                 if($key < count($vols) - 1){
                     $org_html .= ', ';
@@ -4429,7 +4967,7 @@ class FrontController extends Controller
         return view('pages.frontend.show-widget', $data);
     }
     public function addWidgetLog($widget_id, $type, $ref_id=null){
-        // we need to prevent that if user accidently clicked the button twice and hit the ajax twice then multiple logs should not be created so update below code accordingly 
+        // we need to prevent that if user accidently clicked the button twice and hit the ajax twice then multiple logs should not be created so update below code accordingly
         $widget = VolunteerWidget::find(decrypt($widget_id));
         if(!$widget){
             return response()->json([
@@ -4483,7 +5021,7 @@ class FrontController extends Controller
             $volunteers = Volunteer::where('status', 1)
                 ->where('is_organiser', 1)
                 ->where(function($query) use ($search) {
-                    // concat the first_name and last_name and search 
+                    // concat the first_name and last_name and search
                     $query->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $search . '%'])
                         ->orWhere('first_name', 'like', '%' . $search . '%')
                         ->orWhere('last_name', 'like', '%' . $search . '%')
@@ -4500,7 +5038,7 @@ class FrontController extends Controller
         }
         return response()->json(['results' => $options]);
     }
-    
+
     public function bookingConfirmed($order_id)
     {
         $data = [];
@@ -4509,14 +5047,14 @@ class FrontController extends Controller
                 abort(404, 'Order not found.');
             }
             $data['order'] = $order;
-            $data['event'] = $order->event; 
+            $data['event'] = $order->event;
             $data['ticket'] = $order->ticket;
-        
-    
+
+
         $data['seo_details'] = (object)['title' => 'Booking Confirmed'];
         return view('pages.frontend.booking-confirmed', $data);
     }
-    
+
     public function rsvpWaiverConfirmed($id)
     {
         $data = [];
@@ -4525,12 +5063,12 @@ class FrontController extends Controller
         if(!$id || !$event){
             abort(404, 'Event not found.');
         }
-        $data['event'] = $event; 
+        $data['event'] = $event;
         $data['ticket'] = $orderTicket;
         $data['seo_details'] = (object)['title' => 'RSVP Confirmation Form'];
         return view('pages.frontend.rsvp-confirmed', $data);
     }
-    
+
     public function organizerDetail($slug = null)
     {
         if(!$slug){
@@ -4542,28 +5080,28 @@ class FrontController extends Controller
             abort(404, 'Organizer not found.');
         }
         $seo_details = (object)[
-                            'title' => "Organizer ".$organiser->name, 
-                            'description' => $organiser->orgranisation_short_description,                
+                            'title' => "Organizer ".$organiser->name,
+                            'description' => $organiser->orgranisation_short_description,
                         ];
         //$past_events = Event::where('creator_id', $organiser->id)->past()->get();
-        $past_events = Event::with('category')->where('creator_id', $organiser->id)->where('end_datetime', '<', now())
-            ->orderBy('start_datetime', 'desc') 
+        $past_events = Event::with('category')->where('creator_id', $organiser->id)->whereDate('end_datetime', '<', now())
+            ->orderBy('start_datetime', 'desc')
             ->orderBy('end_datetime', 'desc')
             ->orderBy('site_publish_date', 'asc')
             ->orderBy('id', 'asc')->paginate(20, ['*'], 'past_page')->withQueryString()->appends(['tab' => 'past_event']);
         $present_events = Event::with('category')->where('creator_id', $organiser->id)->present()
-            ->orderBy('start_datetime', 'asc') 
+            ->orderBy('start_datetime', 'asc')
             ->orderBy('end_datetime', 'asc')
             ->orderBy('site_publish_date', 'desc')
             ->orderBy('id', 'desc')->paginate(20, ['*'], 'ongoing_page')->withQueryString()->appends(['tab' => 'ongoing_event']);
         $future_events = Event::with('category')->where('creator_id', $organiser->id)->future()
-            ->orderBy('start_datetime', 'asc') 
+            ->orderBy('start_datetime', 'asc')
             ->orderBy('end_datetime', 'asc')
             ->orderBy('site_publish_date', 'desc')
             ->orderBy('id', 'desc')->paginate(20, ['*'], 'upcoming_page')->withQueryString()->appends(['tab' => 'upcoming_event']);
         return view('pages.frontend.organizer-detail' , [
-                            'organiser' => $organiser, 
-                            'seo_details' => $seo_details, 
+                            'organiser' => $organiser,
+                            'seo_details' => $seo_details,
                             'past_events' => $past_events,
                             'present_events' => $present_events,
                             'future_events' => $future_events
@@ -4590,29 +5128,38 @@ class FrontController extends Controller
             'c_volunteer'         => $validated['name'],
             'c_email'             => $validated['email'],
             'c_phone'             => $validated['phone'],
-            'c_message'             => $validated['message']
+            'c_message'             => $validated['message'],
+            'inbox_link'            => $this->mailUrl('contact-lists')
         ];
-        
-        $this->sendEmail($organiser->email_address, CONTACT_ORG_MAIL_SUB, $mail_content, "contact-organizer");
-        
+
+        $to_arr = [
+            [
+                "to" => [
+                    ["email" => trim($organiser->email_address)]
+                ],
+                "dynamic_template_data" => $mail_content
+            ]
+        ];
+        $this->sendSendgridTemplateEmailWithoutLog($to_arr, "d-9addd3042e0a43f7830062b695c8a4e3");
+
         $this->setFlashSession(true, "Thank you for contacting the organizer. We will get back to you soon.");
         return redirect()->back();
     }
     public function waiverForm($ticket){
         $request = request();
-        
+
         if ($request->isMethod('post')) {
             $validated = $request->validate([
                 'email' => 'required|email|max:255',
                 'name' => 'required|string|max:255',
                 'phone' => 'nullable|string|max:20',
             ]);
-            
+
             // Process waiver form submission
             $this->setFlashSession(true, 'Waiver form submitted successfully.');
             return redirect()->back();
         }
-        
+
         // Display waiver form
         return view('pages.frontend.waiver-form', [
             'ticket' => $ticket,
@@ -4634,7 +5181,7 @@ class FrontController extends Controller
         $ianaTimezone = $timezoneMap[strtolower($event->event_timezone)] ?? 'America/New_York';
         $startDateTime = new \DateTime($event->start_datetime, new \DateTimeZone($ianaTimezone));
         $endDateTime = new \DateTime($event->end_datetime, new \DateTimeZone($ianaTimezone));
-        
+
         $startDate   = $startDateTime->format('Ymd\THis');
         $endDate     = $endDateTime->format('Ymd\THis');
         $description = $event->event_name;
@@ -4665,7 +5212,7 @@ class FrontController extends Controller
         request()->validate([
             'meta_title' => 'required',
             'meta_description' => 'required',
-        ]); 
+        ]);
         $meta_title = request()->meta_title;
         $meta_description = request()->meta_description;
         $content = $this->getAiFocusKeyword($meta_title,$meta_description);
@@ -4822,7 +5369,7 @@ class FrontController extends Controller
             if($ticket->is_under_18==1){
                 $subject = "Action Required: ".$name.", Please Sign Waiver for ".$volunteer->first_name." – ".$event->event_name;
             }
-            $to_arr[] = 
+            $to_arr[] =
             [
                 "to" => [
                     ["email" => trim($email)]
@@ -4989,13 +5536,13 @@ class FrontController extends Controller
             $log_arr = [];
             foreach ($tickets as $key => $value) {
                 if($value->community_form_pdf){
-                    $community_form = $value->community_form_pdf; 
+                    $community_form = $value->community_form_pdf;
                 }else{
                     $data = [
                         'event'            => $event,
                         'volunteerName'    => $value->volunteer->first_name.' '.$value->volunteer->last_name,
                         //'hours'            => $value->hours_completed,
-                        'hours'            => $event->volunteer_hours,
+                        'hours'            => ($event->start_datetime && $event->end_datetime) ? round($event->start_datetime->diffInMinutes($event->end_datetime) / 60, 2) : 0,
                         'organization_name'   => $event->creator->organisation_name,
                         'organizer_name'   => $event->creator->first_name.' '.$event->creator->last_name,
                         'organization_email'   => $event->creator->email_address,
@@ -5031,7 +5578,7 @@ class FrontController extends Controller
                 /* $email = $value->volunteer->email_address;
                 $name = $value->volunteer->first_name.' '.$value->volunteer->last_name;
                 if(!empty(trim($email))){
-                    $to_arr[] = 
+                    $to_arr[] =
                     [
                         "to" => [
                             ["email" => trim($email)]
@@ -5094,7 +5641,7 @@ class FrontController extends Controller
                     if($value->is_under_18==1){
                         $subject = "Action Required: ".$name.", Please Sign Waiver for ".$value->volunteer->first_name." – ".$event->event_name;
                     }
-                    $to_arr[] = 
+                    $to_arr[] =
                     [
                         "to" => [
                             ["email" => trim($email)]
@@ -5137,7 +5684,7 @@ class FrontController extends Controller
             $order = $orderTicket->eventOrder;
             $total_donation_amount = !empty($order->donation_amount)?$order->donation_amount:0;
             $orderTicket->update(['is_amt_donated'=>1,'rsvp_confirmation'=>0]);
-            $total_donation_amount += $orderTicket->price; 
+            $total_donation_amount += $orderTicket->price;
             $order->donation_amount = $total_donation_amount;
             $order->save();
             $email = $orderTicket->volunteer->email_address;
@@ -5148,7 +5695,7 @@ class FrontController extends Controller
                 $event = $orderTicket->event;
                 $subject = "Thank you for donating your ticket amount for ".$event->event_name;
                 $to_arr = [];
-                $to_arr[] = 
+                $to_arr[] =
                 [
                     "to" => [
                         ["email" => trim($email)]
@@ -5167,7 +5714,7 @@ class FrontController extends Controller
                         'organizer_name' => $event->creator->first_name.' '.$event->creator->last_name,
                     ],
                 ];
-                // need to change the template id for this email 
+                // need to change the template id for this email
                 //$this->sendSendgridTemplateEmailWithoutLog($to_arr,"d-1ef71dffbc644dce914ab333526c922d");
             }
             $this->setFlashSession(true, "Ticket amount has been donated successfully.");
@@ -5218,7 +5765,7 @@ class FrontController extends Controller
         $this->setFlashSession(true, 'Event cancelled successfully.');
         return redirect()->back();
     }
-    public function cronSendEventCancelEmail(){        
+    public function cronSendEventCancelEmail(){
         set_time_limit(0);
         ini_set('max_execution_time', 0);
         /* $tickets = EventOrderTicket::with([
@@ -5315,13 +5862,13 @@ class FrontController extends Controller
     }
     public function runCronSendEventCancelEmail($to_arr,$log_arr,$updateIds){
         $jayParsedAry = [
-            "personalizations" => $to_arr, 
+            "personalizations" => $to_arr,
             "from" => [
                         "name" => "VolunteerCleanup.Org" ,
-                        "email" => "outreach@volunteercleanup.org" 
-                    ], 
-            "template_id" => "d-90ce664df7e04903aca3bf79264b7db8" 
-        ]; 
+                        "email" => "outreach@volunteercleanup.org"
+                    ],
+            "template_id" => "d-90ce664df7e04903aca3bf79264b7db8"
+        ];
 
         // Convert the post data to a string
         $postDataString = http_build_query($jayParsedAry);
@@ -5636,7 +6183,7 @@ class FrontController extends Controller
                     $email = $value->volunteer->email_address;
                     $name = $value->volunteer->first_name.' '.$value->volunteer->last_name;
                     if(!empty(trim($email))){
-                        $to_arr[] = 
+                        $to_arr[] =
                         [
                             "to" => [
                                 ["email" => trim($email)]
@@ -5652,7 +6199,7 @@ class FrontController extends Controller
                                 'event_date' => $event->startTimeAndEndTime,
                                 'event_location' => $event->fullAddress,
                                 'cancel_registration_link' => $this->mailUrl('front-cleanup-attending'),
-                                'add_to_calendar_link' => $this->mailUrl('front-registration-calendar', ['slug' => $event->slug]), 
+                                'add_to_calendar_link' => $this->mailUrl('front-registration-calendar', ['slug' => $event->slug]),
                                 'event_link' => $this->mailUrl('view-event-details', ['slug' => $event->slug]),
                                 'is_under_18'    => $value->is_under_18==1?true:false,
                                 'waiver_signed'  => !empty($value->rsvp_filled_at)?true:false,
@@ -5692,13 +6239,13 @@ class FrontController extends Controller
             return false;
         }
         $jayParsedAry = [
-            "personalizations" => $to_arr, 
+            "personalizations" => $to_arr,
             "from" => [
                         "name" => "VolunteerCleanup.Org" ,
-                        "email" => "outreach@volunteercleanup.org" 
-                    ], 
-            "template_id" => "d-05bdce4a79464eb294ac6be3fa0f6ee3" 
-        ]; 
+                        "email" => "outreach@volunteercleanup.org"
+                    ],
+            "template_id" => "d-05bdce4a79464eb294ac6be3fa0f6ee3"
+        ];
 
         // Convert the post data to a string
         $postDataString = http_build_query($jayParsedAry);
@@ -5786,7 +6333,7 @@ class FrontController extends Controller
             $log_arr = [];
             foreach ($records as $key => $value) {
                 if(isset($value->creator) && isset($value->creator->email_address) && !empty(trim($value->creator->email_address))){
-                    $to_arr[] = 
+                    $to_arr[] =
                     [
                         "to" => [
                             ["email" => trim($value->creator->email_address)]
@@ -5811,7 +6358,7 @@ class FrontController extends Controller
                 if ($activeCohosts->isNotEmpty()) {
                     foreach ($activeCohosts as $key => $cohost) {
                         if(isset($cohost->volunteer) && isset($cohost->volunteer->email_address) && !empty(trim($cohost->volunteer->email_address))){
-                            $to_arr[] = 
+                            $to_arr[] =
                             [
                                 "to" => [
                                     ["email" => trim($cohost->volunteer->email_address)]
@@ -5847,13 +6394,13 @@ class FrontController extends Controller
     }
     public function runCronEventFinalize($to_arr,$log_arr){
         $jayParsedAry = [
-            "personalizations" => $to_arr, 
+            "personalizations" => $to_arr,
             "from" => [
                         "name" => "VolunteerCleanup.Org" ,
-                        "email" => "outreach@volunteercleanup.org" 
-                    ], 
-            "template_id" => "d-3badeebd9cfe40458f55935dd25aa41a" 
-        ]; 
+                        "email" => "outreach@volunteercleanup.org"
+                    ],
+            "template_id" => "d-3badeebd9cfe40458f55935dd25aa41a"
+        ];
 
         // Convert the post data to a string
         $postDataString = http_build_query($jayParsedAry);
@@ -5915,7 +6462,7 @@ class FrontController extends Controller
             $log_arr = [];
             foreach ($records as $key => $value) {
                 if(isset($value->creator) && isset($value->creator->email_address) && !empty(trim($value->creator->email_address))){
-                    $to_arr[] = 
+                    $to_arr[] =
                     [
                         "to" => [
                             ["email" => trim($value->creator->email_address)]
@@ -5940,7 +6487,7 @@ class FrontController extends Controller
                 if ($activeCohosts->isNotEmpty()) {
                     foreach ($activeCohosts as $key => $cohost) {
                         if(isset($cohost->volunteer) && isset($cohost->volunteer->email_address) && !empty(trim($cohost->volunteer->email_address))){
-                            $to_arr[] = 
+                            $to_arr[] =
                             [
                                 "to" => [
                                     ["email" => trim($cohost->volunteer->email_address)]
@@ -6057,13 +6604,13 @@ class FrontController extends Controller
             return false;
         }
         $jayParsedAry = [
-            "personalizations" => $to_arr, 
+            "personalizations" => $to_arr,
             "from" => [
                         "name" => "VolunteerCleanup.Org" ,
-                        "email" => "outreach@volunteercleanup.org" 
-                    ], 
-            "template_id" => "d-8b60d30487624ad48181d0db07175923" 
-        ]; 
+                        "email" => "outreach@volunteercleanup.org"
+                    ],
+            "template_id" => "d-8b60d30487624ad48181d0db07175923"
+        ];
 
         // Convert the post data to a string
         $postDataString = http_build_query($jayParsedAry);
@@ -6151,7 +6698,7 @@ class FrontController extends Controller
             ];
             foreach ($alerts as $key => $alert) {
                 if(isset($locations_helper[$alert->zipcode]) && $locations_helper[$alert->zipcode]>0 && isset($alert->volunteer) && isset($alert->volunteer->email_address) && !empty(trim($alert->volunteer->email_address))){
-                    $to_arr[] = 
+                    $to_arr[] =
                     [
                         "to" => [
                             ["email" => trim($alert->volunteer->email_address)]
@@ -6170,7 +6717,7 @@ class FrontController extends Controller
                     ];
                     $log_arr[] = array(
                         "email" => $alert->volunteer->email_address,
-                        "alert_id" => $alert->id, 
+                        "alert_id" => $alert->id,
                     );
                     $counter++;
                 }
@@ -6199,12 +6746,12 @@ class FrontController extends Controller
             return false;
         }
         $jayParsedAry = [
-            "personalizations" => $to_arr, 
+            "personalizations" => $to_arr,
             "from" => [
-                        "email" => "outreach@volunteercleanup.org" 
-                    ], 
-            "template_id" => "d-913d0fbed7de496289f80de87da8d8a6" 
-        ]; 
+                        "email" => "outreach@volunteercleanup.org"
+                    ],
+            "template_id" => "d-913d0fbed7de496289f80de87da8d8a6"
+        ];
 
         // Convert the post data to a string
         $postDataString = http_build_query($jayParsedAry);
@@ -6215,7 +6762,7 @@ class FrontController extends Controller
         // Output the size of the post data in MB
         //echo "Size of post data: " . $postDataSizeMB . " MB\n\n";
         //return true;
-        
+
         //print_r(count($jayParsedAry));
         //echo  "<br>";
 
@@ -6272,7 +6819,7 @@ class FrontController extends Controller
         $txt = "\n\nRESPONSE (POST DATA: ".$postDataSizeMB." MB)-------------------------Time" . date('Y-m-d H:i')."\n";
         $txt .= json_encode($response);
         fwrite($myfile, $txt);
-        fclose($myfile);     
+        fclose($myfile);
     }
     public function cronWeeklyAlertsEventHtml($events){
         $html  = '';
@@ -6297,13 +6844,13 @@ class FrontController extends Controller
                         <div class="wpem-event-information" style="float: left;font-size: 15px;line-height: 20px;width: 100%; padding: 0px 15px;">
                             <div class="wpem-event-date" style="width: 80px; font-size: 15px; line-height: 20px;">
                                 <div class="wpem-event-date-type" style="display: flex;">';
-                                if (!empty($event->start_datetime)) { 
+                                if (!empty($event->start_datetime)) {
                                     $html .= '<div class="wpem-from-date" style="width: 40px;">
                                         <div class="wpem-date" style="font-size: 29px; line-height: 30px; font-weight: 600; color:#555555">'.(date('d', strtotime($event->start_datetime))).'</div>
                                         <div class="wpem-month" style="font-size: 13px; text-transform: uppercase; font-weight: 400; line-height: 15px;  color: #555555;">'.(date('M', strtotime($event->start_datetime))).'</div>
                                     </div>';
-                                } 
-                                if (date('Y-m-d',strtotime($event->start_datetime)) != date('Y-m-d',strtotime($event->end_datetime)) && !empty($event->end_datetime)) { 
+                                }
+                                if (date('Y-m-d',strtotime($event->start_datetime)) != date('Y-m-d',strtotime($event->end_datetime)) && !empty($event->end_datetime)) {
                                     $html .= '<div class="wpem-to-date" style="display: flex; float: left; padding-left: 10px;  position: relative; ">
                                         <div class="wpem-date-separator" style="position: absolute; left: 0; top: 50%;  transform: translate(0,-50%);  font-size: 20px;  color: #555555">-</div>
                                         <div style="padding-left: 10px; padding-top: 2px;">
@@ -6324,13 +6871,13 @@ class FrontController extends Controller
                             </tr>
                             <tr>
                                 <div class="wpem-event-date-time" style="margin: 5px 0px;  min-height: 22px;  color: #555555;  display: flex;">
-                                
+
                                         <img width="20" height="20" src="'.($baseurl.'assets/images/clock.png').'" alt="-" /><span class="wpem-event-date-time-text" style="font-size: 15px; line-height: 20px; padding-left: 5px; font-family: Roboto, Sans-serif;"> '.$event->startTimeAndEndTime.'</span>
                                 </div>
                             </tr>
                             <tr>
                                 <div class="wpem-event-location" style="margin: 5px 0px;  min-height: 22px;  color: #555555;  display: flex;">
-                                    
+
                                     <img width="15" height="20" src="'.($baseurl.'assets/images/location-pin.png').'" alt="-" /><span class="wpem-event-location-text" style="font-size: 15px; line-height: 20px; padding-left: 5px; font-family: Roboto, Sans-serif;">'.$event->fullAddress.'</span>
                                 </div>
                             </tr>
@@ -6345,18 +6892,18 @@ class FrontController extends Controller
                                     }
                                 }
                                 //$totalBookedTicket = $event->tickets->where('rsvp_confirmation',1)->count();
-                                if($totalTicketCount>0){ 
+                                if($totalTicketCount>0){
                                     $html .= '<div style="display:block;width: 100%;margin:10px 0px">
                                         <span class="wpem-ticket-price" style="font-size: 15px; line-height: 20px; padding-left: 5px; font-family: Roboto, Sans-serif;"></span>';
                                         if($totalBookedTicket>0 && $totalTicketCount>0 && $totalBookedTicket>=$totalTicketCount){
                                             $html .=  '<span class="wpem-ticket-quantity wpem-form-group wpem-ticket-sold-out" style="background-color: rgb(255 0 0 / 80%);color: white; padding: 4px 10px;border-radius: 4px; text-align: center;">
                                             Sold Out</span>';
-                                        }else{ 
+                                        }else{
                                             $html .=  '<span class="wpem-event-ticket-type-text" style="background: #f5f5f5 ; color: #111111; padding: 5px 7px; display: inline-block; line-height: 15px;  font-weight: 500; font-size: 14px; border-radius: 4px;margin-left:5px;"><span class="remaining-tickets-counter">'.( 'Remaining tickets '.($totalTicketCount-$totalBookedTicket).' out of '.$totalTicketCount).'</span></span>';
                                         }
                                     $html .=    '</div>';
                                 }
-                            
+
                             $html .=    '</div>
                             </tr>
                         </table>
@@ -6388,7 +6935,7 @@ class FrontController extends Controller
                 $email = $value->volunteer->email_address;
                 $name = $value->volunteer->first_name.' '.$value->volunteer->last_name;
                 if(!empty(trim($email)) && !in_array($email, $log_arr)){
-                    $to_arr[] = 
+                    $to_arr[] =
                     [
                         "to" => [
                             ["email" => trim($email)]
@@ -6404,7 +6951,7 @@ class FrontController extends Controller
                     $log_arr[] = trim($email);
                 }
             }
-            $to_arr[] = 
+            $to_arr[] =
             [
                 "to" => [
                     ["email" => 'learningdcm@gmail.com']
@@ -6505,5 +7052,44 @@ class FrontController extends Controller
         return response()->json($this->generateResponse(true, 'Event reminder cron executed successfully.', [
             'email_count' => count($to_arr),
         ]));
+    }
+
+    public function joinWaitlist(\Illuminate\Http\Request $request)
+    {
+        $request->validate([
+            'event_id' => 'required',
+            'ticket_id' => 'required',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+        ]);
+
+        // Check for existing waitlist entry
+        $existingEntry = \App\Models\EventWaitlist::where('event_id', $request->event_id)
+            ->where('ticket_id', $request->ticket_id)
+            ->where('email', $request->email)
+            ->first();
+
+        if ($existingEntry) {
+            if ($existingEntry->status === 'waiting') {
+                return response()->json(['success' => false, 'message' => 'You are already on the waitlist for this ticket.']);
+            } else {
+                // Status is 'cleared', so they are re-joining the waitlist
+                $existingEntry->status = 'waiting';
+                $existingEntry->first_name = $request->first_name;
+                $existingEntry->last_name = $request->last_name;
+                $existingEntry->joined_at = now();
+                $existingEntry->save();
+
+                return response()->json(['success' => true, 'message' => 'You are on the waitlist! We will email you if a ticket becomes available.']);
+            }
+        }
+
+        // If no entry exists at all, create a new one
+        $data = $request->all();
+        $data['joined_at'] = now();
+        \App\Models\EventWaitlist::create($data);
+
+        return response()->json(['success' => true, 'message' => 'You are on the waitlist! We will email you if a ticket becomes available.']);
     }
 }

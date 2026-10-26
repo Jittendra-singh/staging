@@ -403,6 +403,16 @@
                     <div class="sig-label">Participant Full Name</div>
                     <div class="sig-name-text">{{ strip_tags($signerName ?? '') }}</div>
 
+                    @if(isset($ticket->children) && $ticket->children->count() > 0)
+                        <div class="sig-spacer"></div>
+                        <div class="sig-label">Accompanying Minor(s) Included</div>
+                        <div style="font-size: 10px; color: #444; margin-top: 3px;">
+                            @foreach($ticket->children as $child)
+                                <div>&bull; {{ $child->child_name }} (Age {{ $child->child_age }})</div>
+                            @endforeach
+                        </div>
+                    @endif
+
                     <div class="sig-spacer"></div>
 
                     <div class="sig-label sig-date-value-label">Date Signed</div>

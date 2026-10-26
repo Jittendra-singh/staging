@@ -14,6 +14,16 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
+        $response->assertRedirect();
+    }
+
+    /**
+     * Test that following the localization redirect leads to a successful response.
+     */
+    public function test_the_application_follows_localization_redirect_successfully(): void
+    {
+        $response = $this->followingRedirects()->get('/');
+
         $response->assertStatus(200);
     }
 }

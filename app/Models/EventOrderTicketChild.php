@@ -27,7 +27,21 @@ class EventOrderTicketChild extends Pivot
     protected $casts = [
                         'created_at' => 'datetime',
                         'updated_at' => 'datetime',
+                        'cancelled_at' => 'datetime',
+                        'checkin_dt' => 'datetime',
+                        'waiver_filled_at' => 'datetime',
                     ];
+
+    /** Scopes */
+    public function scopeActive($query)
+    {
+        return $query->whereNull('cancelled_at');
+    }
+
+    public function scopeCancelled($query)
+    {
+        return $query->whereNotNull('cancelled_at');
+    }
     /**relations */
     public function eventOrder()
     {

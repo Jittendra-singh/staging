@@ -113,6 +113,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
     Route::get('unsubscribe-alert/{user}/{alert?}', 'unsubscribeAlert')->name('unsubscribe-alert');
     Route::get('confirmed-unsubscribe-alert/{user}/{alert?}', 'confirmedUnsubscribeAlert')->name('confirmed-unsubscribe-alert');
     Route::get('show-community-service-pdf/{ticket}', 'showCommunityServicePdf')->name('show-community-service-pdf');
+    Route::get('show-child-community-service-pdf/{child}', 'showChildCommunityServicePdf')->name('show-child-community-service-pdf');
     Route::get('front-save-ticket-notify/{ticket}', 'saveTicketNotify')->name('save-ticket-notify');
     Route::post('front-save-ticket-notify-guest', 'saveGuestTicketNotify')->name('save-ticket-notify-guest');
     Route::get('verify-ticket-notification-email/{notification}', 'verifyGuestTicketNotification')->middleware('signed')->name('verify-ticket-notify-email');
@@ -134,6 +135,8 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
     * --------------------------------------------------------------------------------------- */
     Route::middleware(['auth:front', 'restrict.during.impersonation'])->group(function () {
         Route::get('dashboard', 'dashboard')->name('front-dashboard');
+        Route::get('waitlist-detail/{event_id}', 'waitlistDetail')->name('waitlist.detail');
+        Route::get('export-waitlist/{event_id}', 'exportWaitlist')->name('export.waitlist');
         Route::get('cleanup-attending', 'cleanupAttending')->name('front-cleanup-attending');
         Route::post('get-organizer-options' , 'getOrganizerOptions' )->name('front-get-organizer-options');
         Route::get('release-notes', 'releaseNotes')->name('front-release-notes');
@@ -171,6 +174,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::get('volunteer-check-in/{id}', 'volunteerCheckin')->name('front-volunteer-check-in');
         Route::post('volunteer-check-in/sign-and-check-in/{id}', 'volunteerSignAndCheckin')->name('front-volunteer-sign-and-check-in');
         Route::post('volunteer-check-in/mark-check-in/{id}', 'volunteerMarkCheckin')->name('front-volunteer-mark-check-in');
+        Route::post('volunteer-check-in/child-mark-check-in/{id}', 'childMarkCheckin')->name('front-child-mark-check-in');
         Route::get('volunteer-check-in/export/{id}', 'exportVolunteerCheckinPdf')->name('front-volunteer-check-in-export');
         Route::post('volunteer-check-in/waiver-qr/{id}', 'volunteerWaiverQr')->name('front-volunteer-waiver-qr');
 
@@ -496,8 +500,12 @@ Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => ['lo
         // cron
         Route::get('cron-event-rsvp-reminder', 'cronEventRSVPReminder')->name('cron-event-rsvp-reminder');
     });
-    Route::controller(\App\Http\Controllers\FrontController::class)->group(function(){
-        Route::get('{slug}' , 'viewEventPage')->name('view-event-details');
-    });
+    // Route::controller(\App\Http\Controllers\FrontController::class)->group(function(){
+    //     Route::get('{slug}' , 'viewEventPage')->name('view-event-details');
+    // });
     Route::post('impersonate/leave', [\App\Http\Controllers\Admin\ImpersonationController::class, 'leave'])->name('admin.impersonate.leave');
+});
+Route::controller(\App\Http\Controllers\FrontController::class)->group(function(){
+    Route::post('/join-waitlist', 'joinWaitlist')->name('join.waitlist');
+    Route::get('{slug}' , 'viewEventPage')->name('view-event-details');
 });

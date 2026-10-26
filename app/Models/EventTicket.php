@@ -161,4 +161,27 @@ class EventTicket extends Model
             }
         );
     }
+
+    protected static function booted()
+    {
+        static::updated(function ($ticket) {
+            // Check if available_quantity was explicitly increased during this update
+            if ($ticket->wasChanged('available_quantity')) {
+                $oldQuantity = $ticket->getOriginal('available_quantity');
+                $newQuantity = $ticket->available_quantity;
+
+                // If they increased the capacity
+                if ($newQuantity > $oldQuantity) {
+                    // Check how many tickets have actually been sold
+                    $alreadySoldTickets = \App\Models\EventOrderTicket::active()->where('ticket_id', $ticket->id)->count();
+                    $remainingTickets = $newQuantity - $alreadySoldTickets;
+                    
+                    // If there are now tickets available to claim, blast the waitlist!
+                    if ($remainingTickets > 0) {
+                        app(\App\Http\Controllers\Controller::class)->notifyWaitlistWhenAvailable($ticket->event_id, $ticket->id);
+                    }
+                }
+            }
+        });
+    }
 }
