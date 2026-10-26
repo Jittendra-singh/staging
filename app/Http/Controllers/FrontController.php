@@ -141,7 +141,7 @@ class FrontController extends Controller
                 continue;
 
             try {
-                Mail::raw(request()->content, function ($message) use($email) {
+                Mail::raw(request()->input('content'), function ($message) use($email) {
                     $message->to($email)
                             ->subject(request()->subject);
                 });
@@ -2222,8 +2222,7 @@ class FrontController extends Controller
 
         return $this->generateJsonResponse(true, 'Cleanup report data saved successfully.', [
             'event_instance' => encrypt($event->id),
-            'event' => $event , 
-            'redirect_href' => $this->mailUrl('front-cleanup-hosting', ['type' => 'organizer']) , 
+            'event' => $event,
             'redirect_href' => $this->mailUrl('front-cleanup-hosting', [
                 'type' => 'organizer',
             ]),
@@ -3022,6 +3021,7 @@ class FrontController extends Controller
             'organization_email'   => $event->creator->email_address,
             'organizer_link'   => route('organizer-detail', ['slug' => $event->creator->organisation_landing_slug]),
         ];
+        $callFromBackend = false;
         try{
             $html = view('pages.events.community-form-new', $data)->render();
             $pdf = \PDF::setOptions(['isHtml5ParserEnabled' => true,'isRemoteEnabled' => true])->loadHTML($html);
@@ -4710,8 +4710,8 @@ class FrontController extends Controller
                 ["email" => trim($ticket->volunteer->email_address)]
             ],
             "dynamic_template_data" => [
-                "subject" => request()->subject,
-                "content" => request()->content,
+                "subject" => request()->input('subject'),
+                "content" => request()->input('content'),
                 "attendee_name" => $ticket->volunteer->first_name.' '.$ticket->volunteer->last_name,
                 "attendee_email" => $ticket->volunteer->email_address,
             ],
@@ -4766,8 +4766,8 @@ class FrontController extends Controller
                     ["email" => $email]
                 ],
                 "dynamic_template_data" => [
-                    "subject" => request()->subject,
-                    "content" => request()->content,
+                    "subject" => request()->input('subject'),
+                    "content" => request()->input('content'),
                     "attendee_name" => $ticket->volunteer->first_name.' '.$ticket->volunteer->last_name,
                     "attendee_email" => $email,
                 ],
@@ -4966,7 +4966,7 @@ class FrontController extends Controller
                     $responseArr['wait_seconds'] = 60 - $secondsSinceLastSend;
                     return $this->generateJsonResponse(false, 'Please wait ' . (60 - $secondsSinceLastSend) . ' seconds before resending the waiver email.', $responseArr);
                 }
-                $lastResendWaiverLog->createdDateTime = $lastResendWaiverLog->createdDateTime;
+                // $lastResendWaiverLog->createdDateTime already set; no reassignment needed.
                 $responseArr['log'] = $lastResendWaiverLog->toArray();
             }
             return $this->generateJsonResponse(true, 'Waiver email sent successfully.', $responseArr);

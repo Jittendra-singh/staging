@@ -18,13 +18,13 @@
         </div>
         @endif
         <!-- <div class="order-total-dt mb-3">
-            <div class="order-text mb-1"><small style="font-weight: 100;font-size: 13px;">Platform Fee ({{$setting->event_commission}}%)</small></div>
-            <div class="order-number mb-1"><small style="font-weight: 100;font-size: 13px;">{{config('app.currency')}}{{formatAmt(($ticket['base_price']*$setting->event_commission)/100)}}</small></div>
+            <div class="order-text mb-1"><small style="font-weight: 100;font-size: 13px;">Platform Fee ({{$setting?->event_commission ?? 0}}%)</small></div>
+            <div class="order-number mb-1"><small style="font-weight: 100;font-size: 13px;">{{config('app.currency')}}{{formatAmt(($ticket['base_price']*($setting?->event_commission ?? 0))/100)}}</small></div>
         </div> -->
         <div class="order-total-dt">
             <div class="order-text mb-0">
                 <small style="font-weight:100;font-size:13px;">
-                    Platform Fee ({{ $setting->event_commission }}%)
+                    Platform Fee ({{ $setting?->event_commission ?? 0 }}%)
                     {{ $buyer_pays_fees ? '' : 'Included' }}
                 </small>
             </div>
@@ -114,7 +114,7 @@
     <div class="order-total-dt mb-2">
         <div class="order-text mb-2">
             <h6>
-                Platform Fee ({{ $setting->event_commission }}%)
+                Platform Fee ({{ $setting?->event_commission ?? 0 }}%)
                 {{ $buyer_pays_fees ? '' : 'Included' }}
             </h6>
         </div>

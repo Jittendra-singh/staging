@@ -1180,4 +1180,8 @@ return [
     'front_zip_post_code' => 'Kòd postal',
     'front_create_my_account' => 'Kreye kont mwen',
     'front_already_have_account' => 'Ou gen yon kont deja?',
+    'communication' => 'Kominikasyon',
+    'website_widgets' => 'Sit entènèt ak Widgets',
+    'account' => 'Kont',
+    'support' => 'Sipò',
 ];

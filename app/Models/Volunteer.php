@@ -208,6 +208,12 @@ class Volunteer extends Authenticatable
         return $this->hasMany(EventCoHost::class , 'volunteer_id');
     }
     /**Attributes */
+    protected function encryptedId(): Attribute{
+        return Attribute::make(
+            get: fn () => encrypt($this->id),
+        );
+    }
+
     protected function name(): Attribute{
         return Attribute::make(
             get: fn () => ucfirst($this->first_name) . ' ' . ucfirst($this->last_name),

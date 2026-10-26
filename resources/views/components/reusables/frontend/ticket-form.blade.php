@@ -1,6 +1,7 @@
 @php
     $counter = $counter ?? 'counter_placeholder';
-    $setting = \App\Models\Setting::first();
+    $setting = $setting ?? \App\Models\Setting::first();
+    $commission = $setting?->event_commission ?? 0;
     $allowPaidTickets = true;
     if(!(!empty(auth()->guard('front')->user()->stripe_email) && !empty(auth()->guard('front')->user()->stripe_account_id)))
     {
@@ -74,7 +75,7 @@
                                 </div>
                                 <div class="col-sm-2 mt-3">
                                     <label for="ticket_price">Ticket Price</label>
-                                    <input type="number" fee_per="{{ $setting->event_commission }}" name="ticket[{{$counter}}][ticket_price]" value="{{@$ticket->ticket_price ?? 0}}" class="form-control form-ele mt-1 ticket_base_price_f"  min="0" required  {{ isset($ticket->ticket_type)?($ticket->ticket_type=='free'?'readonly':''):'readonly' }}>
+                                    <input type="number" fee_per="{{ $commission }}" name="ticket[{{$counter}}][ticket_price]" value="{{@$ticket->ticket_price ?? 0}}" class="form-control form-ele mt-1 ticket_base_price_f"  min="0" required  {{ isset($ticket->ticket_type)?($ticket->ticket_type=='free'?'readonly':''):'readonly' }}>
                                 </div>
                                 <div class="col-sm-2 mt-3">
                                     <label for="available_quantity">Total Tickets*</label>
@@ -130,7 +131,7 @@
                                                         <td>$<span class="form-ele" name="pb_base_price_{{ $counter }}">0</span></td>
                                                     </tr>
                                                     <tr>
-                                                        <th><small><span name="pb_fee_text_{{ $counter }}">Platform Fee</span> ({{$setting->event_commission}}%)</small></th>
+                                                        <th><small><span name="pb_fee_text_{{ $counter }}">Platform Fee</span> ({{ $commission }}%)</small></th>
                                                         <td>$<span class="form-ele" name="pb_platform_fee_{{ $counter }}">0</span></td>
                                                     </tr>
                                                     <tr>

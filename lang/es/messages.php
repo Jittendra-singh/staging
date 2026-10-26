@@ -1180,4 +1180,8 @@ return [
     'front_zip_post_code' => 'Código postal',
     'front_create_my_account' => 'Crear mi cuenta',
     'front_already_have_account' => '¿Ya tienes una cuenta?',
+    'communication' => 'Comunicación',
+    'website_widgets' => 'Sitio web y widgets',
+    'account' => 'Cuenta',
+    'support' => 'Soporte',
 ];
