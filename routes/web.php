@@ -239,7 +239,7 @@ Route::controller(\App\Http\Controllers\FrontController::class)->group(function(
         Route::post('save-organisation-details', 'saveOrganisationDetails')->name('save.front.organisation.details');
 
         
-        Route::get('inbox', 'contactLists')->name('contact-lists');
+        Route::get('inbox', [\App\Http\Controllers\MessagingController::class, 'index'])->name('contact-lists');
         Route::get('orders', 'orders')->name('front-orders');
         Route::post('orders', 'orders')->name('front-orders-post');
         Route::get('order-details/{placeholder}', 'orderDetails')->name('front-order-details');
@@ -274,6 +274,47 @@ Route::controller(\App\Http\Controllers\FrontAuthController::class)->group(funct
     });
 
 });
+});
+
+Route::get(
+    'contact-message/verify/{token}',
+    [\App\Http\Controllers\MessagingController::class, 'verifyPendingContact']
+)->name('messaging.pending.verify')
+  ->middleware('throttle:20,1');
+
+Route::middleware(['auth:front', 'restrict.during.impersonation'])->group(function () {
+    Route::get('inbox/{conversation}/delta', [\App\Http\Controllers\MessagingController::class, 'delta'])
+        ->name('messaging.conversations.delta');
+
+    Route::get('inbox/{conversation}', [\App\Http\Controllers\MessagingController::class, 'show'])
+        ->name('messaging.conversations.show');
+
+    Route::post('inbox/{conversation}/messages', [\App\Http\Controllers\MessagingController::class, 'store'])
+        ->name('messaging.messages.store');
+
+    Route::post('inbox/{conversation}/archive', [\App\Http\Controllers\MessagingController::class, 'archive'])
+        ->name('messaging.conversations.archive');
+
+    Route::post('inbox/{conversation}/unarchive', [\App\Http\Controllers\MessagingController::class, 'unarchive'])
+        ->name('messaging.conversations.unarchive');
+
+    Route::post('inbox/{conversation}/delete', [\App\Http\Controllers\MessagingController::class, 'delete'])
+        ->name('messaging.conversations.delete');
+
+    Route::post('inbox/{conversation}/mark-unread', [\App\Http\Controllers\MessagingController::class, 'markUnread'])
+        ->name('messaging.conversations.mark-unread');
+
+    Route::post('inbox/{conversation}/mark-read', [\App\Http\Controllers\MessagingController::class, 'markRead'])
+        ->name('messaging.conversations.mark-read');
+
+    Route::post('inbox/bulk-action', [\App\Http\Controllers\MessagingController::class, 'bulkAction'])
+        ->name('messaging.conversations.bulk');
+
+    Route::post('inbox/{conversation}/notifications', [\App\Http\Controllers\MessagingController::class, 'updateThreadPreference'])
+        ->name('messaging.conversations.notifications');
+
+    Route::post('inbox/preferences', [\App\Http\Controllers\MessagingController::class, 'updateGlobalPreference'])
+        ->name('messaging.preferences.update');
 });
 
 /**

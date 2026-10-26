@@ -1004,6 +1004,8 @@ return [
     'front_sort_by' => 'Triye pa',
     'front_newest_first' => 'Pi nouvo an premye',
     'front_oldest_first' => 'Pi ansyen an premye',
+    'front_soonest_first' => 'Pi bonè an premye',
+    'front_latest_first' => 'Pi ta an premye',
     'front_organizing_cleanups_count' => 'Netwayaj w ap òganize (:count)',
     'front_cohosting_cleanups_count' => 'Netwayaj w ap ko-òganize (:count)',
     'front_no_cleanup_found' => 'Pa gen netwayaj jwenn',

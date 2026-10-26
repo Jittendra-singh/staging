@@ -1004,6 +1004,8 @@ return [
     'front_sort_by' => 'Sort By',
     'front_newest_first' => 'Newest First',
     'front_oldest_first' => 'Oldest First',
+    'front_soonest_first' => 'Soonest First',
+    'front_latest_first' => 'Latest First',
     'front_organizing_cleanups_count' => 'Organizing Cleanups (:count)',
     'front_cohosting_cleanups_count' => 'Co-Hosting Cleanups (:count)',
     'front_no_cleanup_found' => 'No cleanup found',

@@ -265,6 +265,31 @@ class Volunteer extends Authenticatable
         // Fallback
         return $dummy;
     }
+    public function conversationNotificationPreference()
+{
+    return $this->hasOne(
+        ConversationNotificationPreference::class,
+        'volunteer_id'
+    );
+}
+
+    public function conversationParticipants()
+{
+    return $this->hasMany(
+        ConversationParticipant::class,
+        'volunteer_id'
+    );
+}
+
+    public function conversations()
+{
+    return $this->belongsToMany(
+        Conversation::class,
+        'conversation_participants',
+        'volunteer_id',
+        'conversation_id'
+    );
+}
 
 
 }
